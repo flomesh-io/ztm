@@ -6,6 +6,7 @@ import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useToast } from "primevue/usetoast";
 import { getCurrent, LogicalSize } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/core';
 import store from "@/store";
 NProgress.configure({ showSpinner: true });
 
@@ -28,10 +29,14 @@ const progressStart = (to, from, next) => {
 
 const resize = (width,height,resizable) => {
 	if(!!window.__TAURI_INTERNALS__ && getCurrent().setSize){
-		getCurrent().setSize({
-			type:'Logical',
-			width,
-			height
+		const label = window.__TAURI_INTERNALS__.metadata.currentWindow.label;
+		// getCurrent().setSize(new LogicalSize(width, height));
+		invoke('plugin:window|set_size', {
+		    label,
+		    value: {
+					type: 'Logical',
+					data: {width,height}
+				}
 		});
 	}
 	if(!!window.__TAURI_INTERNALS__ && getCurrent().setResizable){
