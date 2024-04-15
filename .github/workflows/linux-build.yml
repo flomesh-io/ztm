@@ -1,0 +1,41 @@
+name: linux-build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+
+    - name: Install dependencies
+      run: |
+        sudo apt install -y build-essential \
+                       pkg-config \
+                       libgtk-3-dev \
+                       libssl-dev \
+                       libjavascriptcoregtk-4.1-dev \
+                       libsoup-3.0-dev \
+                       libwebkit2gtk-4.1-dev
+
+    - name: build app
+      run: |
+        cd gui
+        yarn install
+        yarn download-pipy-linux
+        NODE_OPTIONS="--max-old-space-size=4096" yarn tauri build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: rpm
+        path: ./gui/src-tauri/target/release/bundle/rpm/zt-mesh-0.1.0-1.x86_64.rpm
+    - uses: actions/upload-artifact@v2
+      with:
+        name: deb
+        path: ./gui/src-tauri/target/release/bundle/deb/zt-mesh_0.1.0_amd64.deb
+    - uses: actions/upload-artifact@v2
+      with:
+        name: appimage
+        path: ./gui/src-tauri/target/release/bundle/appimage/zt-mesh_0.1.0_amd64.AppImage
