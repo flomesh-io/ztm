@@ -1,0 +1,23 @@
+name: windows-build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+    - run: npm install -g win-node-env
+    - name: build app
+      run: |
+        cd gui
+        yarn install
+        yarn download-pipy-windows
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn tauri build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: release
+        path: ./gui/src-tauri/target/release/bundle/nsis/ZTMesh_0.1.0_x64-setup.exe
