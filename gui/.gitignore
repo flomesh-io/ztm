@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# dependencies
+/node_modules
+package-lock.json
+yarn.lock
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+/release
+/download/*
+/public/demo
+/agent
+/src-tauri/agent
+/public/agent
+/public/log
+/cypress/videos/
+/cypress/screenshots/
+/mock/*.mjs
+/src-tauri/target
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Themes
+public/themes/soho-light/
+public/themes/soho-dark/
+public/themes/viva-light/
+public/themes/viva-dark/
+public/themes/mira/
+public/themes/nano/

@@ -1,0 +1,101 @@
+{
+  "$schema": "./schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Capability for the main window",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "path:default",
+    "event:default",
+    "window:default",
+    "app:default",
+    "resources:default",
+    "menu:default",
+    "tray:default",
+    "window:allow-set-title",
+    "window:allow-set-size",
+    "window:allow-set-resizable",
+    "webview:allow-set-webview-size",
+    "webview:allow-internal-toggle-devtools",
+    "cli:default",
+    "cli:allow-cli-matches",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "eval",
+          "cmd": "eval",
+          "args": [
+            {
+              "validator": ".+"
+            }
+          ],
+          "sidecar": false
+        },
+        {
+          "name": "bin/pipy",
+          "args": [
+            {
+              "validator": ".+"
+            }
+          ],
+          "sidecar": true
+        },
+        {
+          "name": "cd",
+          "cmd": "cd",
+          "args": [
+            {
+              "validator": ".+"
+            }
+          ],
+          "sidecar": false
+        },
+        {
+          "name": "lsof",
+          "cmd": "lsof",
+          "args": [
+            "-i",
+            {
+              "validator": ".+"
+            }
+          ],
+          "sidecar": false
+        },
+        {
+          "name": "kill",
+          "cmd": "kill",
+          "args": [
+            {
+              "validator": ".+"
+            }
+          ],
+          "sidecar": false
+        }
+      ]
+    },
+    "shell:allow-kill",
+    "shell:allow-open",
+    "shell:allow-stdin-write",
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        "http://127.0.0.1:*/*"
+      ]
+    },
+    "http:allow-fetch-cancel",
+    "http:allow-fetch-read-body",
+    "http:allow-fetch-send",
+    "os:default",
+    "os:allow-arch",
+    "os:allow-exe-extension",
+    "os:allow-family",
+    "os:allow-locale",
+    "os:allow-os-type",
+    "os:allow-version",
+    "os:allow-platform",
+    "os:allow-hostname"
+  ]
+}
