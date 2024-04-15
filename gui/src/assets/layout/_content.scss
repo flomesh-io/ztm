@@ -1,0 +1,13 @@
+.layout-main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 50px);
+    justify-content: space-between;
+    padding: 0 0 4rem 0;
+    transition: margin-left $transitionDuration;
+		overflow-x: hidden;
+}
+
+.layout-main {
+    flex: 1 1 auto;
+}

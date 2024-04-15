@@ -1,0 +1,11 @@
+# macOS aarch64
+pipy-aarch64-apple-darwin
+
+# macOS x86
+pipy-x86_64-apple-darwin
+
+# Windows
+pipy-x86_64-pc-windows-msvc.exe
+
+# Linux
+pipy-x86_64-unknown-linux-gnu
