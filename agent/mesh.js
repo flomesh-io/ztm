@@ -2,6 +2,12 @@ import db from './db.js'
 
 export default function (meshName, agent, bootstraps) {
   var services = []
+  var hubAddresses = bootstraps.map(
+    function (addr) {
+      if (addr.startsWith('localhost:')) addr = '127.0.0.1:' + addr.substring(10)
+      return addr
+    }
+  )
 
   //
   // Class Hub
@@ -408,8 +414,8 @@ export default function (meshName, agent, bootstraps) {
     return hubs[0].findEndpoint(ep).then(
       function (endpoint) {
         if (!endpoint) return null
-        var hubs = endpoint.hubs
-        return hubs ? hubs[0] : null
+        var hubs = endpoint.hubs || []
+        return hubs.find(addr => hubAddresses.indexOf(addr) >= 0)
       }
     )
   }

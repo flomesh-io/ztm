@@ -6,10 +6,12 @@ var opt = options({
   defaults: {
     '--help': false,
     '--listen': '0.0.0.0:8888',
+    '--address': [],
   },
   shorthands: {
     '-h': '--help',
     '-l': '--listen',
+    '-a': '--address',
   },
 })
 
@@ -17,6 +19,7 @@ if (options['--help']) {
   println('Options:')
   println('  -h, --help      Show available options')
   println('  -l, --listen    Port number to listen (default: 0.0.0.0:8888)')
+  println('  -a, --address   Hub address seen by agents (may be more than one)')
   return
 }
 
@@ -72,6 +75,7 @@ var routes = Object.entries({
 
 var endpoints = {}
 var hubs = {}
+var localAddresses = [...opt['--address']]
 
 function endpointName(id) {
   var ep = endpoints[id]
@@ -82,8 +86,7 @@ var $agent = null
 var $params = null
 var $endpoint = null
 var $hub = null
-var $hubAddr
-var $hubPort
+var $localAddr
 
 pipy.listen(opt['--listen'], $=>$
   .onStart(
@@ -92,8 +95,7 @@ pipy.listen(opt['--listen'], $=>$
         ip: ib.remoteAddress,
         port: ib.remotePort,
       }
-      $hubAddr = ib.localAddress
-      $hubPort = ib.localPort
+      $localAddr = `${ib.localAddress}:${ib.localPort}`
     }
   )
   .demuxHTTP().to($=>$
@@ -120,6 +122,7 @@ var postStatus = pipeline($=>$
           heartbeat: Date.now(),
         }
       )
+      collectLocalAddresses($localAddr)
       return new Message({ status: 201 })
     }
   )
@@ -309,13 +312,25 @@ var noSession = pipeline($=>$
   .replaceMessage(response(404, 'No agent session established yet'))
 )
 
+function collectLocalAddresses(addr) {
+  if (localAddresses.indexOf(addr) < 0) {
+    localAddresses.push(addr)
+    Object.values(endpoints).forEach(
+      ep => {
+        if (ep.isConnected) ep.hubs.push(addr)
+      }
+    )
+  }
+}
+
 function findCurrentEndpointSession() {
   if (!$agent.id) return false
   $endpoint = endpoints[$agent.id]
   if (!$endpoint) {
     $endpoint = endpoints[$agent.id] = { ...$agent, services: [] }
-    $endpoint.hubs = [`${$hubAddr}:${$hubPort}`]
+    $endpoint.hubs = [...localAddresses]
   }
+  $endpoint.isConnected = true
   return true
 }
 
