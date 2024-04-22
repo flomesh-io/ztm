@@ -6,7 +6,7 @@ import options from './options.js'
 var opt = options({
   defaults: {
     '--help': false,
-    '--database': '~/ztm-auth.db',
+    '--database': '~/ztm-ca.db',
     '--listen': '0.0.0.0:9999',
   },
   shorthands: {
@@ -19,7 +19,7 @@ var opt = options({
 if (options['--help']) {
   println('Options:')
   println('  -h, --help      Show available options')
-  println('  -d, --database  Pathname of the database file (default: ~/ztm.db)')
+  println('  -d, --database  Pathname of the database file (default: ~/ztm-ca.db)')
   println('  -l, --listen    Port number to listen (default: 0.0.0.0:9999)')
   return
 }
