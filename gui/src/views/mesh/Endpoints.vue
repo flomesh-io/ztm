@@ -59,10 +59,12 @@ const clickSearch = () => {
 }
 const active = ref(0);
 
+const expandNode = ref();
 const expand = (node) => {
-	if (!node.children) {
+	if (!!node) {
 		node.loading = true;
 		node.children = [];
+		expandNode.value = node;
 		/*
 		 * get services
 		 */
@@ -102,6 +104,66 @@ const expand = (node) => {
 	}
 };
 
+const deleteService = (service) => {
+	confirm.require({
+	    message: `Are you sure to delete ${service.name} service?`,
+	    header: 'Tips',
+	    icon: 'pi pi-exclamation-triangle',
+	    accept: () => {
+				pipyProxyService.deleteService({
+					mesh:selectedMesh.value?.name,
+					ep:expandNode.value?.id,
+					name: service.name,
+					proto: service.protocol,
+				})
+					.then(res => {
+						console.log('Delete Success', err)
+						setTimeout(()=>{
+							expand(expandNode.value);
+						},1000)
+					})
+					.catch(err => {
+						console.log('Request Failed', err)
+						setTimeout(()=>{
+							expand(expandNode.value);
+						},1000)
+					}); 
+	    },
+	    reject: () => {
+	    }
+	});
+	
+}
+const deletePort = (port) => {
+	confirm.require({
+	    message: `Are you sure to delete this port?`,
+	    header: 'Tips',
+	    icon: 'pi pi-exclamation-triangle',
+	    accept: () => {
+				pipyProxyService.deletePort({
+					mesh:selectedMesh.value?.name,
+					ep:expandNode.value?.id,
+					proto: port.protocol,
+					ip: port?.listen?.ip,
+					port: port?.listen?.port
+				})
+					.then(res => {
+						console.log(res);
+						setTimeout(()=>{
+							expand(expandNode.value);
+						},1000)
+					})
+					.catch(err => {
+						setTimeout(()=>{
+							expand(expandNode.value);
+						},1000)
+						console.log('Request Failed', err);
+					}); 
+	    },
+	    reject: () => {
+	    }
+	});
+}
 
 </script>
 
@@ -138,7 +200,7 @@ const expand = (node) => {
 								<span class="status-point run mr-3" :class="{'run':slotProps.node.status=='OK'}"/>
 								EP: {{ slotProps.node.label || slotProps.node.id }} 
 								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
-								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
+								<span class="ml-2"><Tag severity="contrast" class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
 								
 								
 							</b>
@@ -146,11 +208,17 @@ const expand = (node) => {
 								<Avatar icon="pi pi-server" class="mr-2" />Service: {{ slotProps.node.label }}
 								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.host}}:{{slotProps.node.port}}</span>
 								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.protocol}}</Tag></span>
+								<span v-tooltip="'Delete Service'"  @click="deleteService(slotProps.node)" class="pointer ml-4 vm" >
+									<i class="pi pi-times text-gray-500 text-sm"></i>
+								</span>
 							</b>
-							<b v-else-if="slotProps.node.type == 'port'">
+							<b class="flex justify-content-center align-items-center" v-else-if="slotProps.node.type == 'port'">
 								<Avatar icon="pi pi-bullseye" class="mr-2" />Port: {{ slotProps.node.label }}
 								<span v-if="!!slotProps.node.target" class="font-normal text-gray-500 ml-1">| {{slotProps.node.target.service}}</span>
 								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.protocol}}</Tag></span>
+								<span v-tooltip="'Delete Port'"  @click="deletePort(slotProps.node)" class="pointer ml-4 vm" >
+									<i class="pi pi-times text-gray-500 text-sm"></i>
+								</span>
 							</b>
 					</template>
 				</Tree>

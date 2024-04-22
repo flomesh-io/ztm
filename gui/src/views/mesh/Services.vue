@@ -70,7 +70,7 @@ const deleteService = (service) => {
 }
 
 const getEndpoints = () => {
-	pipyProxyService.getEndpoints(selectedMesh.value?.name,)
+	pipyProxyService.getEndpoints(selectedMesh.value?.name)
 		.then(res => {
 			endpoints.value = res;
 			res.forEach((ep) => {
@@ -170,7 +170,14 @@ const save = () => {
 }
 const visiblePort = ref(false)
 const selectedService = ref(null);
-const mappingPort = ({service, ep}) => {
+const targetEndpoints = ref(null);
+const mappingPort = ({service, ep, lb}) => {
+	targetEndpoints.value = [];
+	if(!!lb){
+		lb.forEach(svc=>{
+			targetEndpoints.value.push(svc.ep);
+		})
+	}
 	visiblePort.value = true;
 	selectedService.value = {service, ep};
 }
@@ -221,7 +228,7 @@ const savePort = () => {
 													 style="width: 2.5rem; height: 2.5rem">
 														 <i class="pi pi-check-circle text-green-500 text-xl"></i>
 												 </div>
-												 <div v-else v-tooltip="'Map to Local Port'"  @click="mappingPort({service: lb[0]})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
+												 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: lb[0],lb})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
 														 <i class="pi pi-circle text-primary-500 text-xl"></i>
 												 </div>
 											 </div>
@@ -255,7 +262,7 @@ const savePort = () => {
 															style="width: 2rem; height: 2rem">
 																<i class="pi pi-check-circle text-green-500 text-xl"></i>
 														</div>
-														<div v-else v-tooltip="'Map to Local Port by EP'" @click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
+														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
 															<i class="pi pi-circle text-primary-500 text-xl"></i>
 														</div>
 														<div v-tooltip.top="'Delete'" @click="deleteService(service)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
@@ -287,13 +294,14 @@ const savePort = () => {
 		class="nopd transparent"
 		v-model:visible="visiblePort" 
 		modal 
-		:style="{ width: '100%', maxWidth: '500px', padding: 0 }"
+		:style="{ width: '100%', maxWidth: '900px', padding: 0 }"
 		>
 		<PortMaping 
 			@save="savePort" 
 			:mesh="selectedMesh?.name" 
 			:endpoint="selectedMesh?.agent?.id" 
 			:endpoints="endpoints"
+			:targetEndpoints="targetEndpoints"
 			:service="selectedService?.service?.name" 
 			:servicePort="selectedService?.service?.port"
 			:targetEndpoint="selectedService?.ep"/>
