@@ -21,6 +21,10 @@ const props = defineProps({
 			type: Object,
 			default: () => {}
     },
+    targetEndpoints: {
+			type: Array,
+			default: () => []
+    },
     endpoints: {
 			type: Array,
 			default: () => []
@@ -40,24 +44,26 @@ const pipyProxyService = new PipyProxyService();
 const loading = ref(false);
 const config = ref({
 	protocol: "tcp",
+	ep: props.endpoint,
 	listen: {
 		ip:'127.0.0.1',
 		port:props.servicePort,
 	},
 	target: {
-		endpoint: props.targetEndpoint?.id,
+		endpoint: props.targetEndpoint?.id || 0,
 		service: props.service,
 	}
 });
 const newConfig = () => {
 	config.value = {
 		protocol: "tcp",
+		ep: props.endpoint,
 		listen: {
 			ip:'127.0.0.1',
 			port:props.servicePort,
 		},
 		target: {
-			endpoint: props.targetEndpoint?.id,
+			endpoint: props.targetEndpoint?.id || 0,
 			service: props.service,
 		}
 	}
@@ -76,7 +82,7 @@ const commit = () => {
 	}
 	const d = {
 		mesh: props.mesh,
-		ep: props.endpoint,
+		ep: config.value.ep,
 		proto: config.value.protocol,
 		ip: config.value.listen?.ip,
 		port: config.value.listen?.port,
@@ -111,7 +117,7 @@ const home = ref({
 
 <template>
 	<div >
-		<BlockViewer text="Json" header="Map to Local Port" containerClass="surface-section px-3 py-3 md:px-4 lg:px-5" >
+		<BlockViewer text="Json" header="Connect" containerClass="surface-section px-3 py-3 md:px-4 lg:px-5" >
 			<template #actions>
 				<Button class="mr-2" label="Cancel" size="small" link @click="cancel"/>
 				<Button :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
@@ -120,8 +126,8 @@ const home = ref({
 			<div class="surface-section">
 				<ul class="list-none p-0 m-0">
 					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">Mesh</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
+							<div class="text-500 w-8rem font-medium">Mesh</div>
+							<div class="text-900 flex-item">
 								<Chip class="pl-0 pr-3 mr-2">
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<i class="pi pi-globe"/>
@@ -132,54 +138,9 @@ const home = ref({
 								</Chip>
 							</div>
 					</li>
-					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">Service</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-								<Chip class="pl-0 pr-3 mr-2">
-								    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<i class="pi pi-bookmark"/>
-										</span>
-								    <span class="ml-2 font-medium">
-											{{config.target?.service}}
-										</span>
-								</Chip>
-							</div>
-					</li>
-					<li v-if="!!targetEndpoint?.id" class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">Endpoint</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-								<Chip class="pl-0 pr-3 mr-2">
-								    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<i class="pi pi-chart-scatter"/>
-										</span>
-								    <span class="ml-2 font-medium">
-											{{targetEndpoint?.name || targetEndpoint?.id}}
-										</span>
-								</Chip>
-							</div>
-					</li>
-					<li v-else class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">Endpoint</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-								<Chip class="pl-0 pr-3 mr-2">
-										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<i class="pi pi-chart-scatter"/>
-										</span>
-										<span class="font-medium">
-											<Dropdown
-													v-model="config.target.endpoint" 
-													:options="endpoints" 
-													optionLabel="name" 
-													optionValue="id"
-													placeholder="Endpoint" 
-													class="flex"></Dropdown>
-										</span>
-								</Chip>
-							</div>
-					</li>
 					<li class="flex align-items-center py-3 px-2 surface-border flex-wrap border-bottom-1">
-							<div class="text-500 w-6 md:w-2 font-medium">Protocol</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
+							<div class="text-500 w-8rem font-medium">Protocol</div>
+							<div class="text-900 flex-item">
 								<Chip class="pl-0 pr-3">
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<RadioButton v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
@@ -195,32 +156,118 @@ const home = ref({
 								</Chip>
 							</div>
 					</li>
-					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">IP</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-								<Chip class="pl-0 pr-3 mr-2">
-								    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<i class="pi pi-bookmark"/>
-										</span>
-								    <span class="ml-2 font-medium">
-											<InputText placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.listen.ip" type="text" />
-										</span>
-								</Chip>
+					<li class="pt-6">
+						<div class="grid">
+							<div class="col-12 md:col-6">
+								<div class="surface-section">
+									<h6><Tag severity="contrast" value="Contrast">From</Tag></h6>
+									<ul class="list-none p-0 m-0">
+										
+										<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">Endpoint</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-chart-scatter"/>
+															</span>
+															<span class="font-medium">
+																<Dropdown
+																		style="max-width: 200px;"
+																		v-model="config.ep" 
+																		:options="endpoints" 
+																		optionLabel="name" 
+																		optionValue="id"
+																		placeholder="Endpoint" 
+																		class="flex"></Dropdown>
+															</span>
+													</Chip>
+												</div>
+										</li>
+										<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">IP</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-bookmark"/>
+															</span>
+															<span class="ml-2 font-medium">
+																<InputText placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.listen.ip" type="text" />
+															</span>
+													</Chip>
+												</div>
+										</li>
+										<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">Port</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-sort"/>
+															</span>
+															<span class="ml-2 font-medium">
+																<InputNumber :useGrouping="false" :min="1" :max="65535" placeholder="1-65535" class="add-tag-input" :unstyled="true" v-model="config.listen.port" type="text" />
+															</span>
+													</Chip>
+												</div>
+										</li>
+									</ul>
+								</div>
 							</div>
-					</li>
-					<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">Port</div>
-							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-								<Chip class="pl-0 pr-3 mr-2">
-								    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<i class="pi pi-sort"/>
-										</span>
-								    <span class="ml-2 font-medium">
-											<InputNumber :useGrouping="false" :min="1" :max="65535" placeholder="1-65535" class="add-tag-input" :unstyled="true" v-model="config.listen.port" type="text" />
-										</span>
-								</Chip>
+							<div class="col-12 md:col-6">
+								<div class="surface-section">
+									<h6><Tag severity="contrast" value="Contrast">To</Tag></h6>
+									<ul class="list-none p-0 m-0">
+										<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">Service</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-bookmark"/>
+															</span>
+															<span class="ml-2 font-medium">
+																{{config.target?.service}}
+															</span>
+													</Chip>
+												</div>
+										</li>
+										<li v-if="!!targetEndpoint?.id" class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">Endpoint</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-chart-scatter"/>
+															</span>
+															<span class="ml-2 font-medium">
+																{{targetEndpoint?.name || targetEndpoint?.id}}
+															</span>
+													</Chip>
+												</div>
+										</li>
+										<li v-else class="flex align-items-center py-3 px-2  surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">Endpoint</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-chart-scatter"/>
+															</span>
+															<span class="font-medium">
+																<Dropdown
+																		v-model="config.target.endpoint" 
+																		:options="[{name:'Any', id:0}].concat(targetEndpoints)" 
+																		optionLabel="name" 
+																		optionValue="id"
+																		placeholder="Endpoint" 
+																		style="max-width: 200px;"
+																		class="flex"></Dropdown>
+															</span>
+													</Chip>
+												</div>
+										</li>
+									</ul>
+								</div>
 							</div>
+						</div>
 					</li>
+					
 				</ul>
 			</div>
 		</BlockViewer>
