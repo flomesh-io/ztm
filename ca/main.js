@@ -79,36 +79,35 @@ var routes = Object.entries({
     POST: (params, req) => {
       if (db.getUser(params.name)) return response(409)
       var obj = JSON.decode(req.body)
-      var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
-      var pkey = new crypto.PublicKey(key)
-      var cert = new crypto.Certificate({
-        subject: { CN: params.name },
-        days: 365,
-        issuer: caCert,
-        publicKey: pkey,
-        privateKey: caKey,
-      })
+      var c = issueCertificate(params.name)
       db.setUser(params.name, {
-        cert: cert.toPEM().toString(),
+        cert: c.cert.toPEM().toString(),
         roles: obj.roles,
       })
-      return response(200, key.toPEM().toString())
+      return response(200, c.key.toPEM().toString())
     },
 
     DELETE: (params) => {
-      if (params.name === 'root') return response(403)
+      if (params.name === 'root' || params.name === 'hub') return response(403)
       db.delUser(params.name)
       return response(204)
     },
   },
 
   '/api/users/{name}/certificate': {
-
     GET: (params) => {
       var u = db.getUser(params.name)
       if (!u) return response(404)
       return response(200, u.cert)
     },
+  },
+
+  '/api/sign/{name}': {
+    POST: (params, req) => {
+      var pkey = new crypto.PublicKey(req.body)
+      var cert = signCertificate(params.name, pkey)
+      return response(200, cert.toPEM().toString())
+    }
   },
 
 }).map(
@@ -162,4 +161,21 @@ function responseCT(status, ct, body) {
     },
     body
   )
+}
+
+function issueCertificate(name) {
+  var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+  var pkey = new crypto.PublicKey(key)
+  var cert = signCertificate(name, pkey)
+  return { cert, key }
+}
+
+function signCertificate(name, pkey) {
+  return new crypto.Certificate({
+    subject: { CN: name },
+    days: 365,
+    issuer: caCert,
+    privateKey: caKey,
+    publicKey: pkey,
+  })
 }
