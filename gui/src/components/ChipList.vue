@@ -64,6 +64,7 @@ const removeTag = (index) => {
 <style scoped lang="scss">
 	.custom-chip{
 		line-height: 24px;
+		margin-bottom: 10px;
 	}
 	.custom-chip .pi-times-circle{
 		opacity: 0.5;
