@@ -6,20 +6,22 @@ var opt = options({
   defaults: {
     '--help': false,
     '--listen': '0.0.0.0:8888',
-    '--address': [],
+    '--name': [],
+    '--ca': 'localhost:9999',
   },
   shorthands: {
     '-h': '--help',
     '-l': '--listen',
-    '-a': '--address',
+    '-n': '--name',
   },
 })
 
 if (options['--help']) {
   println('Options:')
-  println('  -h, --help      Show available options')
-  println('  -l, --listen    Port number to listen (default: 0.0.0.0:8888)')
-  println('  -a, --address   Hub address seen by agents (may be more than one)')
+  println('  -h, --help    Show available options')
+  println('  -l, --listen  Port number to listen (default: 0.0.0.0:8888)')
+  println('  -n, --name    Hub address seen by agents (can be more than one)')
+  println('      --ca      Address of the certificate authority service')
   return
 }
 
@@ -75,7 +77,47 @@ var routes = Object.entries({
 
 var endpoints = {}
 var hubs = {}
-var localAddresses = [...opt['--address']]
+var localAddresses = [...opt['--name']]
+var caAgent = new http.Agent(opt['--ca'])
+var caCert = null
+var myCert = null
+var myKey = null
+
+main()
+
+function main() {
+  caAgent.request('GET', '/api/certificates/ca').then(
+    function (res) {
+      if (res.head.status !== 200) {
+        println('cannot retreive the CA certificate')
+        pipy.exit(-1)
+        return
+      }
+      caCert = new crypto.Certificate(res.body)
+      println('==============')
+      println('CA certificate')
+      println('==============')
+      println(res.body.toString())
+      myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+      var pkey = new crypto.PublicKey(myKey)
+      return caAgent.request('POST', '/api/sign/hub/0', null, pkey.toPEM())
+    }
+  ).then(
+    function (res) {
+      if (res.head.status !== 200) {
+        println('error signing a hub certificate')
+        pipy.exit(-1)
+        return
+      }
+      println('===============')
+      println('Hub certificate')
+      println('===============')
+      println(res.body.toString())
+      myCert = new crypto.Certificate(res.body)
+      start()
+    }
+  )
+}
 
 function endpointName(id) {
   var ep = endpoints[id]
@@ -88,29 +130,40 @@ var $endpoint = null
 var $hub = null
 var $localAddr
 
-pipy.listen(opt['--listen'], $=>$
-  .onStart(
-    function (ib) {
-      $agent = {
-        ip: ib.remoteAddress,
-        port: ib.remotePort,
-      }
-      $localAddr = `${ib.localAddress}:${ib.localPort}`
-    }
-  )
-  .demuxHTTP().to($=>$
-    .pipe(
-      function (evt) {
-        if (evt instanceof MessageStart) {
-          var path = evt.head.path
-          var route = routes.find(r => Boolean($params = r.match(path)))
-          if (route) return route.handler($params, evt)
-          return notFound
+function start() {
+  pipy.listen(opt['--listen'], $=>$
+    .onStart(
+      function (ib) {
+        $agent = {
+          ip: ib.remoteAddress,
+          port: ib.remotePort,
         }
+        $localAddr = `${ib.localAddress}:${ib.localPort}`
       }
     )
+    .acceptTLS({
+      certificate: {
+        cert: myCert,
+        key: myKey,
+      },
+      trusted: [caCert],
+    }).to($=>$
+      .demuxHTTP().to($=>$
+        .pipe(
+          function (evt) {
+            if (evt instanceof MessageStart) {
+              var path = evt.head.path
+              var route = routes.find(r => Boolean($params = r.match(path)))
+              if (route) return route.handler($params, evt)
+              return notFound
+            }
+          }
+        )
+      )
+    )
   )
-)
+  println('Hub started at', opt['--listen'])
+}
 
 var postStatus = pipeline($=>$
   .replaceMessage(

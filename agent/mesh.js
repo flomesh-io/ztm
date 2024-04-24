@@ -1,8 +1,44 @@
 import db from './db.js'
 
-export default function (meshName, agent, bootstraps) {
+export default function (config) {
+  var meshName = config.name
+  var caCert
+  var agentCert
+  var agentKey
   var services = []
-  var hubAddresses = bootstraps.map(
+  var errorLog = []
+
+  if (config.ca) {
+    try {
+      caCert = new crypto.Certificate(config.ca)
+    } catch {
+      error('Invalid CA certificate')
+    }
+  } else {
+    error('Missing CA certificate')
+  }
+
+  if (config.agent.certificate) {
+    try {
+      agentCert = new crypto.Certificate(config.agent.certificate)
+    } catch {
+      error('Invalid agent certificate')
+    }
+  } else {
+    error('Missing agent certificate')
+  }
+
+  if (config.agent.privateKey) {
+    try {
+      agentKey = new crypto.PrivateKey(config.agent.privateKey)
+    } catch {
+      error('Invalid agent private key')
+    }
+  } else {
+    error('Missing agent private key')
+  }
+
+  var hubAddresses = config.bootstraps.map(
     function (addr) {
       if (addr.startsWith('localhost:')) addr = '127.0.0.1:' + addr.substring(10)
       return addr
@@ -14,11 +50,8 @@ export default function (meshName, agent, bootstraps) {
   // Management of the interaction with a single hub instance
   //
 
-  function Hub(
-    agent,    // Agent { id, name, certificate, privateKey }
-    address,  // Hub address
-    serve,    // Agent service pipeline
-  ) {
+  function Hub(address) {
+    var isConnected = false
 
     //
     //    requestHub ---\
@@ -33,13 +66,24 @@ export default function (meshName, agent, bootstraps) {
     // Agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
       .muxHTTP(() => '', { version: 2 }).to($=>$
-        .connect(address, {
-          onState: function (ob) {
-            if (ob.state === 'connected' && serviceList) {
-              updateServiceList(serviceList)
+        .connectTLS({
+          certificate: agentCert && agentKey ? {
+            cert: agentCert,
+            key: agentKey,
+          } : null,
+          trusted: caCert ? [caCert] : null,
+        }).to($=>$
+          .connect(address, {
+            onState: function (ob) {
+              if (ob.state === 'connected') {
+                isConnected = true
+                if (serviceList) updateServiceList(serviceList)
+              } else if (ob.state === 'closed') {
+                isConnected = false
+              }
             }
-          }
-        })
+          })
+        )
       )
     )
 
@@ -60,11 +104,11 @@ export default function (meshName, agent, bootstraps) {
           .connectHTTPTunnel(
             new Message({
               method: 'CONNECT',
-              path: `/api/endpoints/${agent.id}`,
+              path: `/api/endpoints/${config.agent.id}`,
             })
           )
           .to(hubSession)
-          .pipe(serve)
+          .pipe(serveHub)
         )
       )
     )
@@ -106,7 +150,7 @@ export default function (meshName, agent, bootstraps) {
       requestHub.spawn(
         new Message(
           { method: 'POST', path: '/api/status' },
-          JSON.encode({ name: agent.name })
+          JSON.encode({ name: config.agent.name })
         )
       )
     }
@@ -167,21 +211,17 @@ export default function (meshName, agent, bootstraps) {
       )
     }
 
-    function status() {
-      return 'OK'
-    }
-
     function leave() {
     }
 
     return {
+      isConnected: () => isConnected,
       heartbeat,
       updateServiceList,
       discoverEndpoints,
       discoverServices,
       findEndpoint,
       findService,
-      status,
       leave,
     }
 
@@ -387,8 +427,8 @@ export default function (meshName, agent, bootstraps) {
   )
 
   // Connect to all hubs
-  var hubs = bootstraps.map(
-    addr => Hub(agent, addr, serveHub)
+  var hubs = config.bootstraps.map(
+    addr => Hub(addr)
   )
 
   // Start sending heartbeats
@@ -398,7 +438,7 @@ export default function (meshName, agent, bootstraps) {
     new Timeout(15).wait().then(heartbeat)
   }
 
-  console.info(`Joined ${meshName} as ${agent.name} (uuid = ${agent.id})`)
+  console.info(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
 
   function selectEndpoint(proto, svc) {
     return hubs[0].findService(proto, svc).then(
@@ -535,17 +575,29 @@ export default function (meshName, agent, bootstraps) {
     )
   }
 
-  function status() {
-    return hubs[0].status()
-  }
-
   function leave() {
     hubs.forEach(hub => hub.leave())
   }
 
+  function isConnected() {
+    return hubs.some(h => h.isConnected())
+  }
+
+  function getErrors() {
+    return [...errorLog]
+  }
+
+  function error(msg) {
+    errorLog.push({
+      time: new Date().toISOString(),
+      message: msg,
+    })
+  }
+
   return {
-    agent,
-    bootstraps,
+    config,
+    isConnected,
+    getErrors,
     discoverEndpoints,
     discoverServices,
     publishService,
@@ -558,7 +610,6 @@ export default function (meshName, agent, bootstraps) {
     remoteQueryPorts,
     remoteOpenPort,
     remoteClosePort,
-    status,
     leave,
   }
 }

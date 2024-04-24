@@ -7,41 +7,41 @@ function open(pathname, reset) {
 
   db = sqlite(pathname)
 
-  if (db.exec(
-    `SELECT * FROM sqlite_schema WHERE type = 'table' AND name = 'meshes'`
-  ).length === 0) {
-    db.exec(`
-      CREATE TABLE meshes (
-        name TEXT PRIMARY KEY,
-        agent TEXT NOT NULL,
-        bootstraps TEXT NOT NULL
-      )
-    `)
-    db.exec(`
-      CREATE TABLE services (
-        mesh TEXT NOT NULL,
-        name TEXT NOT NULL,
-        protocol TEXT NOT NULL,
-        host TEXT NOT NULL,
-        port INTEGER NOT NULL
-      )
-    `)
-    db.exec(`
-      CREATE TABLE ports (
-        mesh TEXT NOT NULL,
-        ip TEXT NOT NULL,
-        port INTEGER NOT NULL,
-        protocol TEXT NOT NULL,
-        endpoint TEXT,
-        service TEXT NOT NULL
-      )
-    `)
-  }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS meshes (
+      name TEXT PRIMARY KEY,
+      ca TEXT NOT NULL,
+      agent TEXT NOT NULL,
+      bootstraps TEXT NOT NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS services (
+      mesh TEXT NOT NULL,
+      name TEXT NOT NULL,
+      protocol TEXT NOT NULL,
+      host TEXT NOT NULL,
+      port INTEGER NOT NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ports (
+      mesh TEXT NOT NULL,
+      ip TEXT NOT NULL,
+      port INTEGER NOT NULL,
+      protocol TEXT NOT NULL,
+      endpoint TEXT,
+      service TEXT NOT NULL
+    )
+  `)
 }
 
 function recordToMesh(rec) {
   return {
     name: rec.name,
+    ca: rec.ca,
     agent: JSON.parse(rec.agent),
     bootstraps: rec.bootstraps.split(','),
   }
@@ -71,18 +71,20 @@ function setMesh(name, mesh) {
     mesh = { ...old, ...mesh }
     var agent = { ...old.agent, ...mesh.agent }
     agent.id = old.agent.id
-    db.sql('UPDATE meshes SET agent = ?, bootstraps = ? WHERE name = ?')
-      .bind(1, JSON.stringify(agent))
-      .bind(2, mesh.bootstraps.join(','))
-      .bind(3, name)
+    db.sql('UPDATE meshes SET ca = ?, agent = ?, bootstraps = ? WHERE name = ?')
+      .bind(1, mesh.ca || '')
+      .bind(2, JSON.stringify(agent))
+      .bind(3, mesh.bootstraps.join(','))
+      .bind(4, name)
       .exec()
   } else {
     var agent = mesh.agent
     agent.id = algo.uuid()
-    db.sql('INSERT INTO meshes(name, agent, bootstraps) VALUES(?, ?, ?)')
+    db.sql('INSERT INTO meshes(name, ca, agent, bootstraps) VALUES(?, ?, ?, ?)')
       .bind(1, name)
-      .bind(2, JSON.stringify(agent))
-      .bind(3, mesh.bootstraps.join(','))
+      .bind(2, mesh.ca || '')
+      .bind(3, JSON.stringify(agent))
+      .bind(4, mesh.bootstraps.join(','))
       .exec()
   }
 }

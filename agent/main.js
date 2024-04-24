@@ -56,18 +56,22 @@ var routes = Object.entries({
   //
   // Mesh
   //   name: string
+  //   ca: string
   //   agent:
   //     id: string (UUID)
   //     name: string
   //     certificate: string (PEM)
   //     privateKey: string (PEM)
   //   bootstraps: string[] (host:port)
-  //   status: string
+  //   connected: boolean
+  //   errors: string[]
   //
 
   '/api/meshes': {
 
     'GET': function () {
+      var all = api.allMeshes()
+      all.forEach(m => delete m.agent.privateKey)
       return response(200, api.allMeshes())
     },
   },
@@ -76,7 +80,9 @@ var routes = Object.entries({
 
     'GET': function ({ mesh }) {
       var obj = api.getMesh(mesh)
-      return obj ? response(200, obj) : response(404)
+      if (!obj) return response(404)
+      delete obj.agent.privateKey
+      return response(200, obj)
     },
 
     'POST': function ({ mesh }, req) {
@@ -86,6 +92,50 @@ var routes = Object.entries({
     'DELETE': function ({ mesh }) {
       api.delMesh(mesh)
       return response(204)
+    },
+  },
+
+  '/api/meshes/{mesh}/ca': {
+
+    'GET': function ({ mesh }) {
+      var obj = api.getMesh(mesh)
+      return obj ? response(200, obj.config.ca || '') : response(404)
+    },
+
+    'POST': function ({ mesh }, req) {
+      var obj = api.getMesh(mesh)
+      if (!obj) return response(404)
+      var data = req.body.toString()
+      obj.ca = data
+      api.setMesh(mesh, { ca: data })
+      return response(201, data)
+    },
+  },
+
+  '/api/meshes/{mesh}/agent/certificate': {
+
+    'GET': function ({ mesh }) {
+      var obj = api.getMesh(mesh)
+      return obj ? response(200, obj.agent.certificate || '') : response(404)
+    },
+
+    'POST': function ({ mesh }, req) {
+      var obj = api.getMesh(mesh)
+      if (!obj) return response(404)
+      var data = req.body.toString()
+      api.setMesh(mesh, { agent: { certificate: data }})
+      return response(201, data)
+    },
+  },
+
+  '/api/meshes/{mesh}/agent/key': {
+
+    'POST': function ({ mesh }, req) {
+      var obj = api.getMesh(mesh)
+      if (!obj) return response(404)
+      var data = req.body.toString()
+      api.setMesh(mesh, { agent: { privateKey: data }})
+      return response(201, data)
     },
   },
 
