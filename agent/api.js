@@ -99,7 +99,7 @@ function allEndpoints(mesh) {
 function allServices(mesh, ep) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve([])
-  if (ep && ep !== m.agent.id) {
+  if (ep && ep !== m.config.agent.id) {
     return m.remoteQueryServices(ep)
   } else {
     return m.discoverServices(ep).then(
@@ -108,7 +108,7 @@ function allServices(mesh, ep) {
           svc.isDiscovered = true
           svc.isLocal = false
         })
-        if (!ep || ep === m.agent.id) {
+        if (!ep || ep === m.config.agent.id) {
           db.allServices().forEach(
             function (local) {
               var name = local.name
@@ -123,8 +123,8 @@ function allServices(mesh, ep) {
                   name,
                   protocol,
                   endpoints: [{
-                    id: m.agent.id,
-                    name: m.agent.name,
+                    id: m.config.agent.id,
+                    name: m.config.agent.name,
                   }],
                   isDiscovered: false,
                   isLocal: true,
@@ -135,7 +135,7 @@ function allServices(mesh, ep) {
             }
           )
         }
-        var id = m.agent.id
+        var id = m.config.agent.id
         list.forEach(svc => (
           svc.endpoints.forEach(ep => {
             if (ep.id === id) ep.isLocal = true
@@ -155,7 +155,7 @@ function getService(mesh, ep, proto, name) {
 
 function setService(mesh, ep, proto, name, service) {
   var m = findMesh(mesh)
-  if (ep === m.agent.id) {
+  if (ep === m.config.agent.id) {
     m.publishService(proto, name, service.host, service.port)
     db.setService(mesh, proto, name, service)
     return getService(mesh, ep, proto, name)
@@ -166,7 +166,7 @@ function setService(mesh, ep, proto, name, service) {
 
 function delService(mesh, ep, proto, name) {
   var m = findMesh(mesh)
-  if (ep === m.agent.id) {
+  if (ep === m.config.agent.id) {
     m.deleteService(proto, name)
     db.delService(mesh, proto, name)
     return Promise.resolve()
@@ -190,7 +190,7 @@ function delUser(mesh, ep, svc, name) {
 function allPorts(mesh, ep) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve([])
-  if (ep === m.agent.id) {
+  if (ep === m.config.agent.id) {
     return Promise.resolve(db.allPorts(mesh))
   } else {
     return m.remoteQueryPorts(ep)
@@ -205,7 +205,7 @@ function getPort(mesh, ep, ip, proto, port) {
 
 function setPort(mesh, ep, ip, proto, port, target) {
   var m = findMesh(mesh)
-  if (ep === m.agent.id) {
+  if (ep === m.config.agent.id) {
     m.openPort(ip, proto, port, target.service, target.endpoint)
     db.setPort(mesh, ip, proto, port, { target })
     return getPort(mesh, ep, ip, proto, port)
@@ -216,7 +216,7 @@ function setPort(mesh, ep, ip, proto, port, target) {
 
 function delPort(mesh, ep, ip, proto, port) {
   var m = findMesh(mesh)
-  if (ep === m.agent.id) {
+  if (ep === m.config.agent.id) {
     m.closePort(ip, proto, port)
     db.delPort(mesh, ip, proto, port)
     return Promise.resolve()
