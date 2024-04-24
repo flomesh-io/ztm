@@ -35,20 +35,17 @@ db.open(dbPath)
 // Generate the CA certificate
 //
 
-if (!db.getUser('root')) {
+if (!db.getKey('ca')) {
   (function () {
     var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
     var cert = new crypto.Certificate({
-      subject: { CN: 'root' },
+      subject: { CN: 'ca' },
       privateKey: key,
       publicKey: new crypto.PublicKey(key),
       days: 365,
     })
-    db.setUser('root', {
-      cert: cert.toPEM().toString(),
-      key: key.toPEM().toString(),
-      roles: {},
-    })
+    db.setCert('ca', cert.toPEM().toString())
+    db.setKey('ca', key.toPEM().toString())
   })()
 }
 
@@ -56,8 +53,8 @@ if (!db.getUser('root')) {
 // Retreive the current CA certificate
 //
 
-var caCert = new crypto.Certificate(db.getUser('root').cert)
-var caKey = new crypto.PrivateKey(db.getUser('root').key)
+var caCert = new crypto.Certificate(db.getCert('ca'))
+var caKey = new crypto.PrivateKey(db.getKey('ca'))
 
 //
 // REST API paths & methods
@@ -65,44 +62,30 @@ var caKey = new crypto.PrivateKey(db.getUser('root').key)
 
 var routes = Object.entries({
 
-  '/api/users/{name}': {
+  '/api/certificates/{name}': {
     GET: (params) => {
-      var u = db.getUser(params.name)
-      if (!u) return response(404)
-      return response(200, {
-        name: params.name,
-        cert: u.cert,
-        roles: u.roles,
-      })
+      var c = db.getCert(params.name)
+      if (!c) return response(404)
+      return response(200, c)
     },
 
-    POST: (params, req) => {
-      if (db.getUser(params.name)) return response(409)
-      var obj = JSON.decode(req.body)
-      var c = issueCertificate(params.name)
-      db.setUser(params.name, {
-        cert: c.cert.toPEM().toString(),
-        roles: obj.roles,
-      })
+    POST: (params) => {
+      var name = params.name
+      if (isReservedName(name)) return response(403)
+      if (db.getCert(name)) return response(409)
+      var c = issueCertificate(name)
+      db.setCert(name, c.cert.toPEM().toString());
       return response(200, c.key.toPEM().toString())
     },
 
     DELETE: (params) => {
-      if (params.name === 'root' || params.name === 'hub') return response(403)
-      db.delUser(params.name)
+      if (isReservedName(params.name)) return response(204)
+      db.delCert(params.name)
       return response(204)
     },
   },
 
-  '/api/users/{name}/certificate': {
-    GET: (params) => {
-      var u = db.getUser(params.name)
-      if (!u) return response(404)
-      return response(200, u.cert)
-    },
-  },
-
-  '/api/sign/{name}': {
+  '/api/sign/hub/{name}': {
     POST: (params, req) => {
       var pkey = new crypto.PublicKey(req.body)
       var cert = signCertificate(params.name, pkey)
@@ -161,6 +144,14 @@ function responseCT(status, ct, body) {
     },
     body
   )
+}
+
+function isReservedName(name) {
+  return (name === 'ca' || isHubName(name))
+}
+
+function isHubName(name) {
+  return (name === 'hub' || name.startsWith('hub/'))
 }
 
 function issueCertificate(name) {
