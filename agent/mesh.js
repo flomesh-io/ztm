@@ -38,6 +38,14 @@ export default function (config) {
     error('Missing agent private key')
   }
 
+  var tlsOptions = {
+    certificate: agentCert && agentKey ? {
+      cert: agentCert,
+      key: agentKey,
+    } : null,
+    trusted: caCert ? [caCert] : null,
+  }
+
   var hubAddresses = config.bootstraps.map(
     function (addr) {
       if (addr.startsWith('localhost:')) addr = '127.0.0.1:' + addr.substring(10)
@@ -66,13 +74,7 @@ export default function (config) {
     // Agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
       .muxHTTP(() => '', { version: 2 }).to($=>$
-        .connectTLS({
-          certificate: agentCert && agentKey ? {
-            cert: agentCert,
-            key: agentKey,
-          } : null,
-          trusted: caCert ? [caCert] : null,
-        }).to($=>$
+        .connectTLS(tlsOptions).to($=>$
           .connect(address, {
             onState: function (ob) {
               if (ob.state === 'connected') {
@@ -415,7 +417,9 @@ export default function (config) {
           })
         )).to($=>$
           .muxHTTP(() => $selectedHub, { version: 2 }).to($=>$
-            .connect(() => $selectedHub)
+            .connectTLS(tlsOptions).to($=>$
+              .connect(() => $selectedHub)
+            )
           )
         )
       ),
@@ -424,6 +428,11 @@ export default function (config) {
         .replaceData(new StreamEnd)
       ),
     })
+  )
+
+  // HTTP agents for ad-hoc agent-to-hub sessions
+  var httpAgents = new algo.Cache(
+    target => new http.Agent(target, { tls: tlsOptions })
   )
 
   // Connect to all hubs
@@ -519,7 +528,7 @@ export default function (config) {
 
   function remoteQueryServices(ep) {
     return selectHubWithThrow(ep).then(
-      (hub) => new http.Agent(hub).request(
+      (hub) => httpAgents.get(hub).request(
         'GET', `/api/forward/${ep}/services`
       ).then(
         res => res?.head?.status === 200 ? JSON.decode(res.body) : []
@@ -529,7 +538,7 @@ export default function (config) {
 
   function remotePublishService(ep, proto, name, host, port) {
     return selectHubWithThrow(ep).then(
-      (hub) => new http.Agent(hub).request(
+      (hub) => httpAgents.get(hub).request(
         'POST', `/api/forward/${ep}/services/${proto}/${name}`,
         {}, JSON.encode({ host, port })
       ).then(
@@ -540,7 +549,7 @@ export default function (config) {
 
   function remoteDeleteService(ep, proto, name) {
     return selectHubWithThrow(ep).then(
-      (hub) => new http.Agent(hub).request(
+      (hub) => httpAgents.get(hub).request(
         'DELETE', `/api/forward/${ep}/services/${proto}/${name}`
       )
     )
@@ -548,7 +557,7 @@ export default function (config) {
 
   function remoteQueryPorts(ep) {
     return selectHubWithThrow(ep).then(
-      (hub) => new http.Agent(hub).request(
+      (hub) => httpAgents.get(hub).request(
         'GET', `/api/forward/${ep}/ports`
       ).then(
         res => res?.head?.status === 200 ? JSON.decode(res.body) : []
@@ -558,7 +567,7 @@ export default function (config) {
 
   function remoteOpenPort(ep, ip, proto, port, target) {
     return selectHubWithThrow(ep).then(
-      (hub) => new http.Agent(hub).request(
+      (hub) => httpAgents.get(hub).request(
         'POST', `/api/forward/${ep}/ports/${ip}/${proto}/${port}`,
         {}, JSON.encode({ target })
       ).then(
@@ -569,7 +578,7 @@ export default function (config) {
 
   function remoteClosePort(ep, ip, proto, port) {
     return selectHubWithThrow(ep).then(
-      (hub) => new http.Agent(hub).request(
+      (hub) => httpAgents.get(hub).request(
         'DELETE', `/api/forward/${ep}/ports/${ip}/${proto}/${port}`
       )
     )
