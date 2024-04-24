@@ -23,7 +23,7 @@ function findMesh(name) {
 function init() {
   db.allMeshes().forEach(
     function (mesh) {
-      meshes[mesh.name] = Mesh(mesh.name, mesh.agent, mesh.bootstraps)
+      meshes[mesh.name] = Mesh(mesh)
     }
   )
 
@@ -45,12 +45,11 @@ function init() {
 }
 
 function allMeshes() {
-  return Object.entries(meshes).map(
-    ([name, mesh]) => ({
-      name,
-      agent: { ...mesh.agent },
-      bootstraps: [ ...mesh.bootstraps ],
-      status: mesh.status(),
+  return Object.values(meshes).map(
+    (mesh) => ({
+      ...mesh.config,
+      connected: mesh.isConnected(),
+      errors: mesh.getErrors(),
     })
   )
 }
@@ -59,10 +58,9 @@ function getMesh(name) {
   var mesh = meshes[name]
   if (mesh) {
     return {
-      name,
-      agent: { ...mesh.agent },
-      bootstraps: [ ...mesh.bootstraps ],
-      status: mesh.status(),
+      ...mesh.config,
+      connected: mesh.isConnected(),
+      errors: mesh.getErrors(),
     }
   }
   return null
@@ -76,7 +74,7 @@ function setMesh(name, mesh) {
     delete meshes[name]
   }
   mesh = db.getMesh(name)
-  meshes[name] = Mesh(name, mesh.agent, mesh.bootstraps)
+  meshes[name] = Mesh(mesh)
   return getMesh(name)
 }
 
@@ -92,7 +90,7 @@ function delMesh(name) {
 function allEndpoints(mesh) {
   mesh = meshes[mesh]
   if (!mesh) return Promise.resolve([])
-  var id = mesh.agent.id
+  var id = mesh.config.agent.id
   return mesh.discoverEndpoints().then(
     list => list.map(ep => ({ ...ep, isLocal: (ep.id === id) }))
   )
