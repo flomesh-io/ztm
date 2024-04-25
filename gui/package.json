@@ -6,8 +6,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --outDir ../gui-dist",
-    "preview": "vite preview --outDir ../gui-dist",
+    "build": "vite build --outDir ../agent/gui",
+    "preview": "vite preview --outDir ../agent/gui",
     "tauri": "tauri",
     "hub": "pipy ../hub/main.js --skip-unknown-arguments --listen=0.0.0.0:8888",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
