@@ -1,0 +1,3 @@
+[submodule "pipy"]
+	path = pipy
+	url = ./pipy
