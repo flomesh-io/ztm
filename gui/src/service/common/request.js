@@ -20,7 +20,7 @@ const METHOD = {
 
 function getUrl(url){
 	if(!window.__TAURI_INTERNALS__){
-		return `/proxy${url}`
+		return `${url}`
 	} else {
 		
 		return `http://127.0.0.1:${getPort()}${url}`

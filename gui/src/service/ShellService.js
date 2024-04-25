@@ -34,7 +34,7 @@ export default class ShellService {
 		//pipy ../agent/main.js --log-file=../ztm_log.txt --skip-unknown-arguments --listen=6666 --database=~/ztm.db
 		const db = await this.getDB();
 		const args = [
-			`${resourceDirPath}/agent/main.js`,
+			`${resourceDirPath}/_up_/_up_/agent/main.js`,
 			`--log-file=${resourceDirPath}/ztm.log`,
 			"--skip-unknown-arguments",
 			`--listen=${port}`,

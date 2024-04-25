@@ -5,7 +5,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "vite build --outDir ../gui-dist",
+    "dev": "vite",
     "build": "vite build --outDir ../gui-dist",
     "preview": "vite preview --outDir ../gui-dist",
     "tauri": "tauri",
