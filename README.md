@@ -28,3 +28,46 @@ ZTM is written in ***PipyJS***, a JavaScript dialect designed for [***Pipy***](h
 * **Highly customizable and programmable**, since ***Pipy*** in itself is a general-purpose networking scripting engine.
 
 * **Portable**. Choose your CPU architecture: x86, ARM, MIPS, RISC-V, LoongArch... Choose your operating system: Linux, Windows, macOS, FreeBSD, Android... ZTM runs anywhere.
+
+## Build
+
+### Install Pipy
+
+If you have the latest version of [***Pipy***](https://github.com/flomesh-io/pipy) installed on your computer already, you can skip this step. If not, or if you're unsure whether your installed ***Pipy*** version is compatible to ***ZTM***, follow these steps to build Pipy from the source:
+
+First, make sure you have the following tools installed:
+
+* Clang (version 5.0 or above)
+* CMake (version 3.1 or above)
+
+Second, download the proper version of source code by using the Git submodule that is already included in this project:
+
+```sh
+git submodule update --init
+```
+
+Finally, enter the downloaded `pipy` folder and build and install it:
+
+```sh
+cd pipy
+make no-gui
+sudo make install
+```
+
+### Build ZTM
+
+You need Node.js for building ZTM's GUI frontend. Once you have Node.js installed, building can be as simple as:
+
+```sh
+cd gui
+npm install
+npm run build
+```
+
+## Setup
+
+### Setup CA (Certificate Authority)
+
+### Setup Hubs
+
+### Setup Endpoints
