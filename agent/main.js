@@ -269,18 +269,25 @@ var routes = Object.entries({
   }
 )
 
+var gui = new http.Directory('../gui-dist', { fs: true })
+
 pipy.listen(opt['--listen'], $=>$
   .serveHTTP(
     function (req) {
       var path = req.head.path
-      var params = null
-      var route = routes.find(r => Boolean(params = r.match(path)))
-      if (route) {
-        try {
-          return route.handler(params, req)
-        } catch (e) {
-          return response(500, e)
+      if (path.startsWith('/api/')) {
+        var params = null
+        var route = routes.find(r => Boolean(params = r.match(path)))
+        if (route) {
+          try {
+            return route.handler(params, req)
+          } catch (e) {
+            return response(500, e)
+          }
         }
+      } else {
+        var res = gui.serve(req)
+        if (res) return res
       }
       return new Message({ status: 404 })
     }
