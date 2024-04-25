@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted,computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshJoin from './MeshJoin.vue';
@@ -12,6 +12,16 @@ const pipyProxyService = new PipyProxyService();
 const meshes = ref([]);
 const status = ref({});
 const scopeType = ref('All');
+const errorMsg = computed(() => (errors) => {
+	let msg = '';
+	errors.forEach((error, ei) => {
+		if(ei>0){
+			msg += '\n';
+		}
+		msg += `[${error.time}] ${error.message}`;
+	});
+	return msg;
+})
 onMounted(() => {
 	loaddata();
 });
@@ -89,10 +99,17 @@ const join = () => {
 	                   <div class="flex justify-content-between mb-3">
 	                       <div>
 	                            <span class="block text-500 font-medium mb-3">
-																<span class="status-point run mr-2"/>
+																
 																{{decodeURI(mesh.name)}}
 															</span>
-	                            <div class="text-900 font-medium text-xl">Joined</div>
+	                            <div v-if="mesh.connected" class="text-900 font-medium text-xl pointer">
+																<span class="status-point mr-2 relative run" style="top: -2px;"/> 
+																<span >Connected</span>
+															</div>
+															<div  v-tooltip="{value:errorMsg(mesh.errors),pt:{text:'w-30rem'}}" v-else class="text-900 font-medium text-xl pointer">
+																<span class="status-point mr-2 relative " style="top: -2px;"/> 
+																<span class="text-gray-400" >Disconnect</span>
+															</div>
 	                       </div>
 	                       <div v-tooltip="'Leave'" @click="deleteMesh(mesh.name)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
 	                           <i class="pi pi-trash text-gray-500 text-xl"></i>

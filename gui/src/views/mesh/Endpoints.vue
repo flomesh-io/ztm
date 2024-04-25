@@ -82,7 +82,10 @@ const expand = (node) => {
 				});
 				node.loading = false;
 			})
-			.catch(err => console.log('Request Failed', err)); 
+			.catch(err => {
+				node.loading = false;
+				console.log('Request Failed', err)
+			}); 
 
 		/*
 		 * get ports
