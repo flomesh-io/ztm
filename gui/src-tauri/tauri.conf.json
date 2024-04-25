@@ -6,7 +6,7 @@
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
-    "frontendDist": "../../gui-dist"
+    "frontendDist": "../../agent/gui"
   },
   "app": {
     "windows": [
@@ -27,7 +27,8 @@
     "active": true,
     "targets": "all",
     "resources": [
-      "../../agent"
+      "../../agent/main.js",
+      "../../agent/src"
     ],
     "externalBin": ["bin/pipy"],
     "icon": [
