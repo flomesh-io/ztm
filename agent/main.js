@@ -9,7 +9,7 @@ var opt = options({
     '--help': false,
     '--reset': false,
     '--database': '~/ztm.db',
-    '--listen': '127.0.0.1:6666',
+    '--listen': '127.0.0.1:7777',
   },
   shorthands: {
     '-h': '--help',
@@ -24,7 +24,7 @@ if (options['--help']) {
   println('  -h, --help      Show available options')
   println('  -r, --reset     Delete the local database and start with a new one')
   println('  -d, --database  Pathname of the database file (default: ~/ztm.db)')
-  println('  -l, --listen    Port number of the administration API (default: 127.0.0.1:6666)')
+  println('  -l, --listen    Port number of the administration API (default: 127.0.0.1:7777)')
   return
 }
 
