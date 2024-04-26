@@ -95,6 +95,7 @@ import VirtualScroller from 'primevue/virtualscroller';
 import BlockViewer from '@/components/BlockViewer.vue';
 import ChipList from '@/components/ChipList.vue';
 import Loading from '@/components/Loading.vue';
+import Status from '@/components/Status.vue';
 
 export function useComponent(app){
 	
@@ -193,4 +194,6 @@ export function useComponent(app){
 	app.component('InputGroup', InputGroup);
 	app.component('InputGroupAddon', InputGroupAddon);
 	app.component('ChipList', ChipList);
+	app.component('Status', Status);
+	
 }

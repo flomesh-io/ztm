@@ -51,13 +51,13 @@ const select = () => {
 				</template> -->
 				<template #option="slotProps">
 						<div class="flex align-items-center">
-								<span class="status-point run mr-3"/>
+								<Status :run="slotProps.option.connected" :errors="slotProps.option.errors" />
 								<div>{{ decodeURI(slotProps.option.name) }}</div>
 						</div>
 				</template>
 				 <template #value="slotProps">
 							<div v-if="slotProps.value" class="flex align-items-center">
-									<span class="status-point run mr-3"/>
+									<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
 									<div>{{ decodeURI(slotProps.value.name) }}</div>
 							</div>
 							<span v-else>

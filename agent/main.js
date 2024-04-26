@@ -1,8 +1,8 @@
 #!/usr/bin/env -S pipy --skip-unknown-arguments
 
-import api from './api.js'
-import db from './db.js'
-import options from './options.js'
+import api from './src/api.js'
+import db from './src/db.js'
+import options from './src/options.js'
 
 var opt = options({
   defaults: {
@@ -269,7 +269,7 @@ var routes = Object.entries({
   }
 )
 
-var gui = new http.Directory('../gui-dist', { fs: true })
+var gui = new http.Directory('./gui', { fs: true })
 
 pipy.listen(opt['--listen'], $=>$
   .serveHTTP(
