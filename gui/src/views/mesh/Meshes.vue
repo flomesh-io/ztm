@@ -12,16 +12,7 @@ const pipyProxyService = new PipyProxyService();
 const meshes = ref([]);
 const status = ref({});
 const scopeType = ref('All');
-const errorMsg = computed(() => (errors) => {
-	let msg = '';
-	errors.forEach((error, ei) => {
-		if(ei>0){
-			msg += '\n';
-		}
-		msg += `[${error.time}] ${error.message}`;
-	});
-	return msg;
-})
+
 onMounted(() => {
 	loaddata();
 });
@@ -102,14 +93,7 @@ const join = () => {
 																
 																{{decodeURI(mesh.name)}}
 															</span>
-	                            <div v-if="mesh.connected" class="text-900 font-medium text-xl pointer">
-																<span class="status-point mr-2 relative run" style="top: -2px;"/> 
-																<span >Connected</span>
-															</div>
-															<div  v-tooltip="{value:errorMsg(mesh.errors),pt:{text:'w-30rem'}}" v-else class="text-900 font-medium text-xl pointer">
-																<span class="status-point mr-2 relative " style="top: -2px;"/> 
-																<span class="text-gray-400" >Disconnect</span>
-															</div>
+															<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
 	                       </div>
 	                       <div v-tooltip="'Leave'" @click="deleteMesh(mesh.name)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
 	                           <i class="pi pi-trash text-gray-500 text-xl"></i>
