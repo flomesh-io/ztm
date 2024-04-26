@@ -26,22 +26,6 @@ function init() {
       meshes[mesh.name] = Mesh(mesh)
     }
   )
-
-  db.allServices().forEach(
-    function (s) {
-      var mesh = meshes[s.mesh]
-      mesh.publishService(s.protocol, s.name, s.host, s.port)
-    }
-  )
-
-  db.allPorts().forEach(
-    function (p) {
-      var listen = p.listen
-      var target = p.target
-      var mesh = meshes[p.mesh]
-      mesh.openPort(listen.ip, p.protocol, listen.port, target.service, target.endpoint)
-    }
-  )
 }
 
 function allMeshes() {

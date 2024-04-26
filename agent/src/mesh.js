@@ -59,7 +59,8 @@ export default function (config) {
   //
 
   function Hub(address) {
-    var isConnected = false
+    var connections = new Set
+    var closed = false
 
     //
     //    requestHub ---\
@@ -76,12 +77,12 @@ export default function (config) {
       .muxHTTP(() => '', { version: 2 }).to($=>$
         .connectTLS(tlsOptions).to($=>$
           .connect(address, {
-            onState: function (ob) {
-              if (ob.state === 'connected') {
-                isConnected = true
+            onState: function (conn) {
+              if (conn.state === 'connected') {
+                connections.add(conn)
                 if (serviceList) updateServiceList(serviceList)
-              } else if (ob.state === 'closed') {
-                isConnected = false
+              } else if (conn.state === 'closed') {
+                connections.delete(conn)
               }
             }
           })
@@ -101,7 +102,7 @@ export default function (config) {
     // Hook up to the hub and receive orders
     var reverseServer = pipeline($=>$
       .onStart(new Data)
-      .repeat(() => new Timeout(5).wait().then(true)).to($=>$
+      .repeat(() => new Timeout(5).wait().then(() => !closed)).to($=>$
         .loop($=>$
           .connectHTTPTunnel(
             new Message({
@@ -214,10 +215,14 @@ export default function (config) {
     }
 
     function leave() {
+      closed = true
+      connections.forEach(
+        conn => conn.close()
+      )
     }
 
     return {
-      isConnected: () => isConnected,
+      isConnected: () => connections.size > 0,
       heartbeat,
       updateServiceList,
       discoverEndpoints,
@@ -447,6 +452,22 @@ export default function (config) {
     new Timeout(15).wait().then(heartbeat)
   }
 
+  // Publish services
+  db.allServices(meshName).forEach(
+    function (s) {
+      publishService(s.protocol, s.name, s.host, s.port)
+    }
+  )
+
+  // Open local ports
+  db.allPorts(meshName).forEach(
+    function (p) {
+      var listen = p.listen
+      var target = p.target
+      openPort(listen.ip, p.protocol, listen.port, target.service, target.endpoint)
+    }
+  )
+
   console.info(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
 
   function selectEndpoint(proto, svc) {
@@ -589,7 +610,13 @@ export default function (config) {
   }
 
   function leave() {
+    db.allPorts(meshName).forEach(
+      function ({ protocol, listen }) {
+        closePort(listen.ip, protocol, listen.port)
+      }
+    )
     hubs.forEach(hub => hub.leave())
+    console.info(`Left ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
   }
 
   function isConnected() {
