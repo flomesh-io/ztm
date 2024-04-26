@@ -159,6 +159,14 @@ var routes = Object.entries({
     },
   },
 
+  '/api/meshes/{mesh}/endpoints/{ep}': {
+    'GET': function (params) {
+      return api.getEndpoint(params.mesh, params.ep).then(
+        ret => ret ? response(200, ret) : response(404)
+      )
+    },
+  },
+
   //
   // Service
   //   name: string
