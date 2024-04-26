@@ -96,6 +96,12 @@ function allEndpoints(mesh) {
   )
 }
 
+function getEndpoint(mesh, ep) {
+  mesh = meshes[mesh]
+  if (!mesh) return Promise.resolve(null)
+  return mesh.findEndpoint(ep)
+}
+
 function allServices(mesh, ep) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve([])
@@ -232,6 +238,7 @@ export default {
   setMesh,
   delMesh,
   allEndpoints,
+  getEndpoint,
   allServices,
   getService,
   setService,

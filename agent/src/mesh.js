@@ -476,6 +476,10 @@ export default function (config) {
     })
   }
 
+  function findEndpoint(ep) {
+    return hubs[0].findEndpoint(ep)
+  }
+
   function discoverEndpoints() {
     return hubs[0].discoverEndpoints()
   }
@@ -607,6 +611,7 @@ export default function (config) {
     config,
     isConnected,
     getErrors,
+    findEndpoint,
     discoverEndpoints,
     discoverServices,
     publishService,
