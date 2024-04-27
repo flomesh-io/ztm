@@ -40,7 +40,7 @@ First, make sure you have the following tools installed if you are running a Uni
 * Clang (version 5.0 or above)
 * CMake (version 3.1 or above)
 
-Or if you are running Windows, the following are nedded:
+Or if you are running Windows, the following are required:
 
 * Microsoft Visual Studio 2022 or above
 * CMake (version 3.1 or above)
