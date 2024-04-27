@@ -33,12 +33,18 @@ ZTM is written in ***PipyJS***, a JavaScript dialect designed for [***Pipy***](h
 
 ### Install Pipy
 
-If you have the latest version of [***Pipy***](https://github.com/flomesh-io/pipy) installed on your computer already, you can skip this step. If not, or if you're unsure whether your installed ***Pipy*** version is compatible to ***ZTM***, follow these steps to build Pipy from the source:
+If you have the latest version of [***Pipy***](https://github.com/flomesh-io/pipy) installed on your computer already, you can skip this step. If not, or if you're unsure whether your installed ***Pipy*** version is compatible to ***ZTM***, follow these steps to build Pipy from source.
 
-First, make sure you have the following tools installed:
+First, make sure you have the following tools installed if you are running a Unix-like system (including Linux and macOS):
 
 * Clang (version 5.0 or above)
 * CMake (version 3.1 or above)
+
+Or if you are running Windows, the following are nedded:
+
+* Microsoft Visual Studio 2022 or above
+* CMake (version 3.1 or above)
+* NASM (version 2.16 or above)
 
 Second, download the proper version of source code by using the Git submodule that is already included in this project:
 
@@ -46,12 +52,21 @@ Second, download the proper version of source code by using the Git submodule th
 git submodule update --init
 ```
 
-Finally, enter the downloaded `pipy` folder and build and install it:
+Finally, enter the downloaded `pipy` folder, build and install it.
+
+For Unix-like systems such as Linux and macOS:
 
 ```sh
 cd pipy
 make no-gui
 sudo make install
+```
+
+For Windows, open *Developer Command Prompt for Visual Studio* and enter:
+
+```sh
+cd pipy
+build.cmd no-gui
 ```
 
 ### Build ZTM
