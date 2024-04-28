@@ -124,6 +124,16 @@ function endpointName(id) {
   return ep?.name ? `${ep.name} (uuid = ${id})` : id
 }
 
+function isEndpointOnline(ep) {
+  if (ep.agents.size == 0) return false
+  if (ep.heartbeat + 30*1000 < Date.now()) return false
+  return true
+}
+
+function isEndpointOutdated(ep) {
+  return (ep.heartbeat + 60*1000 < Date.now())
+}
+
 var $agent = null
 var $params = null
 var $endpoint = null
@@ -162,7 +172,17 @@ function start() {
       )
     )
   )
+
   println('Hub started at', opt['--listen'])
+
+  function runEveryMinute() {
+    Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
+      (ep) => delete endpoints[ep.id]
+    )
+    new Timeout(60).wait().then(runEveryMinute)
+  }
+
+  runEveryMinute()
 }
 
 var postStatus = pipeline($=>$
@@ -192,7 +212,7 @@ var getEndpoints = pipeline($=>$
         ip: ep.ip,
         port: ep.port,
         heartbeat: ep.heartbeat,
-        status: 'OK',
+        online: isEndpointOnline(ep),
       })
     ))
   )
@@ -212,7 +232,7 @@ var getEndpoint = pipeline($=>$
         port: ep.port,
         hubs: ep.hubs,
         heartbeat: ep.heartbeat,
-        status: 'OK',
+        online: isEndpointOnline(ep),
       })
     }
   )
@@ -236,9 +256,9 @@ var getServices = pipeline($=>$
       }
       if ($params.ep) {
         var ep = endpoints[$params.ep]
-        if (ep) collect(ep)
+        if (ep && isEndpointOnline(ep)) collect(ep)
       } else {
-        Object.values(endpoints).forEach(collect)
+        Object.values(endpoints).filter(isEndpointOnline).forEach(collect)
       }
       return response(200, services)
     }
@@ -275,7 +295,7 @@ var getService = pipeline($=>$
       var name = $params.svc
       var protocol = $params.proto
       var providers = Object.values(endpoints).filter(
-        ep => ep.services.some(s => s.name === name && s.protocol === protocol)
+        ep => isEndpointOnline(ep) && ep.services.some(s => s.name === name && s.protocol === protocol)
       )
       if (providers.length === 0) return response(404)
       return response(200, {
@@ -305,7 +325,11 @@ var connectEndpoint = pipeline($=>$
   ).to($=>$
     .onStart(new Data)
     .swap(() => $hub)
-    .onEnd(() => console.info(`Endpoint ${endpointName($agent.id)} left`))
+    .onEnd(() => {
+      var ep = endpoints[$agent.id]
+      if (ep) ep.agents.delete($agent)
+      console.info(`Endpoint ${endpointName($agent.id)} left`)
+    })
   )
 )
 
@@ -382,7 +406,9 @@ function findCurrentEndpointSession() {
   if (!$endpoint) {
     $endpoint = endpoints[$agent.id] = { ...$agent, services: [] }
     $endpoint.hubs = [...localAddresses]
+    $endpoint.agents = new Set
   }
+  $endpoint.agents.add($agent)
   $endpoint.isConnected = true
   return true
 }

@@ -186,6 +186,14 @@ var routes = Object.entries({
     },
   },
 
+  '/api/meshes/{mesh}/services/{proto}/{svc}': {
+    'GET': function ({ mesh, proto, svc }) {
+      return api.getService(mesh, undefined, proto, svc).then(
+        ret => ret ? response(200, ret) : response(404)
+      )
+    },
+  },
+
   '/api/meshes/{mesh}/endpoints/{ep}/services': {
     'GET': function ({ mesh, ep }) {
       return api.allServices(mesh, ep).then(
