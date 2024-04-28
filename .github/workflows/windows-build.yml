@@ -12,7 +12,7 @@ jobs:
       with:
         vs-version: '2022' 
     - name: Install CMake
-      uses: maxkomarychev/setup-cmake@v2
+      uses: actions/setup-cmake@v1
       with:
         cmake-version: '3.21.3' 
     - uses: actions/setup-node@v2
