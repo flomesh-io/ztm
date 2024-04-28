@@ -96,11 +96,11 @@ Start the CA service:
 pipy ca/main.js
 ```
 
-The default listening port is `127.0.0.1:9999`. The default location of database is `~/ztm-ca.db`. These settings can be changed by command-line options:
-
-```sh
-pipy ca/main.js -- --listen=127.0.0.1:1234 --database=~/my-data.db
-```
+> The default listening port is `127.0.0.1:9999`. The default location of database is `~/ztm-ca.db`. These settings can be changed by command-line options:
+>
+> ```sh
+> pipy ca/main.js -- --listen=127.0.0.1:1234 --database=~/my-data.db
+> ```
 
 Now a CA certificate is already generated and stored in the database. Retreive the CA certificate and save it to a file for later use:
 
@@ -108,7 +108,7 @@ Now a CA certificate is already generated and stored in the database. Retreive t
 curl http://localhost:9999/api/certificates/ca | tee ca.crt
 ```
 
-We also need at least one *user certificate* in order to allow an endpoint onboard our mesh. Let's generate a certificate and the private key for user `root`:
+We also need at least one *user certificate* in order to allow an endpoint onboard our mesh. Let's generate a certificate and the private key for user `root`, and save them in files:
 
 ```sh
 curl http://localhost:9999/api/certificates/root -X POST | tee root.key
@@ -131,11 +131,11 @@ After the CA service is up and running, start a hub pointing to the CA service:
 pipy hub/main.js -- --ca=localhost:9999
 ```
 
-Like the CA service, you can use `--listen` option for a custom listening port other than the default `0.0.0.0:8888`:
-
-```sh
-pipy hub/main.js -- --ca=localhost:9999 --listen=0.0.0.0:1234
-```
+> Like the CA service, you can use `--listen` option for a custom listening port other than the default `0.0.0.0:8888`:
+>
+> ```sh
+> pipy hub/main.js -- --ca=localhost:9999 --listen=0.0.0.0:1234
+> ```
 
 If your hub is running behind a gateway, you also need to provide at least one hub address that is visible to the endpoints by `--name` option:
 
@@ -147,7 +147,7 @@ pipy hub/main.js -- --ca=localhost:9999 --name=hub.example.com:8888
 
 ### Setup Endpoints
 
-Now that we've set up all the foundation (most likely in the cloud), we can go on and add as many endpoints as we need to the mesh.
+Now that we've set up all the foundation (most likely in the cloud), we can go on and add as many endpoints as we like to the mesh.
 
 First, start an agent on an endpoint computer that is going to join our mesh:
 
@@ -155,17 +155,17 @@ First, start an agent on an endpoint computer that is going to join our mesh:
 pipy agent/main.js
 ```
 
-The default listening port is `127.0.0.1:7777`. The default location of database is `~/ztm.db`. These settings can be changed by command-line options:
-
-```sh
-pipy agent/main.js -- --listen=127.0.0.1:1234 --database=~/my-data.db
-```
+> The default listening port is `127.0.0.1:7777`. The default location of database is `~/ztm.db`. These settings can be changed by command-line options:
+>
+> ```sh
+> pipy agent/main.js -- --listen=127.0.0.1:1234 --database=~/my-data.db
+> ```
 
 Once the agent is up and running, open your browser and point it to `http://localhost:7777`.
 
-The first thing we do with the web interface is *joining the mesh*. Follow the instructions on screen to do that. The main information you provide while joining a mesh is the address of the hub. You'll also need 3 identify files during the process: the *CA certificate*, the *user certificate* and the user's *private key*, which we've already saved from above in files `ca.crt`, `root.crt` and `root.key` respectively.
+The first thing we do with the web interface is *joining the mesh*. Follow the instructions on screen to do that. The main information you provide while joining a mesh is the *address of the hub*. You'll also need 3 identify files during the process: the *CA certificate*, the *user certificate* and the user's *private key*, which we've already saved from above in files `ca.crt`, `root.crt` and `root.key` respectively.
 
-Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via browser from any of the endpoints. Some daily things you can do include:
+Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via browser from any of the endpoints. Some day-to-day things include:
 
 - List endpoints and services in the mesh
 - Creating services on any endpoint
