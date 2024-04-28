@@ -11,10 +11,6 @@ jobs:
       uses: microsoft/setup-msbuild@v1
       with:
         vs-version: '2022' 
-    - name: Install CMake
-      uses: actions/setup-cmake@v1
-      with:
-        cmake-version: '3.21.3' 
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
