@@ -7,10 +7,14 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Install Visual Studio
-      uses: microsoft/setup-msbuild@v1
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
       with:
-        vs-version: '2022' 
+        msbuild-architecture: x64
+    - uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: "~3.25.0"  # <--= optional, use most recent 3.25.x version
+        ninjaVersion: "^1.11.1"
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
