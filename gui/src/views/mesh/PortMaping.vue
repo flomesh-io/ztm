@@ -47,7 +47,7 @@ const config = ref({
 	ep: props.endpoint,
 	listen: {
 		ip:'127.0.0.1',
-		port:props.servicePort,
+		port:null,
 	},
 	target: {
 		endpoint: props.targetEndpoint?.id || 0,
@@ -60,7 +60,7 @@ const newConfig = () => {
 		ep: props.endpoint,
 		listen: {
 			ip:'127.0.0.1',
-			port:props.servicePort,
+			port:null,
 		},
 		target: {
 			endpoint: props.targetEndpoint?.id || 0,
@@ -146,14 +146,14 @@ const home = ref({
 							<div class="text-500 w-8rem font-medium">Protocol</div>
 							<div class="text-900 flex-item">
 								<Chip class="pl-0 pr-3">
-										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+										<span class=" border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<RadioButton v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
 										</span>
 										<span class="ml-2 font-medium">TCP</span>
 								</Chip>
 								
 								<Chip class="ml-2 pl-0 pr-3">
-										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+										<span class=" border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<RadioButton v-model="config.protocol" inputId="scopeType3" name="scopeType" value="udp" />
 										</span>
 										<span class="ml-2 font-medium">UDP</span>
@@ -220,19 +220,6 @@ const home = ref({
 								<div class="surface-section">
 									<h6><Tag severity="contrast" value="Contrast">To</Tag></h6>
 									<ul class="list-none p-0 m-0">
-										<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">Service</div>
-												<div class="text-900 flex-item">
-													<Chip class="pl-0 pr-3 mr-2">
-															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-																<i class="pi pi-bookmark"/>
-															</span>
-															<span class="ml-2 font-medium">
-																{{config.target?.service}}
-															</span>
-													</Chip>
-												</div>
-										</li>
 										<li v-if="!!targetEndpoint?.id" class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
 												<div class="text-500 w-8rem font-medium">Endpoint</div>
 												<div class="text-900 flex-item">
@@ -240,13 +227,13 @@ const home = ref({
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 																<i class="pi pi-chart-scatter"/>
 															</span>
-															<span class="ml-2 font-medium">
+															<span v-tooltip="targetEndpoint?.name || targetEndpoint?.id" class="ml-2 font-medium text-ellipsis" style="max-width: 200px;">
 																{{targetEndpoint?.name || targetEndpoint?.id}}
 															</span>
 													</Chip>
 												</div>
 										</li>
-										<li v-else class="flex align-items-center py-3 px-2  surface-border flex-wrap">
+										<li v-else class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
 												<div class="text-500 w-8rem font-medium">Endpoint</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
@@ -262,6 +249,19 @@ const home = ref({
 																		placeholder="Endpoint" 
 																		style="max-width: 200px;"
 																		class="flex"></Dropdown>
+															</span>
+													</Chip>
+												</div>
+										</li>
+										<li class="flex align-items-center py-3 px-2   surface-border flex-wrap">
+												<div class="text-500 w-8rem font-medium">Service</div>
+												<div class="text-900 flex-item">
+													<Chip class="pl-0 pr-3 mr-2">
+															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+																<i class="pi pi-bookmark"/>
+															</span>
+															<span class="ml-2 font-medium">
+																{{config.target?.service}}
 															</span>
 													</Chip>
 												</div>
