@@ -67,7 +67,10 @@ For Windows, open *Developer Command Prompt for Visual Studio* and enter:
 ```sh
 cd pipy
 build.cmd no-gui
+build.cmd install
 ```
+
+> The last command `build.cmd install` can only be run as administrator. You might need to open *Developer Command Prompt for Visual Studio* as administrator before you execute it.
 
 ### Build ZTM
 
