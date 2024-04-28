@@ -6,7 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+CA.md
 # dependencies
 /node_modules
 package-lock.json
