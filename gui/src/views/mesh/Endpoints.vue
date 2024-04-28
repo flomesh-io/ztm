@@ -200,7 +200,7 @@ const deletePort = (port) => {
 					class="transparent">
 					<template #default="slotProps">
 							<b v-if="slotProps.node.type == 'ep'" v-tooltip="`ID:${slotProps.node.id}`">
-								<span class="status-point run mr-3" :class="{'run':slotProps.node.status=='OK'}"/>
+								<Status :run="slotProps.node.online" :tip="`Last heartbeat:${slotProps.node.heartbeat}`"  />
 								EP: {{ slotProps.node.label || slotProps.node.id }} 
 								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
 								<span class="ml-2"><Tag severity="contrast" class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
