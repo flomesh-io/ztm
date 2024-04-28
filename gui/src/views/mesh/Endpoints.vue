@@ -6,6 +6,9 @@ import MeshSelector from './common/MeshSelector.vue'
 import store from "@/store";
 import { useConfirm } from "primevue/useconfirm";
 import freeSvg from "@/assets/img/free.svg";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime)
 
 const router = useRouter();
 const pipyProxyService = new PipyProxyService();
@@ -20,6 +23,16 @@ const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
 
+	const date1 = new Date();
+const timeago = computed(() => (ts) => {
+	let label = "Last heartbeat: ";
+	if(ts>0){
+		const date = new Date(ts);
+		return label + dayjs(date).fromNow();
+	} else {
+		return label + "None";
+	}
+})
 onActivated(()=>{
 	getEndpoints();
 })
@@ -199,13 +212,11 @@ const deletePort = (port) => {
 					loadingMode="icon" 
 					class="transparent">
 					<template #default="slotProps">
-							<b v-if="slotProps.node.type == 'ep'" v-tooltip="`ID:${slotProps.node.id}`">
-								<Status :run="slotProps.node.online" :tip="`Last heartbeat:${slotProps.node.heartbeat}`"  />
+							<b v-if="slotProps.node.type == 'ep'" class="relative" style="top: 2px;">
+								<Status style="top: -2px;" :run="slotProps.node.online" :tip="timeago(slotProps.node.heartbeat)"  />
 								EP: {{ slotProps.node.label || slotProps.node.id }} 
 								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
 								<span class="ml-2"><Tag severity="contrast" class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
-								
-								
 							</b>
 							<b v-else-if="slotProps.node.type == 'service'">
 								<Avatar icon="pi pi-server" class="mr-2" />Service: {{ slotProps.node.label }}
