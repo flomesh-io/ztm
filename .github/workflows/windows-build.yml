@@ -7,10 +7,6 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '21'
-    - run: npm install -g win-node-env
     - name: Install Visual Studio
       uses: microsoft/setup-msbuild@v1
       with:
@@ -19,6 +15,10 @@ jobs:
       uses: maxkomarychev/setup-cmake@v2
       with:
         cmake-version: '3.21.3' 
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+    - run: npm install -g win-node-env
     - name: Install NASM
       run: choco install nasm -y
     - name: build pipy
