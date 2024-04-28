@@ -20,7 +20,7 @@ jobs:
         node-version: '21'
     - run: npm install -g win-node-env
     - name: Install NASM
-      run: choco install nasm -y
+      uses: ilammy/setup-nasm@v1
     - name: build pipy
       run: |
         cd gui
