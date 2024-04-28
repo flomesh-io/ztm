@@ -16,14 +16,18 @@ or
 yarn install
 ```
 
-### Download pipy (plaform=windows|linux|macos-x86|macos)
+### First build or download pipy (plaform=windows|linux|macos-x86|macos)
 ```sh
-yarn download-pipy-{plaform}
+npm run build-pipy-{plaform}
+```
+or
+```sh
+npm run download-pipy-{plaform}
 ```
 
 ### Mock a hub if needed
 ```sh
-yarn hub
+npm run hub
 ```
 
 ### Compile and Hot-Reload for Development
@@ -42,7 +46,7 @@ npm run tauri build
 ```
 or
 ```sh
-yarn tauri build
+npm run tauri build
 ```
 
 ### About macOS "can’t be opened" Error
