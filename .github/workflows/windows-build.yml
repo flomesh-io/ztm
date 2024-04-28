@@ -15,7 +15,7 @@ jobs:
       run: |
         cd gui
         yarn install
-        yarn download-pipy-windows
+        yarn build-pipy-windows
         set NODE_OPTIONS=--max_old_space_size=4096 && yarn tauri build
     - uses: actions/upload-artifact@v2
       with:
