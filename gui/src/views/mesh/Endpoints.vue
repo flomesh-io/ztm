@@ -22,8 +22,6 @@ const selectedMesh = ref(null);
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
-
-	const date1 = new Date();
 const timeago = computed(() => (ts) => {
 	let label = "Last heartbeat: ";
 	if(ts>0){
