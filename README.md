@@ -108,7 +108,7 @@ Now a CA certificate is already generated and stored in the database. Retreive t
 curl http://localhost:9999/api/certificates/ca | tee ca.crt
 ```
 
-We also need at least one *user certificate* in order to allow an endpoint onboard our mesh. Let's generate a certificate and the private key for user `root`, and save them in files:
+We also need at least one *user certificate* in order to allow an endpoint onboard our mesh. Let's generate a certificate and the private key for user `root` and save them in files:
 
 ```sh
 curl http://localhost:9999/api/certificates/root -X POST | tee root.key
@@ -168,5 +168,5 @@ The first thing we do with the web interface is *joining the mesh*. Follow the i
 Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via browser from any of the endpoints. Some day-to-day things include:
 
 - List endpoints and services in the mesh
-- Creating services on any endpoint
-- Mapping ports on any endpoint to services on other endpoints
+- Create services on any endpoint
+- Map ports on any endpoint to services on other endpoints
