@@ -14,7 +14,7 @@ jobs:
       run: |
         cd gui
         yarn install
-        yarn download-pipy-macos-x64
+        yarn build-pipy-macos-x64
         NODE_OPTIONS="--max-old-space-size=4096" yarn tauri build
     - uses: actions/upload-artifact@v2
       with:
