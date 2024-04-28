@@ -11,11 +11,14 @@ jobs:
       with:
         node-version: '21'
     - run: npm install -g win-node-env
+    - name: build pipy
+      run: |
+        cd gui
+        yarn build-pipy-windows
     - name: build app
       run: |
         cd gui
         yarn install
-        yarn build-pipy-windows
         set NODE_OPTIONS=--max_old_space_size=4096 && yarn tauri build
     - uses: actions/upload-artifact@v2
       with:
