@@ -1,4 +1,4 @@
-name: macos-x64-build
+name: macos-m1-build
 
 on: workflow_dispatch
 
