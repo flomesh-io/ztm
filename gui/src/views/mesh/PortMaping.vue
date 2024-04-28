@@ -90,8 +90,10 @@ const commit = () => {
 	};
 	console.log('commit port:')
 	console.log(d)
+	loading.value = true;
 	pipyProxyService.createPort(d)
 		.then(res => {
+			loading.value = false;
 			console.log(res)
 			if(!!res.listen){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
@@ -102,6 +104,7 @@ const commit = () => {
 			}
 		})
 		.catch(err => {
+			loading.value = false;
 			console.log('Request Failed', err)
 		}); 
 }
@@ -120,10 +123,11 @@ const home = ref({
 		<BlockViewer text="Json" header="Connect" containerClass="surface-section px-3 py-3 md:px-4 lg:px-5" >
 			<template #actions>
 				<Button class="mr-2" label="Cancel" size="small" link @click="cancel"/>
-				<Button :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
+				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 			</template>
 			
-			<div class="surface-section">
+			<Loading v-if="loading" />
+			<div v-else class="surface-section">
 				<ul class="list-none p-0 m-0">
 					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
 							<div class="text-500 w-8rem font-medium">Mesh</div>

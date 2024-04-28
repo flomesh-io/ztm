@@ -32,7 +32,11 @@ const loaddata = () => {
 			meshes.value = res;
 			store.commit('account/setMeshes', res);
 		})
-		.catch(err => console.log('Request Failed', err)); 
+		.catch(err => {
+			loading.value = false;
+			loader.value = false;
+			console.log('Request Failed', err)
+		}); 
 }
 const deleteMesh = (name) => {
 	confirm.require({

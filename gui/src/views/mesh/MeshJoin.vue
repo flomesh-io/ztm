@@ -15,6 +15,12 @@ const user = computed(() => {
 	return store.getters['account/user'];
 });
 const loading = ref(false);
+
+const placeholder = ref({
+	c:`-----BEGIN CERTIFICATE-----`,
+	ca:`-----BEGIN CERTIFICATE-----`,
+	p:`-----BEGIN RSA PRIVATE KEY-----`
+})
 const config = ref({
 	name: "",
 	ca: "",
@@ -49,8 +55,10 @@ const commit = () => {
 	const joinName = config.value.name;
 	const saveData = _.cloneDeep(config.value)
 	delete saveData.name;
+	loading.value = true;
 	pipyProxyService.joinMesh(joinName, saveData)
 		.then(res => {
+			loading.value = false;
 			if(!!res.name){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
 				emits("save", config.value);
@@ -59,7 +67,10 @@ const commit = () => {
 				toast.add({ severity: 'error', summary:'Tips', detail: 'Join Failed.', life: 3000 });
 			}
 		})
-		.catch(err => console.log('Request Failed', err)); 
+		.catch(err => {
+			loading.value = false;
+			console.log('Request Failed', err)
+		}); 
 }
 onMounted(() => {
 });
@@ -75,25 +86,10 @@ const home = ref({
 	<div >
 		<BlockViewer text="Json" header="Join Mesh" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
 			<template #actions>
-				<Button :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
+				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 			</template>
-			<div v-if="loading" class="p-4">
-			    <div class="flex mb-3">
-			        <Skeleton shape="circle" size="4rem" class="mr-2"></Skeleton>
-			        <div>
-			            <Skeleton width="10rem" class="mb-2"></Skeleton>
-			            <Skeleton width="5rem" class="mb-2"></Skeleton>
-			            <Skeleton height=".5rem"></Skeleton>
-			        </div>
-			    </div>
-			    <Skeleton width="100%" height="150px"></Skeleton>
-			    <div class="flex justify-content-between mt-3">
-			        <Skeleton width="4rem" height="2rem"></Skeleton>
-			        <Skeleton width="4rem" height="2rem"></Skeleton>
-			    </div>
-			</div>
-			
-			<div class="grid">
+			<Loading v-if="loading" />
+			<div class="grid" v-else>
 				<div class="col-12 md:col-6">
 					<div class="surface-section">
 						<h6><Tag severity="contrast" value="Contrast">Mesh</Tag></h6>
@@ -119,7 +115,7 @@ const home = ref({
 													<i class="pi pi-shield" />
 												</span>
 												<span class="font-medium">
-													<Textarea  placeholder="Unset" v-model="config.ca" :autoResize="false" rows="8" />
+													<Textarea :placeholder="placeholder.ca" v-model="config.ca" :autoResize="false" rows="8" />
 												</span>
 										</Chip>	
 									</div>
@@ -160,7 +156,7 @@ const home = ref({
 													<i class="pi pi-shield" />
 												</span>
 												<span class="font-medium">
-													<Textarea  placeholder="Unset" v-model="config.agent.certificate" :autoResize="false" rows="8" />
+													<Textarea :placeholder="placeholder.c" v-model="config.agent.certificate" :autoResize="false" rows="8" />
 												</span>
 										</Chip>	
 									</div>
@@ -174,7 +170,7 @@ const home = ref({
 													<i class="pi pi-key" />
 												</span>
 												<span class="font-medium">
-													<Textarea placeholder="Unset" v-model="config.agent.privateKey" :autoResize="false" rows="5"  />
+													<Textarea :placeholder="placeholder.p" v-model="config.agent.privateKey" :autoResize="false" rows="5"  />
 												</span>
 										</Chip>
 									</div>

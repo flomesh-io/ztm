@@ -55,6 +55,7 @@ const select = (d) => {
 	getEndpoints();
 }
 const commit = () => {
+	loading.value = true;
 	pipyProxyService.createService({
 		mesh: selected.value.name,
 		ep: config.value.ep,
@@ -64,6 +65,7 @@ const commit = () => {
 		port: config.value.port
 	})
 		.then(res => {
+			loading.value = false;
 			console.log('commit service:')
 			console.log(res)
 			if(!!res.name){
@@ -75,6 +77,7 @@ const commit = () => {
 			}
 		})
 		.catch(err => {
+			loading.value = false;
 			console.log('Request Failed', err)
 		}); 
 }
@@ -92,25 +95,10 @@ const home = ref({
 	<div >
 		<BlockViewer text="Json" header="Create Service" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
 			<template #actions>
-				<Button :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
+				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 			</template>
-			<div v-if="loading" class="p-4">
-			    <div class="flex mb-3">
-			        <Skeleton shape="circle" size="4rem" class="mr-2"></Skeleton>
-			        <div>
-			            <Skeleton width="10rem" class="mb-2"></Skeleton>
-			            <Skeleton width="5rem" class="mb-2"></Skeleton>
-			            <Skeleton height=".5rem"></Skeleton>
-			        </div>
-			    </div>
-			    <Skeleton width="100%" height="150px"></Skeleton>
-			    <div class="flex justify-content-between mt-3">
-			        <Skeleton width="4rem" height="2rem"></Skeleton>
-			        <Skeleton width="4rem" height="2rem"></Skeleton>
-			    </div>
-			</div>
-			
-			<div class="surface-section">
+			<Loading v-if="loading" />
+			<div v-else class="surface-section">
 				<ul class="list-none p-0 m-0">
 					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
 							<div class="text-500 w-6 md:w-2 font-medium">Service</div>

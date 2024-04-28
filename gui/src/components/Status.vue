@@ -5,6 +5,10 @@ const props = defineProps({
 		type: Boolean,
 		default: false
 	},
+	tip: {
+		type: String,
+		default: ''
+	},
 	errors: {
 		type: Array,
 		default: () => []
@@ -15,7 +19,10 @@ const props = defineProps({
 	},
 });
 const errorMsg = computed(() => {
-	let msg = '';
+	let msg = props.tip;
+	if(!!msg){
+		msg += '\n';
+	}
 	props.errors.forEach((error, ei) => {
 		if(ei>0){
 			msg += '\n';
@@ -28,7 +35,11 @@ const errorMsg = computed(() => {
 </script>
 
 <template>
-	<div v-if="props.run && !!props.text" class="text-900 font-medium text-xl pointer">
+	<div v-if="props.run && !!props.text && !!props.tip" v-tooltip="{value:props.tip,pt:{text:'w-20rem'}}" class="text-900 font-medium text-xl pointer">
+		<span class="status-point mr-2 relative run" style="top: -2px;"/> 
+		<span >{{props.text}}</span>
+	</div>
+	<div v-else-if="props.run && !!props.text" class="text-900 font-medium text-xl pointer">
 		<span class="status-point mr-2 relative run" style="top: -2px;"/> 
 		<span >{{props.text}}</span>
 	</div>
@@ -36,6 +47,7 @@ const errorMsg = computed(() => {
 		<span class="status-point mr-2 relative " style="top: -2px;"/> 
 		<span class="text-gray-400" >{{props.text}}</span>
 	</div>
+	<span v-else-if="props.run && !!props.tip" v-tooltip="{value:props.tip,pt:{text:'w-20rem'}}" class="status-point mr-3 relative run" />
 	<span v-else-if="props.run" class="status-point mr-3 relative run" />
 	<span v-else  v-tooltip="{value:errorMsg,pt:{text:'w-20rem'}}"  class="status-point mr-3 relative " /> 
 </template>
