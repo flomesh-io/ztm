@@ -11,6 +11,16 @@ jobs:
       with:
         node-version: '21'
     - run: npm install -g win-node-env
+    - name: Install Visual Studio
+      uses: microsoft/setup-msbuild@v1
+      with:
+        vs-version: '2022' 
+    - name: Install CMake
+      uses: maxkomarychev/setup-cmake@v2
+      with:
+        cmake-version: '3.21.3' 
+    - name: Install NASM
+      run: choco install nasm -y
     - name: build pipy
       run: |
         cd gui
