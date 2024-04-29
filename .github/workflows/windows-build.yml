@@ -24,8 +24,7 @@ jobs:
     - name: build pipy
       run: |
         git submodule update --init
-        cd pipy
-        build.cmd no-gui
+        ./pipy/build.cmd no-gui
     - name: cpy pipy
       run: |
         ls
