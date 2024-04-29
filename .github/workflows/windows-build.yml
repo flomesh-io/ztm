@@ -23,8 +23,13 @@ jobs:
       uses: ilammy/setup-nasm@v1
     - name: build pipy
       run: |
-        cd gui
-        yarn build-pipy-windows
+        git submodule update --init
+        cd pipy
+        build.cmd no-gui
+    - name: cpy pipy
+      run: |
+        ls
+        cp -f ./pipy/bin/Release/pipy.exe ./gui/src-tauri/bin/pipy-x86_64-pc-windows-msvc.exe
     - name: build app
       run: |
         cd gui
