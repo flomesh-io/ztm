@@ -11,6 +11,9 @@ const menu = [
 	{
 			label: 'Local Ports', icon: 'pi pi-fw pi-bullseye', route: '/mesh/ports'
 	},
+	{
+			label: 'Logs', icon: 'pi pi-fw pi-book', route: '/mesh/log'
+	},
 ]
 
 const prodMenu = {
