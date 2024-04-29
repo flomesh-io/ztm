@@ -143,12 +143,12 @@ var $localAddr
 function start() {
   pipy.listen(opt['--listen'], $=>$
     .onStart(
-      function (ib) {
+      function (conn) {
         $agent = {
-          ip: ib.remoteAddress,
-          port: ib.remotePort,
+          ip: conn.remoteAddress,
+          port: conn.remotePort,
         }
-        $localAddr = `${ib.localAddress}:${ib.localPort}`
+        $localAddr = `${conn.localAddress}:${conn.localPort}`
       }
     )
     .acceptTLS({
@@ -157,6 +157,11 @@ function start() {
         key: myKey,
       },
       trusted: [caCert],
+      onState: (tls) => {
+        if (tls.state === 'connected') {
+          $agent.username = tls.peer?.subject?.commonName
+        }
+      }
     }).to($=>$
       .demuxHTTP().to($=>$
         .pipe(
@@ -208,6 +213,7 @@ var getEndpoints = pipeline($=>$
       ep => ({
         id: ep.id,
         name: ep.name,
+        username: ep.username,
         certificate: ep.certificate,
         ip: ep.ip,
         port: ep.port,
@@ -227,6 +233,7 @@ var getEndpoint = pipeline($=>$
       return response(200, {
         id: ep.id,
         name: ep.name,
+        username: ep.username,
         certificate: ep.certificate,
         ip: ep.ip,
         port: ep.port,
@@ -336,11 +343,12 @@ var connectEndpoint = pipeline($=>$
 var connectService = pipeline($=>$
   .acceptHTTPTunnel(
     function () {
+      var svc = $params.svc
+      var proto = $params.proto
       var id = $params.ep
       var ep = endpoints[id]
       if (!ep) return response(404, 'Endpoint not found')
-      var svc = $params.svc
-      var proto = $params.proto
+      if (!canConnect($agent.username, ep, proto, svc)) return response(403)
       if (!ep.services.some(s => s.name === svc && s.protocol === proto)) return response(404, 'Service not found')
       $hub = hubs[id]
       if (!$hub) return response(404, 'Agent not found')
@@ -364,6 +372,7 @@ var forwardRequest = pipeline($=>$
         var id = $params.ep
         var ep = endpoints[id]
         if (!ep) return notFound
+        if (!canOperate($agent.username, ep)) return notAllowed
         $hub = hubs[id]
         if (!$hub) return notFound
         var path = $params['*']
@@ -382,6 +391,11 @@ var notFound = pipeline($=>$
 var notSupported = pipeline($=>$
   .replaceData()
   .replaceMessage(response(405))
+)
+
+var notAllowed = pipeline($=>$
+  .replaceData()
+  .replaceMessage(response(403))
 )
 
 var noSession = pipeline($=>$
@@ -411,6 +425,24 @@ function findCurrentEndpointSession() {
   $endpoint.agents.add($agent)
   $endpoint.isConnected = true
   return true
+}
+
+function canSee(username, ep) {
+  if (username === 'root') return true
+  if (username === ep.username) return true
+  return false
+}
+
+function canOperate(username, ep) {
+  if (username === 'root') return true
+  if (username === ep.username) return true
+  return false
+}
+
+function canConnect(username, ep, proto, svc) {
+  if (username === 'root') return true
+  if (username === ep.username) return true
+  return false
 }
 
 function response(status, body) {
