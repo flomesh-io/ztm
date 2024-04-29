@@ -95,6 +95,14 @@ var routes = Object.entries({
     },
   },
 
+  '/api/meshes/{mesh}/log': {
+    'GET': function ({ mesh }) {
+      var obj = api.getMeshLog(mesh)
+      if (obj) return response(200, obj)
+      return response(404)
+    },
+  },
+
   '/api/meshes/{mesh}/ca': {
 
     'GET': function ({ mesh }) {

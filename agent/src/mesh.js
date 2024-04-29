@@ -5,37 +5,38 @@ export default function (config) {
   var caCert
   var agentCert
   var agentKey
+  var agentLog = []
+  var meshErrors = []
   var services = []
-  var errorLog = []
 
   if (config.ca) {
     try {
       caCert = new crypto.Certificate(config.ca)
     } catch {
-      error('Invalid CA certificate')
+      meshError('Invalid CA certificate')
     }
   } else {
-    error('Missing CA certificate')
+    meshError('Missing CA certificate')
   }
 
   if (config.agent.certificate) {
     try {
       agentCert = new crypto.Certificate(config.agent.certificate)
     } catch {
-      error('Invalid agent certificate')
+      meshError('Invalid agent certificate')
     }
   } else {
-    error('Missing agent certificate')
+    meshError('Missing agent certificate')
   }
 
   if (config.agent.privateKey) {
     try {
       agentKey = new crypto.PrivateKey(config.agent.privateKey)
     } catch {
-      error('Invalid agent private key')
+      meshError('Invalid agent private key')
     }
   } else {
-    error('Missing agent private key')
+    meshError('Missing agent private key')
   }
 
   var tlsOptions = {
@@ -75,7 +76,14 @@ export default function (config) {
     // Agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
       .muxHTTP(() => '', { version: 2 }).to($=>$
-        .connectTLS(tlsOptions).to($=>$
+        .connectTLS({
+          ...tlsOptions,
+          onState: (session) => {
+            var err = session.error
+            if (err) meshError(err)
+          }
+        }).to($=>$
+          .onStart(() => { meshErrors.length = 0 })
           .connect(address, {
             onState: function (conn) {
               if (conn.state === 'connected') {
@@ -86,6 +94,9 @@ export default function (config) {
               }
             }
           })
+          .handleStreamEnd(
+            (eos) => meshError(`Connection to hub ${address} closed, error = ${eos.error}`)
+          )
         )
       )
     )
@@ -373,10 +384,10 @@ export default function (config) {
           var name = params.svc
           $requestedService = services.find(s => s.protocol === protocol && s.name === name)
           if ($requestedService) {
-            console.info(`Proxy to local service ${name}`)
+            logInfo(`Proxy to local service ${name}`)
             return response200
           }
-          console.info(`Local service ${name} not found`)
+          logError(`Local service ${name} not found`)
         }
         return response404
       }
@@ -414,7 +425,7 @@ export default function (config) {
     })
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
-        .onStart(() => console.info(`Proxy to ${svc} at endpoint ${$selectedEp} via ${$selectedHub}`))
+        .onStart(() => logInfo(`Proxy to ${svc} at endpoint ${$selectedEp} via ${$selectedHub}`))
         .connectHTTPTunnel(() => (
           new Message({
             method: 'CONNECT',
@@ -429,7 +440,7 @@ export default function (config) {
         )
       ),
       'deny': ($=>$
-        .onStart(() => console.info($selectedEp ? `No route to endpoint ${$selectedEp}` : `No endpoint found for ${svc}`))
+        .onStart(() => logError($selectedEp ? `No route to endpoint ${$selectedEp}` : `No endpoint found for ${svc}`))
         .replaceData(new StreamEnd)
       ),
     })
@@ -468,7 +479,7 @@ export default function (config) {
     }
   )
 
-  console.info(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
+  logInfo(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
 
   function selectEndpoint(proto, svc) {
     return hubs[0].findService(proto, svc).then(
@@ -616,19 +627,45 @@ export default function (config) {
       }
     )
     hubs.forEach(hub => hub.leave())
-    console.info(`Left ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
+    logInfo(`Left ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
   }
 
   function isConnected() {
     return hubs.some(h => h.isConnected())
   }
 
-  function getErrors() {
-    return [...errorLog]
+  function getLog() {
+    return [...agentLog]
   }
 
-  function error(msg) {
-    errorLog.push({
+  function getErrors() {
+    return [...meshErrors]
+  }
+
+  function log(type, msg) {
+    if (agentLog.length > 100) {
+      agentLog.splice(0, agentLog.length - 100)
+    }
+    agentLog.push({
+      time: new Date().toISOString(),
+      type,
+      message: msg,
+    })
+  }
+
+  function logInfo(msg) {
+    log('info', msg)
+    console.info(msg)
+  }
+
+  function logError(msg) {
+    log('error', msg)
+    console.error(msg)
+  }
+
+  function meshError(msg) {
+    logError(msg)
+    meshErrors.push({
       time: new Date().toISOString(),
       message: msg,
     })
@@ -637,6 +674,7 @@ export default function (config) {
   return {
     config,
     isConnected,
+    getLog,
     getErrors,
     findEndpoint,
     discoverEndpoints,
