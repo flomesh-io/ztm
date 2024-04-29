@@ -50,6 +50,11 @@ function getMesh(name) {
   return null
 }
 
+function getMeshLog(name) {
+  var mesh = meshes[name]
+  return mesh ? mesh.getLog() : null
+}
+
 function setMesh(name, mesh) {
   db.setMesh(name, mesh)
   var old = meshes[name]
@@ -219,6 +224,7 @@ export default {
   init,
   allMeshes,
   getMesh,
+  getMeshLog,
   setMesh,
   delMesh,
   allEndpoints,
