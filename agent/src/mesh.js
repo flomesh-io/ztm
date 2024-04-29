@@ -567,7 +567,10 @@ export default function (config) {
       (hub) => httpAgents.get(hub).request(
         'GET', `/api/forward/${ep}/services`
       ).then(
-        res => res?.head?.status === 200 ? JSON.decode(res.body) : []
+        res => {
+          remoteCheckResponse(res, 200)
+          return JSON.decode(res.body)
+        }
       )
     )
   }
@@ -578,7 +581,10 @@ export default function (config) {
         'POST', `/api/forward/${ep}/services/${proto}/${name}`,
         {}, JSON.encode({ host, port })
       ).then(
-        res => res?.head?.status === 201 ? JSON.decode(res.body) : null
+        res => {
+          remoteCheckResponse(res, 201)
+          return JSON.decode(res.body)
+        }
       )
     )
   }
@@ -587,6 +593,10 @@ export default function (config) {
     return selectHubWithThrow(ep).then(
       (hub) => httpAgents.get(hub).request(
         'DELETE', `/api/forward/${ep}/services/${proto}/${name}`
+      ).then(
+        res => {
+          remoteCheckResponse(res, 204)
+        }
       )
     )
   }
@@ -596,7 +606,10 @@ export default function (config) {
       (hub) => httpAgents.get(hub).request(
         'GET', `/api/forward/${ep}/ports`
       ).then(
-        res => res?.head?.status === 200 ? JSON.decode(res.body) : []
+        res => {
+          remoteCheckResponse(res, 200)
+          return JSON.decode(res.body)
+        }
       )
     )
   }
@@ -607,7 +620,10 @@ export default function (config) {
         'POST', `/api/forward/${ep}/ports/${ip}/${proto}/${port}`,
         {}, JSON.encode({ target })
       ).then(
-        res => res?.head?.status === 201 ? JSON.decode(res.body) : null
+        res => {
+          remoteCheckResponse(res, 201)
+          return JSON.decode(res.body)
+        }
       )
     )
   }
@@ -616,8 +632,19 @@ export default function (config) {
     return selectHubWithThrow(ep).then(
       (hub) => httpAgents.get(hub).request(
         'DELETE', `/api/forward/${ep}/ports/${ip}/${proto}/${port}`
+      ).then(
+        res => {
+          remoteCheckResponse(res, 204)
+        }
       )
     )
+  }
+
+  function remoteCheckResponse(res, expected) {
+    var status = res?.head?.status
+    if (status !== expected) {
+      throw { status: status || 500, message: res?.head?.statusText }
+    }
   }
 
   function leave() {

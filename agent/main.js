@@ -304,9 +304,10 @@ pipy.listen(opt['--listen'], $=>$
         var route = routes.find(r => Boolean(params = r.match(path)))
         if (route) {
           try {
-            return route.handler(params, req)
+            var res = route.handler(params, req)
+            return res instanceof Promise ? res.catch(responseError) : res
           } catch (e) {
-            return response(500, e)
+            return responseError(e)
           }
         }
       } else {
@@ -340,4 +341,12 @@ function responseCT(status, ct, body) {
     },
     body
   )
+}
+
+function responseError(e) {
+  if (typeof e === 'object') {
+    return response(e.status || 500, e)
+  } else {
+    return response(500, { status: 500, message: e })
+  }
 }
