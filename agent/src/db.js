@@ -210,7 +210,7 @@ function getPort(mesh, ip, proto, port) {
 }
 
 function setPort(mesh, ip, proto, port, { target }) {
-  var old = getPort(ip, proto, port)
+  var old = getPort(mesh, ip, proto, port)
   if (old) {
     db.sql('UPDATE ports SET endpoint = ?, service = ? WHERE mesh = ? AND ip = ? AND protocol = ? AND port = ?')
       .bind(1, target.endpoint)
