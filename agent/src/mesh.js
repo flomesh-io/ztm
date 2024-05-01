@@ -79,6 +79,9 @@ export default function (config) {
   function Hub(address) {
     var connections = new Set
     var closed = false
+    var serviceList = null
+    var serviceListUpdateTime = 0
+    var serviceListSendTime = 0
 
     //
     //    requestHub ---\
@@ -148,34 +151,45 @@ export default function (config) {
     // Establish a pull session to the hub
     reverseServer.spawn()
 
-    var serviceList = null
-    var serviceListUpdateMsg = null
+    // Start sending service list updates
+    pipeline($=>$
+      .onStart(new Data)
+      .repeat(() => new Timeout(1).wait().then(() => !closed)).to($=>$
+        .pipe(
+          () => {
+            if (serviceListUpdateTime > serviceListSendTime) {
+              serviceListSendTime = serviceListUpdateTime
+              return 'send'
+            }
+            return 'wait'
+          }, {
+            'wait': ($=>$.replaceStreamStart(new StreamEnd)),
+            'send': ($=>$.replaceStreamStart(
+              () => requestHub.spawn(
+                new Message(
+                  {
+                    method: 'POST',
+                    path: `/api/services`,
+                  },
+                  JSON.encode(serviceList || [])
+                )
+              ).then(
+                function (res) {
+                  if (!res || res.head.status !== 201) {
+                    serviceListUpdateTime = Date.now()
+                  }
+                  return new StreamEnd
+                }
+              )
+            )),
+          }
+        )
+      )
+    ).spawn()
 
     function updateServiceList(list) {
       serviceList = list
-      var isSending = Boolean(serviceListUpdateMsg)
-      serviceListUpdateMsg = new Message(
-        {
-          method: 'POST',
-          path: `/api/services`,
-        },
-        JSON.encode(list)
-      )
-      if (!isSending) sendServiceList()
-    }
-
-    function sendServiceList() {
-      if (serviceListUpdateMsg) {
-        requestHub.spawn(serviceListUpdateMsg).then(
-          function (res) {
-            if (res && res.head.status === 201) {
-              serviceListUpdateMsg = null
-            } else {
-              new Timeout(5).wait().then(sendServiceList)
-            }
-          }
-        )
-      }
+      serviceListUpdateTime = Date.now()
     }
 
     function heartbeat() {
