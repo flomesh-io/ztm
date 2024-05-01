@@ -279,6 +279,7 @@ var postServices = pipeline($=>$
       var oldList = $endpoint.services || []
       var newList = services instanceof Array ? services : []
       var who = endpointName($endpoint.id)
+      console.info(`Received service list (length = ${services?.length || 0}) from ${who}`)
       newList.forEach(({ name, protocol }) => {
         if (!oldList.some(s => s.name === name && s.protocol === protocol)) {
           console.info(`Service ${name} published by ${who}`)
