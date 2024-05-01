@@ -8,6 +8,7 @@ export default function (config) {
   var agentLog = []
   var meshErrors = []
   var services = []
+  var ports = {}
 
   if (config.ca) {
     try {
@@ -87,6 +88,7 @@ export default function (config) {
           .connect(address, {
             onState: function (conn) {
               if (conn.state === 'connected') {
+                logInfo(`Connected to hub ${address}`)
                 connections.add(conn)
                 if (serviceList) updateServiceList(serviceList)
               } else if (conn.state === 'closed') {
@@ -315,14 +317,21 @@ export default function (config) {
 
       '/api/ports': {
         'GET': function () {
-          return response(200, db.allPorts(meshName))
+          return response(200, db.allPorts(meshName).map(
+            p => Object.assign(p, checkPort(p.listen.ip, p.protocol, p.listen.port))
+          ))
         },
       },
 
       '/api/ports/{ip}/{proto}/{port}': {
         'GET': function (params) {
+          var ip = params.ip
+          var proto = params.proto
           var port = Number.parseInt(params.port)
-          return response(200, db.getPort(meshName, params.ip, params.proto, port))
+          return response(200, Object.assign(
+            db.getPort(meshName, ip, proto, port),
+            checkPort(ip, proto, port),
+          ))
         },
 
         'POST': function (params, req) {
@@ -549,17 +558,34 @@ export default function (config) {
     hubs.forEach(hub => hub.updateServiceList(list))
   }
 
+  function portName(ip, protocol, port) {
+    return `${ip}/${protocol}/${port}`
+  }
+
   function openPort(ip, protocol, port, service, endpoint) {
-    switch (protocol) {
-      case 'tcp':
-        pipy.listen(`${ip}:${port}`, proxyToMesh(protocol, service, endpoint))
-        break
-      default: throw `Invalid protocol: ${protocol}`
+    var key = portName(ip, protocol, port)
+    try {
+      switch (protocol) {
+        case 'tcp':
+          pipy.listen(`${ip}:${port}`, proxyToMesh(protocol, service, endpoint))
+          break
+        default: throw `Invalid protocol: ${protocol}`
+      }
+      ports[key] = { open: true }
+    } catch (err) {
+      ports[key] = { open: false, error: err.toString() }
     }
   }
 
   function closePort(ip, protocol, port) {
+    var key = portName(ip, protocol, port)
     pipy.listen(`${ip}:${port}`, protocol, null)
+    delete ports[key]
+  }
+
+  function checkPort(ip, protocol, port) {
+    var key = portName(ip, protocol, port)
+    return ports[key]
   }
 
   function remoteQueryServices(ep) {
@@ -710,6 +736,7 @@ export default function (config) {
     deleteService,
     openPort,
     closePort,
+    checkPort,
     remoteQueryServices,
     remotePublishService,
     remoteDeleteService,

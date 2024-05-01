@@ -156,7 +156,7 @@ var routes = Object.entries({
   //   ip: string
   //   port: number
   //   heartbeat: number
-  //   status: string
+  //   online: boolean
   //
 
   '/api/meshes/{mesh}/endpoints': {
@@ -229,22 +229,6 @@ var routes = Object.entries({
   },
 
   //
-  // User
-  //   name: string
-  //   certificate: string (PEM)
-  //
-
-  '/api/meshes/{mesh}/services/{proto}/{svc}/users': {
-    'GET': notImplemented,
-  },
-
-  '/api/meshes/{mesh}/services/{proto}/{svc}/users/{usr}': {
-    'GET': notImplemented,
-    'POST': notImplemented,
-    'DELETE': notImplemented,
-  },
-
-  //
   // Port
   //   protocol: string (tcp|udp)
   //   listen:
@@ -253,6 +237,8 @@ var routes = Object.entries({
   //   target:
   //     endpoint: string?
   //     service: string
+  //   open: boolean
+  //   error: string?
   //
 
   '/api/meshes/{mesh}/endpoints/{ep}/ports': {
@@ -318,14 +304,6 @@ pipy.listen(opt['--listen'], $=>$
     }
   )
 )
-
-function notImplemented(params, req) {
-  throw {
-    message: 'Not implemented',
-    path: req.head.path,
-    params,
-  }
-}
 
 function response(status, body) {
   if (!body) return new Message({ status })
