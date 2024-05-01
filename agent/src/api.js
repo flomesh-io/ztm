@@ -170,23 +170,15 @@ function delService(mesh, ep, proto, name) {
   }
 }
 
-function allUsers(mesh, ep, svc) {
-}
-
-function getUser(mesh, ep, svc, name) {
-}
-
-function setUser(mesh, ep, svc, name, user) {
-}
-
-function delUser(mesh, ep, svc, name) {
-}
-
 function allPorts(mesh, ep) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve([])
   if (ep === m.config.agent.id) {
-    return Promise.resolve(db.allPorts(mesh))
+    return Promise.resolve(
+      db.allPorts(mesh).map(
+        p => Object.assign(p, m.checkPort(p.listen.ip, p.protocol, p.listen.port))
+      )
+    )
   } else {
     return m.remoteQueryPorts(ep)
   }
@@ -233,10 +225,6 @@ export default {
   getService,
   setService,
   delService,
-  allUsers,
-  getUser,
-  setUser,
-  delUser,
   allPorts,
   getPort,
   setPort,
