@@ -56,6 +56,22 @@ export default function (config) {
   )
 
   //
+  // Utility pipelies
+  //
+
+  var bypass = pipeline($=>$)
+
+  var wrapUDP = pipeline($=>$
+    .replaceData(data => data.size > 0 ? new Message(data) : undefined)
+    .encodeWebSocket()
+  )
+
+  var unwrapUDP = pipeline($=>$
+    .decodeWebSocket()
+    .replaceMessage(msg => msg.body)
+  )
+
+  //
   // Class Hub
   // Management of the interaction with a single hub instance
   //
@@ -401,7 +417,14 @@ export default function (config) {
         return response404
       }
     ).to($=>$
-      .connect(() => `${$requestedService.host}:${$requestedService.port}`)
+      .pipe(() => $requestedService.protocol, {
+        'tcp': ($=>$.connect(() => `${$requestedService.host}:${$requestedService.port}`)),
+        'udp': ($=>$
+          .pipe(unwrapUDP)
+          .connect(() => `${$requestedService.host}:${$requestedService.port}`, { protocol: 'udp' })
+          .pipe(wrapUDP)
+        )
+      })
     )
   )
 
@@ -435,6 +458,7 @@ export default function (config) {
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
         .onStart(() => logInfo(`Proxy to ${svc} at endpoint ${$selectedEp} via ${$selectedHub}`))
+        .pipe(proto === 'udp' ? wrapUDP : bypass)
         .connectHTTPTunnel(() => (
           new Message({
             method: 'CONNECT',
@@ -447,6 +471,7 @@ export default function (config) {
             )
           )
         )
+        .pipe(proto === 'udp' ? unwrapUDP : bypass)
       ),
       'deny': ($=>$
         .onStart(() => logError($selectedEp ? `No route to endpoint ${$selectedEp}` : `No endpoint found for ${svc}`))
@@ -567,7 +592,8 @@ export default function (config) {
     try {
       switch (protocol) {
         case 'tcp':
-          pipy.listen(`${ip}:${port}`, proxyToMesh(protocol, service, endpoint))
+        case 'udp':
+          pipy.listen(`${ip}:${port}`, protocol, proxyToMesh(protocol, service, endpoint))
           break
         default: throw `Invalid protocol: ${protocol}`
       }

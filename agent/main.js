@@ -279,7 +279,7 @@ var routes = Object.entries({
   }
 )
 
-var gui = new http.Directory('./gui', { fs: true })
+var gui = new http.Directory('gui')
 
 pipy.listen(opt['--listen'], $=>$
   .serveHTTP(
