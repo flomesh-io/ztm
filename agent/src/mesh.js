@@ -9,6 +9,7 @@ export default function (config) {
   var meshErrors = []
   var services = []
   var ports = {}
+  var exited = false
 
   if (config.ca) {
     try {
@@ -439,6 +440,7 @@ export default function (config) {
           .pipe(wrapUDP)
         )
       })
+      .onEnd(() => logInfo(`Proxy to local service ${$requestedService.name} ended`))
     )
   )
 
@@ -486,6 +488,7 @@ export default function (config) {
           )
         )
         .pipe(proto === 'udp' ? unwrapUDP : bypass)
+        .onEnd(() => logInfo(`Proxy to ${svc} at endpoint ${$selectedEp} via ${$selectedHub} ended`))
       ),
       'deny': ($=>$
         .onStart(() => logError($selectedEp ? `No route to endpoint ${$selectedEp}` : `No endpoint found for ${svc}`))
@@ -507,8 +510,10 @@ export default function (config) {
   // Start sending heartbeats
   heartbeat()
   function heartbeat() {
-    hubs.forEach(h => h.heartbeat())
-    new Timeout(15).wait().then(heartbeat)
+    if (!exited) {
+      hubs.forEach(h => h.heartbeat())
+      new Timeout(15).wait().then(heartbeat)
+    }
   }
 
   // Publish services
@@ -720,6 +725,7 @@ export default function (config) {
       }
     )
     hubs.forEach(hub => hub.leave())
+    exited = true
     logInfo(`Left ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
   }
 
