@@ -94,7 +94,7 @@ export default function (config) {
 
     var $response
 
-    // Agent-to-hub connection, multiplexed with HTTP/2
+    // Long-lived agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
       .muxHTTP(() => '', { version: 2 }).to($=>$
         .connectTLS({
@@ -172,7 +172,10 @@ export default function (config) {
                     method: 'POST',
                     path: `/api/services`,
                   },
-                  JSON.encode(serviceList || [])
+                  JSON.encode({
+                    time: serviceListUpdateTime,
+                    services: serviceList || [],
+                  })
                 )
               ).then(
                 function (res) {
@@ -194,6 +197,7 @@ export default function (config) {
     }
 
     function heartbeat() {
+      if (closed) return
       requestHub.spawn(
         new Message(
           { method: 'POST', path: '/api/status' },

@@ -77,11 +77,11 @@ var routes = Object.entries({
 
 var endpoints = {}
 var hubs = {}
-var localAddresses = [...opt['--name']]
 var caAgent = new http.Agent(opt['--ca'])
 var caCert = null
 var myCert = null
 var myKey = null
+var myNames = [...opt['--name']]
 
 main()
 
@@ -125,7 +125,7 @@ function endpointName(id) {
 }
 
 function isEndpointOnline(ep) {
-  if (ep.agents.size == 0) return false
+  if (!hubs[ep.id]?.size) return false
   if (ep.heartbeat + 30*1000 < Date.now()) return false
   return true
 }
@@ -134,21 +134,21 @@ function isEndpointOutdated(ep) {
   return (ep.heartbeat + 60*1000 < Date.now())
 }
 
-var $agent = null
+var $ctx = null
 var $params = null
 var $endpoint = null
 var $hub = null
-var $localAddr
+var $hubSelected = null
 
 function start() {
   pipy.listen(opt['--listen'], $=>$
     .onStart(
       function (conn) {
-        $agent = {
+        $ctx = {
           ip: conn.remoteAddress,
           port: conn.remotePort,
+          via: `${conn.localAddress}:${conn.localPort}`,
         }
-        $localAddr = `${conn.localAddress}:${conn.localPort}`
       }
     )
     .acceptTLS({
@@ -159,7 +159,7 @@ function start() {
       trusted: [caCert],
       onState: (tls) => {
         if (tls.state === 'connected') {
-          $agent.username = tls.peer?.subject?.commonName
+          $ctx.username = tls.peer?.subject?.commonName
         }
       }
     }).to($=>$
@@ -178,16 +178,16 @@ function start() {
     )
   )
 
-  println('Hub started at', opt['--listen'])
+  console.info('Hub started at', opt['--listen'])
 
-  function runEveryMinute() {
+  function clearOutdatedEndpoints() {
     Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
       (ep) => delete endpoints[ep.id]
     )
-    new Timeout(60).wait().then(runEveryMinute)
+    new Timeout(60).wait().then(clearOutdatedEndpoints)
   }
 
-  runEveryMinute()
+  clearOutdatedEndpoints()
 }
 
 var postStatus = pipeline($=>$
@@ -200,7 +200,6 @@ var postStatus = pipeline($=>$
           heartbeat: Date.now(),
         }
       )
-      collectLocalAddresses($localAddr)
       return new Message({ status: 201 })
     }
   )
@@ -214,7 +213,6 @@ var getEndpoints = pipeline($=>$
         id: ep.id,
         name: ep.name,
         username: ep.username,
-        certificate: ep.certificate,
         ip: ep.ip,
         port: ep.port,
         heartbeat: ep.heartbeat,
@@ -275,22 +273,28 @@ var getServices = pipeline($=>$
 var postServices = pipeline($=>$
   .replaceMessage(
     function (req) {
-      var services = JSON.decode(req.body)
-      var oldList = $endpoint.services || []
-      var newList = services instanceof Array ? services : []
-      var who = endpointName($endpoint.id)
-      console.info(`Received service list (length = ${services?.length || 0}) from ${who}`)
-      newList.forEach(({ name, protocol }) => {
-        if (!oldList.some(s => s.name === name && s.protocol === protocol)) {
-          console.info(`Service ${name} published by ${who}`)
-        }
-      })
-      oldList.forEach(({ name, protocol }) => {
-        if (!newList.some(s => s.name === name && s.protocol === protocol)) {
-          console.info(`Service ${name} deleted by ${who}`)
-        }
-      })
-      $endpoint.services = newList
+      var body = JSON.decode(req.body)
+      var time = body.time
+      var last = $endpoint.servicesUpdateTime
+      if (!last || last <= time) {
+        var services = body.services
+        var oldList = $endpoint.services || []
+        var newList = services instanceof Array ? services : []
+        var who = endpointName($endpoint.id)
+        console.info(`Received service list (length = ${newList.length}) from ${who}`)
+        newList.forEach(({ name, protocol }) => {
+          if (!oldList.some(s => s.name === name && s.protocol === protocol)) {
+            console.info(`Service ${name} published by ${who}`)
+          }
+        })
+        oldList.forEach(({ name, protocol }) => {
+          if (!newList.some(s => s.name === name && s.protocol === protocol)) {
+            console.info(`Service ${name} deleted by ${who}`)
+          }
+        })
+        $endpoint.services = newList
+        $endpoint.servicesUpdateTime = time
+      }
       return new Message({ status: 201 })
     }
   )
@@ -316,8 +320,8 @@ var getService = pipeline($=>$
 )
 
 var muxToAgent = pipeline($=>$
-  .muxHTTP(() => $hub, { version: 2 }).to($=>$
-    .swap(() => $hub)
+  .muxHTTP(() => $hubSelected, { version: 2 }).to($=>$
+    .swap(() => $hubSelected)
   )
 )
 
@@ -325,18 +329,21 @@ var connectEndpoint = pipeline($=>$
   .acceptHTTPTunnel(
     function () {
       var id = $params.ep
-      $agent.id = id
-      $hub = hubs[id] = new pipeline.Hub
-      console.info(`Endpoint ${endpointName(id)} joined`)
+      $ctx.id = id
+      $hub = new pipeline.Hub
+      hubs[id] ??= new Set
+      hubs[id].add($hub)
+      collectMyNames($ctx.via)
+      console.info(`Endpoint ${endpointName(id)} joined, connections = ${hubs[id].size}`)
       return response(200)
     }
   ).to($=>$
     .onStart(new Data)
     .swap(() => $hub)
     .onEnd(() => {
-      var ep = endpoints[$agent.id]
-      if (ep) ep.agents.delete($agent)
-      console.info(`Endpoint ${endpointName($agent.id)} left`)
+      var id = $ctx.id
+      hubs[id]?.delete?.($hub)
+      console.info(`Endpoint ${endpointName(id)} left, connections = ${hubs[id]?.size || 0}`)
     })
   )
 )
@@ -349,10 +356,10 @@ var connectService = pipeline($=>$
       var id = $params.ep
       var ep = endpoints[id]
       if (!ep) return response(404, 'Endpoint not found')
-      if (!canConnect($agent.username, ep, proto, svc)) return response(403)
+      if (!canConnect($ctx.username, ep, proto, svc)) return response(403)
       if (!ep.services.some(s => s.name === svc && s.protocol === proto)) return response(404, 'Service not found')
-      $hub = hubs[id]
-      if (!$hub) return response(404, 'Agent not found')
+      hubs[id]?.forEach?.(h => $hubSelected = h)
+      if (!$hubSelected) return response(404, 'Agent not found')
       console.info(`Forward to ${svc} at ${endpointName(id)}`)
       return response(200)
     }
@@ -373,9 +380,9 @@ var forwardRequest = pipeline($=>$
         var id = $params.ep
         var ep = endpoints[id]
         if (!ep) return notFound
-        if (!canOperate($agent.username, ep)) return notAllowed
-        $hub = hubs[id]
-        if (!$hub) return notFound
+        if (!canOperate($ctx.username, ep)) return notAllowed
+        hubs[id]?.forEach?.(h => $hubSelected = h)
+        if (!$hubSelected) return notFound
         var path = $params['*']
         req.head.path = `/api/${path}`
         return muxToAgent
@@ -404,9 +411,9 @@ var noSession = pipeline($=>$
   .replaceMessage(response(404, 'No agent session established yet'))
 )
 
-function collectLocalAddresses(addr) {
-  if (localAddresses.indexOf(addr) < 0) {
-    localAddresses.push(addr)
+function collectMyNames(addr) {
+  if (myNames.indexOf(addr) < 0) {
+    myNames.push(addr)
     Object.values(endpoints).forEach(
       ep => {
         if (ep.isConnected) ep.hubs.push(addr)
@@ -416,14 +423,20 @@ function collectLocalAddresses(addr) {
 }
 
 function findCurrentEndpointSession() {
-  if (!$agent.id) return false
-  $endpoint = endpoints[$agent.id]
+  var id = $ctx.id
+  if (!id) return false
+  $endpoint = endpoints[id]
   if (!$endpoint) {
-    $endpoint = endpoints[$agent.id] = { ...$agent, services: [] }
-    $endpoint.hubs = [...localAddresses]
-    $endpoint.agents = new Set
+    $endpoint = endpoints[id] = {
+      id,
+      username: $ctx.username,
+      ip: $ctx.ip,
+      port: $ctx.port,
+      via: $ctx.via,
+      services: [],
+      hubs: [...myNames]
+    }
   }
-  $endpoint.agents.add($agent)
   $endpoint.isConnected = true
   return true
 }
