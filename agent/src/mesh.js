@@ -325,6 +325,10 @@ export default function (config) {
   var serveOtherAgents = (function() {
     var routes = Object.entries({
 
+      '/api/ping': {
+        'GET': () => response(200)
+      },
+
       '/api/services': {
         'GET': function () {
           return response(200, db.allServices(meshName))
