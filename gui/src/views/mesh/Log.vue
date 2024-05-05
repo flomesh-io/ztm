@@ -101,7 +101,7 @@ const timeago = computed(() => (ts) => {
 			<template #header>
 				<div>
 					<i class="pi pi-book mr-2"/> Logs
-					<i @click="getPorts" class="pi pi-refresh ml-2 refresh-icon" :class="{'spiner':loader}"/>
+					<i @click="getLogs" class="pi pi-refresh ml-2 refresh-icon" :class="{'spiner':loader}"/>
 				</div>
 			</template>
 			<Loading v-if="loading"/>

@@ -138,7 +138,10 @@ const active = ref(0);
 														 {{port.listen.ip}} | {{port.protocol}}
 													</span>
 													
-													<div class="text-900 font-medium text-xl"><i class="pi pi-bullseye text-gray-500"></i> {{port.listen.port}}</div>
+													<div class="text-900 font-medium text-xl">
+														<Status :run="port.open" :error="port.error"  />
+														{{port.listen.port}}
+													</div>
 											 </div>
 											 <div class="flex">
 												 <div v-tooltip="'Delete Port'"  @click="deletePort(port)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">

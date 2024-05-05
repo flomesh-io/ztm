@@ -222,11 +222,12 @@ const savePort = () => {
 											 </div>
 											 <div class="flex">
 												 <div 
+													 @click="mappingPort({service: lb[0],lb})"
 													 v-if="!!portInfobyLb(lb[0].name)" 
 													 v-tooltip="'Port:'+portInfobyLb(lb[0].name)" 
 													 class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
 													 style="width: 2.5rem; height: 2.5rem">
-														 <i class="pi pi-check-circle text-green-500 text-xl"></i>
+														 <i class="pi pi-circle text-green-500 text-xl"></i>
 												 </div>
 												 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: lb[0],lb})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
 														 <i class="pi pi-circle text-primary-500 text-xl"></i>
@@ -256,11 +257,12 @@ const savePort = () => {
 													</div>
 													<div class="flex text-right" style="width: 5rem;">
 														<div 
+															@click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})"
 															v-if="!!portInfo(service.name,selectedMesh?.agent?.id)" 
 															v-tooltip="'Port:'+portInfo(service.name,selectedMesh?.agent?.id)" 
 															class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
 															style="width: 2rem; height: 2rem">
-																<i class="pi pi-check-circle text-green-500 text-xl"></i>
+																<i class="pi pi-circle text-green-500 text-xl"></i>
 														</div>
 														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
 															<i class="pi pi-circle text-primary-500 text-xl"></i>
