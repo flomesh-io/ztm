@@ -256,7 +256,7 @@ var getServices = pipeline($=>$
             var protocol = svc.protocol
             var s = services.find(s => s.name === name && s.protocol === protocol)
             if (!s) services.push(s = { name, protocol, endpoints: [] })
-            s.endpoints.push({ id: ep.id, name: ep.name })
+            s.endpoints.push({ id: ep.id, name: ep.name, users: svc.users })
           }
         )
       }
@@ -491,7 +491,10 @@ function canOperate(username, ep) {
 function canConnect(username, ep, proto, svc) {
   if (username === 'root') return true
   if (username === ep.username) return true
-  return false
+  var s = ep.services.find(({ protocol, name }) => (protocol === proto && name === svc))
+  if (!s) return false
+  if (!s.users) return true
+  return s.users.includes(username)
 }
 
 function response(status, body) {
