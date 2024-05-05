@@ -22,7 +22,8 @@ function open(pathname, reset) {
       name TEXT NOT NULL,
       protocol TEXT NOT NULL,
       host TEXT NOT NULL,
-      port INTEGER NOT NULL
+      port INTEGER NOT NULL,
+      users TEXT NOT NULL
     )
   `)
 
@@ -108,6 +109,7 @@ function recordToService(rec) {
     protocol: rec.protocol,
     host: rec.host,
     port: Number.parseInt(rec.port),
+    users: JSON.parse(rec.users),
   }
 }
 
@@ -144,20 +146,22 @@ function setService(mesh, proto, name, service) {
   var old = getService(mesh, proto, name)
   if (old) {
     service = { ...old, ...service }
-    db.sql('UPDATE services SET host = ?, port = ? WHERE mesh = ? AND name = ? AND protocol = ?')
+    db.sql('UPDATE services SET host = ?, port = ?, users = ? WHERE mesh = ? AND name = ? AND protocol = ?')
       .bind(1, service.host)
       .bind(2, service.port)
-      .bind(3, mesh)
-      .bind(4, name)
-      .bind(5, proto)
+      .bind(3, JSON.stringify(service.users || null))
+      .bind(4, mesh)
+      .bind(5, name)
+      .bind(6, proto)
       .exec()
   } else {
-    db.sql('INSERT INTO services(mesh, name, protocol, host, port) VALUES(?, ?, ?, ?, ?)')
+    db.sql('INSERT INTO services(mesh, name, protocol, host, port, users) VALUES(?, ?, ?, ?, ?, ?)')
       .bind(1, mesh)
       .bind(2, name)
       .bind(3, proto)
       .bind(4, service.host)
       .bind(5, service.port)
+      .bind(6, JSON.stringify(service.users || null))
       .exec()
   }
 }

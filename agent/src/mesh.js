@@ -341,10 +341,10 @@ export default function (config) {
         },
 
         'POST': function (params, req) {
-          var body = JSON.decode(req.body)
-          publishService(params.proto, params.svc, body.host, body.port)
-          db.setService(meshName, params.proto, params.svc, body)
-          return response(201, db.getService(meshName, params.proto, params.svc))
+          db.setService(meshName, params.proto, params.svc, JSON.decode(req.body))
+          var s = db.getService(meshName, params.proto, params.svc)
+          publishService(params.proto, params.svc, s.host, s.port, s.users)
+          return response(201, s)
         },
 
         'DELETE': function (params) {
@@ -527,7 +527,7 @@ export default function (config) {
   // Publish services
   db.allServices(meshName).forEach(
     function (s) {
-      publishService(s.protocol, s.name, s.host, s.port)
+      publishService(s.protocol, s.name, s.host, s.port, s.users)
     }
   )
 
@@ -581,17 +581,20 @@ export default function (config) {
     return hubs[0].discoverServices(ep)
   }
 
-  function publishService(protocol, name, host, port) {
+  function publishService(protocol, name, host, port, users) {
+    users = users || null
     var old = services.find(s => s.name === name && s.protocol === protocol)
     if (old) {
       old.host = host
       old.port = port
+      old.users = users
     } else {
       services.push({
         name,
         protocol,
         host,
         port,
+        users,
       })
     }
     updateServiceList()
@@ -606,7 +609,7 @@ export default function (config) {
   }
 
   function updateServiceList() {
-    var list = services.map(({ name, protocol }) => ({ name, protocol }))
+    var list = services.map(({ name, protocol, users }) => ({ name, protocol, users }))
     hubs.forEach(hub => hub.updateServiceList(list))
   }
 

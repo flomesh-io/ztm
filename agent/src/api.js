@@ -151,9 +151,10 @@ function getService(mesh, ep, proto, name) {
 function setService(mesh, ep, proto, name, service) {
   var m = findMesh(mesh)
   if (ep === m.config.agent.id) {
-    m.publishService(proto, name, service.host, service.port)
     db.setService(mesh, proto, name, service)
-    return getService(mesh, ep, proto, name)
+    var s = db.getService(mesh, proto, name)
+    m.publishService(proto, name, s.host, s.port, s.users)
+    return Promise.resolve(s)
   } else {
     return m.remotePublishService(ep, proto, name, service.host, service.port)
   }
