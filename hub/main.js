@@ -76,7 +76,7 @@ var routes = Object.entries({
 )
 
 var endpoints = {}
-var hubs = {}
+var sessions = {}
 var caAgent = new http.Agent(opt['--ca'])
 var caCert = null
 var myCert = null
@@ -125,7 +125,7 @@ function endpointName(id) {
 }
 
 function isEndpointOnline(ep) {
-  if (!hubs[ep.id]?.size) return false
+  if (!sessions[ep.id]?.size) return false
   if (ep.heartbeat + 30*1000 < Date.now()) return false
   return true
 }
@@ -139,6 +139,7 @@ var $params = null
 var $endpoint = null
 var $hub = null
 var $hubSelected = null
+var $pingID
 
 function start() {
   pipy.listen(opt['--listen'], $=>$
@@ -331,10 +332,10 @@ var connectEndpoint = pipeline($=>$
       var id = $params.ep
       $ctx.id = id
       $hub = new pipeline.Hub
-      hubs[id] ??= new Set
-      hubs[id].add($hub)
+      sessions[id] ??= new Set
+      sessions[id].add($hub)
       collectMyNames($ctx.via)
-      console.info(`Endpoint ${endpointName(id)} joined, connections = ${hubs[id].size}`)
+      console.info(`Endpoint ${endpointName(id)} joined, connections = ${sessions[id].size}`)
       return response(200)
     }
   ).to($=>$
@@ -342,8 +343,8 @@ var connectEndpoint = pipeline($=>$
     .swap(() => $hub)
     .onEnd(() => {
       var id = $ctx.id
-      hubs[id]?.delete?.($hub)
-      console.info(`Endpoint ${endpointName(id)} left, connections = ${hubs[id]?.size || 0}`)
+      sessions[id]?.delete?.($hub)
+      console.info(`Endpoint ${endpointName(id)} left, connections = ${sessions[id]?.size || 0}`)
     })
   )
 )
@@ -358,7 +359,7 @@ var connectService = pipeline($=>$
       if (!ep) return response(404, 'Endpoint not found')
       if (!canConnect($ctx.username, ep, proto, svc)) return response(403)
       if (!ep.services.some(s => s.name === svc && s.protocol === proto)) return response(404, 'Service not found')
-      hubs[id]?.forEach?.(h => $hubSelected = h)
+      sessions[id]?.forEach?.(h => $hubSelected = h)
       if (!$hubSelected) return response(404, 'Agent not found')
       console.info(`Forward to ${svc} at ${endpointName(id)}`)
       return response(200)
@@ -381,7 +382,7 @@ var forwardRequest = pipeline($=>$
         var ep = endpoints[id]
         if (!ep) return notFound
         if (!canOperate($ctx.username, ep)) return notAllowed
-        hubs[id]?.forEach?.(h => $hubSelected = h)
+        sessions[id]?.forEach?.(h => $hubSelected = h)
         if (!$hubSelected) return notFound
         var path = $params['*']
         req.head.path = `/api/${path}`
@@ -390,6 +391,40 @@ var forwardRequest = pipeline($=>$
     }
   )
 )
+
+//
+// Ping agents regularly
+//
+
+pipeline($=>$
+  .onStart(new Message({ path: '/api/ping' }))
+  .repeat(() => new Timeout(15).wait().then(true)).to($=>$
+    .forkJoin(() => Object.keys(sessions)).to($=>$
+      .onStart(id => { $pingID = id })
+      .forkJoin(() => {
+        var hubs = []
+        sessions[$pingID].forEach(h => hubs.push(h))
+        return hubs
+      }).to($=>$
+        .onStart(hub => { $hubSelected = hub})
+        .pipe(muxToAgent)
+        .replaceData()
+        .replaceMessage(
+          res => {
+            var hubs = sessions[$pingID]
+            if (res.head.status !== 200) {
+              hubs?.delete?.($hubSelected)
+              console.info(`Endpoint ${endpointName($pingID)} ping failure, connections = ${hubs?.size || 0}`)
+            }
+            return new StreamEnd
+          }
+        )
+      )
+      .replaceMessage(new StreamEnd)
+    )
+    .replaceMessage(new StreamEnd)
+  )
+).spawn()
 
 var notFound = pipeline($=>$
   .replaceData()
