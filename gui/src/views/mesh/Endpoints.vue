@@ -212,7 +212,7 @@ const deletePort = (port) => {
 					<template #default="slotProps">
 							<b v-if="slotProps.node.type == 'ep'" class="relative" style="top: 2px;">
 								<Status style="top: -2px;" :run="slotProps.node.online" :tip="timeago(slotProps.node.heartbeat)"  />
-								EP: {{ slotProps.node.label || slotProps.node.id }} 
+								EP: {{ slotProps.node.label || slotProps.node.id }} <span v-if="!!slotProps.node.username">({{slotProps.node.username}})</span>
 								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
 								<span class="ml-2"><Tag severity="contrast" class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
 							</b>

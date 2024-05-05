@@ -13,6 +13,10 @@ const props = defineProps({
 		type: Array,
 		default: () => []
 	},
+	error: {
+		type: String,
+		default: ''
+	},
 	text: {
 		type: String,
 		default: null
@@ -33,7 +37,7 @@ const errorMsg = computed(() => {
 		}
 		msg += `[${error.time}] ${error.message}`;
 	});
-	return msg;
+	return !!props.error?props.error:msg;
 })
 
 </script>
