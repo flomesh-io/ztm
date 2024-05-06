@@ -1,7 +1,8 @@
 <script setup>
 //pass login
 import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 setAuthorization({
 	token: "pass",
 	expireAt: 7

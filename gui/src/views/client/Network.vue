@@ -5,7 +5,8 @@ import * as echarts from 'echarts';
 import PipyProxyService from '@/service/PipyProxyService';
 import SqlService from '@/service/SqlService';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import dayjs from 'dayjs';
 import { useRoute } from 'vue-router'
 const route = useRoute();

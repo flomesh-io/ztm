@@ -4,7 +4,8 @@ import PipyProxyService from '@/service/PipyProxyService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import _ from "lodash"
 
 const emits = defineEmits(['save']);
@@ -145,14 +146,14 @@ const home = ref({
 					<li class="flex align-items-center py-3 px-2 surface-border flex-wrap border-bottom-1">
 							<div class="text-500 w-8rem font-medium">Protocol</div>
 							<div class="text-900 flex-item">
-								<Chip class="pl-0 pr-3">
+								<Chip class="pl-0 pr-3" v-if="config.protocol == 'tcp'">
 										<span class=" border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<RadioButton v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
 										</span>
 										<span class="ml-2 font-medium">TCP</span>
 								</Chip>
 								
-								<Chip class="ml-2 pl-0 pr-3">
+								<Chip class="pl-0 pr-3" v-if="config.protocol == 'udp'">
 										<span class=" border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<RadioButton v-model="config.protocol" inputId="scopeType3" name="scopeType" value="udp" />
 										</span>

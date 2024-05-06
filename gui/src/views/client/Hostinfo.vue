@@ -4,7 +4,8 @@ import PipyProxyService from '@/service/PipyProxyService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 
 const route = useRoute();
 const toast = useToast();

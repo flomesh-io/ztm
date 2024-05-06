@@ -1,6 +1,7 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import axios from "axios";
 import Cookie from './cookie'
+import toast from "@/utils/toast";
 
 const xsrfHeaderName = "Authorization";
 
@@ -38,11 +39,17 @@ async function request(url, method, params, config) {
 		  case METHOD.GET:
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
 		  case METHOD.POST:
-		    return axios.post(getUrl(url), params, config).then((res) => res?.data);
+		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+				});
 		  case METHOD.DELETE:
-		    return axios.delete(getUrl(url), params, config).then((res) => res?.data);
+		    return axios.delete(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+				});
 		  case METHOD.PUT:
-		    return axios.put(getUrl(url), params, config).then((res) => res?.data);
+		    return axios.put(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+				});
 		  default:
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
 		}
@@ -54,7 +61,10 @@ async function request(url, method, params, config) {
 			},
 			body: !!params?JSON.stringify(params):null,
 			...config
-		}).then((res) => res.json());
+		}).then((res) => res.json()).catch((e)=>{
+			if(method != METHOD.GET)
+			toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+		});
 	}
 }
 

@@ -14,6 +14,7 @@ import '@/assets/styles.scss';
 
 const app = createApp(App);
 app.use(PrimeVue, { ripple: true });
+app.use(store);
 app.use(ToastService);
 app.use(DialogService);
 app.use(ConfirmationService);
