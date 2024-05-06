@@ -14,6 +14,10 @@ const props = defineProps({
 			type: String,
 			default: ''
     },
+    proto: {
+			type: String,
+			default: ''
+    },
     endpoint: {
 			type: String,
 			default: ''
@@ -44,7 +48,7 @@ const toast = useToast();
 const pipyProxyService = new PipyProxyService();
 const loading = ref(false);
 const config = ref({
-	protocol: "tcp",
+	protocol: props.proto,
 	ep: props.endpoint,
 	listen: {
 		ip:'127.0.0.1',
@@ -57,7 +61,7 @@ const config = ref({
 });
 const newConfig = () => {
 	config.value = {
-		protocol: "tcp",
+		protocol: props.proto,
 		ep: props.endpoint,
 		listen: {
 			ip:'127.0.0.1',

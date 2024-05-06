@@ -9,7 +9,8 @@ import { useStore } from 'vuex';
 const store = useStore();
 import _ from "lodash"
 
-const emits = defineEmits(['save']);
+const props = defineProps(['pid','mesh','ep','proto','title']);
+const emits = defineEmits(['save','cancel']);
 
 const selected = ref(null);
 const endpoints = ref([]);
@@ -17,22 +18,14 @@ const route = useRoute();
 const toast = useToast();
 const pipyProxyService = new PipyProxyService();
 const loading = ref(false);
-const config = ref({
+const newConfig = {
 	name: "",
 	protocol: "tcp",
 	host:'127.0.0.1',
 	ep: null,
 	port:null
-});
-const newConfig = () => {
-	config.value = {
-		name: "",
-		protocol: "tcp",
-		host:'127.0.0.1',
-		ep: null,
-		port:null
-	}
 }
+const config = ref(newConfig);
 
 const getEndpoints = () => {
 	pipyProxyService.getEndpoints(selected.value?.name)
@@ -72,7 +65,7 @@ const commit = () => {
 			if(!!res.name){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
 				emits("save", config.value);
-				newConfig();
+				config.value = newConfig;
 			} else{
 				toast.add({ severity: 'error', summary:'Tips', detail: 'Create Failed.', life: 3000 });
 			}
@@ -82,11 +75,36 @@ const commit = () => {
 			console.log('Request Failed', err)
 		}); 
 }
-onMounted(() => {
-});
 const home = ref({
     icon: 'pi pi-desktop'
 });
+onMounted(() => {
+	if(!!props.pid){
+		loaddata()
+	} else {
+		config.value = newConfig;
+	}
+});
+const loaddata = () => {
+	loading.value = true;
+	pipyProxyService.getService({
+		name:props.pid,
+		ep:props.ep,
+		mesh:props.mesh,
+		proto:props.proto,
+	})
+		.then(res => {
+			console.log(res);
+			loading.value = false;
+			config.value = res;
+		})
+		.catch(err => {
+			loading.value = false;
+		}); 
+}
+const cancel = () => {
+	emits("cancel");
+}
 </script>
 
 <template>
@@ -94,8 +112,9 @@ const home = ref({
 		<Breadcrumb :home="home" :model="[{label:route.params?.id}]" />
 	</div>
 	<div >
-		<BlockViewer text="Json" header="Create Service" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
+		<BlockViewer text="Json" :header="props.title||'Create Service'" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
 			<template #actions>
+				<Button class="mr-2" severity="secondary" v-if="!!props.pid" label="Cancel" size="small" @click="cancel"/>
 				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 			</template>
 			<Loading v-if="loading" />

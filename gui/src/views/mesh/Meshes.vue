@@ -160,7 +160,12 @@ const openEditor = () => {
 	    </TabPanel>
 	</TabView>
 	<Dialog :closable="false" class="noheader" v-model:visible="visibleEditor" modal header="Edit Mesh" :style="{ width: '90%' }">
-		<MeshJoin title="Edit Mesh" v-if="selectedMesh" :pid="selectedMesh?.name" @save="join" @cancel="() => visibleEditor=false"/>
+		<MeshJoin 
+			title="Edit Mesh" 
+			v-if="selectedMesh" 
+			:pid="selectedMesh?.name" 
+			@save="join" 
+			@cancel="() => visibleEditor=false"/>
 	</Dialog>
 </template>
 
