@@ -40,6 +40,14 @@ export default class PipyProxyService {
 			return request(`/api/meshes/${mesh}/services`);
 		}
 	}
+	getService({
+		mesh,
+		name,
+		proto,
+		ep,
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/services/${proto}/${name}`);
+	}
 	createService({
 		mesh,
 		ep,

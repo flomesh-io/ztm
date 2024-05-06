@@ -38,7 +38,11 @@ onActivated(()=>{
 		getPorts();
 	}
 })
-const deleteService = (service) => {
+const deleteService = () => {
+	const service = selectedService.value?.service;
+	if(!service){
+		return;
+	}
 	const ep = endpointMap.value[service.ep?.id]?.name|| 'Unnamed EP';
 	confirm.require({
 	    message: `Are you sure to delete ${service.name}(${ep}) service?`,
@@ -56,12 +60,18 @@ const deleteService = (service) => {
 						setTimeout(()=>{
 							getServices();
 						},1000)
+						
+						selectedService.value = null;
+						visibleEditor.value = false;
 					})
 					.catch(err => {
 						console.log('Request Failed', err)
 						setTimeout(()=>{
 							getServices();
 						},1000)
+						
+						selectedService.value = null;
+						visibleEditor.value = false;
 					}); 
 	    },
 	    reject: () => {
@@ -168,6 +178,8 @@ const active = ref(0);
 const save = () => {
 	active.value = 0;
 	getServices();
+	selectedService.value = null;
+	visibleEditor.value = false;
 }
 const visiblePort = ref(false)
 const selectedService = ref(null);
@@ -185,6 +197,37 @@ const mappingPort = ({service, ep, lb}) => {
 const savePort = () => {
 	visiblePort.value = false;
 	getPorts();
+}
+
+const actionMenu = ref();
+const actions = ref([
+    {
+        label: 'Actions',
+        items: [
+            {
+                label: 'Edit',
+                icon: 'pi pi-pencil',
+								command: () => {
+									openEditor()
+								}
+            },
+            {
+                label: 'Delete',
+                icon: 'pi pi-trash',
+								command: () => {
+									deleteService()
+								}
+            }
+        ]
+    }
+]);
+const showAtionMenu = (event, svc) => {
+	selectedService.value = svc;
+	actionMenu.value[0].toggle(event);
+};
+const visibleEditor = ref(false);
+const openEditor = () => {
+	visibleEditor.value = true;
 }
 </script>
 
@@ -268,9 +311,13 @@ const savePort = () => {
 														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
 															<i class="pi pi-circle text-primary-500 text-xl"></i>
 														</div>
-														<div v-tooltip.top="'Delete'" @click="deleteService(service)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
-															<i class="pi pi-trash text-gray-500 text-xl"></i>
+														<div @click="showAtionMenu($event, {service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
+															<i class="pi pi-ellipsis-v text-gray-500 text-xl"></i>
 														</div>
+														<Menu ref="actionMenu" :model="actions" :popup="true" />
+													<!-- 	
+														<Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
+														 -->
 												  </div>
 												</div>
 											</div>
@@ -305,9 +352,21 @@ const savePort = () => {
 			:endpoint="selectedMesh?.agent?.id" 
 			:endpoints="endpoints"
 			:targetEndpoints="targetEndpoints"
+			:proto="selectedService?.service?.protocol"
 			:service="selectedService?.service?.name" 
 			:servicePort="selectedService?.service?.port"
 			:targetEndpoint="selectedService?.ep"/>
+	</Dialog>
+	<Dialog :closable="false" class="noheader" v-model:visible="visibleEditor" modal header="Edit Service" :style="{ width: '90%' }">
+		<ServiceCreate 
+			title="Edit Service" 
+			v-if="selectedService" 
+			:mesh="selectedMesh?.name" 
+			:pid="selectedService?.service?.name" 
+			:ep="selectedService?.ep?.id" 
+			:proto="selectedService?.service?.protocol"
+			@save="join" 
+			@cancel="() => visibleEditor=false"/>
 	</Dialog>
 </template>
 
