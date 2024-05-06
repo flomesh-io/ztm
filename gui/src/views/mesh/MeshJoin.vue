@@ -7,8 +7,8 @@ import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
 const store = useStore();
 import _ from "lodash"
-
-const emits = defineEmits(['save']);
+const props = defineProps(['pid','title'])
+const emits = defineEmits(['save','cancel']);
 const route = useRoute();
 const toast = useToast();
 const pipyProxyService = new PipyProxyService();
@@ -22,39 +22,29 @@ const placeholder = ref({
 	ca:`-----BEGIN CERTIFICATE-----`,
 	p:`-----BEGIN RSA PRIVATE KEY-----`
 })
-const config = ref({
+
+const newConfig = {
 	name: "",
 	ca: "",
 	agent: {
-		name: user.value.id,
+		name: "",
 		certificate: "",
 		privateKey: "",
 	},
 	bootstraps: []
-});
-const newConfig = () => {
-	config.value = {
-		name: "",
-		ca: "",
-		agent: {
-			name: user.value.id,
-			certificate: "",
-			privateKey: "",
-		},
-		bootstraps: []
-	}
 }
+const config = ref(newConfig);
 
 const enabled = computed(() => {
 	return config.value.name.length>0 
 	&& config.value.agent.certificate.length>0 
 	&& config.value.ca.length>0 
-	&& config.value.agent.privateKey.length>0 
+	&& config.value.agent?.privateKey?.length>0 
 	&& config.value.bootstraps.length>0;
 });
 const commit = () => {
 	const joinName = config.value.name;
-	const saveData = _.cloneDeep(config.value)
+	const saveData = _.cloneDeep(config.value);
 	delete saveData.name;
 	loading.value = true;
 	pipyProxyService.joinMesh(joinName, saveData)
@@ -63,7 +53,8 @@ const commit = () => {
 			if(!!res.name){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
 				emits("save", config.value);
-				newConfig();
+				config.value = newConfig;
+				config.value.agent.name = user.value.id;
 			} else{
 				toast.add({ severity: 'error', summary:'Tips', detail: 'Join Failed.', life: 3000 });
 			}
@@ -74,10 +65,32 @@ const commit = () => {
 		}); 
 }
 onMounted(() => {
+	if(!!props.pid){
+		loaddata()
+	} else {
+		config.value = newConfig;
+		config.value.agent.name = user.value.id;
+	}
 });
 const home = ref({
     icon: 'pi pi-desktop'
 });
+
+const loaddata = () => {
+	loading.value = true;
+	pipyProxyService.getMesh(props.pid)
+		.then(res => {
+			console.log(res);
+			loading.value = false;
+			config.value = res;
+		})
+		.catch(err => {
+			loading.value = false;
+		}); 
+}
+const cancel = () => {
+	emits("cancel");
+}
 </script>
 
 <template>
@@ -85,8 +98,9 @@ const home = ref({
 		<Breadcrumb :home="home" :model="[{label:route.params?.id}]" />
 	</div>
 	<div >
-		<BlockViewer text="Json" header="Join Mesh" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
+		<BlockViewer text="Json" :header="props.title||'Join Mesh'" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
 			<template #actions>
+				<Button class="mr-2" severity="secondary" v-if="!!props.pid" label="Cancel" size="small" @click="cancel"/>
 				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 			</template>
 			<Loading v-if="loading" />

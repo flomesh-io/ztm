@@ -39,7 +39,11 @@ const loaddata = () => {
 			console.log('Request Failed', err)
 		}); 
 }
-const deleteMesh = (name) => {
+const deleteMesh = () => {
+	const name = selectedMesh.value?.name;
+	if(!name){
+		return
+	}
 	confirm.require({
 	    message: `Are you sure to exit ${decodeURI(name)} ?`,
 	    header: 'Tips',
@@ -51,12 +55,16 @@ const deleteMesh = (name) => {
 						setTimeout(()=>{
 							loaddata();
 						},1000);
+						selectedMesh.value = null;
+						visibleEditor.value = false;
 					})
 					.catch(err => {
 						console.log('Request Failed', err)
 						setTimeout(()=>{
 							loaddata();
 						},1000);
+						selectedMesh.value = null;
+						visibleEditor.value = false;
 					}); 
 	    },
 	    reject: () => {
@@ -73,11 +81,44 @@ const join = () => {
 	setTimeout(()=>{
 		loaddata();
 	},1000);
+	selectedMesh.value = null;
+	visibleEditor.value = false;
+}
+
+const selectedMesh = ref();
+const actionMenu = ref();
+const actions = ref([
+    {
+        label: 'Actions',
+        items: [
+            {
+                label: 'Edit',
+                icon: 'pi pi-pencil',
+								command: () => {
+									openEditor()
+								}
+            },
+            {
+                label: 'Leave',
+                icon: 'pi pi-trash',
+								command: () => {
+									deleteMesh()
+								}
+            }
+        ]
+    }
+]);
+const showAtionMenu = (event, mesh) => {
+	selectedMesh.value = mesh;
+	actionMenu.value[0].toggle(event);
+};
+const visibleEditor = ref(false);
+const openEditor = () => {
+	visibleEditor.value = true;
 }
 </script>
 
 <template>
-	
 	
 	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
 	    <TabPanel>
@@ -100,18 +141,8 @@ const join = () => {
 															</span>
 															<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
 	                       </div>
-	                       <div v-tooltip="'Leave'" @click="deleteMesh(mesh.name)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
-	                           <i class="pi pi-trash text-gray-500 text-xl"></i>
-	                       </div>
-<!-- 	       								<div v-tooltip="'Revoke'" @click="changeStatus(mesh, 3)" v-else-if="mesh.scope == 'Private'" class="pointer flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-	       								    <i class="pi pi-spin pi-spinner text-purple-500 text-xl"></i>
-	       								</div> -->
-											<!-- 	<div v-badge.danger="'3'" v-tooltip="'Subscriptions'" @click="clients" class="mr-3 pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
-													<i class="pi pi-user text-gray-500 text-xl"></i>
-												</div>
-												<div v-tooltip="'Manage'" @click="newHub" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
-													<i class="pi pi-pencil text-gray-500 text-xl"></i>
-												</div> -->
+												 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
+												 <Menu ref="actionMenu" :model="actions" :popup="true" />
 	                   </div>
 	                    <span class="text-500">Hubs: </span>
 											<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
@@ -128,6 +159,9 @@ const join = () => {
 	      <MeshJoin @save="join"/>
 	    </TabPanel>
 	</TabView>
+	<Dialog :closable="false" class="noheader" v-model:visible="visibleEditor" modal header="Edit Mesh" :style="{ width: '90%' }">
+		<MeshJoin title="Edit Mesh" v-if="selectedMesh" :pid="selectedMesh?.name" @save="join" @cancel="() => visibleEditor=false"/>
+	</Dialog>
 </template>
 
 <style scoped lang="scss">

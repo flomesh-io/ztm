@@ -592,3 +592,18 @@ pre.app-code code{
 fieldset{
 	min-inline-size:auto;
 }
+
+.p-button.p-button-icon-only{
+	height: 2.5rem;
+}
+.noheader.p-dialog{
+	border: none;
+}
+.noheader.p-dialog .p-dialog-header{
+	display: none;
+	
+}
+.noheader.p-dialog .p-dialog-content{
+	background-color: transparent;
+	padding: 0;
+}

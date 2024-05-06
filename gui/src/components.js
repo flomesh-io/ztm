@@ -95,7 +95,7 @@ import BlockViewer from '@/components/BlockViewer.vue';
 import ChipList from '@/components/ChipList.vue';
 import Loading from '@/components/Loading.vue';
 import Status from '@/components/Status.vue';
-import Card from '@/components/common/FloatField.vue';
+import Card from '@/components/common/Card.vue';
 import FloatField from '@/components/common/FloatField.vue';
 import HiddenField from '@/components/common/HiddenField.vue';
 import { Field, Form, ErrorMessage } from 'vee-validate';

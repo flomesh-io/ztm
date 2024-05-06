@@ -24,6 +24,9 @@ export default class PipyProxyService {
 	getMeshes() {
 		return request('/api/meshes');
 	}
+	getMesh(name) {
+		return request(`/api/meshes/${name}`);
+	}
 	joinMesh(name, config) {
 		return request(`/api/meshes/${name}`,"POST",config);
 	}
