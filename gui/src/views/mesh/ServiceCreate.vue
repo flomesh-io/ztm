@@ -60,15 +60,9 @@ const commit = () => {
 	})
 		.then(res => {
 			loading.value = false;
-			console.log('commit service:')
-			console.log(res)
-			if(!!res.name){
-				toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
-				emits("save", config.value);
-				config.value = newConfig;
-			} else{
-				toast.add({ severity: 'error', summary:'Tips', detail: 'Create Failed.', life: 3000 });
-			}
+			toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
+			emits("save", config.value);
+			config.value = newConfig;
 		})
 		.catch(err => {
 			loading.value = false;
