@@ -117,7 +117,7 @@ const cancel = () => {
 													<i class="pi pi-bookmark"/>
 												</span>
 												<span class="ml-2 font-medium">
-													<InputText placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
+													<InputText :disabled="!!props.pid" placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
 												</span>
 										</Chip>
 									</div>

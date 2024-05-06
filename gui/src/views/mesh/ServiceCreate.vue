@@ -128,7 +128,7 @@ const cancel = () => {
 											<i class="pi pi-bookmark"/>
 										</span>
 								    <span class="ml-2 font-medium">
-											<InputText placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
+											<InputText :disabled="!!props.pid" placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
 										</span>
 								</Chip>
 							</div>
@@ -143,6 +143,7 @@ const cancel = () => {
 										<span class="font-medium">
 											<MeshSelector 
 												:full="true" 
+												 :disabled="!!props.pid"
 												innerClass="flex" 
 												@select="select"/>
 										</span>
@@ -158,12 +159,13 @@ const cancel = () => {
 										</span>
 										<span class="font-medium">
 											<Dropdown
-													v-model="config.ep" 
-													:options="endpoints" 
-													optionLabel="name" 
-													optionValue="id"
-													placeholder="Endpoint" 
-													class="flex"></Dropdown>
+											 :disabled="!!props.pid"
+												v-model="config.ep" 
+												:options="endpoints" 
+												optionLabel="name" 
+												optionValue="id"
+												placeholder="Endpoint" 
+												class="flex"></Dropdown>
 										</span>
 								</Chip>
 							</div>
@@ -173,14 +175,14 @@ const cancel = () => {
 							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
 								<Chip class="pl-0 pr-3">
 										<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<RadioButton v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
+											<RadioButton  :disabled="!!props.pid" v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
 										</span>
 										<span class="ml-2 font-medium">TCP</span>
 								</Chip>
 								
 								<Chip class="ml-2 pl-0 pr-3">
 										<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-											<RadioButton v-model="config.protocol" inputId="scopeType3" name="scopeType" value="udp" />
+											<RadioButton  :disabled="!!props.pid" v-model="config.protocol" inputId="scopeType3" name="scopeType" value="udp" />
 										</span>
 										<span class="ml-2 font-medium">UDP</span>
 								</Chip>
