@@ -3,17 +3,17 @@ import store from '@/store';
 const remove = (accept, cancel) => {
 	const confirm = store.getters["notice/confirm"];
 	confirm.require({
-		message: `确定要删除吗 ?`,
-		header: '提示',
+		message: `Are you sure you want to delete it?`,
+		header: 'Tips',
 		icon: 'pi pi-exclamation-triangle',
 		rejectProps: {
-				label: '取消',
+				label: 'Cancel',
 				severity: 'secondary',
 				outlined: true
 		},
 		acceptProps: {
 				severity: 'danger',
-				label: '删除'
+				label: 'Delete'
 		},
 		accept: () => {
 			accept()
@@ -27,16 +27,16 @@ const custom = (msg, accept, cancel) => {
 	const confirm = store.getters["notice/confirm"];
 	confirm.require({
 		message: msg,
-		header: '提示',
+		header: 'Tips',
 		icon: 'pi pi-exclamation-triangle',
 		rejectProps: {
-				label: '取消',
+				label: 'Cancel',
 				severity: 'secondary',
 				outlined: true
 		},
 		acceptProps: {
 				severity: 'danger',
-				label: '确定'
+				label: 'Ok'
 		},
 		accept: () => {
 			accept()
