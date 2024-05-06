@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import HubApplications from './HubApplications.vue';
 const router = useRouter();
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 const pipyProxyService = new PipyProxyService();
 
 const clients = ref([]);

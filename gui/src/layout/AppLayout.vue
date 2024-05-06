@@ -5,7 +5,8 @@ import AppFooter from './AppFooter.vue';
 import AppSidebar from './AppSidebar.vue';
 import AppConfig from './AppConfig.vue';
 import { useLayout } from '@/layout/composables/layout';
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 
 const { layoutConfig, layoutState, isSidebarActive } = useLayout();
 

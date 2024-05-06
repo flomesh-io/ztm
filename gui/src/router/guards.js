@@ -7,7 +7,7 @@ import "nprogress/nprogress.css";
 import { useToast } from "primevue/usetoast";
 import { getCurrent, LogicalSize } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import store from "@/store";
+import { useStore } from 'vuex';
 NProgress.configure({ showSpinner: true });
 
 const pipyProxyService = new PipyProxyService();
@@ -51,12 +51,12 @@ const resize = (width,height,resizable) => {
  * @param options
  */
 const loginGuard = (to, from, next, options) => {
-	const $store = options.store;
   const { toast } = options;
+	const store = useStore();
   if (!loginIgnore.includes(to) && !checkAuthorization()) {
 		const toast = useToast();
 		toast.add({ severity: 'warn', summary: 'Tips', detail: 'Login is invalid, please login again', life: 3000 });
-		$store.commit('account/setRedirect', to.path);
+		store.commit('account/setRedirect', to.path);
 		resize(408,455,false);
     next({ path: "/login" });
   } else if(to.path == "/login"){

@@ -7,7 +7,8 @@ import MeshSelector from './common/MeshSelector.vue'
 import PortMaping from './PortMaping.vue'
 import { useConfirm } from "primevue/useconfirm";
 import freeSvg from "@/assets/img/free.svg";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 
 const confirm = useConfirm();
 const router = useRouter();

@@ -9,7 +9,8 @@ import { useRouter } from 'vue-router'
 import { resetRoutes } from "@/router/index";
 import XeyeSvg from "@/assets/img/logo.svg";
 import { isAdmin } from "@/service/common/authority-utils";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 
 
 const router = useRouter()

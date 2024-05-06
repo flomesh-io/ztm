@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';

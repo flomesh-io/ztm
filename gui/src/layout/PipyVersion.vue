@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import PipySvg from "@/assets/img/pipy-white.png";
 import ShellService from '@/service/ShellService';
 

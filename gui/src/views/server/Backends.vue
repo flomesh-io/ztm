@@ -1,7 +1,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import { useToast } from "primevue/usetoast";
 import PipyProxyService from '@/service/PipyProxyService';
 const pipyProxyService = new PipyProxyService();

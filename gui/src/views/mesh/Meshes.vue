@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshJoin from './MeshJoin.vue';
 import { useConfirm } from "primevue/useconfirm";
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import freeSvg from "@/assets/img/free.svg";
 const router = useRouter();
 const confirm = useConfirm();

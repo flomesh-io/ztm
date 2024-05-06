@@ -3,7 +3,8 @@ import { ref, onMounted,onActivated, computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import { useConfirm } from "primevue/useconfirm";
 import freeSvg from "@/assets/img/free.svg";
 

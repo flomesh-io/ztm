@@ -4,7 +4,8 @@ import TerminalService from "primevue/terminalservice";
 import PipyProxyService from '@/service/PipyProxyService';
 const pipyProxyService = new PipyProxyService();
 import { useRoute } from 'vue-router'
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 import { mkConfig, generateCsv, download } from "export-to-csv";
 import freeSvg from "@/assets/img/free.svg";
 const route = useRoute();

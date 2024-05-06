@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted,onActivated, computed } from "vue";
 import PipyProxyService from '@/service/PipyProxyService';
-import store from "@/store";
+import { useStore } from 'vuex';
+const store = useStore();
 const pipyProxyService = new PipyProxyService();
 const selected = ref(null);
 const props = defineProps({
