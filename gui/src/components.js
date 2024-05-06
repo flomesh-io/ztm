@@ -8,7 +8,6 @@ import BlockUI from 'primevue/blockui';
 import Button from 'primevue/button';
 import Breadcrumb from 'primevue/breadcrumb';
 import Calendar from 'primevue/calendar';
-import Card from 'primevue/card';
 import Chart from 'primevue/chart';
 import CascadeSelect from 'primevue/cascadeselect';
 import Carousel from 'primevue/carousel';
@@ -96,9 +95,17 @@ import BlockViewer from '@/components/BlockViewer.vue';
 import ChipList from '@/components/ChipList.vue';
 import Loading from '@/components/Loading.vue';
 import Status from '@/components/Status.vue';
+import Card from '@/components/common/FloatField.vue';
+import FloatField from '@/components/common/FloatField.vue';
+import HiddenField from '@/components/common/HiddenField.vue';
+import { Field, Form, ErrorMessage } from 'vee-validate';
 
 export function useComponent(app){
 	
+	
+	app.component('Field', Field);
+	app.component('Form', Form);
+	app.component('ErrorMessage', ErrorMessage);
 	app.component('Loading', Loading);
 	app.component('BlockViewer', BlockViewer);
 	app.component('Accordion', Accordion);
@@ -195,5 +202,6 @@ export function useComponent(app){
 	app.component('InputGroupAddon', InputGroupAddon);
 	app.component('ChipList', ChipList);
 	app.component('Status', Status);
-	
+	app.component('FloatField', FloatField);
+	app.component('HiddenField', HiddenField);
 }

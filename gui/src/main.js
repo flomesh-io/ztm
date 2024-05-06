@@ -9,6 +9,7 @@ import DialogService from 'primevue/dialogservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import { useComponent } from './components';
 import { useDirective } from './directives';
+import rulesReg from './rules/reg';
 import bootstrap from "@/bootstrap";
 import '@/assets/styles.scss';
 
