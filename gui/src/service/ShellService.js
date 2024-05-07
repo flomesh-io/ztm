@@ -35,8 +35,8 @@ export default class ShellService {
 		const db = await this.getDB();
 		const args = [
 			`${resourceDirPath}/_up_/_up_/agent/main.js`,
-			`--log-file=${resourceDirPath}/ztm.log`,
 			"--skip-unknown-arguments",
+			`--log-file=${resourceDirPath}/ztm.log`,
 			`--listen=${port}`,
 			`--database=${db}`,
 		];

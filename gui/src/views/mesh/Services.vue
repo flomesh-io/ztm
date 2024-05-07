@@ -365,7 +365,7 @@ const openEditor = () => {
 			:pid="selectedService?.service?.name" 
 			:ep="selectedService?.ep?.id" 
 			:proto="selectedService?.service?.protocol"
-			@save="join" 
+			@save="save" 
 			@cancel="() => visibleEditor=false"/>
 	</Dialog>
 </template>

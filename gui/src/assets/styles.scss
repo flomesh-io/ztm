@@ -93,8 +93,8 @@ $gutter: 1rem; //for primeflex grid system
 	color: #4b5563;
 }
 .app-top-bar .right-icon{
-	height: 50px;
-	line-height: 50px;
+	height: 50px !important;
+	line-height: 50px !important;
 	border-radius: 0;
 	width: 50px;
 	text-align: center;
@@ -340,6 +340,10 @@ pre.app-code code{
 	border-width: 0 3px 0 0 !important;
 	border-color: var(--primary-color) !important;
 	border-style: solid !important;
+}
+.tabview-vertical .p-tabview-nav li.p-highlight .p-tabview-nav-link:hover{
+	
+	border-color: var(--primary-color) !important;
 }
 
 .search-bar .p-dropdown{
