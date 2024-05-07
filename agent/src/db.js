@@ -104,7 +104,6 @@ function delMesh(name) {
 
 function recordToService(rec) {
   return {
-    mesh: rec.mesh,
     name: rec.name,
     protocol: rec.protocol,
     host: rec.host,
@@ -176,7 +175,6 @@ function delService(mesh, proto, name) {
 
 function recordToPort(rec) {
   return {
-    mesh: rec.mesh,
     protocol: rec.protocol,
     listen: {
       ip: rec.ip,
