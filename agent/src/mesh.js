@@ -93,6 +93,7 @@ export default function (config) {
     //
 
     var $response
+    var $serviceListTime
 
     // Long-lived agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
@@ -109,6 +110,7 @@ export default function (config) {
             onState: function (conn) {
               if (conn.state === 'connected') {
                 logInfo(`Connected to hub ${address}`)
+                meshErrors.length = 0
                 connections.add(conn)
                 if (serviceList) updateServiceList(serviceList)
               } else if (conn.state === 'closed') {
@@ -156,38 +158,43 @@ export default function (config) {
     pipeline($=>$
       .onStart(new Data)
       .repeat(() => new Timeout(1).wait().then(() => !closed)).to($=>$
-        .pipe(
-          () => {
-            if (serviceListUpdateTime > serviceListSendTime) {
-              serviceListSendTime = serviceListUpdateTime
-              return 'send'
-            }
-            return 'wait'
-          }, {
-            'wait': ($=>$.replaceStreamStart(new StreamEnd)),
-            'send': ($=>$.replaceStreamStart(
-              () => requestHub.spawn(
-                new Message(
-                  {
-                    method: 'POST',
-                    path: `/api/services`,
-                  },
-                  JSON.encode({
-                    time: serviceListUpdateTime,
-                    services: serviceList || [],
-                  })
-                )
-              ).then(
-                function (res) {
-                  if (!res || res.head.status !== 201) {
-                    serviceListUpdateTime = Date.now()
+        .forkJoin().to($=>$
+          .pipe(
+            () => {
+              if (serviceListUpdateTime > serviceListSendTime) {
+                $serviceListTime = serviceListUpdateTime
+                return 'send'
+              }
+              return 'wait'
+            }, {
+              'wait': ($=>$.replaceStreamStart(new StreamEnd)),
+              'send': ($=>$.replaceStreamStart(
+                () => requestHub.spawn(
+                  new Message(
+                    {
+                      method: 'POST',
+                      path: `/api/services`,
+                    },
+                    JSON.encode({
+                      time: $serviceListTime,
+                      services: serviceList || [],
+                    })
+                  )
+                ).then(
+                  function (res) {
+                    if (res && res.head.status === 201) {
+                      if (serviceListSendTime < $serviceListTime) {
+                        serviceListSendTime = $serviceListTime
+                      }
+                    }
+                    return new StreamEnd
                   }
-                  return new StreamEnd
-                }
-              )
-            )),
-          }
+                )
+              )),
+            }
+          )
         )
+        .replaceStreamStart(new StreamEnd)
       )
     ).spawn()
 
