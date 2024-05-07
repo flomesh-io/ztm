@@ -94,8 +94,12 @@ function getEndpoint(mesh, ep) {
 function allServices(mesh, ep) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve([])
-  if (ep && ep !== m.config.agent.id) {
-    return m.remoteQueryServices(ep)
+  if (ep) {
+    if (ep === m.config.agent.id) {
+      return Promise.resolve(db.allServices(mesh))
+    } else {
+      return m.remoteQueryServices(ep)
+    }
   } else {
     return m.discoverServices(ep).then(
       function (list) {
@@ -156,7 +160,7 @@ function setService(mesh, ep, proto, name, service) {
     m.publishService(proto, name, s.host, s.port, s.users)
     return Promise.resolve(s)
   } else {
-    return m.remotePublishService(ep, proto, name, service.host, service.port)
+    return m.remotePublishService(ep, proto, name, service.host, service.port, service.users)
   }
 }
 

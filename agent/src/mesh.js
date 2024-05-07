@@ -657,11 +657,11 @@ export default function (config) {
     )
   }
 
-  function remotePublishService(ep, proto, name, host, port) {
+  function remotePublishService(ep, proto, name, host, port, users) {
     return selectHubWithThrow(ep).then(
       (hub) => httpAgents.get(hub).request(
         'POST', `/api/forward/${ep}/services/${proto}/${name}`,
-        {}, JSON.encode({ host, port })
+        {}, JSON.encode({ host, port, users })
       ).then(
         res => {
           remoteCheckResponse(res, 201)
