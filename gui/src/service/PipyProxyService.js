@@ -54,10 +54,11 @@ export default class PipyProxyService {
 		name, 
 		proto,
 		port,
-		host
+		host,
+		users
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/services/${proto}/${name}`,"POST", {
-			port, host
+			port, host, users
 		});
 	}
 	getPorts({

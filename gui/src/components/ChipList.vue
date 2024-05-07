@@ -2,20 +2,24 @@
 import { ref, watch } from 'vue';
 
 const props = defineProps({
-    list: {
-        type: Array,
-        default: ()=>{
-					return [];
-				}
-    },
-    placeholder: {
-        type: String,
-        default: 'Add'
-    },
-    icon: {
-        type: String,
-        default: 'pi-pencil'
-    },
+	list: {
+			type: Array,
+			default: ()=>{
+				return [];
+			}
+	},
+	direction: {
+			type: String,
+			default: 'h'
+	},
+	placeholder: {
+			type: String,
+			default: 'Add'
+	},
+	icon: {
+			type: String,
+			default: 'pi-pencil'
+	},
 		
 });
 
@@ -46,10 +50,21 @@ const removeTag = (index) => {
 </script>
 
 <template>
-    <Chip class="mr-2 custom-chip" v-for="(tag,tagidx) in list">
+    <Chip v-if="props.direction == 'h'" class="mr-2 custom-chip" v-for="(tag,tagidx) in list">
 			{{tag}}
 			<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 		</Chip>
+		<div v-else v-for="(tag,tagidx) in list">
+			<Chip class="pl-0 custom-chip">
+				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+					<i class="pi" :class="icon"/>
+				</span>
+				<span class="ml-2 font-medium">
+					{{tag}}
+					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
+				</span>
+			</Chip>
+		</div>
     <Chip class="pl-0 pr-3">
         <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
     			<i class="pi" :class="icon"/>
