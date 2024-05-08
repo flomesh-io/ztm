@@ -38,6 +38,18 @@
           "args": [
             {
               "validator": ".+"
+            },
+            {
+              "validator": ".+"
+            },
+            {
+              "validator": ".+"
+            },
+            {
+              "validator": ".+"
+            },
+            {
+              "validator": ".+"
             }
           ],
           "sidecar": true
