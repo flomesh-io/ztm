@@ -19,7 +19,7 @@ var opt = options({
   },
 })
 
-if (options['--help']) {
+if (opt['--help']) {
   println('Options:')
   println('  -h, --help      Show available options')
   println('  -r, --reset     Delete the local database and start with a new one')

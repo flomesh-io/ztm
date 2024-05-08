@@ -16,7 +16,7 @@ var opt = options({
   },
 })
 
-if (options['--help']) {
+if (opt['--help']) {
   println('Options:')
   println('  -h, --help      Show available options')
   println('  -d, --database  Pathname of the database file (default: ~/ztm-ca.db)')
