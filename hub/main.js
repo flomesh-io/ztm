@@ -16,7 +16,7 @@ var opt = options({
   },
 })
 
-if (options['--help']) {
+if (opt['--help']) {
   println('Options:')
   println('  -h, --help    Show available options')
   println('  -l, --listen  Port number to listen (default: 0.0.0.0:8888)')
