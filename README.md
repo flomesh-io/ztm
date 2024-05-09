@@ -2,6 +2,10 @@
 
 ZTM is an open source network infrastructure software for running a ***decentralized*** network. It is built upon ***HTTP/2 tunnels*** and can run on ***any sort of IP networks*** such as LANs, containerized networks and the Internet, etc.
 
+## Quick Start
+
+[Quick Start Docs](docs/quickstart.md)
+
 ## Why ZTM?
 
 ZTM lays the foundation for building ***decentralized applications*** by providing a set of core capabilities including:
