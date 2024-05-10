@@ -15,6 +15,7 @@
         "width": 455,
         "height": 350,
         "resizable": false,
+				"fileDropEnabled": false,
         "fullscreen": false,
         "visible": true
       }
