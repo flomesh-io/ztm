@@ -611,3 +611,16 @@ fieldset{
 	background-color: transparent;
 	padding: 0;
 }
+
+.small.p-button.p-button-icon-only,.p-button-sm.p-button.p-button-icon-only{
+	font-size: 0.875rem;
+	width: 2.2rem;
+	height: 2.2rem;
+}
+.noheader-upload .p-fileupload-content{
+	border: none;
+	padding: 0;
+}
+.noheader-upload .p-fileupload-buttonbar{
+	display: none;
+}

@@ -125,14 +125,7 @@ const cancel = () => {
 							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
 									<div class="text-500 w-6 md:w-2 font-medium">CA Certificate</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel"  >
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-shield" />
-												</span>
-												<span class="font-medium">
-													<Textarea :placeholder="placeholder.ca" v-model="config.ca" :autoResize="false" rows="8" />
-												</span>
-										</Chip>	
+										<CertificateUploder :placeholder="placeholder.ca" v-model="config.ca"/>
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
@@ -166,28 +159,13 @@ const cancel = () => {
 							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
 									<div class="text-500 w-6 md:w-2 font-medium">Certificate</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel"  >
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-shield" />
-												</span>
-												<span class="font-medium">
-													<Textarea :placeholder="placeholder.c" v-model="config.agent.certificate" :autoResize="false" rows="8" />
-												</span>
-										</Chip>	
+										<CertificateUploder :placeholder="placeholder.c" v-model="config.agent.certificate"/>
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
 									<div class="text-500 w-6 md:w-2 font-medium">Private Key</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										
-										<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-key" />
-												</span>
-												<span class="font-medium">
-													<Textarea :placeholder="placeholder.p" v-model="config.agent.privateKey" :autoResize="false" rows="5"  />
-												</span>
-										</Chip>
+										<CertificateUploder :placeholder="placeholder.p" v-model="config.agent.privateKey"/>
 									</div>
 							</li>
 							

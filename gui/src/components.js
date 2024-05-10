@@ -98,10 +98,10 @@ import Status from '@/components/Status.vue';
 import Card from '@/components/common/Card.vue';
 import FloatField from '@/components/common/FloatField.vue';
 import HiddenField from '@/components/common/HiddenField.vue';
+import CertificateUploder from '@/components/common/CertificateUploder.vue';
 import { Field, Form, ErrorMessage } from 'vee-validate';
 
 export function useComponent(app){
-	
 	
 	app.component('Field', Field);
 	app.component('Form', Form);
@@ -204,4 +204,5 @@ export function useComponent(app){
 	app.component('Status', Status);
 	app.component('FloatField', FloatField);
 	app.component('HiddenField', HiddenField);
+	app.component('CertificateUploder', CertificateUploder);
 }
