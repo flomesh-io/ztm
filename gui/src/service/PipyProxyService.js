@@ -28,6 +28,9 @@ export default class PipyProxyService {
 		return request(`/api/meshes/${name}`);
 	}
 	joinMesh(name, config) {
+		if(config.bootstraps){
+			config.bootstraps = config.bootstraps.filter(n=>!!n)
+		}
 		return request(`/api/meshes/${name}`,"POST",config);
 	}
 	getServices({
@@ -58,7 +61,7 @@ export default class PipyProxyService {
 		users
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/services/${proto}/${name}`,"POST", {
-			port, host, users
+			port, host, users:users?users.filter(n=>!!n):null
 		});
 	}
 	getPorts({

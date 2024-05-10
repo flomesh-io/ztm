@@ -40,7 +40,8 @@ const enabled = computed(() => {
 	&& config.value.agent.certificate.length>0 
 	&& config.value.ca.length>0 
 	&& config.value.agent?.privateKey?.length>0 
-	&& config.value.bootstraps.length>0;
+	&& config.value.bootstraps.length>0 
+	&& !!config.value.bootstraps[0];
 });
 const commit = () => {
 	const joinName = config.value.name;
