@@ -131,8 +131,8 @@ const typeOk = () => {
         <div class="w-full">
           <div class="flex flex-wrap justify-content-between align-items-center flex-1 gap-2" v-if="!props.modelValue">
 						<div class="flex gap-2">
-                <Button size="small" v-tooltip="'Select'" @click="chooseCallback" icon="pi pi-plus" rounded severity="contrast"></Button>
-                <Button size="small" v-tooltip="'Type'" @click="toggle" icon="pi pi-pencil" rounded  severity="success"></Button>
+                <Button size="small" v-tooltip="'Select'" @click="chooseCallback" icon="pi pi-plus" rounded severity="warn"></Button>
+                <Button size="small" v-tooltip="'Type'" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
 								<OverlayPanel ref="op">
 									<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel w-30rem"  >
 											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
