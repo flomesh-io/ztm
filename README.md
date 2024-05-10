@@ -2,6 +2,8 @@
 
 ZTM is an open source network infrastructure software for running a ***decentralized*** network. It is built upon ***HTTP/2 tunnels*** and can run on ***any sort of IP networks*** such as LANs, containerized networks and the Internet, etc.
 
+## Quick Start
+![How to access my home Linux from office macOS by ztm?](https://github.com/flomesh-io/ztm/wiki/HOWTO:-How-to-access-my-home-Linux-from-office-macOS-by-ztm%3F)
 ## Why ZTM?
 
 ZTM lays the foundation for building ***decentralized applications*** by providing a set of core capabilities including:
