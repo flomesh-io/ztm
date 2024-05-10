@@ -624,3 +624,7 @@ fieldset{
 .noheader-upload .p-fileupload-buttonbar{
 	display: none;
 }
+.noheader-upload.p-fileupload .p-fileupload-content.p-fileupload-highlight{
+	background-color: transparent !important;
+	display: none !important;
+}
