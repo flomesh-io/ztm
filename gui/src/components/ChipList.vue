@@ -20,42 +20,52 @@ const props = defineProps({
 			type: String,
 			default: 'pi-pencil'
 	},
-		
 });
-
-const tags = ref(props.list);
-watch(()=>{
-	return props.list
-},()=>{
-	tags.value = props.list;
-},{
-	deep:true
-});
-const newTag = ref("");
-const addTag = () => {
-	if(!!newTag.value){
-		tags.value.push(newTag.value);
-		newTag.value = "";
-		emits("update:list",tags.value);
-		emits("change",tags.value);
+watch(() => props.list, () =>{
+	if(!props.list){
+		emits("update:list",[]);
 	}
+	if(props.list.length == 0){
+		props.list.push('')
+	}
+},{
+	deep:true,
+	immediate:true
+})
+const addTag = (tag) => {
+	if(!!tag){
+		props.list.push("");
+	}
+	emits("change",props.list);
 }
-
 const emits = defineEmits(['change','update:list']);
 const removeTag = (index) => {
-	tags.value.splice(index,1);
-	emits("update:list",tags.value);
-	emits("change",tags.value);
+	props.list.splice(index,1);
+	emits("change",props.list);
+}
+const typing = (e,idx) => {
+	props.list[idx] = e.target.value;
 }
 </script>
 
 <template>
-    <Chip v-if="props.direction == 'h'" class="mr-2 custom-chip" v-for="(tag,tagidx) in list">
-			{{tag}}
-			<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
-		</Chip>
-		<div v-else v-for="(tag,tagidx) in list">
-			<Chip class="pl-0 custom-chip">
+		<span v-if="props.direction == 'h'" v-for="(tag,tagidx) in props.list">
+			<Chip v-if="tagidx<props.list.length - 1" class="mr-2 custom-chip" >
+				{{tag}}
+				<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
+			</Chip>
+			<Chip v-else class="pl-0 pr-3">
+					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+						<i class="pi" :class="icon"/>
+					</span>
+					<span class="ml-2 font-medium">
+						<InputText @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
+						<i class="pi pi-arrow-down-left" />
+					</span>
+			</Chip>
+		</span>
+		<div v-else v-for="(tag,tagidx) in props.list">
+			<Chip v-if="tagidx<props.list.length - 1" class="pl-0 custom-chip">
 				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 					<i class="pi" :class="icon"/>
 				</span>
@@ -64,16 +74,16 @@ const removeTag = (index) => {
 					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 				</span>
 			</Chip>
+			<Chip v-else class="pl-0 pr-3">
+					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+						<i class="pi" :class="icon"/>
+					</span>
+					<span class="ml-2 font-medium">
+						<InputText @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
+						<i class="pi pi-arrow-down-left" />
+					</span>
+			</Chip>
 		</div>
-    <Chip class="pl-0 pr-3">
-        <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-    			<i class="pi" :class="icon"/>
-    		</span>
-        <span class="ml-2 font-medium">
-    			<InputText @keyup.enter="addTag" :placeholder="placeholder" class="add-tag-input" :unstyled="true" v-model="newTag" type="text" />
-					<i class="pi pi-arrow-down-left" />
-				</span>
-    </Chip>
 </template>
 
 <style scoped lang="scss">
