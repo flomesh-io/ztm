@@ -34,8 +34,7 @@ const resize = (width,height,resizable) => {
 		invoke('plugin:window|set_size', {
 		    label,
 		    value: {
-					type: 'Logical',
-					data: {width,height}
+					'Logical': {width,height}
 				}
 		});
 	}

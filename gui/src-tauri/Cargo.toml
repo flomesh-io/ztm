@@ -17,14 +17,15 @@ tauri-build = { version = "2.0.0-beta", features = [] }
 # tauri = { version = "2.0.0-beta", features = ["devtools"] }
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri = { version = "2.0.0-beta", features = [] }
+tauri = { version = "=2.0.0-beta.19", features = [] }
 tauri-plugin-shell = "2.0.0-beta"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-process = "2.0.0-beta.3"
 tauri-plugin-http = "2.0.0-beta.3"
 tauri-plugin-os = "2.0.0-beta.3"
+tauri-plugin-fs = "=2.0.0-beta.7"
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
-tauri-plugin-cli = "2.0.0-beta.3"
+tauri-plugin-cli = "2.0.0-beta"
 
