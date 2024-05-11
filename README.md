@@ -2,8 +2,6 @@
 
 ZTM is an open source network infrastructure software for running a ***decentralized*** network. It is built upon ***HTTP/2 tunnels*** and can run on ***any sort of IP networks*** such as LANs, containerized networks and the Internet, etc.
 
-## Quick Start
-![How to access my home Linux from office macOS by ztm?](https://github.com/flomesh-io/ztm/wiki/HOWTO:-How-to-access-my-home-Linux-from-office-macOS-by-ztm%3F)
 ## Why ZTM?
 
 ZTM lays the foundation for building ***decentralized applications*** by providing a set of core capabilities including:
@@ -31,77 +29,64 @@ ZTM is written in ***PipyJS***, a JavaScript dialect designed for [***Pipy***](h
 
 * **Portable**. Choose your CPU architecture: x86, ARM, MIPS, RISC-V, LoongArch... Choose your operating system: Linux, Windows, macOS, FreeBSD, Android... ZTM runs anywhere.
 
-## Build
+## Quick Start
 
-### Install Pipy
+### Download
 
-If you have the latest version of [***Pipy***](https://github.com/flomesh-io/pipy) installed on your computer already, you can skip this step. If not, or if you're unsure whether your installed ***Pipy*** version is compatible to ***ZTM***, follow these steps to build Pipy from source.
+The easiest way to get started is download the latest binary release of ZTM from our [release page](https://github.com/flomesh-io/ztm/releases). But if you prefer to have your own build from the source, follow the instructions in [Build](docs/Build.md).
 
-First, make sure you have the following tools installed if you are running a Unix-like system (including Linux and macOS):
+### Setup
 
-* Clang (version 5.0 or above)
-* CMake (version 3.1 or above)
+A common setup consists of 3 nodes: one node running the *CA* and a *hub*, the other two nodes running two *agents* who are to communicate with each other.
 
-Or if you are running Windows, the following are required:
-
-* Microsoft Visual Studio 2022 or above
-* CMake (version 3.1 or above)
-* NASM (version 2.16 or above)
-
-Second, download the proper version of source code by using the Git submodule that is already included in this project:
-
-```sh
-git submodule update --init
 ```
+                       Data Center
+               +------------------------+
+               |          CA            |
+               | (state in ~/ztm-ca.db) |
+               +------------------------+
+                      HTTP | Port 9999
+                           |
+               +------------------------+
+               |          Hub           |
+               |      (stateless)       |
+               +------------------------+
+             HTTPS /   Port 8888   \ HTTPS
+  ----------------/-----------------\----------------
+                 /      Firewall     \
+  --------------/---------------------\--------------
+               /                       \
+              /        Internet         \
+             /                           \
+  -------------------------|-------------------------
+          Firewall         |        Firewall
+  -------------------------|-------------------------
+            |              |               |
+            |              |               |
+  +---------------------+  |  +---------------------+
+  |    Agent @ Home     |  |  |  Agent @ Workplace  |
+  | (state in ~/ztm.db) |  |  | (state in ~/ztm.db) |
+  +---------------------+  |  +---------------------+
+                           |
 
-Finally, enter the downloaded `pipy` folder, build and install it.
-
-For Unix-like systems such as Linux and macOS:
-
-```sh
-cd pipy
-make no-gui
-sudo make install
 ```
-
-For Windows, open *Developer Command Prompt for Visual Studio* and enter:
-
-```sh
-cd pipy
-build.cmd no-gui
-build.cmd install
-```
-
-> The last command `build.cmd install` can only be run as administrator. You might need to open *Developer Command Prompt for Visual Studio* as administrator before you execute it.
-
-### Build ZTM
-
-You need Node.js for building ZTM's GUI frontend. Once you have Node.js installed, building can be as simple as:
-
-```sh
-cd gui
-npm install
-npm run build
-```
-
-## Setup
 
 > We'll only cover the setup of CA and hubs on Linux, since that's where they are usually run - a cloud-hosted Linux virtual machine. Although technically, one can also run CA and hubs in a Windows box, it can be relatively less convenient due to lack of a few handy tools such as `curl`.
 >
 > For setup of endpoints, on the other hand, we mainly operate via the browser interface, so the procedure is consistant among different OSes.
 
-### Setup CA (Certificate Authority)
+#### Setup CA (Certificate Authority)
 
 Start the CA service:
 
 ```sh
-pipy ca/main.js
+pipy repo://ztm/ca
 ```
 
 > The default listening port is `127.0.0.1:9999`. The default location of database is `~/ztm-ca.db`. These settings can be changed by command-line options:
 >
 > ```sh
-> pipy ca/main.js -- --listen=127.0.0.1:1234 --database=~/my-data.db
+> pipy repo://ztm/ca --args --listen=127.0.0.1:1234 --database=~/my-data.db
 > ```
 
 Now a CA certificate is already generated and stored in the database. Retreive the CA certificate and save it to a file for later use:
@@ -125,42 +110,34 @@ curl http://localhost:9999/api/certificates/root | tee root.crt
 > curl http://localhost:9999/api/certificates/root -X DELETE
 > ```
 
-### Setup Hubs
+#### Setup Hubs
 
 After the CA service is up and running, start a hub pointing to the CA service:
 
 ```sh
-pipy hub/main.js -- --ca=localhost:9999
+pipy repo://ztm/hub --args --ca=localhost:9999
 ```
 
 > Like the CA service, you can use `--listen` option for a custom listening port other than the default `0.0.0.0:8888`:
 >
 > ```sh
-> pipy hub/main.js -- --ca=localhost:9999 --listen=0.0.0.0:1234
+> pipy repo://ztm/hub --args --ca=localhost:9999 --listen=0.0.0.0:1234
 > ```
 
-If your hub is running behind a gateway, you also need to provide at least one hub address that is visible to the endpoints by `--name` option:
-
-```sh
-pipy hub/main.js -- --ca=localhost:9999 --name=hub.example.com:8888
-```
-
-> You can include more than one `--name` options to assign multiple hub addresses.
-
-### Setup Endpoints
+#### Setup Endpoints
 
 Now that we've set up all the foundation (most likely in the cloud), we can go on and add as many endpoints as we like to the mesh.
 
 First, start an agent on an endpoint computer that is going to join our mesh:
 
 ```sh
-pipy agent/main.js
+pipy repo://ztm/agent
 ```
 
 > The default listening port is `127.0.0.1:7777`. The default location of database is `~/ztm.db`. These settings can be changed by command-line options:
 >
 > ```sh
-> pipy agent/main.js -- --listen=127.0.0.1:1234 --database=~/my-data.db
+> pipy repo://ztm/agent --args --listen=127.0.0.1:1234 --database=~/my-data.db
 > ```
 
 Once the agent is up and running, open your browser and point it to `http://localhost:7777`.
