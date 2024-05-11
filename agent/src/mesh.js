@@ -278,6 +278,7 @@ export default function (config) {
 
     return {
       isConnected: () => connections.size > 0,
+      address,
       heartbeat,
       updateServiceList,
       discoverEndpoints,
@@ -563,8 +564,8 @@ export default function (config) {
     return hubs[0].findEndpoint(ep).then(
       function (endpoint) {
         if (!endpoint) return null
-        var hubs = endpoint.hubs || []
-        return hubs.find(addr => hubAddresses.indexOf(addr) >= 0)
+        var addresses = endpoint.hubs || []
+        return addresses.find(addr => hubAddresses.indexOf(addr) >= 0) || hubs[0].address
       }
     )
   }
