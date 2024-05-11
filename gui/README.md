@@ -46,7 +46,7 @@ npm run tauri build
 ```
 or
 ```sh
-npm run tauri build
+yarn tauri build
 ```
 
 ### About macOS "can’t be opened" Error
