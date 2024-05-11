@@ -33,11 +33,11 @@ ZTM is written in ***PipyJS***, a JavaScript dialect designed for [***Pipy***](h
 
 ### Download
 
-The easiest way to get started is download the latest binary release of ZTM from our [release page](https://github.com/flomesh-io/ztm/releases). But if you prefer to have your own build from the source, follow the instructions in [Build](docs/Build.md).
+The easiest way to get started is download the latest binary release of ZTM from our [release page](https://github.com/flomesh-io/ztm/releases). If you prefer to have your own build from the source, you can follow the instructions in [Build](docs/Build.md).
 
 ### Setup
 
-A common setup consists of 3 nodes: one node running the *CA* and a *hub*, the other two nodes running two *agents* who are to communicate with each other.
+A common setup consists of 3 nodes: 1 node running the *CA* and a *hub*, the other 2 nodes running two *agents* who are to communicate with each other.
 
 ```
                        Data Center
