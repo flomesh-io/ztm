@@ -13,4 +13,4 @@ cmake .. \
   -DPIPY_CODEBASES=ON \
   -DPIPY_CUSTOM_CODEBASES=ztm/ca:../ca,ztm/hub:../hub,ztm/agent:../agent
 
-make
+make -j2

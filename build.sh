@@ -17,6 +17,7 @@ cd "$ZTM_DIR/gui"
 npm install --no-audit
 
 mkdir -p "$ZTM_DIR/bin"
-cp "$ZTM_DIR/pipy/bin/pipy" "$ZTM_BIN"
+rm -f "$ZTM_BIN"
+cp -f "$ZTM_DIR/pipy/bin/pipy" "$ZTM_BIN"
 
 echo "The final product is ready at $ZTM_BIN"
