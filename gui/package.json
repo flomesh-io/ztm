@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --outDir ../agent/gui",
+    "build": "vite build --emptyOutDir --outDir ../agent/gui",
     "preview": "vite preview --outDir ../agent/gui",
     "tauri": "tauri",
     "ca": "pipy ../ca/main.js --skip-unknown-arguments --listen=127.0.0.1:9999",
