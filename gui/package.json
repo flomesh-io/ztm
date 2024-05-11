@@ -14,11 +14,11 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
     "build-pipy-macos-x64": "cd ../ && git submodule update --init && cd pipy && make no-gui && cp -f ./bin/pipy ../gui/src-tauri/bin/pipy-x86_64-apple-darwin",
     "build-pipy-macos": "cd ../ && git submodule update --init && cd pipy && make no-gui && cp -f ./bin/pipy ../gui/src-tauri/bin/pipy-aarch64-apple-darwin",
-    "build-pipy-windows": "cd ../ && git submodule update --init && cd pipy && build.cmd no-gui && cp /Y ./bin/Release/pipy.exe ../gui/src-tauri/bin/pipy-x86_64-pc-windows-msvc.exe",
+    "build-pipy-windows": "cd ../ && git submodule update --init && cd pipy && build.cmd no-gui && copy ./bin/Release/pipy.exe ../gui/src-tauri/bin/pipy-x86_64-pc-windows-msvc.exe",
     "build-pipy-linux": "cd ../ && git submodule update --init && cd pipy && make no-gui && cp -f ./bin/pipy ../gui/src-tauri/bin/pipy-x86_64-unknown-linux-gnu",
     "download-pipy-macos-x64": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/pipy-nightly/x86_64/binary/pipy-nightly-202404011409-macos-x86_64.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/bin/pipy ../src-tauri/bin/pipy-x86_64-apple-darwin",
     "download-pipy-macos": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/pipy-nightly/aarch64/binary/pipy-nightly-202404011409-macos-aarch64.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/bin/pipy ../src-tauri/bin/pipy-aarch64-apple-darwin",
-    "download-pipy-windows": "mkdir -p download && cd download && curl -o pipy.zip https://pipy-oss-1255617643.cos.accelerate.myqcloud.com/repo/pipy-repo-nightly/win32/binary/pipy-repo-nightly-202404011409-win32-x86_64.zip && unzip pipy.zip && cp /Y pipy.exe ../src-tauri/bin/pipy-x86_64-pc-windows-msvc.exe",
+    "download-pipy-windows": "mkdir -p download && cd download && curl -o pipy.zip https://pipy-oss-1255617643.cos.accelerate.myqcloud.com/repo/pipy-repo-nightly/win32/binary/pipy-repo-nightly-202404011409-win32-x86_64.zip && unzip pipy.zip && copy pipy.exe ../src-tauri/bin/pipy-x86_64-pc-windows-msvc.exe",
     "download-pipy-linux": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos-website.ap-beijing.myqcloud.com/repo/pipy-nightly/x86_64/binary/pipy-nightly-202404011409-generic_linux-x86_64.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/bin/pipy ../src-tauri/bin/pipy-x86_64-unknown-linux-gnu"
   },
   "dependencies": {
