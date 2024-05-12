@@ -21,18 +21,8 @@
     "cli:default",
     "cli:allow-cli-matches",
     {
-      "identifier": "shell:allow-execute",
+      "identifier": "shell:allow-spawn",
       "allow": [
-        {
-          "name": "eval",
-          "cmd": "eval",
-          "args": [
-            {
-              "validator": ".+"
-            }
-          ],
-          "sidecar": false
-        },
         {
           "name": "bin/pipy",
           "args": [
@@ -50,6 +40,20 @@
             },
             {
               "validator": ".*"
+            }
+          ],
+          "sidecar": true
+        },
+			]
+		},
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "bin/pipy",
+          "args": [
+            {
+              "validator": ".+"
             }
           ],
           "sidecar": true

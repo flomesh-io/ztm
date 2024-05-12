@@ -19,10 +19,10 @@ export default class ShellService {
 	}
 	async takePipyVersion () {
 		console.log("takePipyVersion");
-		let result = await Command.sidecar("bin/pipy", ['-v','','','','']).execute();
+		let result = await Command.sidecar("bin/pipy", ['-v']).execute();
 		console.log(result);
 		if(result?.code == 0){
-			const _v = result?.stdout.split("\n")[0].split(":")[1].trim();
+			const _v = !!result?.stdout?(result.stdout.split("\n")[0].split(":")[1].trim()):'Unknown';
 			store.commit('account/setPipyVersion', _v);
 		}
 	}
