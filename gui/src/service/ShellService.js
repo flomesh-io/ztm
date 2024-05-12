@@ -19,12 +19,13 @@ export default class ShellService {
 	}
 	async takePipyVersion () {
 		console.log("takePipyVersion");
-		let result = await Command.sidecar("bin/pipy", ['-v']).execute();
-		console.log(result);
-		if(result?.code == 0){
-			const _v = !!result?.stdout?(result.stdout.split("\n")[0].split(":")[1].trim()):'Unknown';
-			store.commit('account/setPipyVersion', _v);
-		}
+		let command = await Command.sidecar("bin/pipy", ['-v','','','','']);
+		await command.spawn();
+		command.stdout.on('data', line => {
+			if(!!line && line.split(":")[0].trim() == 'Version'){
+				store.commit('account/setPipyVersion', line.split(":")[1].trim());
+			}
+		});
 	}
 	async startPipy (port, reset){
 		await this.pausePipy();
