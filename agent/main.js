@@ -107,7 +107,7 @@ var routes = Object.entries({
 
     'GET': function ({ mesh }) {
       var obj = api.getMesh(mesh)
-      return obj ? response(200, obj.config.ca || '') : response(404)
+      return obj ? response(200, obj.ca || '') : response(404)
     },
 
     'POST': function ({ mesh }, req) {
