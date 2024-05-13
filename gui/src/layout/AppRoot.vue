@@ -312,12 +312,13 @@ const restart = ref(false);
 	.e-card {
 	  background: transparent;
 	  box-shadow: 0px 8px 28px -9px rgba(0,0,0,0.45);
-	  position: relative;
-	  width: 455px;
-	  height: 322px;
+	  position: fixed;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
 	  border-radius: 0px;
 	  overflow: hidden;
-		
 	}
 	.e-card.blur{
 		filter: blur(10px);
