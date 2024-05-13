@@ -3,7 +3,7 @@
 import db from './db.js'
 import options from './options.js'
 
-var opt = options({
+var opt = options(pipy.argv, {
   defaults: {
     '--help': false,
     '--database': '~/ztm-ca.db',
