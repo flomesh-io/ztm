@@ -4,7 +4,7 @@ import api from './src/api.js'
 import db from './src/db.js'
 import options from './src/options.js'
 
-var opt = options({
+var opt = options(pipy.argv, {
   defaults: {
     '--help': false,
     '--reset': false,

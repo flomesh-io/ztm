@@ -1,9 +1,9 @@
-export default function ({ defaults, shorthands }) {
+export default function (argv, { defaults, shorthands }) {
   var args = []
   var opts = {}
   var lastOption
 
-  pipy.argv.forEach(
+  argv.forEach(
     function (term, i) {
       if (i === 0) return
       if (lastOption) {
