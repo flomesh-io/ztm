@@ -1,7 +1,7 @@
 {
   "productName": "ZTMesh",
   "version": "0.1.0",
-  "identifier": "com.ztm.dev",
+  "identifier": "com.ztm.ztmesh",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
