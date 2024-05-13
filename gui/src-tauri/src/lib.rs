@@ -3,11 +3,11 @@ use tauri::Manager;
 #[tauri::command]
 fn close_splashscreen(window: tauri::Window) {
     // 关闭启动视图
-    if let Some(splashscreen) = window.get_webview_window("splashscreen") {
-        splashscreen.close().unwrap();
-    }
+    // if let Some(splashscreen) = window.get_webview_window("splashscreen") {
+    //    splashscreen.close().unwrap();
+    // }
     // 展示主视图
-    window.get_webview_window("main").unwrap().show().unwrap();
+    // window.get_webview_window("main").unwrap().show().unwrap();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

@@ -367,8 +367,9 @@ const restart = ref(false);
 	.infotop {
 	  text-align: center;
 	  font-size: 20px;
-	  position: absolute;
-	  top: 3.6em;
+	  position: fixed;;
+	  top: 50%;
+		margin-top: -80px;
 	  left: 0;
 	  right: 0;
 	  color: rgb(255, 255, 255);
