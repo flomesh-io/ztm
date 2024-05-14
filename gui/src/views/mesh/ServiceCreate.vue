@@ -35,10 +35,12 @@ const getEndpoints = () => {
 			console.log("Endpoints:")
 			console.log(res)
 			endpoints.value = res || [];
-			if(!!res.find((ep)=> ep.id == selected.value.agent?.id)){
-				config.value.ep = selected.value.agent?.id;
-			} else {
-				config.value.ep = res[0].id;
+			if(!props.pid){
+				if(!!res.find((ep)=> ep.id == selected.value.agent?.id)){
+					config.value.ep = selected.value.agent?.id;
+				} else {
+					config.value.ep = res[0].id;
+				}
 			}
 		})
 		.catch(err => console.log('Request Failed', err)); 
