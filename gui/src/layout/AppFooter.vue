@@ -9,7 +9,7 @@ import XeyeSvg from "@/assets/img/logo.svg";
 <template>
     <div class="layout-footer">
 				<img class="mr-1" :src="XeyeSvg"  height="20"/>
-        ZTMesh by
+        ZTM by
         <a target="_blank" href="https://flomesh.io/pipy" class="font-medium ml-2">Pipy proxy</a>
     </div>
 </template>

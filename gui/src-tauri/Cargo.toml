@@ -1,7 +1,7 @@
 [package]
-name = "ztmesh"
+name = "ztm"
 version = "0.0.3"
-description = "A ZTMesh App"
+description = "A ZTM App"
 authors = ["lindc"]
 edition = "2021"
 
