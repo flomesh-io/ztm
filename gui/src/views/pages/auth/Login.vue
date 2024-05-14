@@ -81,7 +81,7 @@ const onClose = () => {
 											<!-- <i class="pi pi-lock text-lg" style="font-size: 50px !important;"/> -->
                         <img :src="XeyeSvg" height="55" class="mr-3" alt="Xeye" />
 												<div>
-										    <div class=" text-3xl font-medium mb-2 font-bold" style="color: rgba(255, 255, 255, 1);">ZTMesh</div>
+										    <div class=" text-3xl font-medium mb-2 font-bold" style="color: rgba(255, 255, 255, 1);">ZTM</div>
 										    <span class=" font-medium" style="color: rgba(255, 255, 255, 0.9);">Sign in to continue</span>
 												</div>
 										</div>

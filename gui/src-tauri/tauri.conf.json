@@ -1,7 +1,7 @@
 {
-  "productName": "ZTMesh",
+  "productName": "ZTM",
   "version": "0.0.3",
-  "identifier": "com.ztm.ztmesh",
+  "identifier": "com.ztm.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
     "windows": [
       {
 				"dragDropEnabled": false,
-        "title": "ZTMesh App",
+        "title": "ZTM App",
         "width": 455,
         "height": 350,
         "resizable": false,
