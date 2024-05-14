@@ -98,7 +98,7 @@ const pipyPlay = async () => {
 	},300)
 }
 
-const errors = ref(['errprasd']);
+const errors = ref([]);
 const errorMsg = computed(() => {
 	let msg = '';
 	errors.value.forEach((error, ei) => {
