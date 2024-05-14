@@ -6,6 +6,7 @@ import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
 import PipyVersion from './PipyVersion.vue';
+import PipyLog from './PipyLog.vue';
 import XeyeSvg from "@/assets/img/white.png";
 import HoverXeyeSvg from "@/assets/img/loading.png";
 import PipySvg from "@/assets/img/pipy-white.png";
@@ -28,6 +29,7 @@ const emits = defineEmits(['collapse']);
 const router = useRouter();
 const meshes = ref([]);
 const configOpen = ref(false);
+const logOpen = ref(false);
 const logoHover = ref(false);
 const db = ref('');
 const config = ref({
@@ -169,7 +171,7 @@ const restart = ref(false);
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': configOpen}">
+	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen}">
 	  <div class="image"></div>
 	  
 	  <div class="wave"></div>
@@ -245,6 +247,11 @@ const restart = ref(false);
 				</Button>
 			</div>
 			<div class="flex-item">
+				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => logOpen = true" >
+					<i class="pi pi-book text-3xl"  />
+				</Button>
+			</div>
+			<div class="flex-item">
 				<Button v-tooltip.left="'Start'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
 					<i class="pi pi-play " />
 				</Button>
@@ -290,17 +297,7 @@ const restart = ref(false);
 			</div>
 		</div>
 	</div>
-<!-- 	<div class="flex">
-		
-		<div class="flex-item">
-			
-			
-		</div>
-		<div>
-		
-			<AppSmallMenu />
-		</div>
-	</div> -->
+	<PipyLog v-if="logOpen" @close="() => logOpen = false"/>
 	<ConfirmDialog></ConfirmDialog>
 </template>
 

@@ -13,10 +13,14 @@ export default {
 		child: null,
 		collapsed: true,
 		meshes:[],
+		logs:[],
   },
   getters: {
     pid: (state) => {
       return localStorage.getItem('PID') || state.pid;
+    },
+    logs: (state) => {
+      return state.logs;
     },
     pipyRunning: (state) => {
       return state.pipyRunning;
@@ -72,6 +76,15 @@ export default {
   mutations: {
     setPipyRunning(state, pipyRunning) {
       state.pipyRunning = pipyRunning;
+    },
+    setLogs(state, logs) {
+      state.logs = logs;
+    },
+    pushLog(state, log) {
+			if(!state.logs){
+				state.logs = [];
+			}
+			state.logs.push(log)
     },
     setPid(state, pid) {
       state.pid = pid;
