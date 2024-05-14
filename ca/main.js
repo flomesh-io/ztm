@@ -65,22 +65,23 @@ var routes = Object.entries({
   '/api/certificates/{name}': {
     GET: (params) => {
       var c = db.getCert(params.name)
-      if (!c) return response(404)
+      if (!c) return responseError(404, 'Username not found')
       return response(200, c)
     },
 
     POST: (params) => {
       var name = params.name
-      if (isReservedName(name)) return response(403)
-      if (db.getCert(name)) return response(409)
+      if (isReservedName(name)) return responseError(403, 'Reserved username')
+      if (db.getCert(name)) return responseError(409, 'Username already exists')
       var c = issueCertificate(name)
       db.setCert(name, c.cert.toPEM().toString());
       return response(200, c.key.toPEM().toString())
     },
 
     DELETE: (params) => {
-      if (isReservedName(params.name)) return response(204)
-      db.delCert(params.name)
+      var name = params.name
+      if (isReservedName(name)) return responseError(403, 'Reserved username')
+      db.delCert(name)
       return response(204)
     },
   },
@@ -144,6 +145,10 @@ function responseCT(status, ct, body) {
     },
     body
   )
+}
+
+function responseError(status, message) {
+  return response(status, { status, message })
 }
 
 function isReservedName(name) {
