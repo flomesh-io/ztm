@@ -17,7 +17,7 @@ const props = defineProps({
 	},
 	maxFileSize: {
 		type: Number,
-		default: 1000
+		default: 10000
 	},
 	modelValue: {
 		type: [String, Array],
