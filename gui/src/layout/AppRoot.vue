@@ -43,9 +43,11 @@ const user = computed(() => {
 const placeholder = computed(() => {
 	if(!!loading.value){
 		return "Starting...";
-	}else if(!playing.value){
+	} else if(!playing.value && errors.value > 0){
+		return "Check for errors.";
+	} else if(!playing.value){
 		return "Pipy off.";
-	}else if(!meshes.value || meshes.value.length ==0){
+	} else if(!meshes.value || meshes.value.length ==0){
 		return "First, join a Mesh.";
 	} else if(meshes.value.length == 1){
 		return "1 Mesh Joined.";
@@ -64,8 +66,12 @@ const loaddata = () => {
 			playing.value = true;
 			loading.value = false;
 			meshes.value = res;
+			errors.value = [];
 		})
-		.catch(err => console.log('Request Failed', err)); 
+		.catch(err => {
+			loading.value = false;
+			console.log('Request Failed', err)
+		}); 
 }
 const play = () => {
 	pipyPlay();
@@ -91,9 +97,25 @@ const pipyPlay = async () => {
 		loaddata();
 	},300)
 }
+
+const errors = ref(['errprasd']);
+const errorMsg = computed(() => {
+	let msg = '';
+	errors.value.forEach((error, ei) => {
+		if(ei>0){
+			msg += '\n';
+		}
+		msg += `${error}`;
+	});
+	return msg;
+})
+
 const startPipy = async () => {
 	await pause();
-	await shellService.startPipy(config.value.port);
+	await shellService.startPipy(config.value.port, false, error => {
+		errors.value.push(error);
+		console.error(`command error: "${error}"`)
+	});
 }
 const pause = async () => {
 	await shellService.pausePipy();
@@ -133,7 +155,10 @@ const reset = () => {
 			header: 'Factory settings',
 			icon: 'pi pi-exclamation-triangle',
 			accept: () => {
-				shellService.startPipy(config.value.port, true);
+				shellService.startPipy(config.value.port, true, error => {
+					errors.value.push(error);
+					console.error(`command error: "${error}"`)
+				});
 			},
 			reject: () => {
 					
@@ -168,29 +193,31 @@ const restart = ref(false);
 				v-else
 				:options="meshes" 
 				optionLabel="label" 
+				:loading="loading"
 				:placeholder="placeholder" 
 				class="w-20rem transparent">
-<!-- 				    <template #optiongroup="slotProps">
-				        <div class="flex align-items-center">
-										<i class="pi pi-star-fill " style="color: orange;"/>
-				            <div>{{ slotProps.option.label }}</div>
-				        </div>
-				    </template> -->
+				    <template #dropdownicon>
+							<i v-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
+							<i v-else class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
+				    </template>
 				    <template #option="slotProps">
 				        <div class="flex align-items-center">
 										<Status :run="slotProps.option.connected" :errors="slotProps.option.errors" />
 				            <div>{{ decodeURI(slotProps.option.name) }}</div>
 				        </div>
 				    </template>
-						 <template #value="slotProps">
-									<div v-if="slotProps.value" class="flex align-items-center">
-											<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
-											<div>{{ decodeURI(slotProps.value.name) }}</div>
-									</div>
-									<span v-else>
-											{{ slotProps.placeholder }}
-									</span>
-							</template>
+				    <template #empty>
+							No mesh.
+				    </template>
+						<template #value="slotProps">
+								<div v-if="slotProps.value" class="flex align-items-center">
+										<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
+										<div>{{ decodeURI(slotProps.value.name) }}</div>
+								</div>
+								<span v-else>
+										{{ slotProps.placeholder }}
+								</span>
+						</template>
 				</Dropdown>
 				
 			</div>
