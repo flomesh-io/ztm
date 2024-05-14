@@ -1,7 +1,7 @@
 {
   "productName": "ZTM",
   "version": "0.0.3",
-  "identifier": "com.ztm.app",
+  "identifier": "com.ztm.ztm",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
