@@ -248,7 +248,7 @@ const restart = ref(false);
 			</div>
 			<div class="flex-item">
 				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => logOpen = true" >
-					<i class="pi pi-book text-3xl"  />
+					<i class="iconfont icon-cmd text-3xl"  />
 				</Button>
 			</div>
 			<div class="flex-item">
@@ -325,7 +325,7 @@ const restart = ref(false);
 		vertical-align: middle;
 		transform: scale(0.7);
 	}
-	.footer .pi{
+	.footer .pi,.footer .iconfont{
 		font-size: 26px;
 		color: rgba(255, 255, 255, 0.9);
 		transition: .3s all;
