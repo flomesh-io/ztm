@@ -27,7 +27,7 @@ export default class ShellService {
 			}
 		});
 	}
-	async startPipy (port, reset){
+	async startPipy (port, reset, callError){
 		await this.pausePipy();
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
@@ -52,7 +52,7 @@ export default class ShellService {
 		});
 		command.stdout.on('data', line => console.log(`command stdout: "${line}"`));
 		command.stderr.on('data', line => console.log(`command stderr: "${line}"`));
-		command.on('error', error => console.error(`command error: "${error}"`));
+		command.on('error', callError);
 		let child = await command.spawn();
 		store.commit('account/setPid', child.pid);
 		store.commit('account/setChild', child);
