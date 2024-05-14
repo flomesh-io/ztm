@@ -7,10 +7,8 @@ export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
 3.
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 4
-brew install openssl@3
-export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
-
 cmd
+yarn tauri android init
 yarn tauri android dev
 yarn tauri build --target aarch64-linux-android
 
@@ -21,3 +19,5 @@ delete the
 ~/.cargo/registry
 ~/.gradle/caches
 src-tauri/target/
+
+brew install openssl@3

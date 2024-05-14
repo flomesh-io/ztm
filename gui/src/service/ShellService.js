@@ -9,14 +9,6 @@ export default class ShellService {
 		console.log(`[appDataDirPath]:${appDataDirPath}`);
 		return `${appDataDirPath}/ztm.db`
 	}
-	async getPipy () {
-		// const isDev = import.meta.env.DEV;
-		// const plm = await platform();
-		// linux、macos、ios、freebsd、dragonfly、netbsd、openbsd、solaris、android、windows
-		// const resourceDirPath = await resourceDir();
-		///Users/lindongchen/Documents/HBuilderProjects/ztm/gui/src-tauri/target/debug/bin/macos/pipy
-		return `bin/pipy`;
-	}
 	async takePipyVersion () {
 		console.log("takePipyVersion");
 		let command = await Command.sidecar("bin/pipy", ['-v','','','','']);
@@ -32,7 +24,6 @@ export default class ShellService {
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
-		//pipy ../agent/main.js --log-file=../ztm_log.txt --skip-unknown-arguments --listen=6666 --database=~/ztm.db
 		const db = await this.getDB();
 		const args = [
 			`${resourceDirPath}/_up_/_up_/agent/main.js`,
