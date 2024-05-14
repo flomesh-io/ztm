@@ -48,16 +48,31 @@ export default class ShellService {
 		const command = Command.sidecar("bin/pipy", args);
 		command.on('close', data => {
 			console.log(data);
-			console.log(`pipy pause with code ${data.code} and signal ${data.signal}`)
+			store.commit('account/pushLog', {level:'Info',msg:`pipy pause with code ${data.code} and signal ${data.signal}`});
 		});
-		command.stdout.on('data', line => console.log(`command stdout: "${line}"`));
-		command.stderr.on('data', line => console.log(`command stderr: "${line}"`));
-		command.on('error', callError);
+		command.stdout.on('data', line => {
+			store.commit('account/pushLog', {level:'Info',msg:line});
+			store.commit('account/pushLog', {level:'Info',msg:line});
+			store.commit('account/pushLog', {level:'Info',msg:line});
+			store.commit('account/pushLog', {level:'Info',msg:line});
+		});
+		command.stderr.on('data', line => {
+			store.commit('account/pushLog', {level:'Error',msg:line});
+			store.commit('account/pushLog', {level:'Error',msg:line});
+			store.commit('account/pushLog', {level:'Error',msg:line});
+			store.commit('account/pushLog', {level:'Error',msg:line});
+			callError(line);
+		});
+		command.on('error', error => {
+			store.commit('account/pushLog', {level:'Error',msg:error});
+			store.commit('account/pushLog', {level:'Error',msg:error});
+			store.commit('account/pushLog', {level:'Error',msg:error});
+			store.commit('account/pushLog', {level:'Error',msg:error});
+			callError(error);
+		});
 		let child = await command.spawn();
 		store.commit('account/setPid', child.pid);
 		store.commit('account/setChild', child);
-		
-		
 	}
 	async pausePipy (){
 		let child = store.getters['account/child'];
