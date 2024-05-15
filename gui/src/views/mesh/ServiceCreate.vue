@@ -27,8 +27,7 @@ const newConfig = {
 	users:[],
 	port:null
 }
-const config = ref(newConfig);
-
+const config = ref(_.cloneDeep(newConfig));
 const getEndpoints = () => {
 	pipyProxyService.getEndpoints(selected.value?.name)
 		.then(res => {
@@ -67,7 +66,7 @@ const commit = () => {
 			loading.value = false;
 			toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
 			emits("save", config.value);
-			config.value = newConfig;
+			config.value = _.cloneDeep(newConfig);
 		})
 		.catch(err => {
 			loading.value = false;
@@ -81,7 +80,7 @@ onMounted(() => {
 	if(!!props.pid){
 		loaddata()
 	} else {
-		config.value = newConfig;
+		config.value = _.cloneDeep(newConfig);
 	}
 });
 const loaddata = () => {
