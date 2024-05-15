@@ -3,7 +3,7 @@ import { useLayout } from '@/layout/composables/layout';
 import { computed } from 'vue';
 
 const { layoutConfig } = useLayout();
-import XeyeSvg from "@/assets/img/logo.svg";
+import XeyeSvg from "@/assets/img/logo.png";
 </script>
 
 <template>
