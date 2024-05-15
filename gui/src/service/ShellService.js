@@ -43,21 +43,12 @@ export default class ShellService {
 		});
 		command.stdout.on('data', line => {
 			store.commit('account/pushLog', {level:'Info',msg:line});
-			store.commit('account/pushLog', {level:'Info',msg:line});
-			store.commit('account/pushLog', {level:'Info',msg:line});
-			store.commit('account/pushLog', {level:'Info',msg:line});
 		});
 		command.stderr.on('data', line => {
-			store.commit('account/pushLog', {level:'Error',msg:line});
-			store.commit('account/pushLog', {level:'Error',msg:line});
-			store.commit('account/pushLog', {level:'Error',msg:line});
 			store.commit('account/pushLog', {level:'Error',msg:line});
 			callError(line);
 		});
 		command.on('error', error => {
-			store.commit('account/pushLog', {level:'Error',msg:error});
-			store.commit('account/pushLog', {level:'Error',msg:error});
-			store.commit('account/pushLog', {level:'Error',msg:error});
 			store.commit('account/pushLog', {level:'Error',msg:error});
 			callError(error);
 		});
