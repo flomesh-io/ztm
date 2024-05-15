@@ -29,7 +29,7 @@ const newConfig = {
 	agent: {
 		name: "",
 		certificate: "",
-		privateKey: "",
+		privateKey: null,
 	},
 	bootstraps: []
 }
@@ -84,6 +84,9 @@ const loaddata = () => {
 			console.log(res);
 			loading.value = false;
 			config.value = res;
+			if(!config.value.agent?.privateKey){
+				config.value.agent.privateKey = '';
+			}
 		})
 		.catch(err => {
 			loading.value = false;
