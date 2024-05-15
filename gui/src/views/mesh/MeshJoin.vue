@@ -33,7 +33,7 @@ const newConfig = {
 	},
 	bootstraps: []
 }
-const config = ref(newConfig);
+const config = ref(_.cloneDeep(newConfig));
 
 const enabled = computed(() => {
 	return config.value.name.length>0 
@@ -54,7 +54,7 @@ const commit = () => {
 			if(!!res.name){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
 				emits("save", config.value);
-				config.value = newConfig;
+				config.value = _.cloneDeep(newConfig);
 				config.value.agent.name = user.value.id;
 			} else{
 				toast.add({ severity: 'error', summary:'Tips', detail: 'Join Failed.', life: 3000 });
@@ -69,7 +69,7 @@ onMounted(() => {
 	if(!!props.pid){
 		loaddata()
 	} else {
-		config.value = newConfig;
+		config.value = _.cloneDeep(newConfig);
 		config.value.agent.name = user.value.id;
 	}
 });
