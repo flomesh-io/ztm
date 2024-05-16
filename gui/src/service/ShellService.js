@@ -20,7 +20,7 @@ export default class ShellService {
 		});
 	}
 	async startPipy (port, reset, callError){
-		await open('pipy');
+		// await open('pipy');
 		await this.pausePipy();
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
