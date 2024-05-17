@@ -47,6 +47,7 @@ const deleteMesh = () => {
 	pipyProxyService.deleteMesh(name,() => {
 		setTimeout(()=>{
 			loaddata();
+			store.dispatch('account/meshes');
 		},1000);
 		selectedMesh.value = null;
 		visibleEditor.value = false;
@@ -100,7 +101,6 @@ const openEditor = () => {
 </script>
 
 <template>
-	
 	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
 	    <TabPanel>
 				<template #header>

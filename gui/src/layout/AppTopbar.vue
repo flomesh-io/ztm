@@ -5,11 +5,16 @@ import { useLayout } from '@/layout/composables/layout';
 import { useRouter, useRoute } from 'vue-router';
 import { getMenu } from './menu';
 import XeyeSvg from "@/assets/img/web-logo.png";
+import MeshSelector from '@/views/mesh/common/MeshSelector.vue'
 import HoverXeyeSvg from "@/assets/img/hover-web-logo.png";
 import { useStore } from 'vuex';
-const store = useStore();
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
+
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
+const store = useStore();
 const confirm = useConfirm();
 const model = computed(() => {
 	return getMenu(isAdmin())
@@ -41,7 +46,14 @@ onBeforeUnmount(() => {
 const logoUrl = computed(() => {
     return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
 });
-
+const username = computed(() => {
+	const agent = selectedMesh.value?.agent;
+	if(!!agent?.name && !!agent?.username){
+		return `${agent.name} | ${agent.username}`;
+	} else {
+		return agent?.name || agent?.username;
+	}
+})
 const onTopBarMenuButton = () => {
     topbarMenuActive.value = !topbarMenuActive.value;
 };
@@ -127,6 +139,14 @@ const menuClick = (e) => {
 }
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const focusMenu = ref(route.path);
+
+const load = (d) => {
+	store.commit('account/setMeshes', d);
+}
+
+const select = (selected) => {
+	store.commit('account/setSelectedMesh', selected);
+}
 </script>
 
 <template>
@@ -153,9 +173,14 @@ const focusMenu = ref(route.path);
 							<span v-if="hasSubmenu" class="pi pi-fw pi-angle-down ml-2" />
 					</a>
 			</template>
-			<template #end v-if="hasTauri">
+			<template #end >
 					<div class="flex align-items-center ">
-						<Button size="large" class="right-icon" type="button" icon="pi pi-window-minimize" @click="home" aria-haspopup="true" aria-controls="overlay_menu" />
+						<Avatar v-if="!!username" icon="pi pi-user" style="background-color: #9855f7;" shape="circle" />
+						<span v-if="!!username" class="pl-2 pr-4">{{username}}</span>
+						<MeshSelector
+							:full="false" 
+							@load="load" 
+							@select="select"/>
 						<!-- <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" @click="menuClick"/> -->
 					</div>
 					
@@ -193,4 +218,3 @@ const focusMenu = ref(route.path);
     </div> -->
 </template>
 
-<style lang="scss" scoped></style>

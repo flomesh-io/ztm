@@ -1,3 +1,5 @@
+import PipyProxyService from '@/service/PipyProxyService';
+const pipyProxyService = new PipyProxyService();
 export default {
   namespaced: true,
   state: {
@@ -13,8 +15,15 @@ export default {
 		child: null,
 		collapsed: true,
 		meshes:[],
+		selectedMesh:null,
 		logs:[],
   },
+	actions: {
+		async meshes({ commit }) {
+			const res = await pipyProxyService.getMeshes;
+			commit('setMeshes',res || []);
+		},
+	},
   getters: {
     pid: (state) => {
       return localStorage.getItem('PID') || state.pid;
@@ -27,6 +36,9 @@ export default {
     },
     meshes: (state) => {
       return state.meshes;
+    },
+    selectedMesh: (state) => {
+      return state.selectedMesh;
     },
     child: (state) => {
       return state.child;
@@ -98,6 +110,9 @@ export default {
     },
     setMeshes(state, meshes) {
       state.meshes = meshes;
+    },
+    setSelectedMesh(state, selectedMesh) {
+      state.selectedMesh = selectedMesh;
     },
     setPipyVersion(state, pipyVersion) {
       state.pipyVersion = pipyVersion;

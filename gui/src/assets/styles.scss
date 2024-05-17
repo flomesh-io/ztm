@@ -93,6 +93,10 @@ $gutter: 1rem; //for primeflex grid system
 .app-top-bar .p-avatar-icon{
 	color: #4b5563;
 }
+
+.app-top-bar .p-avatar-icon.pi-user{
+	color: #fff !important;
+}
 .app-top-bar .right-icon{
 	height: 50px !important;
 	line-height: 50px !important;
@@ -643,9 +647,46 @@ fieldset{
 	padding-top: 0;
 	padding-bottom: 0;
 }
+.search-bar{
+	overflow: hidden;
+	border-radius: 8px;
+}
 .p-inputgroup.search-bar .p-select-dropdown{
 	color: #fff;
 }
 .p-inputgroup.search-bar .p-inputtextarea::placeholder{
 	color: #d1d1d1;
+}
+.app-top-bar .p-menubar-end .p-select{
+	
+	background-color: var(--primary-500) !important;
+	border-radius: 0;
+	border: none;
+}
+.app-top-bar .p-menubar-end .p-select-dropdown{
+	color: #fff;
+}
+.app-top-bar .p-menubar-end .p-select-label{
+	line-height: 50px;
+	height: 50px;
+	padding-top: 0;
+	padding-bottom: 0;
+	color: #fff;
+}
+
+.p-tabview-nav-link{
+	outline: none !important;
+}
+.p-tabview-tablist-item,.p-tabview-tablist-item>a,.p-row-even,.p-row-odd{
+	outline: none !important;
+}
+.p-togglebutton-checked .pi{
+	z-index: 3;
+	color: #fff;
+}
+.p-togglebutton-checked::before{
+	background-color: var(--primary-500) !important;
+}
+.p-tabview-tablist-item-active .p-tabview-tab-header{
+	color: var(--primary-500) !important;
 }

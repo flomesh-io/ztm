@@ -1,12 +1,11 @@
 <script setup>
-import { ref, onMounted,onActivated, computed } from "vue";
+import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import ServiceCreate from './ServiceCreate.vue'
 import MeshSelector from './common/MeshSelector.vue'
 import PortMaping from './PortMaping.vue'
 import { useConfirm } from "primevue/useconfirm";
-import freeSvg from "@/assets/img/free.svg";
 import { useStore } from 'vuex';
 const store = useStore();
 
@@ -19,18 +18,15 @@ const endpoints = ref([]);
 const status = ref({});
 const scopeType = ref('All');
 const portMap = ref({});
+const loading = ref(false);
+const loader = ref(false);
+const active = ref(0);
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
-const selectedMesh = ref(null);
-const loading = ref(false);
-const loader = ref(false);
-const select = (selected) => {
-	selectedMesh.value = selected;
-	getServices();
-	getEndpoints();
-	getPorts();
-}
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
 onActivated(()=>{
 	if(selectedMesh.value){
 		getServices();
@@ -105,6 +101,16 @@ const getPorts = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 
+watch(()=>selectedMesh,()=>{
+	if(selectedMesh.value){
+		getServices();
+		getEndpoints();
+		getPorts();
+	}
+},{
+	deep:true,
+	immediate:true
+})
 const portInfo = computed(() => {
 	return (svc,ep) => {
 		const postAry = [];
@@ -150,10 +156,6 @@ const servicesLb = computed(() => {
 });
 
 const typing = ref('');
-const clickSearch = () => {
-}
-
-const active = ref(0);
 const save = () => {
 	active.value = 0;
 	getServices();
@@ -202,31 +204,29 @@ const actions = ref([
 ]);
 const showAtionMenu = (event, svc) => {
 	selectedService.value = svc;
-	actionMenu.value[0].toggle(event);
+	actionMenu.value.toggle(event);
 };
 const visibleEditor = ref(false);
 const openEditor = () => {
 	visibleEditor.value = true;
 }
+const layout = ref('grid');
+const expandedRows = ref({});
 </script>
 
 <template>
 	<Card class="nopd ml-3 mr-3 mt-3">
 		<template #content>
 			<InputGroup class="search-bar" v-show="active!=1">
-				<MeshSelector 
-					v-show="active!=1" 
-					:full="false" 
-					innerClass="transparent" 
-					@load="load" 
-					@select="select"/>
+				<Button :disabled="!typing" icon="pi pi-search"  :label="selectedMesh?.name"/>
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | host" rows="1" cols="30" />
-				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>
 	</Card>
 	
-	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
+	
+	<DataViewLayoutOptions v-if="active!=1" v-model="layout" class="absolute" style="right: 10px;position: absolute;margin-top: 25px;z-index: 2;"/>
+	<TabView class="pt-3 pl-3 pr-3 relative" style="z-index: 1;" v-model:activeIndex="active">
 		<TabPanel>
 			<template #header>
 				<div>
@@ -235,8 +235,78 @@ const openEditor = () => {
 				</div>
 			</template>
 			<Loading v-if="loading"/>
-			<div v-else class="text-center">
-				<div class="grid text-left" v-if="servicesLb && servicesLb.length >0">
+			<div v-else-if="servicesLb && servicesLb.length >0" class="text-center">
+				<DataTable v-if="layout == 'list'" class="nopd-header w-full" v-model:expandedRows="expandedRows" :value="servicesLb" dataKey="id" tableStyle="min-width: 50rem">
+						<Column expander style="width: 5rem" />
+						<Column header="Service">
+							<template #body="slotProps">
+								<span class="block text-500 font-medium"><i class="pi pi-server text-gray-500"></i> {{slotProps.data[0].name}}</span>
+							</template>
+						</Column>
+						<Column header="Endpoints">
+							<template #body="slotProps">
+								<Badge :value="slotProps.data.length"/>
+							</template>
+						</Column>
+						<Column header="Action"  style="width: 110px;">
+							<template #body="slotProps">
+			
+							 <div 
+								 @click="mappingPort({service: slotProps.data[0],lb:slotProps.data})"
+								 v-if="!!portInfobyLb(slotProps.data[0].name)" 
+								 v-tooltip="'Port:'+portInfobyLb(slotProps.data[0].name)" 
+								 class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
+								 style="width: 2rem; height: 2rem">
+									 <i class="pi pi-circle text-green-500 text-xl"></i>
+							 </div>
+							 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: slotProps.data[0],lb:slotProps.data[0]})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
+									 <i class="pi pi-circle text-primary-500 text-xl"></i>
+							 </div>
+							</template>
+						</Column>
+						<template #expansion="parentSlotProps">
+						    <div class="pl-7" v-if="!!parentSlotProps.data.length > 0">
+						        <DataTable :value="parentSlotProps.data || []" >
+											<Column header="Endpoint">
+												<template #body="slotProps">
+													{{endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP'}}
+												</template>
+											</Column>
+											<Column header="Info">
+												<template #body="slotProps">
+													<div v-if="!!slotProps.data.port || !!slotProps.data.host">
+														<Tag class="mr-2" severity="contrast" value="Contrast" v-if="slotProps.data.ep?.isLocal">Local</Tag> 
+														<Tag class="mr-2" severity="secondary" value="Secondary">{{slotProps.data.protocol}}</Tag> 
+														<span class="relative" style="top: 2px;">{{slotProps.data.host}}{{!!slotProps.data.port?(`:${slotProps.data.port}`):''}}</span> 
+													</div>
+												</template>
+											</Column>
+											
+											<Column header="Action" style="width: 100px;">
+												<template #body="slotProps">
+													<div class="flex">
+														<div 
+															@click="mappingPort({service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})"
+															v-if="!!portInfo(slotProps.data.name,selectedMesh?.agent?.id)" 
+															v-tooltip="'Port:'+portInfo(slotProps.data.name,selectedMesh?.agent?.id)" 
+															class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
+															style="width: 2rem; height: 2rem">
+																<i class="pi pi-circle text-green-500 text-xl"></i>
+														</div>
+														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
+															<i class="pi pi-circle text-primary-500 text-xl"></i>
+														</div>
+														<div @click="showAtionMenu($event, {service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
+															<i class="pi pi-ellipsis-v text-gray-500 text-xl"></i>
+														</div>
+													</div>
+												</template>
+											</Column>
+						        </DataTable>
+						    </div>
+						</template>
+				</DataTable>
+				<div v-else class="grid text-left" v-if="servicesLb && servicesLb.length >0">
 						<div class="col-12 md:col-6 lg:col-4" v-for="(lb,hid) in servicesLb" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between">
@@ -293,7 +363,6 @@ const openEditor = () => {
 														<div @click="showAtionMenu($event, {service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
 															<i class="pi pi-ellipsis-v text-gray-500 text-xl"></i>
 														</div>
-														<Menu ref="actionMenu" :model="actions" :popup="true" />
 													<!-- 	
 														<Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
 														 -->
@@ -304,8 +373,9 @@ const openEditor = () => {
 							 </div>
 					 </div>
 				</div>
-				<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
+				<Menu ref="actionMenu" :model="actions" :popup="true" />
 			</div>
+			<Empty v-else />
 		</TabPanel>
 		<TabPanel >
 			<template #header>

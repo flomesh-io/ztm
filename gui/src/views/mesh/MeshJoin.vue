@@ -59,6 +59,7 @@ const commit = () => {
 			} else{
 				toast.add({ severity: 'error', summary:'Tips', detail: 'Join Failed.', life: 3000 });
 			}
+			store.dispatch('account/meshes');
 		})
 		.catch(err => {
 			loading.value = false;

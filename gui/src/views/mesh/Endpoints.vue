@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted,onActivated, computed } from "vue";
+import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
@@ -18,10 +18,12 @@ const loading = ref(false);
 const loader = ref(false);
 const status = ref({});
 const endpoints = ref([]);
-const selectedMesh = ref(null);
 
 const meshes = computed(() => {
 	return store.getters['account/meshes']
+});
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
 });
 const timeago = computed(() => (ts) => {
 	let label = "Last heartbeat: ";
@@ -35,13 +37,6 @@ const timeago = computed(() => (ts) => {
 onActivated(()=>{
 	getEndpoints();
 })
-const load = (d) => {
-	meshes.value = d;
-}
-const select = (selected) => {
-	selectedMesh.value = selected;
-	getEndpoints();
-}
 const getEndpoints = () => {
 	loading.value = true;
 	loader.value = true;
@@ -67,8 +62,16 @@ const getEndpoints = () => {
 }
 
 const typing = ref('');
-const clickSearch = () => {
-}
+
+watch(()=>selectedMesh,()=>{
+	if(selectedMesh.value){
+		getEndpoints();
+	}
+},{
+	deep:true,
+	immediate:true
+})
+
 const active = ref(0);
 
 const expandNode = ref();
@@ -149,17 +152,6 @@ const deletePort = (port) => {
 </script>
 
 <template>
-	<Card class="nopd ml-3 mr-3 mt-3">
-		<template #content>
-			<InputGroup class="search-bar" >
-				<MeshSelector
-					:full="true" 
-					innerClass="transparent" 
-					@load="load" 
-					@select="select"/>
-			</InputGroup>
-		</template>
-	</Card>
 	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
 		<TabPanel>
 			<template #header>
