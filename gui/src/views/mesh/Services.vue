@@ -44,40 +44,19 @@ const deleteService = () => {
 		return;
 	}
 	const ep = endpointMap.value[service.ep?.id]?.name|| 'Unnamed EP';
-	confirm.require({
-	    message: `Are you sure to delete ${service.name}(${ep}) service?`,
-	    header: 'Tips',
-	    icon: 'pi pi-exclamation-triangle',
-	    accept: () => {
-				pipyProxyService.deleteService({
-					name: service.name,
-					proto: service.protocol,
-					mesh:selectedMesh.value?.name,
-					ep: service.ep?.id
-				})
-					.then(res => {
-						console.log('Delete Success', err)
-						setTimeout(()=>{
-							getServices();
-						},1000)
-						
-						selectedService.value = null;
-						visibleEditor.value = false;
-					})
-					.catch(err => {
-						console.log('Request Failed', err)
-						setTimeout(()=>{
-							getServices();
-						},1000)
-						
-						selectedService.value = null;
-						visibleEditor.value = false;
-					}); 
-	    },
-	    reject: () => {
-	    }
+	pipyProxyService.deleteService({
+		name: service.name,
+		proto: service.protocol,
+		mesh:selectedMesh.value?.name,
+		ep: service.ep?.id
+	},() => {
+		setTimeout(()=>{
+			getServices();
+		},1000)
+		
+		selectedService.value = null;
+		visibleEditor.value = false;
 	});
-	
 }
 
 const getEndpoints = () => {
@@ -241,7 +220,7 @@ const openEditor = () => {
 					innerClass="transparent" 
 					@load="load" 
 					@select="select"/>
-				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white" placeholder="Type service | host" rows="1" cols="30" />
+				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | host" rows="1" cols="30" />
 				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>

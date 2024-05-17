@@ -1,25 +1,22 @@
 <script setup>
-//pass login
 import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
+import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 const store = useStore();
+const toast = useToast();
+const confirm = useConfirm();
 setAuthorization({
 	token: "pass",
 	expireAt: 7
 }, AUTH_TYPE.BASIC);
 store.commit('account/setUser', {id:'Client'});
-	// import { invoke } from '@tauri-apps/api/core'
-	// setTimeout(()=>{
-	// 	invoke('close_splashscreen');
-	// },1000)
-	
-	// {
-	// 	 "width": 300,
-	// 	 "height": 300,
-	// 	 "decorations": false,
-	// 	 "url": "splashscreen.html",
-	// 	 "label": "splashscreen"
-	// },
+store.commit('notice/setToast', toast);
+store.commit('notice/setConfirm', confirm);
+// import { invoke } from '@tauri-apps/api/core'
+// setTimeout(()=>{
+// 	invoke('close_splashscreen');
+// },1000)
 </script>
 
 <template>

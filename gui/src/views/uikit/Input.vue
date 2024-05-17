@@ -24,14 +24,14 @@ const listboxValues = ref([
     { name: 'Paris', code: 'PRS' }
 ]);
 const listboxValue = ref(null);
-const dropdownValues = ref([
+const selectValues = ref([
     { name: 'New York', code: 'NY' },
     { name: 'Rome', code: 'RM' },
     { name: 'London', code: 'LDN' },
     { name: 'Istanbul', code: 'IST' },
     { name: 'Paris', code: 'PRS' }
 ]);
-const dropdownValue = ref(null);
+const selectValue = ref(null);
 const multiselectValues = ref([
     { name: 'Australia', code: 'AU' },
     { name: 'Brazil', code: 'BR' },
@@ -125,7 +125,7 @@ const searchCountry = (event) => {
                 <Textarea placeholder="Your Message" :autoResize="true" rows="3" cols="30" />
 
                 <h5>AutoComplete</h5>
-                <AutoComplete placeholder="Search" id="dd" :dropdown="true" :multiple="true" v-model="selectedAutoValue" :suggestions="autoFilteredValue" @complete="searchCountry($event)" field="name" />
+                <AutoComplete placeholder="Search" id="dd" :select="true" :multiple="true" v-model="selectedAutoValue" :suggestions="autoFilteredValue" @complete="searchCountry($event)" field="name" />
 
                 <h5>Calendar</h5>
                 <Calendar :showIcon="true" :showButtonBar="true" v-model="calendarValue"></Calendar>
@@ -214,8 +214,8 @@ const searchCountry = (event) => {
                 <h5>Listbox</h5>
                 <Listbox v-model="listboxValue" :options="listboxValues" optionLabel="name" :filter="true" />
 
-                <h5>Dropdown</h5>
-                <Dropdown v-model="dropdownValue" :options="dropdownValues" optionLabel="name" placeholder="Select" />
+                <h5>Select</h5>
+                <Select v-model="selectValue" :options="selectValues" optionLabel="name" placeholder="Select" />
 
                 <h5>MultiSelect</h5>
                 <MultiSelect v-model="multiselectValue" :options="multiselectValues" optionLabel="name" placeholder="Select Countries" :filter="true">

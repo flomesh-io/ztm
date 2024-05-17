@@ -94,8 +94,8 @@ const searchCountry = (event) => {
             </div>
             <div class="field col-12 md:col-4">
                 <span class="p-float-label">
-                    <Dropdown id="dropdown" :options="cities" v-model="value8" optionLabel="name"></Dropdown>
-                    <label for="dropdown">Dropdown</label>
+                    <Select id="select" :options="cities" v-model="value8" optionLabel="name"></Select>
+                    <label for="select">Select</label>
                 </span>
             </div>
             <div class="field col-12 md:col-4">

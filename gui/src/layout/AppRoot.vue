@@ -191,14 +191,14 @@ const restart = ref(false);
 			</div>
 			<div class="mt-4">
 				<Button v-if="!isLogined" class="w-20rem" @click="goLogin">Login</Button>
-				<Dropdown 
+				<Select 
 				v-else
 				:options="meshes" 
 				optionLabel="label" 
 				:loading="loading"
 				:placeholder="placeholder" 
 				class="w-20rem transparent">
-				    <template #dropdownicon>
+				    <template #selecticon>
 							<i v-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
 							<i v-else class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
 				    </template>
@@ -220,7 +220,7 @@ const restart = ref(false);
 										{{ slotProps.placeholder }}
 								</span>
 						</template>
-				</Dropdown>
+				</Select>
 				
 			</div>
 	

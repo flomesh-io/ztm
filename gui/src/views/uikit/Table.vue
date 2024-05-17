@@ -183,7 +183,7 @@ const calculateCustomerTotal = (name) => {
                             <span :class="'customer-badge status-' + data.status">{{ data.status }}</span>
                         </template>
                         <template #filter="{ filterModel }">
-                            <Dropdown v-model="filterModel.value" :options="statuses" placeholder="Any" class="p-column-filter" :showClear="true">
+                            <Select v-model="filterModel.value" :options="statuses" placeholder="Any" class="p-column-filter" :showClear="true">
                                 <template #value="slotProps">
                                     <span :class="'customer-badge status-' + slotProps.value" v-if="slotProps.value">{{ slotProps.value }}</span>
                                     <span v-else>{{ slotProps.placeholder }}</span>
@@ -191,7 +191,7 @@ const calculateCustomerTotal = (name) => {
                                 <template #option="slotProps">
                                     <span :class="'customer-badge status-' + slotProps.option">{{ slotProps.option }}</span>
                                 </template>
-                            </Dropdown>
+                            </Select>
                         </template>
                     </Column>
                     <Column field="activity" header="Activity" :showFilterMatchModes="false" style="min-width: 12rem">

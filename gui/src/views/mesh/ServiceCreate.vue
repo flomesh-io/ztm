@@ -166,14 +166,14 @@ const active = ref(0);
 													<i class="pi pi-chart-scatter"/>
 												</span>
 												<span class="font-medium">
-													<Dropdown
+													<Select
 													 :disabled="!!props.pid"
 														v-model="config.ep" 
 														:options="endpoints" 
 														optionLabel="name" 
 														optionValue="id"
 														placeholder="Endpoint" 
-														class="flex"></Dropdown>
+														class="flex"></Select>
 												</span>
 										</Chip>
 									</div>

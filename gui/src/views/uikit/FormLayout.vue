@@ -1,13 +1,13 @@
 <script setup>
 import { ref } from 'vue';
 
-const dropdownItems = ref([
+const selectItems = ref([
     { name: 'Option 1', code: 'Option 1' },
     { name: 'Option 2', code: 'Option 2' },
     { name: 'Option 3', code: 'Option 3' }
 ]);
 
-const dropdownItem = ref(null);
+const selectItem = ref(null);
 </script>
 
 <template>
@@ -108,7 +108,7 @@ const dropdownItem = ref(null);
                     </div>
                     <div class="field col-12 md:col-3">
                         <label for="state">State</label>
-                        <Dropdown id="state" v-model="dropdownItem" :options="dropdownItems" optionLabel="name" placeholder="Select One"></Dropdown>
+                        <Select id="state" v-model="selectItem" :options="selectItems" optionLabel="name" placeholder="Select One"></Select>
                     </div>
                     <div class="field col-12 md:col-3">
                         <label for="zip">Zip</label>

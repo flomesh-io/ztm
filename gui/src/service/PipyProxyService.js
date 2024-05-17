@@ -1,4 +1,6 @@
 import { request } from './common/request';
+import toast from "@/utils/toast";
+import confirm from "@/utils/confirm";
 const isDev = process.env.NODE_ENV === "development";
 export default class PipyProxyService {
 	login(user, password) {
@@ -92,19 +94,41 @@ export default class PipyProxyService {
 		proto,
 		ip,
 		port,
-	}) {
-		return request(`/api/meshes/${mesh}/endpoints/${ep}/ports/${ip}/${proto}/${port}`,"DELETE");
+	},callback) {
+		
+		confirm.remove(() => {
+			request(`/api/meshes/${mesh}/endpoints/${ep}/ports/${ip}/${proto}/${port}`,"DELETE").then((res) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
+				!!callback && callback(res);
+			}).catch(err => {
+				!!callback && callback(res);
+			});
+		})
 	}
-	deleteMesh(name) {
-		return request(`/api/meshes/${name}`,"DELETE");
+	deleteMesh(name,callback) {
+		confirm.remove(() => {
+			request(`/api/meshes/${name}`,"DELETE").then((res) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
+				!!callback && callback(res);
+			}).catch(err => {
+				!!callback && callback(res);
+			});
+		});
 	}
 	deleteService({
 		mesh,
 		ep,
 		name, 
 		proto,
-	}) {
-		return request(`/api/meshes/${mesh}/endpoints/${ep}/services/${proto}/${name}`,"DELETE");
+	},callback) {
+		confirm.remove(() => {
+			request(`/api/meshes/${mesh}/endpoints/${ep}/services/${proto}/${name}`,"DELETE").then((res) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
+				!!callback && callback(res);
+			}).catch(err => {
+				!!callback && callback(res);
+			});
+		});
 	}
 	downloadCa({id}) {
 		return '/api/download-ca';

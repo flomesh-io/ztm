@@ -3,7 +3,6 @@ import App from './App.vue';
 import { initRouter } from "./router";
 import store from "./store";
 import PrimeVue from 'primevue/config';
-// import 'primevue/resources/themes/aura-light-purple/theme.css'
 import ToastService from 'primevue/toastservice';
 import DialogService from 'primevue/dialogservice';
 import ConfirmationService from 'primevue/confirmationservice';
@@ -11,10 +10,21 @@ import { useComponent } from './components';
 import { useDirective } from './directives';
 import rulesReg from './rules/reg';
 import bootstrap from "@/bootstrap";
+import MyPreset from './theme';
 import '@/assets/styles.scss';
 
 const app = createApp(App);
-app.use(PrimeVue, { ripple: true });
+app.use(PrimeVue, { 
+	ripple: true ,
+	theme: {
+		preset: MyPreset,
+		options: {
+				prefix: '',
+				// darkModeSelector: 'system',
+				cssLayer: false
+		}
+	}
+});
 app.use(store);
 app.use(ToastService);
 app.use(DialogService);

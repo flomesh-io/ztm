@@ -120,63 +120,29 @@ const expand = (node) => {
 };
 
 const deleteService = (service) => {
-	confirm.require({
-	    message: `Are you sure to delete ${service.name} service?`,
-	    header: 'Tips',
-	    icon: 'pi pi-exclamation-triangle',
-	    accept: () => {
-				pipyProxyService.deleteService({
-					mesh:selectedMesh.value?.name,
-					ep:expandNode.value?.id,
-					name: service.name,
-					proto: service.protocol,
-				})
-					.then(res => {
-						console.log('Delete Success', err)
-						setTimeout(()=>{
-							expand(expandNode.value);
-						},1000)
-					})
-					.catch(err => {
-						console.log('Request Failed', err)
-						setTimeout(()=>{
-							expand(expandNode.value);
-						},1000)
-					}); 
-	    },
-	    reject: () => {
-	    }
-	});
-	
+	pipyProxyService.deleteService({
+		mesh:selectedMesh.value?.name,
+		ep:expandNode.value?.id,
+		name: service.name,
+		proto: service.protocol,
+	},() => {
+		console.log('Delete Success', err)
+		setTimeout(()=>{
+			expand(expandNode.value);
+		},1000)
+	}); 
 }
 const deletePort = (port) => {
-	confirm.require({
-	    message: `Are you sure to delete this port?`,
-	    header: 'Tips',
-	    icon: 'pi pi-exclamation-triangle',
-	    accept: () => {
-				pipyProxyService.deletePort({
-					mesh:selectedMesh.value?.name,
-					ep:expandNode.value?.id,
-					proto: port.protocol,
-					ip: port?.listen?.ip,
-					port: port?.listen?.port
-				})
-					.then(res => {
-						console.log(res);
-						setTimeout(()=>{
-							expand(expandNode.value);
-						},1000)
-					})
-					.catch(err => {
-						setTimeout(()=>{
-							expand(expandNode.value);
-						},1000)
-						console.log('Request Failed', err);
-					}); 
-	    },
-	    reject: () => {
-	    }
+	pipyProxyService.deletePort({
+		mesh:selectedMesh.value?.name,
+		ep:expandNode.value?.id,
+		proto: port.protocol,
+		ip: port?.listen?.ip,
+		port: port?.listen?.port
+	},() => {
+		setTimeout(()=>{
+			expand(expandNode.value);
+		},1000)
 	});
 }
 
