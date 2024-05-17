@@ -4,6 +4,13 @@ var config = null
 try { config = JSON.decode(os.read(CONFIG_PATHNAME)) } catch {}
 if (!config || typeof config !== 'object') config = {}
 
+function getConfig() {
+  return {
+    ca: config.ca || 'localhost:9999',
+    agent: config.agent || 'localhost:7777',
+  }
+}
+
 function Client(target) {
   var ha = new http.Agent(target)
 
@@ -30,11 +37,15 @@ function Client(target) {
 
 export default {
   config: (c) => {
-    if (c.ca) config.ca = c.ca
-    if (c.agent) config.agent = c.agent
-    os.write(CONFIG_PATHNAME, JSON.encode(config, null, 2))
+    if (c) {
+      if (c.ca) config.ca = c.ca
+      if (c.agent) config.agent = c.agent
+      os.write(CONFIG_PATHNAME, JSON.encode(config, null, 2))
+    } else {
+      return getConfig()
+    }
   },
 
-  ca: () => Client(config.ca || 'localhost:9999'),
-  agent: () => Client(config.agent || 'localhost:7777'),
+  ca: () => Client(getConfig().ca),
+  agent: () => Client(getConfig().agent),
 }
