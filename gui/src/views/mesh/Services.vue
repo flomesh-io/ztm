@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted,onActivated, computed } from "vue";
+import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import ServiceCreate from './ServiceCreate.vue'
@@ -19,18 +19,15 @@ const endpoints = ref([]);
 const status = ref({});
 const scopeType = ref('All');
 const portMap = ref({});
+const loading = ref(false);
+const loader = ref(false);
+const active = ref(0);
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
-const selectedMesh = ref(null);
-const loading = ref(false);
-const loader = ref(false);
-const select = (selected) => {
-	selectedMesh.value = selected;
-	getServices();
-	getEndpoints();
-	getPorts();
-}
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
 onActivated(()=>{
 	if(selectedMesh.value){
 		getServices();
@@ -105,6 +102,16 @@ const getPorts = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 
+watch(()=>selectedMesh,()=>{
+	if(selectedMesh.value){
+		getServices();
+		getEndpoints();
+		getPorts();
+	}
+},{
+	deep:true,
+	immediate:true
+})
 const portInfo = computed(() => {
 	return (svc,ep) => {
 		const postAry = [];
@@ -150,10 +157,6 @@ const servicesLb = computed(() => {
 });
 
 const typing = ref('');
-const clickSearch = () => {
-}
-
-const active = ref(0);
 const save = () => {
 	active.value = 0;
 	getServices();
@@ -214,14 +217,8 @@ const openEditor = () => {
 	<Card class="nopd ml-3 mr-3 mt-3">
 		<template #content>
 			<InputGroup class="search-bar" v-show="active!=1">
-				<MeshSelector 
-					v-show="active!=1" 
-					:full="false" 
-					innerClass="transparent" 
-					@load="load" 
-					@select="select"/>
+				<Button :disabled="!typing" icon="pi pi-search"  :label="selectedMesh?.name"/>
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | host" rows="1" cols="30" />
-				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>
 	</Card>

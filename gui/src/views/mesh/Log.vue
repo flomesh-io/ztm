@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted,onActivated, computed } from "vue";
+import { ref, onMounted,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
@@ -18,23 +18,16 @@ const loading = ref(false);
 const loader = ref(false);
 const status = ref({});
 const logs = ref([])
-const selectedMesh = ref(null);
-
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
 
-const load = (d) => {
-	meshes.value = d;
-}
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
 onActivated(()=>{
 	getLogs();
 })
-const select = (selected) => {
-	selectedMesh.value = selected;
-	getLogs();
-}
-
 const getLogs = () => {
 	loading.value = true;
 	loader.value = true;
@@ -57,8 +50,14 @@ const logsFilter = computed(() => {
 		return (typing.value == '' || log.message.indexOf(typing.value) >=0  || typing.value == log.type);
 	})
 });
-const clickSearch = () => {
-}
+watch(()=>selectedMesh,()=>{
+	if(selectedMesh.value){
+		getLogs();
+	}
+},{
+	deep:true,
+	immediate:true
+})
 const active = ref(0);
 const severityMap = computed(() => (severity) => {
 	if(severity == 'error'){
@@ -86,13 +85,8 @@ const timeago = computed(() => (ts) => {
 	<Card class="nopd ml-3 mr-3 mt-3">
 		<template #content>
 			<InputGroup class="search-bar" >
-				<MeshSelector
-					:full="false" 
-					innerClass="transparent" 
-					@load="load" 
-					@select="select"/>
+				<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keywork" rows="1" cols="30" />
-				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>
 	</Card>

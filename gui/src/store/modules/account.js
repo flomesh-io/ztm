@@ -13,6 +13,7 @@ export default {
 		child: null,
 		collapsed: true,
 		meshes:[],
+		selectedMesh:null,
 		logs:[],
   },
   getters: {
@@ -27,6 +28,9 @@ export default {
     },
     meshes: (state) => {
       return state.meshes;
+    },
+    selectedMesh: (state) => {
+      return state.selectedMesh;
     },
     child: (state) => {
       return state.child;
@@ -98,6 +102,9 @@ export default {
     },
     setMeshes(state, meshes) {
       state.meshes = meshes;
+    },
+    setSelectedMesh(state, selectedMesh) {
+      state.selectedMesh = selectedMesh;
     },
     setPipyVersion(state, pipyVersion) {
       state.pipyVersion = pipyVersion;
