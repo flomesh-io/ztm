@@ -57,6 +57,33 @@
           "sidecar": true
         },
         {
+          "name": "ls",
+          "cmd": "ls",
+          "sidecar": false
+        },
+        {
+          "name": "pipy",
+          "cmd": "pipy",
+          "args": [
+            {
+              "validator": ".+"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
+        },
+        {
           "name": "cd",
           "cmd": "cd",
           "args": [

@@ -1,4 +1,5 @@
 import { Command, Child, open } from '@tauri-apps/plugin-shell';
+import { invoke } from '@tauri-apps/api/core';
 import { resourceDir, appLogDir, appDataDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/plugin-os';
 import store from "@/store";
@@ -18,6 +19,21 @@ export default class ShellService {
 				store.commit('account/setPipyVersion', line.split(":")[1].trim());
 			}
 		});
+		
+		// let command = await invoke("plugin:shell|execute", {
+		//     program: "pipy",
+		//     args: ['-v','','','',''],
+		// 		options: {},
+		// });
+		// let command = await invoke("plugin:shell|execute", {
+		//     program: "sudo",
+		//     args: ["ls",""],
+		// 		options: {},
+		// });
+		// console.log(command);
+		// let command = await Command.create("pipy", ['-v','','','','']);
+		// const rst = await command.spawn();
+		// console.log(rst)
 	}
 	async startPipy (port, reset, callError){
 		// await open('pipy');
