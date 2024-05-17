@@ -291,8 +291,13 @@ function config(argv) {
     ca: opts['--ca'],
     agent: opts['--agent'],
   }
-  if (Object.values(conf).filter(i=>i).length === 0) return errorInput('missing options', 'config')
-  clients.config(conf)
+  if (Object.values(conf).filter(i=>i).length === 0) {
+    var c = clients.config()
+    println('Current CA    :', c.ca)
+    println('Current agent :', c.agent)
+  } else {
+    clients.config(conf)
+  }
 }
 
 //
