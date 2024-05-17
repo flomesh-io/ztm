@@ -1,18 +1,20 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
-const store = useStore();
 import _ from "lodash"
 
 const props = defineProps(['pid','mesh','ep','proto','title']);
 const emits = defineEmits(['save','cancel']);
-
-const selected = ref(null);
+const store = useStore();
+const meshes = computed(() => {
+	return store.getters['account/meshes']
+});
+const selected = ref(props.mesh);
 const endpoints = ref([]);
 const route = useRoute();
 const toast = useToast();
@@ -28,15 +30,22 @@ const newConfig = {
 	port:null
 }
 const config = ref(_.cloneDeep(newConfig));
+const agentId = computed(()=>{
+	const find = meshes.value.filter((mesh) => mesh.name == selected.value);
+	return find?.agent?.id;
+})
 const getEndpoints = () => {
-	pipyProxyService.getEndpoints(selected.value?.name)
+	if(!selected.value){
+		return;
+	}
+	pipyProxyService.getEndpoints(selected.value)
 		.then(res => {
 			console.log("Endpoints:")
 			console.log(res)
 			endpoints.value = res || [];
 			if(!props.pid){
-				if(!!res.find((ep)=> ep.id == selected.value.agent?.id)){
-					config.value.ep = selected.value.agent?.id;
+				if(!!res.find((ep)=> ep.id == agentId)){
+					config.value.ep = agentId;
 				} else {
 					config.value.ep = res[0].id;
 				}
@@ -45,16 +54,18 @@ const getEndpoints = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 const enabled = computed(() => {
-	return selected.value && config.value.name.length>0 && selected.value && !!selected.value.agent?.id;
+	return selected.value && config.value.name.length>0 && selected.value && !!agentId;
 });
-const select = (d) => {
-	selected.value = d;
+watch(()=> selected,()=>{
 	getEndpoints();
-}
+},{
+	immediate: true,
+	deep:true,
+})
 const commit = () => {
 	loading.value = true;
 	pipyProxyService.createService({
-		mesh: selected.value.name,
+		mesh: selected.value,
 		ep: config.value.ep,
 		name: config.value.name,
 		proto: config.value.protocol,
@@ -64,9 +75,11 @@ const commit = () => {
 	})
 		.then(res => {
 			loading.value = false;
-			toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
-			emits("save", config.value);
-			config.value = _.cloneDeep(newConfig);
+			if(res){
+				toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
+				emits("save", config.value);
+				config.value = _.cloneDeep(newConfig);
+			}
 		})
 		.catch(err => {
 			loading.value = false;
@@ -95,6 +108,7 @@ const loaddata = () => {
 			console.log(res);
 			loading.value = false;
 			config.value = res;
+			config.value.ep = props.ep;
 			if(res.users == null){
 				scope.value = 'public';
 				config.value.users = [];
@@ -144,16 +158,18 @@ const active = ref(0);
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
 									<div class="text-500 w-6 md:w-2 font-medium">Mesh</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
+										
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 													<i class="pi pi-globe"/>
 												</span>
 												<span class="font-medium">
 													<MeshSelector 
+														:form="true" 
 														:full="true" 
+														v-model="selected"
 														 :disabled="!!props.pid"
-														innerClass="flex" 
-														@select="select"/>
+														innerClass="flex"/>
 												</span>
 										</Chip>
 									</div>

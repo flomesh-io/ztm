@@ -312,12 +312,12 @@ pre.app-code code{
 	display: flex;
 	flex-direction: row;
 }
-.tabview-vertical .p-tabview-nav-container{
+.tabview-vertical .p-tabview-tablist-container{
 }
-.tabview-vertical .p-tabview-nav {
+.tabview-vertical .p-tabview-tablist {
 	display: block;
 }
-.tabview-vertical .p-tabview-nav li{
+.tabview-vertical .p-tabview-tablist li{
 	display: block;
 	position: relative;
 	left: 3px;
@@ -325,28 +325,28 @@ pre.app-code code{
 .tabview-vertical .p-tabview-panels{
 	flex: 1;
 }
-.tabview-vertical .p-tabview-nav li .p-tabview-nav-link{
+.tabview-vertical .p-tabview-tablist li .p-tabview-tab-header{
 	background: transparent;
 	border-width: 0;
 	border-color: transparent;
 	border-radius: 0;
 }
-.tabview-vertical .p-tabview-nav-content{
+.tabview-vertical .p-tabview-tablist-scroll-container{
 	
 	height: 100%;
 }
-.tabview-vertical .p-tabview-nav{
+.tabview-vertical .p-tabview-tablist{
 	height: 100%;
 	border-width: 0 3px 0 0;
 	border-color: transparent #e5e7eb transparent transparent;
 	border-radius: 0;
 }
-.tabview-vertical .p-tabview-nav li.p-highlight .p-tabview-nav-link{
+.tabview-vertical .p-tabview-tablist .p-tabview-tablist-item-active .p-tabview-tab-header{
 	border-width: 0 3px 0 0 !important;
 	border-color: var(--primary-color) !important;
 	border-style: solid !important;
 }
-.tabview-vertical .p-tabview-nav li.p-highlight .p-tabview-nav-link:hover{
+.tabview-vertical .p-tabview-tablist .p-tabview-tablist-item-active .p-tabview-tab-header:hover{
 	
 	border-color: var(--primary-color) !important;
 }
@@ -554,7 +554,7 @@ pre.app-code code{
 			opacity: 0.8;
 	}
 }
-.p-tabview-nav-link{
+.p-tabview-tablist-link{
 	outline: none !important;
 }
 .p-tabview .p-tabview-panels{
@@ -574,6 +574,9 @@ pre.app-code code{
 	border: none;
 	box-shadow: none;
 	line-height: 20px;
+}
+.p-chip .p-select.p-disabled{
+	background-color: transparent;
 }
 .p-chip .p-select-label.p-inputtext{
 	padding-top: 0 !important;
@@ -674,7 +677,7 @@ fieldset{
 	color: #fff;
 }
 
-.p-tabview-nav-link{
+.p-tabview-tablist-link{
 	outline: none !important;
 }
 .p-tabview-tablist-item,.p-tabview-tablist-item>a,.p-row-even,.p-row-odd{
@@ -689,4 +692,10 @@ fieldset{
 }
 .p-tabview-tablist-item-active .p-tabview-tab-header{
 	color: var(--primary-500) !important;
+}
+.p-radiobutton.p-radiobutton-checked .p-radiobutton-box .p-radiobutton-icon{
+	background-color: var(--primary-500) !important;
+}
+.p-radiobutton.p-radiobutton-checked .p-radiobutton-box{
+	background-color: transparent !important;
 }
