@@ -588,7 +588,7 @@ onMounted(() => {
 													<Tag :severity="data.protocol == 'https'?'success':'info'" :value="data.protocol"></Tag>
 												</template>
 												<template #filter="{ filterModel }">
-													<Dropdown v-model="filterModel.value" :options="protocols" placeholder="Any" class="p-column-filter" :showClear="true">
+													<Select v-model="filterModel.value" :options="protocols" placeholder="Any" class="p-column-filter" :showClear="true">
 													    <template #value="slotProps">
 													        <span :class="'customer-badge status-' + slotProps.value" v-if="slotProps.value">{{ slotProps.value }}</span>
 													        <span v-else>{{ slotProps.placeholder }}</span>
@@ -596,7 +596,7 @@ onMounted(() => {
 													    <template #option="slotProps">
 													        <span :class="'customer-badge status-' + slotProps.option">{{ slotProps.option }}</span>
 													    </template>
-													</Dropdown>
+													</Select>
 												</template>
 										</Column>
 										<Column sortable field="status" header="Status" style="min-width: 3rem">
@@ -628,7 +628,7 @@ onMounted(() => {
 													<Tag :severity="{DELETE:'danger',GET:'',POST:'warning',PUT:'info'}[data.method]" :value="data.method"></Tag>
 												</template>
 												<template #filter="{ filterModel }">
-													<Dropdown v-model="filterModel.value" :options="['GET','POST','DELETE','PUT']" placeholder="Any" class="p-column-filter" :showClear="true">
+													<Select v-model="filterModel.value" :options="['GET','POST','DELETE','PUT']" placeholder="Any" class="p-column-filter" :showClear="true">
 													    <template #value="slotProps">
 													        <span :class="'customer-badge status-' + slotProps.value" v-if="slotProps.value">{{ slotProps.value }}</span>
 													        <span v-else>{{ slotProps.placeholder }}</span>
@@ -636,7 +636,7 @@ onMounted(() => {
 													    <template #option="slotProps">
 													        <span :class="'customer-badge status-' + slotProps.option">{{ slotProps.option }}</span>
 													    </template>
-													</Dropdown>
+													</Select>
 												</template>
 										</Column>
 										<Column sortable field="request_begin_time" header="Request Time" style="min-width: 6rem">
@@ -864,7 +864,7 @@ onMounted(() => {
 				<div class="col-12">
 					<Card>
 						<template #title>
-							<Dropdown @change="searchLeftChart()" v-model="groupBy" :options="groupByOptions" optionLabel="name" placeholder="Select" />
+							<Select @change="searchLeftChart()" v-model="groupBy" :options="groupByOptions" optionLabel="name" placeholder="Select" />
 						</template>
 						<template #content>
 							<div style="width: 100%;height: 310px;" id="left-chart"></div>

@@ -44,31 +44,12 @@ const deleteMesh = () => {
 	if(!name){
 		return
 	}
-	confirm.require({
-	    message: `Are you sure to exit ${decodeURI(name)} ?`,
-	    header: 'Tips',
-	    icon: 'pi pi-exclamation-triangle',
-	    accept: () => {
-				pipyProxyService.deleteMesh(name)
-					.then(res => {
-						console.log(res);
-						setTimeout(()=>{
-							loaddata();
-						},1000);
-						selectedMesh.value = null;
-						visibleEditor.value = false;
-					})
-					.catch(err => {
-						console.log('Request Failed', err)
-						setTimeout(()=>{
-							loaddata();
-						},1000);
-						selectedMesh.value = null;
-						visibleEditor.value = false;
-					}); 
-	    },
-	    reject: () => {
-	    }
+	pipyProxyService.deleteMesh(name,() => {
+		setTimeout(()=>{
+			loaddata();
+		},1000);
+		selectedMesh.value = null;
+		visibleEditor.value = false;
 	});
 	
 }

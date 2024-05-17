@@ -36,7 +36,7 @@ const select = () => {
 </script>
 
 <template>
-	<Dropdown
+	<Select
 		v-model="selected" 
 		:options="meshes" 
 		optionLabel="label" 
@@ -65,7 +65,7 @@ const select = () => {
 									{{ slotProps.placeholder }}
 							</span>
 					</template>
-		</Dropdown>
+		</Select>
 </template>
 
 <style scoped lang="scss">

@@ -35,29 +35,14 @@ const select = (selected) => {
 	getEndpoints();
 }
 const deletePort = (port) => {
-	confirm.require({
-	    message: `Are you sure to delete this port?`,
-	    header: 'Tips',
-	    icon: 'pi pi-exclamation-triangle',
-	    accept: () => {
-				pipyProxyService.deletePort({
-					mesh:selectedMesh.value?.name,
-					ep:selectedMesh.value?.agent?.id,
-					proto: port.protocol,
-					ip: port?.listen?.ip,
-					port: port?.listen?.port
-				})
-					.then(res => {
-						console.log(res);
-						getPorts();
-					})
-					.catch(err => {
-						console.log('Request Failed', err);
-						getPorts();
-					}); 
-	    },
-	    reject: () => {
-	    }
+	pipyProxyService.deletePort({
+		mesh:selectedMesh.value?.name,
+		ep:selectedMesh.value?.agent?.id,
+		proto: port.protocol,
+		ip: port?.listen?.ip,
+		port: port?.listen?.port
+	},()=>{
+		getPorts()
 	});
 }
 
@@ -114,7 +99,7 @@ const active = ref(0);
 					innerClass="transparent" 
 					@load="load" 
 					@select="select"/>
-				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white" placeholder="Type service | port" rows="1" cols="30" />
+				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | port" rows="1" cols="30" />
 				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>
@@ -133,7 +118,7 @@ const active = ref(0);
 				<div class="grid text-left" v-if="portsFilter && portsFilter.length >0">
 						<div class="col-12 md:col-6 lg:col-3" v-for="(port,hid) in portsFilter" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
-									 <div class="flex justify-content-between mb-3">
+									 <div class="flex justify-content-between mb-1">
 											 <div>
 													<span class="block text-500 font-medium mb-3">
 														 {{port.listen.ip}} | {{port.protocol}}

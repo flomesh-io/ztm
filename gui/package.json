@@ -38,7 +38,7 @@
     "nprogress": "^0.2.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
-    "primevue": "^3.48",
+		"primevue": "4.0.0-beta.2",
     "vee-validate": "^4.12.7",
     "vue": "^3.2.41",
     "vue-router": "^4.1.5",

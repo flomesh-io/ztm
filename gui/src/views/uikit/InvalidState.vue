@@ -81,8 +81,8 @@ const searchCountry = (event) => {
                             <InputNumber id="inputnumber" v-model="value6" class="p-invalid" />
                         </div>
                         <div class="field">
-                            <label for="dropdown">Dropdown</label>
-                            <Dropdown id="dropdown" v-model="value7" :options="cities" optionLabel="name" class="p-invalid" />
+                            <label for="select">Select</label>
+                            <Select id="select" v-model="value7" :options="cities" optionLabel="name" class="p-invalid" />
                         </div>
                         <div class="field">
                             <label for="multiselect">MultiSelect</label>

@@ -91,7 +91,7 @@ const timeago = computed(() => (ts) => {
 					innerClass="transparent" 
 					@load="load" 
 					@select="select"/>
-				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white" placeholder="Type keywork" rows="1" cols="30" />
+				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keywork" rows="1" cols="30" />
 				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>

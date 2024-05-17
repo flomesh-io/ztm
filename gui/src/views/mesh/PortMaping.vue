@@ -180,14 +180,14 @@ const home = ref({
 																<i class="pi pi-chart-scatter"/>
 															</span>
 															<span class="font-medium">
-																<Dropdown
+																<Select
 																		style="max-width: 200px;"
 																		v-model="config.ep" 
 																		:options="endpoints" 
 																		optionLabel="name" 
 																		optionValue="id"
 																		placeholder="Endpoint" 
-																		class="flex"></Dropdown>
+																		class="flex"></Select>
 															</span>
 													</Chip>
 												</div>
@@ -246,14 +246,14 @@ const home = ref({
 																<i class="pi pi-chart-scatter"/>
 															</span>
 															<span class="font-medium">
-																<Dropdown
+																<Select
 																		v-model="config.target.endpoint" 
 																		:options="[{name:'Any', id:0}].concat(targetEndpoints)" 
 																		optionLabel="name" 
 																		optionValue="id"
 																		placeholder="Endpoint" 
 																		style="max-width: 200px;"
-																		class="flex"></Dropdown>
+																		class="flex small"></Select>
 															</span>
 													</Chip>
 												</div>
