@@ -368,17 +368,17 @@ function run(argv, program) {
 
 function runCA(argv, program) {
   parseOptions(optionsCA, argv, 'run ca')
-  exec([program, 'repo://ztm/ca', '--args', ...argv])
+  exec([program, '--pipy', 'repo://ztm/ca', '--args', ...argv])
 }
 
 function runHub(argv, program) {
   parseOptions(optionsHub, argv, 'run ca')
-  exec([program, 'repo://ztm/hub', '--args', ...argv])
+  exec([program, '--pipy', 'repo://ztm/hub', '--args', ...argv])
 }
 
 function runAgent(argv, program) {
   parseOptions(optionsAgent, argv, 'run ca')
-  exec([program, 'repo://ztm/agent', '--args', ...argv])
+  exec([program, '--pipy', 'repo://ztm/agent', '--args', ...argv])
 }
 
 function exec(argv) {

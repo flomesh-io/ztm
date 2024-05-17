@@ -11,6 +11,7 @@ cmake .. \
   -DCMAKE_CXX_COMPILER=clang++ \
   -DPIPY_GUI=OFF \
   -DPIPY_CODEBASES=ON \
-  -DPIPY_CUSTOM_CODEBASES=ztm/ca:../ca,ztm/hub:../hub,ztm/agent:../agent
+  -DPIPY_CUSTOM_CODEBASES=ztm/ca:../ca,ztm/hub:../hub,ztm/agent:../agent,ztm/cli:../cli \
+  -DPIPY_DEFAULT_OPTIONS="repo://ztm/cli --args"
 
 make -j2
