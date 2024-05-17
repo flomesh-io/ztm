@@ -70,7 +70,7 @@ const loginGuard = (to, from, next, options) => {
 		}
   } else {
 		resize(1280,860,true);
-		if(to.path != "/mesh/list" && to.path != "/"){
+		if(to.path != "/"){
 			const _meshes = store.getters['account/meshes']
 			if(!!_meshes && _meshes.length>0){
 				next();

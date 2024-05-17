@@ -47,6 +47,7 @@ const deleteMesh = () => {
 	pipyProxyService.deleteMesh(name,() => {
 		setTimeout(()=>{
 			loaddata();
+			store.dispatch('account/meshes');
 		},1000);
 		selectedMesh.value = null;
 		visibleEditor.value = false;
