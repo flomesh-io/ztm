@@ -20,6 +20,9 @@ const emits = defineEmits(['select']);
 onMounted(() => {
 	loaddata();
 });
+onActivated(() => {
+	loaddata();
+});
 
 const meshes = computed(() => {
 	return store.getters['account/meshes'] || []
