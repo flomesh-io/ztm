@@ -673,3 +673,10 @@ fieldset{
 	padding-bottom: 0;
 	color: #fff;
 }
+
+.p-tabview-nav-link{
+	outline: none !important;
+}
+.p-tabview-tablist-item,.p-tabview-tablist-item>a,.p-row-even,.p-row-odd{
+	outline: none !important;
+}
