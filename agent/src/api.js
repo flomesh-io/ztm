@@ -30,23 +30,13 @@ function init() {
 
 function allMeshes() {
   return Object.values(meshes).map(
-    (mesh) => ({
-      ...mesh.config,
-      connected: mesh.isConnected(),
-      errors: mesh.getErrors(),
-    })
+    (mesh) => mesh.getStatus()
   )
 }
 
 function getMesh(name) {
   var mesh = meshes[name]
-  if (mesh) {
-    return {
-      ...mesh.config,
-      connected: mesh.isConnected(),
-      errors: mesh.getErrors(),
-    }
-  }
+  if (mesh) return mesh.getStatus()
   return null
 }
 
