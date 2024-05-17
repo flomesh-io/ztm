@@ -680,3 +680,13 @@ fieldset{
 .p-tabview-tablist-item,.p-tabview-tablist-item>a,.p-row-even,.p-row-odd{
 	outline: none !important;
 }
+.p-togglebutton-checked .pi{
+	z-index: 3;
+	color: #fff;
+}
+.p-togglebutton-checked::before{
+	background-color: var(--primary-500) !important;
+}
+.p-tabview-tablist-item-active .p-tabview-tab-header{
+	color: var(--primary-500) !important;
+}
