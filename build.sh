@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ZTM_DIR=$(cd "$(dirname "$0")" && pwd)
-ZTM_BIN="$ZTM_DIR/bin/pipy"
+ZTM_BIN="$ZTM_DIR/bin/ztm"
 
 cd "$ZTM_DIR"
 build/deps.sh
