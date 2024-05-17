@@ -629,6 +629,12 @@ fieldset{
 	width: 2.2rem;
 	height: 2.2rem;
 }
+.small .p-togglebutton{
+	font-size: 0.9rem;
+	padding: 0 0.875rem;
+	line-height: 36px;
+	height: 36px;
+}
 .noheader-upload .p-fileupload-content{
 	border: none;
 	padding: 0;
@@ -671,6 +677,7 @@ fieldset{
 }
 .app-top-bar .p-menubar-end .p-select-label{
 	line-height: 50px;
+	padding-left: 15px;
 	height: 50px;
 	padding-top: 0;
 	padding-bottom: 0;
@@ -687,6 +694,10 @@ fieldset{
 	z-index: 3;
 	color: #fff;
 }
+.p-togglebutton.p-togglebutton-checked{
+	z-index: 3;
+	color: #fff !important;;
+}
 .p-togglebutton-checked::before{
 	background-color: var(--primary-500) !important;
 }
@@ -698,4 +709,7 @@ fieldset{
 }
 .p-radiobutton.p-radiobutton-checked .p-radiobutton-box{
 	background-color: transparent !important;
+}
+.p-datatable .p-datatable-thead > tr > th{
+	background-color: transparent;
 }

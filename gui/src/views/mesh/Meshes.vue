@@ -6,7 +6,6 @@ import MeshJoin from './MeshJoin.vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 const store = useStore();
-import freeSvg from "@/assets/img/free.svg";
 const router = useRouter();
 const confirm = useConfirm();
 const pipyProxyService = new PipyProxyService();
@@ -110,8 +109,8 @@ const openEditor = () => {
 					</div>
 				</template>
 				<Loading v-if="loading"/>
-				<div v-else class="text-center">
-					<div class="grid text-left" v-if="meshes && meshes.length >0">
+				<div v-else-if="meshes && meshes.length >0" class="text-center">
+					<div class="grid mt-1 text-left" >
 							<div class="col-12 md:col-6 lg:col-3" v-for="(mesh,hid) in meshes" :key="hid">
 	               <div class="surface-card shadow-2 p-3 border-round">
 	                   <div class="flex justify-content-between mb-3">
@@ -130,8 +129,8 @@ const openEditor = () => {
 	               </div>
 	           </div>
 					</div>
-					<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
 				</div>
+				<Empty v-else />
 			</TabPanel>
 	    <TabPanel >
 				<template #header>
@@ -162,5 +161,8 @@ const openEditor = () => {
 :deep(.p-tabview-panels),
 :deep(.p-tabview-nav-link){
 	background: transparent !important;
+}
+:deep(.p-tabview-panels){
+	padding: 0;
 }
 </style>

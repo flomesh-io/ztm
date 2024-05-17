@@ -212,4 +212,7 @@ const deletePort = (port) => {
 :deep(.p-tabview-nav-link){
 	background: transparent !important;
 }
+:deep(.p-tabview-panels){
+	padding: 0;
+}
 </style>

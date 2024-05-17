@@ -178,7 +178,7 @@ const select = (selected) => {
 						<Avatar v-if="!!username" icon="pi pi-user" style="background-color: #9855f7;" shape="circle" />
 						<span v-if="!!username" class="pl-2 pr-4">{{username}}</span>
 						<MeshSelector
-							:full="false" 
+							:full="true" 
 							@load="load" 
 							@select="select"/>
 						<!-- <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" @click="menuClick"/> -->

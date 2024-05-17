@@ -4,13 +4,13 @@ import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
 import { useStore } from 'vuex';
-const store = useStore();
 import { useConfirm } from "primevue/useconfirm";
-import freeSvg from "@/assets/img/free.svg";
 import dayjs from 'dayjs';
+import _ from 'lodash';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
+const store = useStore();
 const router = useRouter();
 const pipyProxyService = new PipyProxyService();
 const confirm = useConfirm();
@@ -26,18 +26,47 @@ const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
 onActivated(()=>{
-	getLogs();
+	loaddata();
 })
-const getLogs = () => {
+const loaddata = () => {
+	
 	loading.value = true;
 	loader.value = true;
-	pipyProxyService.getLogs(selectedMesh.value?.name)
+	getEndpoints();
+}
+const mergeLogs = () => {
+	logs.value = [];
+	selectEndpoints.value.forEach((ep)=>{
+		getLogs(ep);
+	})
+}
+const selectEndpoints = ref([]);
+const endpoints = ref([]);
+const getEndpoints = (callback) => {
+	loading.value = true;
+	loader.value = true;
+	pipyProxyService.getEndpoints(selectedMesh.value?.name)
+		.then(res => {
+			endpoints.value = res || [];
+			if(!!selectedMesh.value?.agent?.id){
+				selectEndpoints.value = [ selectedMesh.value.agent.id ];
+			}
+			mergeLogs();
+		})
+		.catch(err => console.log('Request Failed', err)); 
+}
+const getLogs = (ep) => {
+	pipyProxyService.getLogs(selectedMesh.value?.name, ep)
 		.then(res => {
 			loading.value = false;
 			setTimeout(() => {
 				loader.value = false;
 			},2000)
-			logs.value = res || [];
+			const _res = res;
+			_res.forEach(item => item.ep = ep);
+			logs.value = logs.value.concat(res || []);
+			logs.value  = _.uniqBy(logs.value, item => `${item.ep}-${item.time}-${item.message}`);
+			logs.value = _.sortBy(logs.value, item => item.time).reverse();
 		})
 		.catch(err => {
 			loading.value = false;
@@ -52,7 +81,7 @@ const logsFilter = computed(() => {
 });
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
-		getLogs();
+		loaddata();
 	}
 },{
 	deep:true,
@@ -78,7 +107,6 @@ const timeago = computed(() => (ts) => {
 		return "None";
 	}
 })
-
 </script>
 
 <template>
@@ -90,43 +118,40 @@ const timeago = computed(() => (ts) => {
 			</InputGroup>
 		</template>
 	</Card>
-	
-	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
-		<TabPanel>
-			<template #header>
-				<div>
-					<i class="pi pi-book mr-2"/> Logs
-					<i @click="getLogs" class="pi pi-refresh ml-2 refresh-icon" :class="{'spiner':loader}"/>
-				</div>
-			</template>
-			<Loading v-if="loading"/>
-			<div v-else class="text-center">
-				<div class="grid text-left" v-if="logsFilter && logsFilter.length >0">
-					<DataTable class="w-full" :value="logsFilter" tableStyle="min-width: 50rem">
-						
-						<Column header="Time">
-							<template #body="slotProps">
-								{{timeago(slotProps.data.time)}}
-							</template>
-						</Column>
-						
-						<Column header="Type">
-							<template #body="slotProps">
-								<Tag :severity="severityMap(slotProps.data.type)">{{slotProps.data.type}}</Tag>
-							</template>
-						</Column>
-						
-						<Column header="Message">
-							<template #body="slotProps">
-								{{slotProps.data.message}}
-							</template>
-						</Column>
-					</DataTable>
-				</div>
-				<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
-			</div>
-		</TabPanel>
-	</TabView>
+	<div class="mt-3 flex text-center justify-content-center align-content-center">
+		<Label class="px-3" style="padding-top: 10px;"><b>Endpoints:</b></Label>
+		<SelectButton class="small" @change="mergeLogs" v-model="selectEndpoints" :options="endpoints" optionLabel="name" optionValue="id" multiple aria-labelledby="multiple" />
+	</div>
+	<Loading v-if="loading"/>
+	<div v-else-if="logsFilter && logsFilter.length >0" class="text-center">
+		<div class="grid text-left px-5 py-5" >
+			<DataTable class="w-full" :value="logsFilter" tableStyle="min-width: 50rem">
+				
+				<Column header="Time">
+					<template #body="slotProps">
+						{{timeago(slotProps.data.time)}}
+					</template>
+				</Column>
+				<Column header="Endpoint">
+					<template #body="slotProps">
+						{{endpoints.find((n)=>n.id == slotProps.data.ep)?.name}}
+					</template>
+				</Column>
+				<Column header="Type">
+					<template #body="slotProps">
+						<Tag :severity="severityMap(slotProps.data.type)">{{slotProps.data.type}}</Tag>
+					</template>
+				</Column>
+				
+				<Column header="Message">
+					<template #body="slotProps">
+						{{slotProps.data.message}}
+					</template>
+				</Column>
+			</DataTable>
+		</div>
+	</div>
+	<Empty v-else />
 </template>
 
 <style scoped lang="scss">
