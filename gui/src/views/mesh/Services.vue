@@ -148,7 +148,7 @@ const portInfobyLb = computed(() => {
 
 const servicesFilter = computed(() => {
 	return services.value.filter((svc)=>{
-		return (typing.value == '' || typing.value == svc.name || typing.value == svc.host) 
+		return (typing.value == '' || svc.name.indexOf(typing.value)>=0 || typing.value == svc.host) 
 		&& (scopeType.value == 'All' || (scopeType.value == 'Remote' && !svc.isLocal) || (scopeType.value == 'Local' && !!svc.isLocal))
 	})
 });
@@ -156,7 +156,7 @@ const servicesFilter = computed(() => {
 
 const servicesLb = computed(() => {
 	const lbMap = {};
-	services.value.forEach((svc)=>{
+	servicesFilter.value.forEach((svc)=>{
 		if(!lbMap[svc.name]){
 			lbMap[svc.name] = [];
 		}
@@ -260,7 +260,7 @@ const openEditor = () => {
 				<div class="grid text-left" v-if="servicesLb && servicesLb.length >0">
 						<div class="col-12 md:col-6 lg:col-4" v-for="(lb,hid) in servicesLb" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
-									 <div class="flex justify-content-between mb-3">
+									 <div class="flex justify-content-between">
 											 <div>
 													<span class="block text-500 font-medium mb-3"><i class="pi pi-server text-gray-500"></i> {{lb[0].name}}</span>
 											 </div>
