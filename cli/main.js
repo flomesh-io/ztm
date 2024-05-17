@@ -360,7 +360,7 @@ function invite(argv) {
       ca: crtCA,
       agent: {
         certificate: crtUser,
-        key: keyUser,
+        privateKey: keyUser,
       },
       bootstraps,
     })
@@ -402,7 +402,7 @@ function join(argv) {
   var permit = JSON.decode(os.read(profilePathname))
   if (!permit.ca) throw 'permit missing CA certificate'
   if (!permit.agent?.certificate) throw 'permit missing user certificate'
-  if (!permit.agent?.key) throw 'permit missing user key'
+  if (!permit.agent?.privateKey) throw 'permit missing user key'
   if (!(permit.bootstraps instanceof Array)) throw 'permit missing bootstraps'
   if (permit.bootstraps.some(
     addr => {
@@ -420,7 +420,7 @@ function join(argv) {
     agent: {
       name: epName,
       certificate: permit.agent.certificate,
-      key: permit.agent.key,
+      privateKey: permit.agent.privateKey,
     },
     bootstraps: permit.bootstraps,
   })).then(() => {
