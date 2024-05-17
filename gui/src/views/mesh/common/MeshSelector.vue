@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted,onActivated, computed } from "vue";
+import { ref, onMounted,onActivated, computed,watch } from "vue";
 import PipyProxyService from '@/service/PipyProxyService';
 import { useStore } from 'vuex';
 const store = useStore();
@@ -11,12 +11,20 @@ const props = defineProps({
 		default: false
 	},
 	innerClass: {
-		type: Boolean,
+		type: String,
 		default: 'transparent'
 	},
+	form: {
+		type: Boolean,
+		default: false
+	},
+	modelValue: {
+		type: String,
+		default: ()=> null
+	}
 	
 });
-const emits = defineEmits(['select']);
+const emits = defineEmits(['select','update:modelValue']);
 onMounted(() => {
 	loaddata();
 });
@@ -28,21 +36,26 @@ const meshes = computed(() => {
 	return store.getters['account/meshes'] || []
 });
 const loaddata = () => {
-	selected.value = meshes.value[0];
+	selected.value = props.modelValue || (props.form?meshes.value[0]?.name:meshes.value[0]);
 	emits('select',selected.value);
+	if(props.form)
+	emits('update:modelValue',selected.value);
 }
 
 
 const select = () => {
 	emits('select',selected.value);
+	if(props.form)
+	emits('update:modelValue',selected.value);
 }
 </script>
 
 <template>
 	<Select
+		v-if="!props.form"
 		v-model="selected" 
 		:options="meshes" 
-		optionLabel="label" 
+		optionLabel="name" 
 		@change="select"
 		placeholder="Mesh" 
 		:style="full?'':'max-width: 200px;'"
@@ -63,6 +76,38 @@ const select = () => {
 							<div v-if="slotProps.value" class="flex align-items-center">
 									<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
 									<div>{{ decodeURI(slotProps.value.name) }}</div>
+							</div>
+							<span v-else>
+									{{ slotProps.placeholder }}
+							</span>
+					</template>
+		</Select>
+		
+	<Select
+		v-else
+		v-model="selected" 
+		:options="meshes" 
+		optionLabel="name" 
+		optionValue="name" 
+		@change="select"
+		placeholder="Mesh" 
+		:style="full?'':'max-width: 200px;'"
+		:class="innerClass">
+<!-- 				    <template #optiongroup="slotProps">
+						<div class="flex align-items-center">
+								<i class="pi pi-star-fill " style="color: orange;"/>
+								<div>{{ slotProps.option.label }}</div>
+						</div>
+				</template> -->
+				<template #option="slotProps">
+						<div class="flex align-items-center">
+								<Status :run="slotProps.option.connected" :errors="slotProps.option.errors" />
+								<div>{{ decodeURI(slotProps.option.name) }}</div>
+						</div>
+				</template>
+				 <template #value="slotProps">
+							<div v-if="slotProps.value" class="flex align-items-center">
+								<div>{{ decodeURI(slotProps.value) }}</div>
 							</div>
 							<span v-else>
 									{{ slotProps.placeholder }}

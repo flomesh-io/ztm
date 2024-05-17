@@ -100,17 +100,14 @@ const commit = () => {
 		.then(res => {
 			loading.value = false;
 			console.log(res)
-			if(!!res.listen){
+			if(!!res){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
 				emits("save", config.value);
 				newConfig();
-			} else{
-				toast.add({ severity: 'error', summary:'Tips', detail: 'Create Failed.', life: 3000 });
 			}
 		})
 		.catch(err => {
 			loading.value = false;
-			console.log('Request Failed', err)
 		}); 
 }
 

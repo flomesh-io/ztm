@@ -51,13 +51,11 @@ const commit = () => {
 	pipyProxyService.joinMesh(joinName, saveData)
 		.then(res => {
 			loading.value = false;
-			if(!!res.name){
+			if(!!res){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
 				emits("save", config.value);
 				config.value = _.cloneDeep(newConfig);
 				config.value.agent.name = user.value.id;
-			} else{
-				toast.add({ severity: 'error', summary:'Tips', detail: 'Join Failed.', life: 3000 });
 			}
 			store.dispatch('account/meshes');
 		})
