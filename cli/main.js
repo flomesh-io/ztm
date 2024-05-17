@@ -72,12 +72,32 @@ var optionsJoin = {
   },
 }
 
+var optionsGet = {
+  defaults: {
+    '--mesh': '',
+  },
+  shorthands: {
+    '-m': '--mesh',
+  }
+}
+
+var optionsDelete = {
+  defaults: {
+    '--mesh': '',
+  },
+  shorthands: {
+    '-m': '--mesh',
+  }
+}
+
 var optionsService = {
   defaults: {
+    '--mesh': '',
     '--host': '',
     '--port': 0,
   },
   shorthands: {
+    '-m': '--mesh',
     '-h': '--host',
     '-p': '--port',
   },
@@ -85,10 +105,12 @@ var optionsService = {
 
 var optionsPort = {
   defaults: {
+    '--mesh': '',
     '--service': '',
     '--endpoint': '',
   },
   shorthands: {
+    '-m': '--mesh',
     '-s': '--service',
     '-e': '--endpoint',
     '--ep': '--endpoint',
@@ -457,22 +479,80 @@ function get(argv) {
 
 function getMesh(argv) {
   var meshName = normalizeName(readOptionalWord(argv))
-  println(meshName)
+  clients.agent().get('/api/meshes').then(ret => {
+    printTable(
+      JSON.decode(ret).filter(m => !meshName || m.name === meshName),
+      {
+        'NAME': m => m.name,
+        'JOINED AS': m => m.agent.name,
+        'USER': m => m.agent.username,
+        'HUBS': m => m.bootstraps.join(','),
+        'STATUS': m => m.connected ? 'Connected' : `ERROR: ${m.errors[0]?.message}`,
+      }
+    )
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function getEndpoint(argv) {
   var epName = normalizeName(readOptionalWord(argv))
-  println(epName)
+  var c = clients.agent()
+  selectMesh(c, parseOptions(optionsGet, argv, 'ztm get endpoint')).then(mesh => {
+    return c.get(`/api/meshes/${mesh.name}/endpoints`)
+  }).then(ret => {
+    printTable(
+      JSON.decode(ret).filter(ep => !epName || ep.name === epName),
+      {
+        'NAME': ep => ep.isLocal ? `${ep.name} (local)` : ep.name,
+        'USER': ep => ep.username,
+        'IP': ep => ep.ip,
+        'PORT': ep => ep.port,
+        'STATUS': ep => ep.online ? 'Online' : 'Offline',
+      }
+    )
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function getService(argv) {
   var svcName = normalizeServiceName(readOptionalWord(argv))
-  println(svcName)
+  var c = clients.agent()
+  selectMesh(c, parseOptions(optionsGet, argv, 'ztm get service')).then(mesh => {
+    return c.get(`/api/meshes/${mesh.name}/services`)
+  }).then(ret => {
+    var list = JSON.decode(ret)
+    list.forEach(svc => svc.name = `${svc.protocol}/${svc.name}`)
+    printTable(
+      list.filter(svc => !svcName || svc.name === svcName),
+      {
+        'NAME': svc => svc.name,
+        'ENDPOINTS': ep => ep.endpoints.length,
+        'HOST': ep => ep.host,
+        'PORT': ep => ep.port,
+      }
+    )
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function getPort(argv) {
   var portName = normalizePortName(readOptionalWord(argv))
-  println(portName)
+  var c = clients.agent()
+  selectMesh(c, parseOptions(optionsGet, argv, 'ztm get port')).then(mesh => {
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${mesh.agent.id}/ports`)
+  }).then(ret => {
+    var list = JSON.decode(ret)
+    list.forEach(p => p.name = `${p.listen.ip}/${p.protocol}/${p.listen.port}`)
+    printTable(
+      list.filter(p => !portName || p.name === portName),
+      {
+        'NAME': p => p.name,
+        'ENDPOINT': () => '(local)',
+        'SERVICE': p => p.target.endpoint ? `${p.protocol}/${p.target.service} @ ${p.target.endpoint}` : `${p.protocol}/${p.target.service}`,
+      }
+    )
+    pipy.exit(0)
+  }).catch(error)
 }
 
 //
@@ -532,7 +612,23 @@ function createService(argv) {
 function createPort(argv) {
   var portName = normalizePortName(readWord(argv, 'port name'))
   var opts = parseOptions(optionsPort, argv, 'create port')
-  println(portName, opts)
+  var svcName = normalizeServiceName(requiredOption(opts, '--service', 'create port'))
+  var epName = opts['--endpoint']
+  if (portName.split('/')[1] !== svcName.split('/')[0]) throw 'port/service protocol mismatch'
+  var c = clients.agent()
+  selectMesh(c, opts).then(mesh => {
+    return c.post(
+      `/api/meshes/${mesh.name}/endpoints/${mesh.agent.id}/ports/${portName}`,
+      JSON.encode({
+        target: {
+          service: svcName.split('/')[1],
+          endpoint: epName,
+        }
+      })
+    )
+  }).then(() => {
+    pipy.exit(0)
+  }).catch(error)
 }
 
 //
@@ -550,10 +646,57 @@ function deleteCmd(argv) {
 
 function deleteService(argv) {
   var svcName = normalizeServiceName(readWord(argv, 'service name'))
-  println(svcName)
+  var c = clients.agent()
+  selectMesh(c, parseOptions(optionsDelete, argv, 'delete service')).then(mesh => {
+    return c.delete(`/api/meshes/${mesh.name}/services/${svcName}`)
+  }).then(() => {
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function deletePort(argv) {
   var portName = normalizePortName(readWord(argv, 'port name'))
-  println(portName)
+  var c = clients.agent()
+  selectMesh(c, parseOptions(optionsDelete, argv, 'delete port')).then(mesh => {
+    return c.delete(`/api/meshes/${mesh.name}/endpoints/${mesh.agent.id}/ports/${portName}`)
+  }).then(() => {
+    pipy.exit(0)
+  }).catch(error)
+}
+
+//
+// Utilities
+//
+
+function selectMesh(client, opts) {
+  var m = opts['--mesh']
+  if (m) return client.get(`/api/meshes/${m}`).then(ret => JSON.decode(ret))
+  return client.get('/api/meshes').then(
+    ret => {
+      var list = JSON.decode(ret)
+      if (list.length === 1) return list[0]
+      if (list.length === 0) throw `you haven't joined a mesh yet`
+      throw `you've joined multiple meshes, pick a mesh with '--mesh' or '-m' option`
+    }
+  )
+}
+
+function printTable(data, columns) {
+  var cols = Object.entries(columns)
+  var colHeaders = cols.map(i => i[0])
+  var colFormats = cols.map(i => i[1])
+  var colSizes = colHeaders.map(name => name.length)
+  var rows = data.map(row => colFormats.map(
+    (format, i) => {
+      var v = format(row).toString()
+      colSizes[i] = Math.max(colSizes[i], v.length)
+      return v
+    }
+  ))
+  colHeaders.forEach((name, i) => print(name.padEnd(colSizes[i]), ' '))
+  println()
+  rows.forEach(row => {
+    row.forEach((v, i) => print(v.padEnd(colSizes[i]), ' '))
+    println()
+  })
 }

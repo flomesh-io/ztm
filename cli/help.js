@@ -164,9 +164,9 @@ function helpJoin() {
   println(`Usage: ztm join <mesh name> --as=<name> --permit=<filename>`)
   println()
   println(`Options:`)
-  println(`  -a, --as      Specify a name of the endpoint seen by other endpoints in the mesh`)
-  println(`  -p, --permit  Point to a file containing the permit for joining the mesh`)
-  println(`                A permit is generated with command 'ztm invite'`)
+  println(`  -a, --as=<name>          Specify a name of the endpoint seen by other endpoints in the mesh`)
+  println(`  -p, --permit=<filename>  Point to a file containing the permit for joining the mesh`)
+  println(`                           A permit is generated with command 'ztm invite'`)
   println()
 }
 
@@ -178,7 +178,12 @@ function helpLeave() {
 
 function helpGet() {
   println()
-  println(`Usage: ztm get service|port|endpoint|mesh [<name>]`)
+  println(`Usage: ztm get service|port|endpoint|mesh [<name>] [--mesh=<name>]`)
+  println()
+  println(`Options:`)
+  println(`  -m, --mesh=<name>  Specify a mesh by name`)
+  println(`                     Can be omitted when only 1 mesh is joined'`)
+  println(`                     Not applicable when doing 'ztm get mesh'`)
   println()
   helpServiceName()
   println()
