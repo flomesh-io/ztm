@@ -306,7 +306,7 @@ const expandedRows = ref({});
 						    </div>
 						</template>
 				</DataTable>
-				<div v-else class="grid text-left" v-if="servicesLb && servicesLb.length >0">
+				<div v-else class="grid text-left mt-1" v-if="servicesLb && servicesLb.length >0">
 						<div class="col-12 md:col-6 lg:col-4" v-for="(lb,hid) in servicesLb" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between">
@@ -431,5 +431,8 @@ const expandedRows = ref({});
 :deep(.p-tabview-panels),
 :deep(.p-tabview-nav-link){
 	background: transparent !important;
+}
+:deep(.p-tabview-panels){
+	padding: 0;
 }
 </style>

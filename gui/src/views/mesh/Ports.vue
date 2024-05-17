@@ -5,7 +5,6 @@ import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
-import freeSvg from "@/assets/img/free.svg";
 
 const store = useStore();
 const router = useRouter();
@@ -110,8 +109,8 @@ const active = ref(0);
 				</div>
 			</template>
 			<Loading v-if="loading"/>
-			<div v-else class="text-center">
-				<div class="grid text-left" v-if="portsFilter && portsFilter.length >0">
+			<div v-else-if="portsFilter && portsFilter.length >0" class="text-center">
+				<div class="mt-1 grid text-left">
 						<div class="col-12 md:col-6 lg:col-3" v-for="(port,hid) in portsFilter" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between mb-1">
@@ -166,8 +165,8 @@ const active = ref(0);
 							 </div>
 					 </div>
 				</div>
-				<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
 			</div>
+			<Empty v-else />
 		</TabPanel>
 	</TabView>
 </template>
@@ -184,5 +183,8 @@ const active = ref(0);
 :deep(.p-tabview-panels),
 :deep(.p-tabview-nav-link){
 	background: transparent !important;
+}
+:deep(.p-tabview-panels){
+	padding: 0;
 }
 </style>

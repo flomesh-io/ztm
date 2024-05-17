@@ -72,8 +72,8 @@ export default class PipyProxyService {
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/ports`);
 	}
-	getLogs(mesh) {
-		return request(`/api/meshes/${mesh}/log`);
+	getLogs(mesh, ep) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/log`);
 	}
 	getEndpoints(mesh) {
 		return request(`/api/meshes/${mesh}/endpoints`);
