@@ -2,6 +2,7 @@ import db from './db.js'
 
 export default function (config) {
   var meshName = config.name
+  var username
   var caCert
   var agentCert
   var agentKey
@@ -24,6 +25,7 @@ export default function (config) {
   if (config.agent.certificate) {
     try {
       agentCert = new crypto.Certificate(config.agent.certificate)
+      username = agentCert.subject?.commonName
     } catch {
       meshError('Invalid agent certificate')
     }
@@ -752,6 +754,22 @@ export default function (config) {
     return hubs.some(h => h.isConnected())
   }
 
+  function getStatus() {
+    return {
+      name: meshName,
+      ca: config.ca,
+      agent: {
+        id: config.agent.id,
+        name: config.agent.name,
+        username,
+        certificate: config.agent.certificate,
+      },
+      bootstraps: [...config.bootstraps],
+      connected: isConnected(),
+      errors: getErrors(),
+    }
+  }
+
   function getLog() {
     return [...agentLog]
   }
@@ -791,7 +809,9 @@ export default function (config) {
 
   return {
     config,
+    username,
     isConnected,
+    getStatus,
     getLog,
     getErrors,
     findEndpoint,

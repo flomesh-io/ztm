@@ -60,6 +60,7 @@ var routes = Object.entries({
   //   agent:
   //     id: string (UUID)
   //     name: string
+  //     username: string
   //     certificate: string (PEM)
   //     privateKey: string (PEM)
   //   bootstraps: string[] (host:port)
@@ -68,7 +69,6 @@ var routes = Object.entries({
   //
 
   '/api/meshes': {
-
     'GET': function () {
       var all = api.allMeshes()
       all.forEach(m => delete m.agent.privateKey)
