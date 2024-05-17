@@ -67,18 +67,28 @@ function delMesh(name) {
 }
 
 function allEndpoints(mesh) {
-  mesh = meshes[mesh]
-  if (!mesh) return Promise.resolve([])
-  var id = mesh.config.agent.id
-  return mesh.discoverEndpoints().then(
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve([])
+  var id = m.config.agent.id
+  return m.discoverEndpoints().then(
     list => list.map(ep => ({ ...ep, isLocal: (ep.id === id) }))
   )
 }
 
 function getEndpoint(mesh, ep) {
-  mesh = meshes[mesh]
-  if (!mesh) return Promise.resolve(null)
-  return mesh.findEndpoint(ep)
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.findEndpoint(ep)
+}
+
+function getEndpointLog(mesh, ep) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  if (!ep || ep === m.config.agent.id) {
+    return Promise.resolve(m.getLog())
+  } else {
+    return m.remoteQueryLog(ep)
+  }
 }
 
 function allServices(mesh, ep) {
@@ -216,6 +226,7 @@ export default {
   delMesh,
   allEndpoints,
   getEndpoint,
+  getEndpointLog,
   allServices,
   getService,
   setService,

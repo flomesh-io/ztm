@@ -160,16 +160,24 @@ var routes = Object.entries({
   //
 
   '/api/meshes/{mesh}/endpoints': {
-    'GET': function (params) {
-      return api.allEndpoints(params.mesh).then(
+    'GET': function ({ mesh }) {
+      return api.allEndpoints(mesh).then(
         ret => response(200, ret)
       )
     },
   },
 
   '/api/meshes/{mesh}/endpoints/{ep}': {
-    'GET': function (params) {
-      return api.getEndpoint(params.mesh, params.ep).then(
+    'GET': function ({ mesh, ep }) {
+      return api.getEndpoint(mesh, ep).then(
+        ret => ret ? response(200, ret) : response(404)
+      )
+    },
+  },
+
+  '/api/meshes/{mesh}/endpoints/{ep}/log': {
+    'GET': function ({ mesh, ep }) {
+      return api.getEndpointLog(mesh, ep).then(
         ret => ret ? response(200, ret) : response(404)
       )
     },

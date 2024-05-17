@@ -400,6 +400,12 @@ export default function (config) {
         },
       },
 
+      '/api/log': {
+        'GET': function () {
+          return response(200, getLog())
+        }
+      },
+
     }).map(
       function ([path, methods]) {
         var match = new http.Match(path)
@@ -732,6 +738,19 @@ export default function (config) {
     )
   }
 
+  function remoteQueryLog(ep) {
+    return selectHubWithThrow(ep).then(
+      (hub) => httpAgents.get(hub).request(
+        'GET', `/api/forward/${ep}/log`
+      ).then(
+        res => {
+          remoteCheckResponse(res, 200)
+          return JSON.decode(res.body)
+        }
+      )
+    )
+  }
+
   function remoteCheckResponse(res, expected) {
     var status = res?.head?.status
     if (status !== expected) {
@@ -828,6 +847,7 @@ export default function (config) {
     remoteQueryPorts,
     remoteOpenPort,
     remoteClosePort,
+    remoteQueryLog,
     leave,
   }
 }
