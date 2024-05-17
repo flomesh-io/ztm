@@ -18,19 +18,19 @@ var optionsConfig = {
 
 var optionsCA = {
   defaults: {
-    '--database': '~/ztm-ca.db',
     '--listen': '0.0.0.0:9999',
+    '--database': '~/ztm-ca.db',
   },
   shorthands: {
-    '-d': '--database',
     '-l': '--listen',
+    '-d': '--database',
   },
 }
 
 var optionsHub = {
   defaults: {
-    '--ca': 'localhost:9999',
     '--listen': '0.0.0.0:8888',
+    '--ca': 'localhost:9999',
     '--name': [],
   },
   shorthands: {
@@ -41,12 +41,12 @@ var optionsHub = {
 
 var optionsAgent = {
   defaults: {
-    '--database': '~/ztm.db',
     '--listen': '127.0.0.1:7777',
+    '--database': '~/ztm.db',
   },
   shorthands: {
-    '-d': '--database',
     '-l': '--listen',
+    '-d': '--database',
   },
 }
 
@@ -72,32 +72,50 @@ var optionsJoin = {
   },
 }
 
-var optionsGet = {
+var optionsGetEP = {
   defaults: {
     '--mesh': '',
   },
   shorthands: {
     '-m': '--mesh',
+  }
+}
+
+var optionsGet = {
+  defaults: {
+    '--mesh': '',
+    '--endpoint': '',
+  },
+  shorthands: {
+    '-m': '--mesh',
+    '-e': '--endpoint',
+    '--ep': '--endpoint',
   }
 }
 
 var optionsDelete = {
   defaults: {
     '--mesh': '',
+    '--endpoint': '',
   },
   shorthands: {
     '-m': '--mesh',
+    '-e': '--endpoint',
+    '--ep': '--endpoint',
   }
 }
 
 var optionsService = {
   defaults: {
     '--mesh': '',
+    '--endpoint': '',
     '--host': '',
     '--port': 0,
   },
   shorthands: {
     '-m': '--mesh',
+    '-e': '--endpoint',
+    '--ep': '--endpoint',
     '-h': '--host',
     '-p': '--port',
   },
@@ -106,14 +124,14 @@ var optionsService = {
 var optionsPort = {
   defaults: {
     '--mesh': '',
-    '--service': '',
     '--endpoint': '',
+    '--service': '',
   },
   shorthands: {
     '-m': '--mesh',
-    '-s': '--service',
     '-e': '--endpoint',
     '--ep': '--endpoint',
+    '-s': '--service',
   },
 }
 
@@ -238,6 +256,13 @@ function normalizePortName(name) {
   return errorInput(`invalid port name '${name}'`)
 }
 
+function checkPortNumber(v) {
+  if (v === undefined) return v
+  var n = Number.parseFloat(v)
+  if (0 < n && n < 65536) return n
+  throw `invalid port number '${v}'`
+}
+
 function parseOptions(meta, argv, command) {
   try {
     return options([null, ...argv], meta)
@@ -250,6 +275,8 @@ function requiredOption(opts, name, command) {
   var v = opts[name]
   if (v instanceof Array || typeof v === 'string') {
     if (v.length > 0) return v
+  } else if (typeof v === 'number') {
+    return v
   }
   throw `missing option: ${name}. Type 'ztm help ${command}' for help.`
 }
@@ -497,7 +524,7 @@ function getMesh(argv) {
 function getEndpoint(argv) {
   var epName = normalizeName(readOptionalWord(argv))
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsGet, argv, 'ztm get endpoint')).then(mesh => {
+  selectMesh(c, parseOptions(optionsGetEP, argv, 'ztm get endpoint')).then(mesh => {
     return c.get(`/api/meshes/${mesh.name}/endpoints`)
   }).then(ret => {
     printTable(
@@ -516,19 +543,30 @@ function getEndpoint(argv) {
 
 function getService(argv) {
   var svcName = normalizeServiceName(readOptionalWord(argv))
+  var opts = parseOptions(optionsGet, argv, 'ztm get service')
+  var epName = opts['--endpoint']
+  var mesh = null
+  var endp = null
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsGet, argv, 'ztm get service')).then(mesh => {
-    return c.get(`/api/meshes/${mesh.name}/services`)
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return epName ? selectEndpoint(c, opts, m) : null
+  }).then(ep => {
+    endp = ep
+    return ep ? c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/services`) : c.get(`/api/meshes/${mesh.name}/services`)
   }).then(ret => {
     var list = JSON.decode(ret)
     list.forEach(svc => svc.name = `${svc.protocol}/${svc.name}`)
     printTable(
       list.filter(svc => !svcName || svc.name === svcName),
-      {
+      epName ? {
         'NAME': svc => svc.name,
-        'ENDPOINTS': ep => ep.endpoints.length,
-        'HOST': ep => ep.host,
-        'PORT': ep => ep.port,
+        'ENDPOINT': () => endp.name,
+        'HOST': svc => svc.host,
+        'PORT': svc => svc.port,
+      } : {
+        'NAME': svc => svc.name,
+        'ENDPOINTS': svc => svc.endpoints.length,
       }
     )
     pipy.exit(0)
@@ -537,9 +575,16 @@ function getService(argv) {
 
 function getPort(argv) {
   var portName = normalizePortName(readOptionalWord(argv))
+  var opts = parseOptions(optionsGet, argv, 'ztm get port')
+  var mesh = null
+  var endp = null
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsGet, argv, 'ztm get port')).then(mesh => {
-    return c.get(`/api/meshes/${mesh.name}/endpoints/${mesh.agent.id}/ports`)
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, opts, m)
+  }).then(ep => {
+    endp = ep
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/ports`)
   }).then(ret => {
     var list = JSON.decode(ret)
     list.forEach(p => p.name = `${p.listen.ip}/${p.protocol}/${p.listen.port}`)
@@ -547,7 +592,7 @@ function getPort(argv) {
       list.filter(p => !portName || p.name === portName),
       {
         'NAME': p => p.name,
-        'ENDPOINT': () => '(local)',
+        'ENDPOINT': () => endp.name,
         'SERVICE': p => p.target.endpoint ? `${p.protocol}/${p.target.service} @ ${p.target.endpoint}` : `${p.protocol}/${p.target.service}`,
       }
     )
@@ -606,23 +651,42 @@ function create(argv) {
 function createService(argv) {
   var svcName = normalizeServiceName(readWord(argv, 'service name'))
   var opts = parseOptions(optionsService, argv, 'create service')
-  println(svcName, opts)
+  var host = requiredOption(opts, '--host', 'create service')
+  var port = checkPortNumber(requiredOption(opts, '--port', 'create service'))
+  var mesh = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, opts, m)
+  }).then(ep => {
+    return c.post(
+      `/api/meshes/${mesh.name}/endpoints/${ep.id}/services/${svcName}`,
+      JSON.encode({
+        host,
+        port,
+      })
+    )
+  }).then(() => {
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function createPort(argv) {
   var portName = normalizePortName(readWord(argv, 'port name'))
   var opts = parseOptions(optionsPort, argv, 'create port')
   var svcName = normalizeServiceName(requiredOption(opts, '--service', 'create port'))
-  var epName = opts['--endpoint']
   if (portName.split('/')[1] !== svcName.split('/')[0]) throw 'port/service protocol mismatch'
+  var mesh = null
   var c = clients.agent()
-  selectMesh(c, opts).then(mesh => {
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, opts, m)
+  }).then(ep => {
     return c.post(
-      `/api/meshes/${mesh.name}/endpoints/${mesh.agent.id}/ports/${portName}`,
+      `/api/meshes/${mesh.name}/endpoints/${ep.id}/ports/${portName}`,
       JSON.encode({
         target: {
           service: svcName.split('/')[1],
-          endpoint: epName,
         }
       })
     )
@@ -646,9 +710,14 @@ function deleteCmd(argv) {
 
 function deleteService(argv) {
   var svcName = normalizeServiceName(readWord(argv, 'service name'))
+  var opts = parseOptions(optionsDelete, argv, 'delete service')
+  var mesh = null
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsDelete, argv, 'delete service')).then(mesh => {
-    return c.delete(`/api/meshes/${mesh.name}/services/${svcName}`)
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, opts, m)
+  }).then(ep => {
+    return c.delete(`/api/meshes/${mesh.name}/endpoints/${ep.id}/services/${svcName}`)
   }).then(() => {
     pipy.exit(0)
   }).catch(error)
@@ -656,9 +725,14 @@ function deleteService(argv) {
 
 function deletePort(argv) {
   var portName = normalizePortName(readWord(argv, 'port name'))
+  var opts = parseOptions(optionsDelete, argv, 'delete port')
+  var mesh = null
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsDelete, argv, 'delete port')).then(mesh => {
-    return c.delete(`/api/meshes/${mesh.name}/endpoints/${mesh.agent.id}/ports/${portName}`)
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, opts, m)
+  }).then(ep => {
+    return c.delete(`/api/meshes/${mesh.name}/endpoints/${ep.id}/ports/${portName}`)
   }).then(() => {
     pipy.exit(0)
   }).catch(error)
@@ -681,6 +755,25 @@ function selectMesh(client, opts) {
   )
 }
 
+function selectEndpoint(client, opts, mesh) {
+  var name = opts['--endpoint']
+  if (name) {
+    return client.get(`/api/meshes/${mesh.name}/endpoints`).then(ret => {
+      var list = JSON.decode(ret)
+      var ep = list.find(ep => ep.id === name)
+      if (ep) return ep
+      list = list.filter(ep => ep.name === name)
+      if (list.length === 1) return list[0]
+      if (list.length === 0) throw `endpoint '${name}' not found`
+      throw `ambiguous endpoint name '${name}'`
+    })
+  } else {
+    return client.get(`/api/meshes/${mesh.name}`).then(ret => {
+      var id = JSON.decode(ret).agent.id
+      return client.get(`/api/meshes/${mesh.name}/endpoints/${id}`)
+    }).then(ret => JSON.decode(ret))
+  }
+}
 function printTable(data, columns) {
   var cols = Object.entries(columns)
   var colHeaders = cols.map(i => i[0])
