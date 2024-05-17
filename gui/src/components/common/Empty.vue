@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import Empty from "@/assets/img/empty.png";
+import freeSvg from "@/assets/img/free.svg";
 const props = defineProps({
 	title: {
 		type: String,
@@ -13,9 +13,9 @@ const props = defineProps({
 });
 </script>
 <template>
-    <div class="w-full text-center py-8">
-				<img :src="Empty"/>
-        <h5 class="text-gray-400">{{props.title||'暂无数据'}}</h5>
+    <div class="w-full text-center">
+				<img :src="freeSvg" class="w-4 h-4 mx-aut" style="margin: auto;"  />
+        <h5 class="text-gray-500">{{props.title||'No data.'}}</h5>
         <p>{{props.sub}}</p>
     </div>
 </template>
