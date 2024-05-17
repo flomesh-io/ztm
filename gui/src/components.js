@@ -95,6 +95,7 @@ import ChipList from '@/components/ChipList.vue';
 import Loading from '@/components/Loading.vue';
 import Status from '@/components/Status.vue';
 import Card from '@/components/common/Card.vue';
+import Empty from '@/components/common/Empty.vue';
 import FloatField from '@/components/common/FloatField.vue';
 import HiddenField from '@/components/common/HiddenField.vue';
 import CertificateUploder from '@/components/common/CertificateUploder.vue';
@@ -203,4 +204,5 @@ export function useComponent(app){
 	app.component('FloatField', FloatField);
 	app.component('HiddenField', HiddenField);
 	app.component('CertificateUploder', CertificateUploder);
+	app.component('Empty', Empty);
 }
