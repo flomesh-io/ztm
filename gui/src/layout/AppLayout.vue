@@ -6,10 +6,11 @@ import AppSidebar from './AppSidebar.vue';
 import AppConfig from './AppConfig.vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+
 const store = useStore();
-
+const router = useRouter();
 const { layoutConfig, layoutState, isSidebarActive } = useLayout();
-
 const outsideClickListener = ref(null);
 
 watch(isSidebarActive, (newVal) => {
@@ -58,6 +59,10 @@ const isOutsideClicked = (event) => {
     return !(sidebarEl.isSameNode(event.target) || sidebarEl.contains(event.target) || topbarEl.isSameNode(event.target) || topbarEl.contains(event.target));
 };
 
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const home = () => {
+	router.push('/root');
+}
 
 </script>
 
@@ -69,6 +74,10 @@ const isOutsideClicked = (event) => {
         </div> -->
         <div class="layout-main-container">
             <div class="layout-main">
+							
+							<button v-if="hasTauri" class="layout-config-button" style="border-width: 0;" type="button" @click="home()">
+									<i class="pi pi-window-minimize text-xl" style="position: relative;top: -1px;"></i>
+							</button>
 							<router-view
 							  v-slot="{ Component }"
 							>

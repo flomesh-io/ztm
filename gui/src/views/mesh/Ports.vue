@@ -1,13 +1,13 @@
 <script setup>
-import { ref, onMounted,onActivated, computed } from "vue";
+import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
 import { useStore } from 'vuex';
-const store = useStore();
 import { useConfirm } from "primevue/useconfirm";
 import freeSvg from "@/assets/img/free.svg";
 
+const store = useStore();
 const router = useRouter();
 const pipyProxyService = new PipyProxyService();
 const confirm = useConfirm();
@@ -16,24 +16,18 @@ const loader = ref(false);
 const status = ref({});
 const endpointMap = ref({});
 const ports = ref([])
-const selectedMesh = ref(null);
 
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
 
-const load = (d) => {
-	meshes.value = d;
-}
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
 onActivated(()=>{
 	getPorts();
 	getEndpoints();
 })
-const select = (selected) => {
-	selectedMesh.value = selected;
-	getPorts();
-	getEndpoints();
-}
 const deletePort = (port) => {
 	pipyProxyService.deletePort({
 		mesh:selectedMesh.value?.name,
@@ -76,6 +70,15 @@ const getPorts = () => {
 			.catch(err => console.log('Request Failed', err)); 
 	},600);
 }
+watch(()=>selectedMesh,()=>{
+	if(selectedMesh.value){
+		getPorts();
+		getEndpoints();
+	}
+},{
+	deep:true,
+	immediate:true
+})
 const portsFilter = computed(() => {
 	return ports.value.filter((port)=>{
 		return (typing.value == '' || typing.value == port.target.service|| typing.value == port.listen.port );
@@ -83,8 +86,6 @@ const portsFilter = computed(() => {
 });
 
 const typing = ref('');
-const clickSearch = () => {
-}
 const active = ref(0);
 
 
@@ -94,13 +95,8 @@ const active = ref(0);
 	<Card class="nopd ml-3 mr-3 mt-3">
 		<template #content>
 			<InputGroup class="search-bar" >
-				<MeshSelector
-					:full="false" 
-					innerClass="transparent" 
-					@load="load" 
-					@select="select"/>
+				<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | port" rows="1" cols="30" />
-				<Button :disabled="!typing" icon="pi pi-search"  @click="clickSearch"/>
 			</InputGroup>
 		</template>
 	</Card>
