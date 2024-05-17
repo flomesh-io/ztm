@@ -123,21 +123,9 @@ const devMenu = [
             { label: 'Message', icon: 'pi pi-fw pi-comment', route: '/uikit/message' },
             { label: 'File', icon: 'pi pi-fw pi-file', route: '/uikit/file' },
             { label: 'Chart', icon: 'pi pi-fw pi-chart-bar', route: '/uikit/charts' },
-            { label: 'Misc', icon: 'pi pi-fw pi-circle', route: '/uikit/misc' }
-        ]
-    },
-    {
-        label: 'Prime Blocks',
-        items: [
+            { label: 'Misc', icon: 'pi pi-fw pi-circle', route: '/uikit/misc' },
             { label: 'Free Blocks', icon: 'pi pi-fw pi-eye', route: '/page/blocks', badge: 'NEW' },
             { label: 'All Blocks', icon: 'pi pi-fw pi-globe', url: 'https://www.primefaces.org/primeblocks-vue', target: '_blank' }
-        ]
-    },
-    {
-        label: 'Utilities',
-        items: [
-            { label: 'PrimeIcons', icon: 'pi pi-fw pi-prime', route: '/page/icons' },
-            { label: 'PrimeFlex', icon: 'pi pi-fw pi-desktop', url: 'https://www.primefaces.org/primeflex/', target: '_blank' }
         ]
     }
 ]
