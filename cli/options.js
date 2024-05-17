@@ -40,7 +40,7 @@ export default function (argv, { defaults, shorthands }) {
   function addOption(name, value) {
     var k = shorthands[name] || name
     switch (typeof defaults[k]) {
-      case 'number': opts[k] = Number.parseFloat(value); break
+      case 'number': opts[k] = Number.parseFloat(value); if (Number.isNaN(opts[k])) opts[k] = value; break
       case 'string': opts[k] = value; break
       case 'object': (opts[k] ??= []).push(value); break
     }
