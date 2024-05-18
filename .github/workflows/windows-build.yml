@@ -21,18 +21,11 @@ jobs:
     - run: npm install -g win-node-env
     - name: Install NASM
       uses: ilammy/setup-nasm@v1
-    - name: build pipy
-      run: |
-        git submodule update --init
-        ./pipy/build.cmd no-gui
-    - name: cpy pipy
-      run: |
-        ls
-        copy ./pipy/bin/Release/pipy.exe ./gui/src-tauri/bin/pipy-x86_64-pc-windows-msvc.exe
     - name: build app
       run: |
         cd gui
         yarn install
+        yarn build-ztm-windows
         set NODE_OPTIONS=--max_old_space_size=4096 && yarn tauri build
     - uses: actions/upload-artifact@v2
       with:
