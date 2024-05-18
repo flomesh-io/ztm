@@ -46,20 +46,19 @@ const user = computed(() => {
 	return store.getters['account/user'];
 });
 const placeholder = computed(() => {
-	const _v = !!version.value?.ztm?.version? `(ZTM ${version.value?.ztm?.version})` : "";
-	const _vs = !!version.value?.ztm?.version? `(${version.value?.ztm?.version})` : "";
+	const _vs = !!version.value?.ztm?.version? `ZTM (${version.value?.ztm?.version}) : ` : "";
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
-		return `Check for errors. ${_v}`;
+		return `${_vs}Check for errors.`;
 	} else if(!playing.value){
-		return `ZTM ${_vs} off.`;
+		return `${_vs}Off.`;
 	} else if(!meshes.value || meshes.value.length ==0){
-		return `First, join a Mesh. ${_v}`;
+		return `${_vs}First, join a Mesh.`;
 	} else if(meshes.value.length == 1){
-		return `1 Mesh Joined. ${_v}`;
+		return `${_vs}1 Mesh Joined.`;
 	} else {
-		return `${meshes.value.length} ${meshes.value.length>1?'Meshes':'Mesh'} Joined. ${_v}`;
+		return `${_vs}${meshes.value.length} ${meshes.value.length>1?'Meshes':'Mesh'} Joined.`;
 	}
 });
 onMounted(() => {
