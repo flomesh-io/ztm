@@ -32,7 +32,15 @@ const getPort = () => {
 	const DEFAULT_VITE_APP_API_PORT = import.meta.env.VITE_APP_API_PORT;
 	return VITE_APP_API_PORT || DEFAULT_VITE_APP_API_PORT;
 }
-
+const toastMessage = (e) => {
+	if(!!e.status && !!e.message){
+		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+	} else if(!!e.message){
+		toast.add({ severity: 'error', summary: 'Tips', detail: `${e.message}`, life: 3000 });
+	} else {
+		toast.add({ severity: 'error', summary: 'Tips', detail: `${e}`, life: 3000 });
+	}
+}
 async function request(url, method, params, config) {
 	if(!window.__TAURI_INTERNALS__){
 		switch (method) {
@@ -40,15 +48,15 @@ async function request(url, method, params, config) {
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
 		  case METHOD.POST:
 		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
-					toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+					toastMessage(e);
 				});
 		  case METHOD.DELETE:
 		    return axios.delete(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
-					toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+					toastMessage(e);
 				});
 		  case METHOD.PUT:
 		    return axios.put(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
-					toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+					toastMessage(e);
 				});
 		  default:
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
@@ -63,7 +71,7 @@ async function request(url, method, params, config) {
 			...config
 		}).then((res) => res.json()).catch((e)=>{
 			if(method != METHOD.GET)
-			toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+			toastMessage(e);
 		});
 	}
 }
