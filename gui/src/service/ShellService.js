@@ -7,22 +7,21 @@ import store from "@/store";
 export default class ShellService {
 	async getDB () {
 		const appDataDirPath = await resourceDir();
-		console.log(`[appDataDirPath]:${appDataDirPath}`);
 		return `${appDataDirPath}/ztm.db`
 	}
 	async takePipyVersion () {
 		console.log("takePipyVersion");
-		let command = await Command.sidecar("bin/pipy", ['-v','','','','']);
+		let command = await Command.sidecar("bin/ztm", ['version','--json','','','','']);
 		await command.spawn();
 		command.stdout.on('data', line => {
-			if(!!line && line.split(":")[0].trim() == 'Version'){
-				store.commit('account/setPipyVersion', line.split(":")[1].trim());
-			}
+			console.log(line)
+			//{"ztm":{"version":"v0.0.2","commit":"a73787b37cb500044410325b04558d2507a847f7","date":"Sat, 18 May 2024 18:55:27 +0800"},"pipy":{"version":"1.1.0-33","commit":"bd7450a98c9513394869493753456944aa26c1f7","date":"Sat, 18 May 2024 18:10:58 +0800"}}
+			store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
 		});
 		
 		// let command = await invoke("plugin:shell|execute", {
-		//     program: "pipy",
-		//     args: ['-v','','','',''],
+		//     program: "LD_LIBRARY_PATH=.",
+		//     args: ['./pipy','-v','','',''],
 		// 		options: {},
 		// });
 		// let command = await invoke("plugin:shell|execute", {
@@ -36,36 +35,42 @@ export default class ShellService {
 		// console.log(rst)
 	}
 	async startPipy (port, reset, callError){
-		// await open('pipy');
 		await this.pausePipy();
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
-		const db = await this.getDB();
+		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
 		const args = [
-			`${resourceDirPath}/_up_/_up_/agent/main.js`,
-			"--skip-unknown-arguments",
-			`--log-file=${resourceDirPath}/ztm.log`,
+			"run",
+			"agent",
 			`--listen=${port}`,
-			`--database=${db}`,
+			`--database=${resourceDirPath}/ztm.db`,
+			// `--log-file=${resourceDirPath}/ztm.log`,
 		];
 		if(reset){
 			args.push("--reset");
+		} else {
+			args.push("");
 		}
+		args.push("");
 		console.log(`[starting pipy:${args}]`);
-		const command = Command.sidecar("bin/pipy", args);
+		const command = Command.sidecar("bin/ztm", args);
 		command.on('close', data => {
+			console.log("[close]");
 			console.log(data);
 			store.commit('account/pushLog', {level:'Info',msg:`pipy pause with code ${data.code} and signal ${data.signal}`});
 		});
 		command.stdout.on('data', line => {
+			console.log("[data]");
 			store.commit('account/pushLog', {level:'Info',msg:line});
 		});
 		command.stderr.on('data', line => {
+			console.log("[data]");
 			store.commit('account/pushLog', {level:'Error',msg:line});
 			callError(line);
 		});
 		command.on('error', error => {
+			console.log("[error]");
 			store.commit('account/pushLog', {level:'Error',msg:error});
 			callError(error);
 		});

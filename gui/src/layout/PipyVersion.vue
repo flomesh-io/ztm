@@ -1,24 +1,24 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
-const store = useStore();
 import PipySvg from "@/assets/img/pipy-white.png";
 import ShellService from '@/service/ShellService';
 
 const shellService = new ShellService();
+const store = useStore();
 const restart = ref(false);
-const pipyVersion = computed(() => {
-	return store.getters['account/pipyVersion']
+const version = computed(() => {
+	return store.getters['account/version']
 });
 
 onMounted(() => {
-	if(!pipyVersion.value){
+	if(!version.value){
 		shellService.takePipyVersion();
 	}
 });
 const restartPipy = () => {
 	restart.value = true;
-	store.commit('account/setPipyVersion', '');
+	store.commit('account/setVersion', {});
 	setTimeout(()=>{
 		restart.value = false;
 	},1000);
@@ -31,7 +31,7 @@ const restartPipy = () => {
 	<div class="pipyinfo">
 		<div class="pipystatus">
 			<img :src="PipySvg" height="25"/>
-			<span v-if="!!pipyVersion" class="label">{{pipyVersion}}</span>
+			<span v-if="!!version" class="label">{{version?.pipy?.version}}</span>
 			<a v-else class="label link pointer" href="https://flomesh.io/pipy/download" target="_blank"><b>Download</b></a>
 		</div>
 		<i class="pi pi-refresh" :class="{'spiner': restart}" @click="restartPipy"/>

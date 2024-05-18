@@ -16,13 +16,9 @@ or
 yarn install
 ```
 
-### First build or download pipy (plaform=windows|linux|macos-x86|macos)
+### First build ztm (plaform=windows|linux|macos-x86|macos)
 ```sh
 npm run build-pipy-{plaform}
-```
-or
-```sh
-npm run download-pipy-{plaform}
 ```
 
 ### Mock a hub if needed
