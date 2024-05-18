@@ -8,6 +8,13 @@ import help from './help.js'
 // Options
 //
 
+var optionsVersion = {
+  defaults: {
+    '--json': false,
+  },
+  shorthands: {},
+}
+
 var optionsConfig = {
   defaults: {
     '--ca': '',
@@ -151,7 +158,7 @@ function main() {
   if (!command || command.startsWith('-')) return errorInput(`missing command`)
 
   var f = ({
-    help, config,
+    help, version, config,
     start, stop, run, invite, evict, join, leave,
     get, describe, create, 'delete': deleteCmd,
   })[command]
@@ -279,6 +286,31 @@ function requiredOption(opts, name, command) {
     return v
   }
   throw `missing option: ${name}. Type 'ztm help ${command}' for help.`
+}
+
+//
+// Command: version
+//
+
+function version(argv) {
+  try { var data = JSON.decode(pipy.load('version.json')) } catch {}
+  var opts = parseOptions(optionsVersion, argv, 'version')
+  var info = {
+    ztm: data,
+    pipy: pipy.version,
+  }
+  if (opts['--json']) {
+    println(JSON.stringify(info))
+  } else {
+    println(`ZTM:`)
+    println(`  Version : ${info.ztm?.version}`)
+    println(`  Commit  : ${info.ztm?.commit}`)
+    println(`  Date    : ${info.ztm?.date}`)
+    println(`Pipy:`)
+    println(`  Version : ${info.pipy?.version}`)
+    println(`  Commit  : ${info.pipy?.commit}`)
+    println(`  Date    : ${info.pipy?.date}`)
+  }
 }
 
 //

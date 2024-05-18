@@ -53,6 +53,16 @@ api.init()
 
 var routes = Object.entries({
 
+  '/api/version': {
+    'GET': function () {
+      try { var data = JSON.decode(pipy.load('version.json')) } catch {}
+      return response(200, {
+        ztm: data,
+        pipy: pipy.version,
+      })
+    },
+  },
+
   //
   // Mesh
   //   name: string

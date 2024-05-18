@@ -16,3 +16,10 @@ CD "%ztm_dir%\gui"
 CMD /c "npm install --no-audit"
 
 CD "%cur_dir%"
+
+FOR /f %%i IN ('git describe --abbrev^=0 --tags') DO SET VERSION=%%i
+FOR /f %%i IN ('git log -1 --format^=%%H') DO SET COMMIT=%%i
+FOR /f "eol= tokens=* delims=" %%i IN ('"git log -1 --format=%%cD"') DO SET COMMIT_DATE=%%i
+
+ECHO {"version":"%VERSION%","commit":"%COMMIT%","date":"%OMMIT_DATE%"} > cli\version.json
+COPY cli\version.json agent\version.json
