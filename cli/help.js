@@ -1,5 +1,6 @@
 export default function (argv) {
   switch (argv[0]) {
+    case 'version': return helpVersion()
     case 'config': return helpConfig()
     case 'run':
       switch (argv[1]) {
@@ -31,6 +32,7 @@ function helpAll() {
   println()
   println(`Commands:`)
   println()
+  println(`  version`)
   println(`  config`)
   println(`  start     ca | hub | agent`)
   println(`  stop      ca | hub | agent`)
@@ -82,6 +84,15 @@ function helpPortName() {
   println(`  udp/port`)
   println()
   println(`  e.g. '10.0.0.2/tcp/8080', 'localhost/udp/445', 'tcp/80'`)
+}
+
+function helpVersion() {
+  println()
+  println(`Usage: ztm version [--json]`)
+  println()
+  println(`Options:`)
+  println(`  --json  Output version information in JSON format`)
+  println()
 }
 
 function helpConfig() {

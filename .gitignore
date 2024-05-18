@@ -2,4 +2,6 @@
 .vscode/
 
 bin/
+cli/version.json
+agent/version.json
 agent/gui
