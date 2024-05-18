@@ -65,10 +65,12 @@ const loaddata = () => {
 	loading.value = true;
 	pipyProxyService.getMeshes()
 		.then(res => {
-			playing.value = true;
 			loading.value = false;
-			meshes.value = res;
-			errors.value = [];
+			if(!!res){
+				playing.value = true;
+				meshes.value = res;
+				errors.value = [];
+			}
 		})
 		.catch(err => {
 			loading.value = false;
