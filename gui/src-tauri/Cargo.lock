@@ -4638,7 +4638,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ztm"
+name = "ztmapp"
 version = "0.0.3"
 dependencies = [
  "fix-path-env",

@@ -22,10 +22,13 @@
       "identifier": "shell:allow-spawn",
       "allow": [
         {
-          "name": "bin/pipy",
+          "name": "bin/ztm",
           "args": [
             {
               "validator": ".+"
+            },
+            {
+              "validator": ".*"
             },
             {
               "validator": ".*"
@@ -48,15 +51,6 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "bin/pipy",
-          "args": [
-            {
-              "validator": ".+"
-            }
-          ],
-          "sidecar": true
-        },
-        {
           "name": "ls",
           "cmd": "ls",
           "sidecar": false
@@ -64,6 +58,28 @@
         {
           "name": "pipy",
           "cmd": "pipy",
+          "args": [
+            {
+              "validator": ".+"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            }
+          ],
+          "sidecar": false
+        },
+        {
+          "name": "LD_LIBRARY_PATH=.",
+          "cmd": "LD_LIBRARY_PATH=.",
           "args": [
             {
               "validator": ".+"

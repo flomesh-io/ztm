@@ -22,6 +22,9 @@ import { resourceDir } from '@tauri-apps/api/path';
 
 const playing = ref(false);
 const loading = ref(false);
+const version = computed(() => {
+	return store.getters['account/version']
+});
 const pipyProxyService = new PipyProxyService();
 const shellService = new ShellService();
 const confirm = useConfirm();
@@ -43,18 +46,20 @@ const user = computed(() => {
 	return store.getters['account/user'];
 });
 const placeholder = computed(() => {
+	const _v = !!version.value?.ztm?.version? `(ZTM ${version.value?.ztm?.version})` : "";
+	const _vs = !!version.value?.ztm?.version? `(${version.value?.ztm?.version})` : "";
 	if(!!loading.value){
-		return "Starting...";
+		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
-		return "Check for errors.";
+		return `Check for errors. ${_v}`;
 	} else if(!playing.value){
-		return "Pipy off.";
+		return `ZTM ${_vs} off.`;
 	} else if(!meshes.value || meshes.value.length ==0){
-		return "First, join a Mesh.";
+		return `First, join a Mesh. ${_v}`;
 	} else if(meshes.value.length == 1){
-		return "1 Mesh Joined.";
+		return `1 Mesh Joined. ${_v}`;
 	} else {
-		return `${meshes.value.length} ${meshes.value.length>1?'Meshes':'Mesh'} Joined.`;
+		return `${meshes.value.length} ${meshes.value.length>1?'Meshes':'Mesh'} Joined. ${_v}`;
 	}
 });
 onMounted(() => {
@@ -200,7 +205,7 @@ const restart = ref(false);
 				:loading="loading"
 				:placeholder="placeholder" 
 				class="w-20rem transparent">
-				    <template #selecticon>
+				    <template #dropdownicon>
 							<i v-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
 							<i v-else class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
 				    </template>
@@ -313,13 +318,14 @@ const restart = ref(false);
 		animation: bling2 2s infinite linear
 	}
 	.userinfo{
+		text-align: right;
 		position: absolute;
 		top: 10px;
 		right: 15px;
 		color: rgba(255,255,255,0.7);
 		font-weight: bold;
 		text-overflow: ellipsis;
-		width: 130px;
+		max-width: 130px;
 		overflow: hidden;
 		white-space: nowrap;
 	}

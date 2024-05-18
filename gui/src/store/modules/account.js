@@ -9,7 +9,7 @@ export default {
 		guest: false,
 		redirect: null,
 		appkey: null,
-		pipyVersion: '',
+		version: '',
 		client: null,
 		pid: null,
 		child: null,
@@ -49,8 +49,8 @@ export default {
     appkey: (state) => {
       return state.appkey;
     },
-    pipyVersion: (state) => {
-      return state.pipyVersion;
+    version: (state) => {
+      return state.version;
     },
     redirect: (state) => {
       return state.redirect;
@@ -114,8 +114,8 @@ export default {
     setSelectedMesh(state, selectedMesh) {
       state.selectedMesh = selectedMesh;
     },
-    setPipyVersion(state, pipyVersion) {
-      state.pipyVersion = pipyVersion;
+    setVersion(state, version) {
+      state.version = version;
     },
     setRedirect(state, redirect) {
       state.redirect = redirect;

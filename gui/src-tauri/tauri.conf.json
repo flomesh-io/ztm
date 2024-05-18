@@ -1,5 +1,5 @@
 {
-  "productName": "ZTM",
+  "productName": "ZTM App",
   "version": "0.0.3",
   "identifier": "com.ztm.ztm",
   "build": {
@@ -27,11 +27,8 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": [
-      "../../agent/main.js",
-      "../../agent/src"
-    ],
-    "externalBin": ["bin/pipy"],
+    "resources": [],
+    "externalBin": ["bin/ztm"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

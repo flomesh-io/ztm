@@ -63,9 +63,9 @@ private void copyBinaryToPrivateDir(Context context) {
     InputStream inputStream = null;
     OutputStream outputStream = null;
     try {
-        // 假设 binary 文件名为 "mybinary"
-        inputStream = context.getAssets().open("mybinary");
-        File outFile = new File(context.getFilesDir(), "mybinary");
+        // 假设 binary 文件名为 "pipy"
+        inputStream = context.getAssets().open("pipy");
+        File outFile = new File(context.getFilesDir(), "pipy");
         outputStream = new FileOutputStream(outFile);
 
         byte[] buffer = new byte[1024];
@@ -118,7 +118,8 @@ private void executeBinary() {
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     ```
-
+<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+    android:required="false"/>
 - **文件路径**：不同 Android 版本的文件路径管理有所不同，确保文件路径是应用私有目录而不是公共目录。
 
 - **兼容性**：确保 binary 文件是为目标 Android 设备架构编译的，例如 ARM 或 x86。

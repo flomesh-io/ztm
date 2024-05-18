@@ -38,7 +38,7 @@ const level = ref('Error');
 	    </div> -->
 	    <div class="terminal_body py-2">
 	        <div class="terminal_promt mt-1">
-	            <span class="terminal_user">pipy@log: </span>
+	            <span class="terminal_user">ztm@log: </span>
 	            <span class="terminal_location">~</span>
 							<div class="flex flex-wrap gap-3 px-3">
 							    <div class="flex align-items-center ">
@@ -60,7 +60,7 @@ const level = ref('Error');
 							v-show="log.level == level || level == 'All'">{{log.msg}}</div>
 	        </div>
 	        <div class="terminal_promt" v-if="!!logs && logs.length>0">
-	            <span class="terminal_user">pipy@log: </span>
+	            <span class="terminal_user">ztm@log: </span>
 	            <span class="terminal_location">~</span>
 	            <span class="terminal_bling">$</span>
 	            <span class="terminal_cursor"></span>
