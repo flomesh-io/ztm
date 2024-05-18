@@ -595,6 +595,9 @@ pre.app-code code{
 .transparent{
 	background-color: transparent !important;
 }
+.transparent.p-select .p-select-label.p-placeholder{
+	padding-right: 0 !important;
+}
 .transparent>.p-dialog-content{
 	background-color: transparent;
 	
