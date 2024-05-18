@@ -18,7 +18,7 @@ yarn install
 
 ### First build ztm (plaform=windows|linux|macos-x86|macos)
 ```sh
-npm run build-pipy-{plaform}
+npm run build-ztm-{plaform}
 ```
 
 ### Mock a hub if needed
