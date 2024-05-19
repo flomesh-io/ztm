@@ -45,14 +45,14 @@ export default class ShellService {
 			"agent",
 			`--listen=${port}`,
 			`--database=${resourceDirPath}/ztm.db`,
-			// `--log-file=${resourceDirPath}/ztm.log`,
+			"--pipy-options",
+			`--log-file=${resourceDirPath}/ztm.log`,
 		];
-		if(reset){
-			args.push("--reset");
-		} else {
-			args.push("");
-		}
-		args.push("");
+		// if(reset){
+		// 	args.push("--reset");
+		// } else {
+		// 	args.push("");
+		// }
 		console.log(`[starting pipy:${args}]`);
 		const command = Command.sidecar("bin/ztm", args);
 		command.on('close', data => {
