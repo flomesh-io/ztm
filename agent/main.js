@@ -1,8 +1,8 @@
 #!/usr/bin/env -S pipy --args
 
-import api from './src/api.js'
-import db from './src/db.js'
-import options from './src/options.js'
+import api from './api.js'
+import db from './db.js'
+import options from './options.js'
 
 var opt = options(pipy.argv, {
   defaults: {
