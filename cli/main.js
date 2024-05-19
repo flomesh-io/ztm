@@ -158,7 +158,7 @@ function main() {
   if (!command || command.startsWith('-')) return errorInput(`missing command`)
 
   var f = ({
-    help, version, config,
+    help, version, config, log,
     start, stop, run, invite, evict, join, leave,
     get, describe, create, 'delete': deleteCmd,
   })[command]
@@ -859,6 +859,24 @@ function deletePort(argv) {
   }).then(ep => {
     return c.delete(`/api/meshes/${mesh.name}/endpoints/${ep.id}/ports/${portName}`)
   }).then(() => {
+    pipy.exit(0)
+  }).catch(error)
+}
+
+function log(argv) {
+  var epName = normalizeName(readOptionalWord(argv))
+  var opts = parseOptions(optionsGetEP, argv, 'log')
+  var mesh = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, { '--endpoint': epName }, m)
+  }).then(ep => {
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/log`)
+  }).then(ret => {
+    JSON.decode(ret).forEach(l => {
+      println(l.time, l.message)
+    })
     pipy.exit(0)
   }).catch(error)
 }
