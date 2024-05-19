@@ -1,4 +1,4 @@
-#!/usr/bin/env -S pipy --skip-redundant-arguments --skip-unknown-arguments
+#!/usr/bin/env -S pipy --args
 
 import options from './options.js'
 import clients from './clients.js'
@@ -189,9 +189,9 @@ function errorObjectType(type, command) {
 // Command parsing utilities
 //
 
-function readWord(argv, meaning) {
+function readWord(argv, meaning, command) {
   var word = argv.shift()
-  if (!word || word.startsWith('-')) return errorInput(`missing ${meaning}`)
+  if (!word || word.startsWith('-')) return errorInput(`missing ${meaning}`, command)
   return word
 }
 
@@ -201,8 +201,8 @@ function readOptionalWord(argv) {
   return argv.shift()
 }
 
-function readObjectType(argv) {
-  var type = readWord(argv, 'object type')
+function readObjectType(argv, command) {
+  var type = readWord(argv, 'object type', command)
   switch (type) {
     case 'ca':
     case 'hub':
@@ -222,7 +222,7 @@ function readObjectType(argv) {
     case 'port':
     case 'ports':
       return 'port'
-    default: return errorInput(`unknown object type '${type}'`)
+    default: return errorInput(`unknown object type '${type}'`, command)
   }
 }
 
@@ -337,7 +337,7 @@ function config(argv) {
 //
 
 function start(argv, program) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'start')
   switch (type) {
     case 'ca': return startCA(argv, program)
     case 'hub': return startHub(argv, program)
@@ -366,7 +366,7 @@ function startAgent(argv, program) {
 //
 
 function stop(argv) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'stop')
   switch (type) {
     case 'ca': return stopCA()
     case 'hub': return stopHub()
@@ -389,7 +389,7 @@ function stopAgent() {
 //
 
 function run(argv, program) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'run')
   switch (type) {
     case 'ca': return runCA(argv, program)
     case 'hub': return runHub(argv, program)
@@ -427,7 +427,7 @@ function exec(argv) {
 //
 
 function invite(argv) {
-  var username = normalizeName(readWord(argv, 'username'))
+  var username = normalizeName(readWord(argv, 'username', 'invite'))
   var opts = parseOptions(optionsInvite, argv, 'invite')
   var bootstraps = requiredOption(opts, '--bootstrap', 'invite')
   var crtCA
@@ -469,7 +469,7 @@ function invite(argv) {
 //
 
 function evict(argv) {
-  var username = normalizeName(readWord(argv, 'username'))
+  var username = normalizeName(readWord(argv, 'username', 'evict'))
   var c = clients.ca()
   c.delete(`/api/certificates/${username}`).then(() => {
     pipy.exit(0)
@@ -481,7 +481,7 @@ function evict(argv) {
 //
 
 function join(argv) {
-  var meshName = normalizeName(readWord(argv, 'mesh name'))
+  var meshName = normalizeName(readWord(argv, 'mesh name', 'join'))
   var opts = parseOptions(optionsJoin, argv, 'join')
   var epName = normalizeName(requiredOption(opts, '--as', 'join'))
   var profilePathname = requiredOption(opts, '--permit', 'join')
@@ -519,7 +519,7 @@ function join(argv) {
 //
 
 function leave(argv) {
-  var meshName = normalizeName(readWord(argv, 'mesh name'))
+  var meshName = normalizeName(readWord(argv, 'mesh name', 'leave'))
   var c = clients.agent()
   c.delete(`/api/meshes/${meshName}`).then(() => {
     pipy.exit(0)
@@ -531,7 +531,7 @@ function leave(argv) {
 //
 
 function get(argv) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'get')
   switch (type) {
     case 'mesh': return getMesh(argv)
     case 'endpoint': return getEndpoint(argv)
@@ -561,7 +561,7 @@ function getMesh(argv) {
 function getEndpoint(argv) {
   var epName = normalizeName(readOptionalWord(argv))
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsGetEP, argv, 'ztm get endpoint')).then(mesh => {
+  selectMesh(c, parseOptions(optionsGetEP, argv, 'get endpoint')).then(mesh => {
     return c.get(`/api/meshes/${mesh.name}/endpoints`)
   }).then(ret => {
     printTable(
@@ -580,7 +580,7 @@ function getEndpoint(argv) {
 
 function getService(argv) {
   var svcName = normalizeServiceName(readOptionalWord(argv))
-  var opts = parseOptions(optionsGet, argv, 'ztm get service')
+  var opts = parseOptions(optionsGet, argv, 'get service')
   var epName = opts['--endpoint']
   var mesh = null
   var endp = null
@@ -612,7 +612,7 @@ function getService(argv) {
 
 function getPort(argv) {
   var portName = normalizePortName(readOptionalWord(argv))
-  var opts = parseOptions(optionsGet, argv, 'ztm get port')
+  var opts = parseOptions(optionsGet, argv, 'get port')
   var mesh = null
   var endp = null
   var c = clients.agent()
@@ -642,7 +642,7 @@ function getPort(argv) {
 //
 
 function describe(argv) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'describe')
   switch (type) {
     case 'mesh': return describeMesh(argv)
     case 'endpoint': return describeEndpoint(argv)
@@ -653,23 +653,111 @@ function describe(argv) {
 }
 
 function describeMesh(argv) {
-  var meshName = normalizeName(readWord(argv))
-  println(meshName)
+  var meshName = normalizeName(readWord(argv, 'mesh name', 'describe mesh'))
+  clients.agent().get(`/api/meshes/${meshName}`).then(ret => {
+    var m = JSON.decode(ret)
+    println(`Mesh: ${m.name}`)
+    println(`Hubs:`)
+    m.bootstraps.forEach(h => println(' ', h))
+    println(`Agent:`)
+    println(`  Endpoint ID: ${m.agent.id}`)
+    println(`  Endpoint Name: ${m.agent.name}`)
+    println(`  User Name: ${m.agent.username}`)
+    println(`CA Certificate:`)
+    println(m.ca)
+    println(`User Certificate:`)
+    println(m.agent.certificate)
+    println(`Status:`, m.connected ? 'Connected' : 'Offline')
+    if (m.errors.length > 0) {
+      println(`Errors:`)
+      m.errors.forEach(e => println(' ', e.time, e.message))
+    }
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function describeEndpoint(argv) {
-  var epName = normalizeName(readWord(argv))
-  println(epName)
+  var epName = normalizeName(readOptionalWord(argv, 'endpoint name', 'describe endpoint'))
+  var opts = parseOptions(optionsGetEP, argv, 'describe endpoint')
+  var mesh = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, { '--endpoint': epName }, m)
+  }).then(ep => {
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}`)
+  }).then(ret => {
+    var ep = JSON.decode(ret)
+    println(`Endpoint: ${ep.name}${ep.isLocal ? ' (local)' : ''}`)
+    println(`ID: ${ep.id}`)
+    println(`Username: ${ep.username}`)
+    println(`Hubs:`)
+    ep.hubs.forEach(h => println(' ', h))
+    println(`IP: ${ep.ip}`)
+    println(`Port: ${ep.port}`)
+    println(`Heartbeat: ${new Date(ep.heartbeat).toUTCString()}`)
+    println(`Status:`, ep.online ? 'Online' : 'Offline')
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function describeService(argv) {
-  var svcName = normalizeServiceName(readWord(argv))
-  println(svcName)
+  var svcName = normalizeServiceName(readWord(argv, 'service name', 'describe service'))
+  var opts = parseOptions(optionsGet, argv, 'describe service')
+  var epName = opts['--endpoint']
+  var mesh = null
+  var endp = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return epName ? selectEndpoint(c, opts, m) : null
+  }).then(ep => {
+    endp = ep
+    return ep ? c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/services/${svcName}`) : c.get(`/api/meshes/${mesh.name}/services/${svcName}`)
+  }).then(ret => {
+    var svc = JSON.decode(ret)
+    println(`Service: ${svc.protocol}/${svc.name}`)
+    if (epName) {
+      println(`Endpoint: ${endp.name}`)
+      println(`Endpoint ID: ${endp.id}`)
+      println(`Host: ${svc.host}`)
+      println(`Port: ${svc.port}`)
+    } else {
+      println(`Providers:`)
+      svc.endpoints.forEach(ep => {
+        println(`  Endpoint: ${ep.name}${ep.isLocal ? ' (local)' : ''}`)
+        println(`    ID: ${ep.id}`)
+        println(`    Access: ${ep.users ? (ep.users.length > 0 ? ep.users.join(', ') : 'Private') : 'Public'}`)
+      })
+    }
+    pipy.exit(0)
+  }).catch(error)
 }
 
 function describePort(argv) {
-  var portName = normalizePortName(readWord(argv))
-  println(portName)
+  var portName = normalizePortName(readWord(argv), 'port name', 'describe port')
+  var opts = parseOptions(optionsGet, argv, 'describe port')
+  var mesh = null
+  var endp = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return selectEndpoint(c, opts, m)
+  }).then(ep => {
+    endp = ep
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/ports/${portName}`)
+  }).then(ret => {
+    var p = JSON.decode(ret)
+    println(`Port: ${p.listen.ip}/${p.protocol}/${p.listen.port}`)
+    println(`Protocol: ${p.protocol}`)
+    println(`Listen:`)
+    println(`  IP: ${p.listen.ip}`)
+    println(`  Port: ${p.listen.port}`)
+    println(`Service: ${p.protocol}/${p.service}`)
+    println(`Status:`, p.open ? 'Open' : 'Not open')
+    if (p.error) println(`Error:`, p.error)
+    pipy.exit(0)
+  }).catch(error)
 }
 
 //
@@ -677,7 +765,7 @@ function describePort(argv) {
 //
 
 function create(argv) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'create')
   switch (type) {
     case 'service': return createService(argv)
     case 'port': return createPort(argv)
@@ -686,7 +774,7 @@ function create(argv) {
 }
 
 function createService(argv) {
-  var svcName = normalizeServiceName(readWord(argv, 'service name'))
+  var svcName = normalizeServiceName(readWord(argv, 'service name', 'create service'))
   var opts = parseOptions(optionsService, argv, 'create service')
   var host = requiredOption(opts, '--host', 'create service')
   var port = checkPortNumber(requiredOption(opts, '--port', 'create service'))
@@ -709,7 +797,7 @@ function createService(argv) {
 }
 
 function createPort(argv) {
-  var portName = normalizePortName(readWord(argv, 'port name'))
+  var portName = normalizePortName(readWord(argv, 'port name', 'create port'))
   var opts = parseOptions(optionsPort, argv, 'create port')
   var svcName = normalizeServiceName(requiredOption(opts, '--service', 'create port'))
   if (portName.split('/')[1] !== svcName.split('/')[0]) throw 'port/service protocol mismatch'
@@ -737,7 +825,7 @@ function createPort(argv) {
 //
 
 function deleteCmd(argv) {
-  var type = readObjectType(argv)
+  var type = readObjectType(argv, 'delete')
   switch (type) {
     case 'service': return deleteService(argv)
     case 'port': return deletePort(argv)
@@ -746,7 +834,7 @@ function deleteCmd(argv) {
 }
 
 function deleteService(argv) {
-  var svcName = normalizeServiceName(readWord(argv, 'service name'))
+  var svcName = normalizeServiceName(readWord(argv, 'service name', 'delete service'))
   var opts = parseOptions(optionsDelete, argv, 'delete service')
   var mesh = null
   var c = clients.agent()
@@ -761,7 +849,7 @@ function deleteService(argv) {
 }
 
 function deletePort(argv) {
-  var portName = normalizePortName(readWord(argv, 'port name'))
+  var portName = normalizePortName(readWord(argv, 'port name', 'delete port'))
   var opts = parseOptions(optionsDelete, argv, 'delete port')
   var mesh = null
   var c = clients.agent()
@@ -811,6 +899,7 @@ function selectEndpoint(client, opts, mesh) {
     }).then(ret => JSON.decode(ret))
   }
 }
+
 function printTable(data, columns) {
   var cols = Object.entries(columns)
   var colHeaders = cols.map(i => i[0])

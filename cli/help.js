@@ -60,7 +60,7 @@ function helpAll() {
   println()
   helpPortName()
   println()
-  println(`Type 'ztm help <command> [<object name>]' for more details.`)
+  println(`Type 'ztm help <command> [<object type>]' for more details.`)
   println()
 }
 

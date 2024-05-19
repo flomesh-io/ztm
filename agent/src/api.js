@@ -78,7 +78,9 @@ function allEndpoints(mesh) {
 function getEndpoint(mesh, ep) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
-  return m.findEndpoint(ep)
+  return m.findEndpoint(ep).then(
+    ep => ({ ...ep, isLocal: (ep.id === m.config.agent.id) })
+  )
 }
 
 function getEndpointLog(mesh, ep) {
