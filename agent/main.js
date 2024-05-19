@@ -1,4 +1,4 @@
-#!/usr/bin/env -S pipy --skip-unknown-arguments
+#!/usr/bin/env -S pipy --args
 
 import api from './src/api.js'
 import db from './src/db.js'
