@@ -22,6 +22,7 @@ export default function (argv) {
         default: return helpCreate()
       }
     case 'delete': return helpDelete()
+    case 'log': return helpLog()
     default: return helpAll()
   }
 }
@@ -45,6 +46,7 @@ function helpAll() {
   println(`  describe  service | port | endpoint | mesh`)
   println(`  create    service | port`)
   println(`  delete    service | port`)
+  println(`  log`)
   println()
   println(`Object types:`)
   println()
@@ -277,5 +279,11 @@ function helpDelete() {
   helpServiceName()
   println()
   helpPortName()
+  println()
+}
+
+function helpLog() {
+  println()
+  println(`Usage: ztm log [<endpoint>]`)
   println()
 }
