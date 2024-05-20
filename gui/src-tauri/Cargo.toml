@@ -29,5 +29,5 @@ tauri-plugin-fs = "=2.0.0-beta.7"
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-cli = "2.0.0-beta"
 
-#[target.'cfg(any(target_os = "android"))']
-#linker = "~/Library/Android/sdk/ndk/27.0.11718014/toolchains/llvm/prebuilt/darwin-x86_64/bin"
+[target.'cfg(any(target_os = "android"))']
+linker = "~/Library/Android/sdk/ndk/27.0.11718014/toolchains/llvm/prebuilt/darwin-x86_64/bin"
