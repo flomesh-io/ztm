@@ -21,11 +21,14 @@ jobs:
     - run: npm install -g win-node-env
     - name: Install NASM
       uses: ilammy/setup-nasm@v1
+    - name: build ztm
+      run: |
+        cd gui
+        yarn build-ztm-windows
     - name: build app
       run: |
         cd gui
         yarn install
-        yarn build-ztm-windows
         set NODE_OPTIONS=--max_old_space_size=4096 && yarn tauri build
     - uses: actions/upload-artifact@v2
       with:
