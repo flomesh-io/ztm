@@ -24,7 +24,7 @@ jobs:
     - name: build ztm
       run: |
         ./build.cmd
-        copy ./bin/ztm.exe './gui/src-tauri/bin/ztm-x86_64-pc-windows-msvc.exe'"
+        copy ./bin/ztm.exe './gui/src-tauri/bin/ztm-x86_64-pc-windows-msvc.exe'
     - name: build app
       run: |
         cd gui
