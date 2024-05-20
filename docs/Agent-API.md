@@ -59,6 +59,9 @@ POST requires:
 }
 ```
 
+Paths and methods:
+
+```
 GET /api/meshes
 GET /api/meshes/{name}
 GET /api/meshes/{name}/log
@@ -70,6 +73,7 @@ POST /api/meshes/{name}/ca
 POST /api/meshes/{name}/agent/certificate
 POST /api/meshes/{name}/agent/key
 DELETE /api/meshes/{name}
+```
 
 > For `/api/meshes/.../ca`, `/api/meshes/.../agent/certificate`, `/api/meshes/.../agent/key` paths, the request/response body is a PEM file in plain text.
 
@@ -88,9 +92,13 @@ DELETE /api/meshes/{name}
 }
 ```
 
+Paths and methods:
+
+```
 GET /api/meshes/{meshName}/endpoints
 GET /api/meshes/{meshName}/endpoints/{uuid}
 GET /api/meshes/{meshName}/endpoints/{uuid}/log
+```
 
 ## Service
 
@@ -122,12 +130,16 @@ POST requires:
 }
 ```
 
+Paths and methods:
+
+```
 GET /api/meshes/{meshName}/services
 GET /api/meshes/{meshName}/services/{protocol}/{name}
 GET /api/meshes/{meshName}/endpoints/{uuid}/services
 GET /api/meshes/{meshName}/endpoints/{uuid}/services/{protocol}/{name}
 POST /api/meshes/{meshName}/endpoints/{uuid}/services/{protocol}/{name}
 DELETE /api/meshes/{meshName}/endpoints/{uuid}/services/{protocol}/{name}
+```
 
 ## Port
 
@@ -158,7 +170,11 @@ POST requires:
 }
 ```
 
+Paths and methods:
+
+```
 GET /api/meshes/{meshName}/endpoints/{uuid}/ports
 GET /api/meshes/{meshName}/endpoints/{uuid}/ports/{ip}/{protocol}/{port}
 POST /api/meshes/{meshName}/endpoints/{uuid}/ports/{ip}/{protocol}/{port}
 DELETE /api/meshes/{meshName}/endpoints/{uuid}/ports/{ip}/{protocol}/{port}
+```
