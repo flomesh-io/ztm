@@ -357,6 +357,9 @@ pre.app-code code{
 .tabview-vertical .p-tabview-panels{
 	flex: 1;
 }
+.p-tabview-tab-header{
+	min-height: 50px;
+}
 .tabview-vertical .p-tabview-tablist li .p-tabview-tab-header{
 	background: transparent;
 	border-width: 0;
@@ -667,6 +670,11 @@ fieldset{
 	font-size: 0.875rem;
 	width: 2.2rem;
 	height: 2.2rem;
+}
+.p-selectbutton .p-togglebutton{
+	width: 100%;
+	line-height: 36px;
+	height: 36px;
 }
 .small .p-togglebutton{
 	font-size: 0.9rem;

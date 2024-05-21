@@ -2754,49 +2754,9 @@
   .p-rating:not(.p-disabled):not(.p-readonly) .p-rating-item:hover .p-rating-icon {
     color: var(--primary-color);
   }
-  .p-rating:not(.p-disabled):not(.p-readonly) .p-rating-item:hover .p-rating-icon.p-rating-cancel {
-    color: #ef4444;
-  }
 
   .p-selectbutton .p-button {
-    background: #f1f5f9;
-    border: 1px solid #f1f5f9;
-    color: #64748b;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, outline-color 0.2s;
-  }
-  .p-selectbutton .p-button .p-button-icon-left,
-.p-selectbutton .p-button .p-button-icon-right {
-    color: #64748b;
-  }
-  .p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover {
-    background: #f1f5f9;
-    border-color: #f1f5f9;
-    color: #334155;
-  }
-  .p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover .p-button-icon-left,
-.p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover .p-button-icon-right {
-    color: #334155;
-  }
-  .p-selectbutton .p-button.p-highlight {
-    background: #f1f5f9;
-    border-color: #f1f5f9;
-    color: #0f172a;
-  }
-  .p-selectbutton .p-button.p-highlight .p-button-icon-left,
-.p-selectbutton .p-button.p-highlight .p-button-icon-right {
-    color: #0f172a;
-  }
-  .p-selectbutton .p-button.p-highlight:hover {
-    background: #f1f5f9;
-    border-color: #f1f5f9;
-    color: #0f172a;
-  }
-  .p-selectbutton .p-button.p-highlight:hover .p-button-icon-left,
-.p-selectbutton .p-button.p-highlight:hover .p-button-icon-right {
-    color: #0f172a;
-  }
-  .p-selectbutton.p-invalid > .p-button {
-    border-color: #f87171;
   }
 
   .p-slider {
@@ -3934,11 +3894,8 @@
   .p-datatable .p-datatable-thead > tr > th {
     text-align: left;
     padding: 0.75rem 1rem;
-    border: 1px solid #e2e8f0;
     border-width: 0 0 1px 0;
     font-weight: 600;
-    color: #334155;
-    background: #ffffff;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, outline-color 0.2s;
   }
   .p-datatable .p-datatable-tfoot > tr > td {
