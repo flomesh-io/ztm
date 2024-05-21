@@ -78,6 +78,9 @@ export default class PipyProxyService {
 	getEndpoints(mesh) {
 		return request(`/api/meshes/${mesh}/endpoints`);
 	}
+	getVersion() {
+		return request(`/api/version`);
+	}
 	createPort({
 		mesh,
 		ep,
