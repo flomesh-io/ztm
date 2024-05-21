@@ -382,8 +382,8 @@ const expandedRows = ref({});
 				<i class="pi pi-plus mr-2" /> Create
 			</template>
 			<ServiceCreate v-if="!!meshes && meshes.length>0" @save="save"/>
-			<div v-else>
-				Join a mesh first.
+			<div class="py-5 text-center text-gray-600 text-xl" v-else>
+				<i class="pi pi-exclamation-circle"/> Join a mesh first.
 			</div>
 		</TabPanel>
 	</TabView>

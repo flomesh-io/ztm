@@ -160,21 +160,8 @@ const goLogin = () => {
 const goConsole = () => {
 	router.push('/mesh');
 }
-const reset = () => {
-	confirm.require({
-			message: 'Are you sure you want to reset pipy db?',
-			header: 'Factory settings',
-			icon: 'pi pi-exclamation-triangle',
-			accept: () => {
-				shellService.startPipy(config.value.port, true, error => {
-					errors.value.push(error);
-					console.error(`command error: "${error}"`)
-				});
-			},
-			reject: () => {
-					
-			}
-	});
+const openFinder = () => {
+	shellService.openFinder();
 }
 const restart = ref(false);
 </script>
@@ -204,6 +191,7 @@ const restart = ref(false);
 				v-else
 				:options="meshes" 
 				optionLabel="label" 
+				:filter="meshes.length>10"
 				:loading="loading"
 				:placeholder="placeholder" 
 				class="w-20rem transparent">
@@ -297,9 +285,9 @@ const restart = ref(false);
 							</div>
 					</li>
 					<li v-if="!!isLogined" class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-							<div class="font-medium font-bold w-3">Reset</div>
+							<div class="font-medium font-bold w-3"></div>
 							<div >
-								<Button  class="w-12rem" @click="reset">Factory settings <i class="pi pi-undo ml-2"></i></Button>
+								<Button  class="w-12rem" @click="openFinder">Show in finder <i class="pi pi-box ml-2"></i></Button>
 							</div>
 					</li>
 				</ul>

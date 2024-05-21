@@ -55,10 +55,12 @@ const select = () => {
 		v-if="!props.form"
 		v-model="selected" 
 		:options="meshes" 
+		:filter="meshes.length>10"
+		scrollHeight="19rem"
 		optionLabel="name" 
 		@change="select"
 		placeholder="Mesh" 
-		:style="full?'':'max-width: 200px;'"
+		:style="full?'':'max-width: 300px;'"
 		:class="innerClass">
 <!-- 				    <template #optiongroup="slotProps">
 						<div class="flex align-items-center">
@@ -89,9 +91,11 @@ const select = () => {
 		:options="meshes" 
 		optionLabel="name" 
 		optionValue="name" 
+		scrollHeight="19rem"
+		:filter="meshes.length>10"
 		@change="select"
 		placeholder="Mesh" 
-		:style="full?'':'max-width: 200px;'"
+		:style="full?'':'max-width: 300px;'"
 		:class="innerClass">
 <!-- 				    <template #optiongroup="slotProps">
 						<div class="flex align-items-center">

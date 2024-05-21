@@ -11,6 +11,10 @@ export default class ShellService {
 		const appDataDirPath = await resourceDir();
 		return `${appDataDirPath}/ztm.db`
 	}
+	async openFinder() {
+		const appDataDirPath = await resourceDir();
+		open(appDataDirPath)
+	}
 	async takePipyVersion () {
 		const pm = await platform();
 		store.commit('account/setPlatform', pm);

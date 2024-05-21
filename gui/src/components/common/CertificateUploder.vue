@@ -3,6 +3,14 @@ import { ref, computed } from 'vue';
 import { usePrimeVue } from 'primevue/config';
 
 const props = defineProps({
+	format: {
+		type: String,
+		default: ''
+	},
+	label: {
+		type: String,
+		default: ''
+	},
 	accept: {
 		type: String,
 		default: '*/*'
@@ -28,6 +36,20 @@ const props = defineProps({
 const emits = defineEmits(['update:modelValue']);
 const $primevue = usePrimeVue();
 
+const isValid = computed(()=>{
+	if(!props.format){
+		return true;
+	} else if(props.format == 'json'){
+		let rnt = false;
+		try{
+			const testJSON = JSON.parse(props.modelValue);
+      rnt = true;
+		}catch(e){}
+		return rnt;
+  } else {
+    return true;
+  }
+})
 const uploadedLength = computed(() => {
 	if(!props.modelValue){
 		return 0;
@@ -158,8 +180,14 @@ const typeOk = () => {
         <div v-if="!!props.modelValue">
             <div class="flex flex-wrap p-0 gap-5">
                 <div class="flex flex-column align-items-left gap-3">
-                    <Chip  severity="success" >
+                    <Chip v-if="isValid" severity="success" >
 											<i class="pi pi-verified text-green-600 text-xl mr-2" />Configured
+											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
+												<i class="pi pi-times-circle relative text-gray-500" style="top: 1px;" />
+											</span>
+										</Chip>
+                    <Chip v-else severity="error" >
+											<i class="pi pi-exclamation-circle text-red-600 text-xl mr-2" />Format error
 											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
 												<i class="pi pi-times-circle relative text-gray-500" style="top: 1px;" />
 											</span>
@@ -171,7 +199,7 @@ const typeOk = () => {
     <template #empty="{ chooseCallback }">
         <div v-if="!props.modelValue" class="flex align-items-center justify-content-center flex-column">
             <i class="pi pi-file-arrow-up pt-2 pb-4 text-6xl text-400 border-400 text-gray-300" />
-            <p class="mb-2 text-gray-500">Drag and drop to here.</p>
+            <p class="mb-2 text-gray-500">Drag and drop {{props.label}} to here.</p>
         </div>
     </template>
 	</FileUpload>
