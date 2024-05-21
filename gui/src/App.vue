@@ -10,7 +10,7 @@ setAuthorization({
 	token: "pass",
 	expireAt: 7
 }, AUTH_TYPE.BASIC);
-store.commit('account/setUser', {id:'Client'});
+store.commit('account/setUser', {id:''});
 store.commit('notice/setToast', toast);
 store.commit('notice/setConfirm', confirm);
 // import { invoke } from '@tauri-apps/api/core'

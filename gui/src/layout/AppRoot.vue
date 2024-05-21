@@ -167,7 +167,7 @@ const restart = ref(false);
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen,platform:true}">
+	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen,'android':platform=='android'}">
 	  <div class="image"></div>
 	  
 	  <div class="wave"></div>
@@ -500,22 +500,23 @@ const restart = ref(false);
 		width: 20rem;
 	}
 @media screen and (max-width: 768px){
-	.logo{
-		height: 120px;
-		width: 120px;
-		opacity: 0.85;
-		margin-bottom: 40px;
+	.android{
+		.logo{
+			height: 110px;
+			width: 110px;
+			opacity: 0.85;
+			margin-bottom: 30px;
+		}
+		.infotop {
+		  top: 30%;
+			margin-top: 0px;
+			
+		}
+		.transparent.p-select{
+			width: 80%;
+			line-height: 26px;
+			font-size: 1.2rem;
+		}
 	}
-	.infotop {
-	  top: 35%;
-		margin-top: 0px;
-		
-	}
-	:deep(.transparent.p-select){
-		width: 80%;
-		line-height: 26px;
-		font-size: 1.2rem;
-	}
-	
 }
 </style>

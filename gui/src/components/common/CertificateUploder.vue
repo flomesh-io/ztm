@@ -153,8 +153,8 @@ const typeOk = () => {
         <div class="w-full">
           <div class="flex flex-wrap justify-content-between align-items-center flex-1 gap-2" v-if="!props.modelValue">
 						<div class="flex gap-2">
-                <Button size="small" v-tooltip="'Select'" @click="chooseCallback" icon="pi pi-plus" rounded ></Button>
-                <Button size="small" v-tooltip="'Type'" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
+                <Button size="small" v-tooltip="'Browse'" @click="chooseCallback" icon="pi pi-plus" rounded ></Button>
+                <Button size="small" v-tooltip="'Input'" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
 								<OverlayPanel ref="op">
 									<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel w-30rem"  >
 											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -199,7 +199,7 @@ const typeOk = () => {
     <template #empty="{ chooseCallback }">
         <div v-if="!props.modelValue" class="flex align-items-center justify-content-center flex-column">
             <i class="pi pi-file-arrow-up pt-2 pb-4 text-6xl text-400 border-400 text-gray-300" />
-            <p class="mb-2 text-tip">Drag and drop {{props.label}} to here.</p>
+            <p class="mb-2 text-tip">Drag and drop {{props.label}} here.</p>
         </div>
     </template>
 	</FileUpload>

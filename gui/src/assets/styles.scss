@@ -766,7 +766,12 @@ fieldset{
 	.p-datatable .p-datatable-thead > tr > th{
 		color:var(--gray-300);
 	}
-		
+	.empty-result {
+		margin-top: 30px;
+	}
+	.empty-result img{
+			opacity: 0.5;
+	}
 	.link{
 		color: var(--primary-300) !important;
 	}

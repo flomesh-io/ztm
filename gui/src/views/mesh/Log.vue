@@ -114,7 +114,7 @@ const timeago = computed(() => (ts) => {
 		<template #content>
 			<InputGroup class="search-bar" >
 				<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
-				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keywork" rows="1" cols="30" />
+				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keyword" rows="1" cols="30" />
 			</InputGroup>
 		</template>
 	</Card>
