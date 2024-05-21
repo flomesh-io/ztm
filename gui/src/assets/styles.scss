@@ -134,27 +134,6 @@ $gutter: 1rem; //for primeflex grid system
 	background-color: var(--green-100);
 	color: var(--green-500);
 }
-@media (prefers-color-scheme: dark){
-	
-	.bg-primary-sec{
-		background-color: var(--primary-700);
-		color: var(--primary-300) !important;
-	}
-	.bg-green-sec{
-		background-color: var(--green-700);
-		color: var(--green-300) !important;
-	}
-	.bg-primary{
-		background-color: var(--primary-700) !important;
-		color: var(--primary-300) !important;
-	}
-	.layout-main .p-tabview-tablist-item-active .p-tabview-tab-header{
-		color: var(--primary-300) !important;
-	}
-	.p-datatable .p-datatable-thead > tr > th{
-		color:var(--gray-300);
-	}
-}
 .p-card.nopd .p-datatable-header input.p-inputtext,
 .p-card.nopd .p-datatable-header .p-button{
 	border-radius: 0;
@@ -762,4 +741,33 @@ fieldset{
 }
 .text-tip{
 	color: var(--surface-tip);
+}
+.link{
+	color: var(--primary-color)
+}
+
+@media (prefers-color-scheme: dark){
+	
+	.bg-primary-sec{
+		background-color: var(--primary-700);
+		color: var(--primary-300) !important;
+	}
+	.bg-green-sec{
+		background-color: var(--green-700);
+		color: var(--green-300) !important;
+	}
+	.bg-primary{
+		background-color: var(--primary-700) !important;
+		color: var(--primary-300) !important;
+	}
+	.layout-main .p-tabview-tablist-item-active .p-tabview-tab-header{
+		color: var(--primary-300) !important;
+	}
+	.p-datatable .p-datatable-thead > tr > th{
+		color:var(--gray-300);
+	}
+		
+	.link{
+		color: var(--primary-300) !important;
+	}
 }
