@@ -11,6 +11,7 @@ android.md
 # dependencies
 /node_modules
 package-lock.json
+permit.json
 yarn.lock
 .DS_Store
 dist
