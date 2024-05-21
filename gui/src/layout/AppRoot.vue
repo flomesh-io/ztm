@@ -15,7 +15,7 @@ import PipyProxyService from '@/service/PipyProxyService';
 import ShellService from '@/service/ShellService';
 import { checkAuthorization } from "@/service/common/request";
 import { isAdmin } from "@/service/common/authority-utils";
-import { hostname, platform, locale } from '@tauri-apps/plugin-os';
+import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { resourceDir } from '@tauri-apps/api/path';
@@ -39,6 +39,9 @@ const config = ref({
 	port: getPort(),
 });
 
+const platform = computed(() => {
+	return store.getters['account/platform']
+});
 const isLogined = computed(() => {
 	return store.getters['account/user']
 });
@@ -177,7 +180,7 @@ const restart = ref(false);
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen}">
+	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen,platform:true}">
 	  <div class="image"></div>
 	  
 	  <div class="wave"></div>
@@ -190,7 +193,7 @@ const restart = ref(false);
 		</div>
 		<div class="infotop">
 			<div>
-				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" height="60"/>
+				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" :height="platform=='android'?120:60"/>
 			</div>
 			<div>
 				

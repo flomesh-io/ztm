@@ -15,6 +15,7 @@ export default {
 		child: null,
 		collapsed: true,
 		meshes:[],
+		platform: null,
 		selectedMesh:null,
 		logs:[],
   },
@@ -25,6 +26,9 @@ export default {
 		},
 	},
   getters: {
+    platform: (state) => {
+      return state.platform;
+    },
     pid: (state) => {
       return localStorage.getItem('PID') || state.pid;
     },
@@ -91,6 +95,9 @@ export default {
     },
     setLogs(state, logs) {
       state.logs = logs;
+    },
+    setPlatform(state, platform) {
+      state.platform = platform;
     },
     pushLog(state, log) {
 			if(!state.logs){

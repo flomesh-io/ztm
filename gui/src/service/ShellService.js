@@ -1,41 +1,40 @@
 import { Command, Child, open } from '@tauri-apps/plugin-shell';
 import { invoke } from '@tauri-apps/api/core';
-import { resourceDir, appLogDir, appDataDir } from '@tauri-apps/api/path';
+import { resourceDir, appLogDir, appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/plugin-os';
+import PipyProxyService from '@/service/PipyProxyService';
 import store from "@/store";
 
+const pipyProxyService = new PipyProxyService();
 export default class ShellService {
 	async getDB () {
 		const appDataDirPath = await resourceDir();
 		return `${appDataDirPath}/ztm.db`
 	}
 	async takePipyVersion () {
+		const pm = await platform();
+		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
-		let command = await Command.sidecar("bin/ztm", ['version','--json','','','','']);
-		await command.spawn();
-		command.stdout.on('data', line => {
-			console.log(line)
-			//{"ztm":{"version":"v0.0.2","commit":"a73787b37cb500044410325b04558d2507a847f7","date":"Sat, 18 May 2024 18:55:27 +0800"},"pipy":{"version":"1.1.0-33","commit":"bd7450a98c9513394869493753456944aa26c1f7","date":"Sat, 18 May 2024 18:10:58 +0800"}}
-			store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
-		});
-		
-		// let command = await invoke("plugin:shell|execute", {
-		//     program: "LD_LIBRARY_PATH=.",
-		//     args: ['./pipy','-v','','',''],
-		// 		options: {},
-		// });
-		// let command = await invoke("plugin:shell|execute", {
-		//     program: "sudo",
-		//     args: ["ls",""],
-		// 		options: {},
-		// });
-		// console.log(command);
-		// let command = await Command.create("pipy", ['-v','','','','']);
-		// const rst = await command.spawn();
-		// console.log(rst)
+		if(pm != "android"){
+			let command = await Command.sidecar("bin/ztm", ['version','--json','','','','']);
+			await command.spawn();
+			command.stdout.on('data', line => {
+				console.log(line)
+				//{"ztm":{"version":"v0.0.2","commit":"a73787b37cb500044410325b04558d2507a847f7","date":"Sat, 18 May 2024 18:55:27 +0800"},"pipy":{"version":"1.1.0-33","commit":"bd7450a98c9513394869493753456944aa26c1f7","date":"Sat, 18 May 2024 18:10:58 +0800"}}
+				store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
+			});
+		} else {
+			pipyProxyService.getVersion()
+				.then(res => {
+					if(!!res){
+						store.commit('account/setVersion', res);
+					}
+				})
+				.catch(err => {
+				}); 
+		}
 	}
 	async startPipy (port, reset, callError){
-		await this.pausePipy();
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
@@ -48,47 +47,66 @@ export default class ShellService {
 			"--pipy-options",
 			`--log-file=${resourceDirPath}/ztm.log`,
 		];
-		// if(reset){
-		// 	args.push("--reset");
-		// } else {
-		// 	args.push("");
-		// }
-		console.log(`[starting pipy:${args}]`);
-		const command = Command.sidecar("bin/ztm", args);
-		command.on('close', data => {
-			console.log("[close]");
-			console.log(data);
-			store.commit('account/pushLog', {level:'Info',msg:`pipy pause with code ${data.code} and signal ${data.signal}`});
-		});
-		command.stdout.on('data', line => {
-			console.log("[data]");
-			store.commit('account/pushLog', {level:'Info',msg:line});
-		});
-		command.stderr.on('data', line => {
-			console.log("[data]");
-			store.commit('account/pushLog', {level:'Error',msg:line});
-			callError(line);
-		});
-		command.on('error', error => {
-			console.log("[error]");
-			store.commit('account/pushLog', {level:'Error',msg:error});
-			callError(error);
-		});
-		let child = await command.spawn();
-		store.commit('account/setPid', child.pid);
-		store.commit('account/setChild', child);
+		
+		const pm = await platform();
+		if(pm != "android"){
+			await this.pausePipy();
+			// if(reset){
+			// 	args.push("--reset");
+			// } else {
+			// 	args.push("");
+			// }
+			console.log(`[starting pipy:${args}]`);
+			const command = Command.sidecar("bin/ztm", args);
+			command.on('close', data => {
+				console.log("[close]");
+				console.log(data);
+				store.commit('account/pushLog', {level:'Info',msg:`pipy pause with code ${data.code} and signal ${data.signal}`});
+			});
+			command.stdout.on('data', line => {
+				console.log("[data]");
+				store.commit('account/pushLog', {level:'Info',msg:line});
+			});
+			command.stderr.on('data', line => {
+				console.log("[data]");
+				store.commit('account/pushLog', {level:'Error',msg:line});
+				callError(line);
+			});
+			command.on('error', error => {
+				console.log("[error]");
+				store.commit('account/pushLog', {level:'Error',msg:error});
+				callError(error);
+			});
+			let child = await command.spawn();
+			store.commit('account/setPid', child.pid);
+			store.commit('account/setChild', child);
+		} else {
+			args.unshift("./main");
+			const filePath = await appLocalDataDir();
+			const lib = `${filePath}/files/libpipy.so`;
+			invoke('pipylib', {
+				lib,
+				argv: args,
+				argc: args.length
+			}).then((res)=>{
+				console.log(`[pipylib]Result: ${res}`);
+			});
+		}
 	}
 	async pausePipy (){
-		let child = store.getters['account/child'];
-		let pid = store.getters['account/pid'];
-		if(!!child){
-			child.kill();
-			store.commit('account/setPid', null);
-		}else if(!!pid){
-			const findChild = new Child(pid*1);
-			findChild.kill();
-			store.commit('account/setPid', null);
+		const pm = await platform();
+		if(pm != "android"){
+			let child = store.getters['account/child'];
+			let pid = store.getters['account/pid'];
+			if(!!child){
+				child.kill();
+				store.commit('account/setPid', null);
+			}else if(!!pid){
+				const findChild = new Child(pid*1);
+				findChild.kill();
+				store.commit('account/setPid', null);
+			}
+			console.log('[paused pipy]');
 		}
-		console.log('[paused pipy]');
 	}
 }

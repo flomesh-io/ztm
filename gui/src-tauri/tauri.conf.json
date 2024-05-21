@@ -22,7 +22,8 @@
     ],
     "security": {
       "capabilities": ["main-capability"]
-    }
+    },
+		"withGlobalTauri": true
   },
   "bundle": {
     "active": true,
