@@ -43,17 +43,18 @@ export default class ShellService {
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
-		const args = [
-			"run",
-			"agent",
-			`--listen=${port}`,
-			`--database=${resourceDirPath}/ztm.db`,
-			"--pipy-options",
-			`--log-file=${resourceDirPath}/ztm.log`,
-		];
-		
 		const pm = await platform();
 		if(pm != "android"){
+			
+			const args = [
+				"run",
+				"agent",
+				`--listen=${port}`,
+				`--database=${resourceDirPath}/ztm.db`,
+				"--pipy-options",
+				`--log-file=${resourceDirPath}/ztm.log`,
+			];
+			
 			await this.pausePipy();
 			// if(reset){
 			// 	args.push("--reset");
@@ -85,11 +86,20 @@ export default class ShellService {
 			store.commit('account/setPid', child.pid);
 			store.commit('account/setChild', child);
 		} else {
-			args.unshift("./main");
+			const args = [
+				"./main",
+				"--pipy",
+				"repo://ztm/agent",
+				"--args",
+				`--listen=${port}`,
+				`--database=${resourceDirPath}/ztm.db`,
+				"--pipy-options",
+				`--log-file=${resourceDirPath}/ztm.log`,
+			];
+			console.log(args)
 			const filePath = await appLocalDataDir();
-			const lib = `${filePath}/files/libztm.so`;
 			invoke('pipylib', {
-				lib,
+				lib:`${filePath}/files/libztm.so`,
 				argv: args,
 				argc: args.length
 			}).then((res)=>{
