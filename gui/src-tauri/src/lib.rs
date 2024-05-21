@@ -40,6 +40,7 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<i32, String> {
 					 let c_argv_ptr = c_argv.as_ptr();
 
 						// 调用外部函数
+						
 					 pipy_main(argc, c_argv_ptr);
 					 //nix::unistd::close(stdout_write).unwrap();
 					 //nix::unistd::close(stderr_write).unwrap();

@@ -15,6 +15,7 @@ class CopyBinaryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // 复制binary文件到私有目录
+        copyBinaryToPrivateDir(this, "libc++_shared.so")
         copyBinaryToPrivateDir(this, "libztm.so")
         // 完成后返回结果给主Activity
         setResult(RESULT_OK)

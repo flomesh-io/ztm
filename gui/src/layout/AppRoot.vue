@@ -180,7 +180,7 @@ const restart = ref(false);
 		</div>
 		<div class="infotop">
 			<div>
-				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" :height="platform=='android'?120:60"/>
+				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" />
 			</div>
 			<div>
 				
@@ -194,7 +194,7 @@ const restart = ref(false);
 				:filter="meshes.length>10"
 				:loading="loading"
 				:placeholder="placeholder" 
-				class="w-20rem transparent">
+				class="transparent">
 				    <template #dropdownicon>
 							<i v-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
 							<i v-else class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
@@ -385,7 +385,10 @@ const restart = ref(false);
 	  margin-top: -1em;
 	  padding-bottom: 1em;
 	}
-	
+	.logo{
+		height: 60px;
+		width: 60px;
+	}
 	.infotop {
 	  text-align: center;
 	  font-size: 20px;
@@ -493,4 +496,26 @@ const restart = ref(false);
 		border-color:rgba(255,255,255,0.5) !important;
 		border-bottom-style: dashed !important;
 	}
+	:deep(.transparent.p-select){
+		width: 20rem;
+	}
+@media screen and (max-width: 768px){
+	.logo{
+		height: 120px;
+		width: 120px;
+		opacity: 0.85;
+		margin-bottom: 40px;
+	}
+	.infotop {
+	  top: 35%;
+		margin-top: 0px;
+		
+	}
+	:deep(.transparent.p-select){
+		width: 80%;
+		line-height: 26px;
+		font-size: 1.2rem;
+	}
+	
+}
 </style>
