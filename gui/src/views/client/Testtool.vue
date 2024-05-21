@@ -404,14 +404,14 @@ const watchEnter = (e) => {
 				<template #content>
 					<ul class="list-none p-0 m-0">
 						<li :class="{'border-top-1':i>0,'hidden':k == 'result'}" v-for="(k,i) in Object.keys(result)" :key="k" class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">{{k}}</div>
+							<div class="text-tip w-6 md:w-2 font-medium">{{k}}</div>
 							<div v-if="k != 'status'" class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">{{result[k]}}</div>
 							<div v-else-if="k == 'status'" class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 								<Tag :severity="{OK:'success',ERROR:'danger',FAIL:'danger'}[result.status]" :value="result.status"></Tag>
 							</div>
 						</li>
 						<li :class="{'hidden':k == 'status'}" v-if="result?.result" v-for="(k) in Object.keys(result.result)" :key="k" class="border-top-1 flex align-items-center py-3 px-5 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">{{k}}</div>
+							<div class="text-tip w-6 md:w-2 font-medium">{{k}}</div>
 							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">{{result?.result[k]}}</div>
 						</li>
 					</ul>
@@ -421,7 +421,7 @@ const watchEnter = (e) => {
 				<template #content>
 					<ul class="list-none p-0 m-0">
 						<li class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">ERROR</div>
+							<div class="text-tip w-6 md:w-2 font-medium">ERROR</div>
 							<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 								<Tag severity="danger" :value="result.error"></Tag>
 							</div>
@@ -433,7 +433,7 @@ const watchEnter = (e) => {
 				<template #content>
 					<ul class="list-none p-0 m-0">
 						<li :class="{'border-top-1':i>0,'hidden':k == 'result'}" v-for="(k,i) in Object.keys(result)" :key="k" class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-							<div class="text-500 w-6 md:w-2 font-medium">{{k}}</div>
+							<div class="text-tip w-6 md:w-2 font-medium">{{k}}</div>
 							<div v-if="k != 'status'" class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 pl-2">{{result[k]}}</div>
 							<div v-else-if="k == 'status'" class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 								<Tag :severity="{OK:'success',ERROR:'danger',FAIL:'danger'}[result.status]" :value="result.status"></Tag>
@@ -475,9 +475,6 @@ const watchEnter = (e) => {
 <style scoped lang="scss">
 ::v-deep(.p-breadcrumb){
 	border-radius: 0;
-	border: none;
-}
-.drak-input{
 	border: none;
 }
 .hidden{

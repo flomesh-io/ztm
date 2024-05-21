@@ -115,7 +115,7 @@ const openEditor = () => {
 	               <div class="surface-card shadow-2 p-3 border-round">
 	                   <div class="flex justify-content-between mb-3">
 	                       <div>
-	                            <span class="block text-500 font-medium mb-3">
+	                            <span class="block text-tip font-medium mb-3">
 																
 																{{decodeURI(mesh.name)}}
 															</span>
@@ -124,7 +124,7 @@ const openEditor = () => {
 												 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
 												 <Menu ref="actionMenu" :model="actions" :popup="true" />
 	                   </div>
-	                    <span class="text-500">Hubs: </span>
+	                    <span class="text-tip">Hubs: </span>
 											<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
 	               </div>
 	           </div>
@@ -152,10 +152,6 @@ const openEditor = () => {
 <style scoped lang="scss">
 :deep(.p-dataview-content) {
   background-color: transparent !important;
-}
-.drak-input{
-	border: none;
-	min-height: 33px !important;
 }
 :deep(.p-tabview-nav),
 :deep(.p-tabview-panels),

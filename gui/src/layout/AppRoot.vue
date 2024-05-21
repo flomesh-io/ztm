@@ -264,7 +264,7 @@ const restart = ref(false);
 				<i class="pi pi-times " />
 			</Button>
 			<div>
-				<!-- <div class="text-500 mb-5">xxx</div> -->
+				<!-- <div class="text-tip mb-5">xxx</div> -->
 				<ul class="list-none p-0 m-0">
 					
 					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">

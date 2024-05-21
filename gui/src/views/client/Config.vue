@@ -194,10 +194,10 @@ async function copyCode(event) {
 						<div class="font-medium text-3xl text-900 mb-5">CA Certificate
 						<a :href="downloadHref" target="_blank"><Button style="position: relative;top: 5px;" icon="pi pi-download" text /></a>
 						</div>
-						<!-- <div class="text-500 mb-5">xxx</div> -->
+						<!-- <div class="text-tip mb-5">xxx</div> -->
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Organization</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Organization</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -210,7 +210,7 @@ async function copyCode(event) {
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Common Name</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Common Name</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -235,10 +235,10 @@ async function copyCode(event) {
 					
 					<div class="surface-section ml-5">
 						<div class="font-medium text-3xl text-900 mb-5">Server</div>
-						<!-- <div class="text-500 mb-5">xxx</div> -->
+						<!-- <div class="text-tip mb-5">xxx</div> -->
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Server Name</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Server Name</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -251,7 +251,7 @@ async function copyCode(event) {
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Port</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Port</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -264,7 +264,7 @@ async function copyCode(event) {
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Allow connect from Lan</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Allow connect from Lan</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class=" w-3rem h-2rem flex align-items-center justify-content-center">
@@ -280,13 +280,13 @@ async function copyCode(event) {
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Save Head And Body</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Save Head And Body</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<InputSwitch class="relative" style="left:2px" v-model="config.configs.saveHeadAndBody" />
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Copy Shell Export Command</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Copy Shell Export Command</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Button class="min-btn" rounded icon="pi pi-copy" @click="copyCode($event)" v-tooltip.focus.bottom="{ value: 'Copied to clipboard' }"/>
 									</div>
@@ -303,10 +303,10 @@ async function copyCode(event) {
 					
 					<div class="surface-section ml-5">
 						<div class="font-medium text-3xl text-900 mb-5">Tunnel</div>
-						<!-- <div class="text-500 mb-5">xxx</div> -->
+						<!-- <div class="text-tip mb-5">xxx</div> -->
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Target</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Target</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -320,13 +320,13 @@ async function copyCode(event) {
 							</li>
 							
 							<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Via Http Tunnel</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Via Http Tunnel</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<InputSwitch class="relative" style="left:2px"  v-model="config.internal.reverseServer.viaHttpTunnel" />
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Idle Timeout</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Idle Timeout</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -341,7 +341,7 @@ async function copyCode(event) {
 							</li>
 							
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">
+									<div class="text-tip w-6 md:w-2 font-medium">
 										<span class="pr-2" v-if="tls.default">
 											Default TLS
 										</span>
@@ -426,10 +426,10 @@ async function copyCode(event) {
 					
 					<div class="surface-section ml-5">
 						<div class="font-medium text-3xl text-900 mb-5">Auth</div>
-						<!-- <div class="text-500 mb-5">xxx</div> -->
+						<!-- <div class="text-tip mb-5">xxx</div> -->
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">User</div>
+									<div class="text-tip w-6 md:w-2 font-medium">User</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -442,7 +442,7 @@ async function copyCode(event) {
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Password</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Password</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -456,7 +456,7 @@ async function copyCode(event) {
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">New Password</div>
+									<div class="text-tip w-6 md:w-2 font-medium">New Password</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip :class="oldPassword != config.configs.password?'disabled':''" class="pl-0 pr-3 mr-2">
 										    <span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">

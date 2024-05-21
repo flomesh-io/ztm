@@ -116,7 +116,7 @@ watch(() => permit.value,() => {
 		<Breadcrumb :home="home" :model="[{label:route.params?.id}]" />
 	</div>
 	<div >
-		<BlockViewer text="Json" :header="props.title||'Join Mesh'" containerClass="surface-section px-3 py-3 md:px-4 md:py-7 lg:px-5" >
+		<BlockViewer text="Json" :header="props.title||'Join Mesh'" containerClass="surface-section px-3 py-3 md:px-4 md:pb-7 lg:px-5" >
 			<template #actions>
 				<Button class="mr-2" severity="secondary" v-if="!!props.pid" label="Cancel" size="small" @click="cancel"/>
 				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
@@ -128,7 +128,7 @@ watch(() => permit.value,() => {
 						<h6><Tag severity="contrast" value="Contrast">Name</Tag></h6>
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Mesh</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Mesh</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -141,7 +141,7 @@ watch(() => permit.value,() => {
 									</div>
 							</li>
 							<li class="flex align-items-center border-top-1 py-3 px-2 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Join As</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Join As</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 align-items-top"  >
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -164,17 +164,17 @@ watch(() => permit.value,() => {
 							<div class="flex flex-wrap gap-3 ml-8">
 							    <div class="flex align-items-center">
 							        <RadioButton v-model="permitType" inputId="ingredient1" name="pizza" value="Json" />
-							        <label for="ingredient1" class="ml-2">Json</label>
+							        <label for="ingredient1" class="ml-2 text-tip">Json</label>
 							    </div>
 							    <div class="flex align-items-center">
 							        <RadioButton v-model="permitType" inputId="ingredient2" name="pizza" value="Form" />
-							        <label for="ingredient2" class="ml-2">Form</label>
+							        <label for="ingredient2" class="ml-2 text-tip">Form</label>
 							    </div>
 							</div>
 						</h6>
 						<ul class="list-none p-0 m-0" v-if="permitType == 'Json'">
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Json</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Json</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<CertificateUploder :placeholder="placeholder.json" v-model="permit" format="json" label="[permit.json]"/>
 									</div>
@@ -183,25 +183,25 @@ watch(() => permit.value,() => {
 						<ul class="list-none p-0 m-0" v-else>
 							
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Hubs</div>
+									<div class="text-tip w-6 md:w-2 pr-2 font-medium">Hubs</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
 										<ChipList icon="pi-desktop" placeholder="Host:Port" v-model:list="config.bootstraps" />
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">CA Certificate</div>
+									<div class="text-tip w-6 md:w-2 pr-2 font-medium">CA Certificate</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<CertificateUploder :placeholder="placeholder.ca" v-model="config.ca"/>
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Certificate</div>
+									<div class="text-tip w-6 md:w-2 pr-2 font-medium">Certificate</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<CertificateUploder :placeholder="placeholder.c" v-model="config.agent.certificate"/>
 									</div>
 							</li>
-							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Private Key</div>
+							<li class="flex align-items-center pr-2 py-3 px-2 border-top-1 surface-border flex-wrap">
+									<div class="text-tip w-6 md:w-2 font-medium">Private Key</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<CertificateUploder :placeholder="placeholder.p" v-model="config.agent.privateKey"/>
 									</div>

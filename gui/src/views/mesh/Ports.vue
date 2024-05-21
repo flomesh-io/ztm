@@ -115,7 +115,7 @@ const active = ref(0);
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between mb-1">
 											 <div>
-													<span class="block text-500 font-medium mb-3">
+													<span class="block text-tip font-medium mb-3">
 														 {{port.listen.ip}} | {{port.protocol}}
 													</span>
 													
@@ -125,8 +125,8 @@ const active = ref(0);
 													</div>
 											 </div>
 											 <div class="flex">
-												 <div v-tooltip="'Delete Port'"  @click="deletePort(port)" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
-														 <i class="pi pi-trash text-gray-500 text-xl"></i>
+												 <div v-tooltip="'Delete Port'"  @click="deletePort(port)" class="pointer flex align-items-center justify-content-center p-button-secondary border-round mr-2" style="width: 2.5rem; height: 2.5rem">
+														 <i class="pi pi-trash text-tip text-xl"></i>
 												 </div>
 											 </div>
 									 </div>
@@ -174,10 +174,6 @@ const active = ref(0);
 <style scoped lang="scss">
 :deep(.p-dataview-content) {
   background-color: transparent !important;
-}
-.drak-input{
-	border: none;
-	min-height: 33px !important;
 }
 :deep(.p-tabview-nav),
 :deep(.p-tabview-panels),

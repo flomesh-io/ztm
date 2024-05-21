@@ -17,9 +17,10 @@ $gutter: 1rem; //for primeflex grid system
 .app-top-bar.p-menubar {
 	padding:0 0 0 0.75em;
 	height: 50px;
+	overflow: hidden;
 	background: #1e1e1e;
 	color: rgba(255, 255, 255, 0.87);
-	border: 1px solid rgba(255, 255, 255, 0.12);
+	border: 0px solid rgba(255, 255, 255, 0.12);
 	border-radius: 0px;
 }
 .app-top-bar.p-menubar .p-menubar-root-list{
@@ -66,7 +67,7 @@ $gutter: 1rem; //for primeflex grid system
 	font-weight: bold;
 }
 .p-menubar .p-menubar-item.p-highlight > .p-menubar-item-content{
-	background: var(--primary-500) !important;
+	background: var(--primary-color) !important;
 	color: var(--primary-color-text) !important;
 }
 .app-top-bar.p-menubar>.p-menubar-root-list>.p-menubar-item:not(.p-highlight):not(.p-disabled).p-focus > .p-menubar-item-content,
@@ -110,10 +111,11 @@ $gutter: 1rem; //for primeflex grid system
 	color: var(--primary-color-text);
 }
 .card, .p-card, .shadow, .block-section{
-	--card-shadow: 0px 4px 30px rgba(221, 224, 255, .54);
 	box-shadow: var(--card-shadow);
 }
-
+.block-section{
+	border-radius: 8px;
+}
 .surface-ground+.layout-config-button{
 	display: none !important;
 }
@@ -123,6 +125,35 @@ $gutter: 1rem; //for primeflex grid system
 }
 .p-card.nopd .p-datatable-header{
 	padding: 0;
+}
+.bg-primary-sec{
+	background-color: var(--primary-100);
+	color: var(--primary-color);
+}
+.bg-green-sec{
+	background-color: var(--green-100);
+	color: var(--green-500);
+}
+@media (prefers-color-scheme: dark){
+	
+	.bg-primary-sec{
+		background-color: var(--primary-700);
+		color: var(--primary-300) !important;
+	}
+	.bg-green-sec{
+		background-color: var(--green-700);
+		color: var(--green-300) !important;
+	}
+	.bg-primary{
+		background-color: var(--primary-700) !important;
+		color: var(--primary-300) !important;
+	}
+	.layout-main .p-tabview-tablist-item-active .p-tabview-tab-header{
+		color: var(--primary-300) !important;
+	}
+	.p-datatable .p-datatable-thead > tr > th{
+		color:var(--gray-300);
+	}
 }
 .p-card.nopd .p-datatable-header input.p-inputtext,
 .p-card.nopd .p-datatable-header .p-button{
@@ -137,7 +168,7 @@ $gutter: 1rem; //for primeflex grid system
 .p-card.nopd .p-datatable-header .p-select-trigger,
 .p-button-primary.calendar-icon{
 	background: rgba(129, 102, 241, 0.06) !important;
-	color: var(--primary-500);
+	color: var(--primary-color);
 }
 .p-button-primary.calendar-icon{
 	padding-right: 0;
@@ -315,6 +346,7 @@ pre.app-code code{
 .tabview-vertical .p-tabview-tablist-container{
 }
 .tabview-vertical .p-tabview-tablist {
+	background-color: transparent;
 	display: block;
 }
 .tabview-vertical .p-tabview-tablist li{
@@ -338,7 +370,7 @@ pre.app-code code{
 .tabview-vertical .p-tabview-tablist{
 	height: 100%;
 	border-width: 0 3px 0 0;
-	border-color: transparent #e5e7eb transparent transparent;
+	border-color: transparent var(--surface-border) transparent transparent;
 	border-radius: 0;
 }
 .tabview-vertical .p-tabview-tablist .p-tabview-tablist-item-active .p-tabview-tab-header{
@@ -358,6 +390,10 @@ pre.app-code code{
 .search-bar .p-select .p-select-label{
 	color:#fff;
 	font-weight: bold;
+}
+.search-bar .p-inputtextarea{
+	min-height: 36px !important;
+	border: none;
 }
 .p-chip .p-select-label{
 	padding-bottom: 0;
@@ -671,7 +707,7 @@ fieldset{
 }
 .app-top-bar .p-menubar-end .p-select{
 	
-	background-color: var(--primary-500) !important;
+	background-color: var(--primary-color) !important;
 	border-radius: 0;
 	border: none;
 }
@@ -702,17 +738,20 @@ fieldset{
 	color: #fff !important;;
 }
 .p-togglebutton-checked::before{
-	background-color: var(--primary-500) !important;
+	background-color: var(--primary-color) !important;
 }
 .p-tabview-tablist-item-active .p-tabview-tab-header{
-	color: var(--primary-500) !important;
+	color: var(--primary-color) !important;
 }
 .p-radiobutton.p-radiobutton-checked .p-radiobutton-box .p-radiobutton-icon{
-	background-color: var(--primary-500) !important;
+	background-color: var(--primary-color) !important;
 }
 .p-radiobutton.p-radiobutton-checked .p-radiobutton-box{
 	background-color: transparent !important;
 }
 .p-datatable .p-datatable-thead > tr > th{
 	background-color: transparent;
+}
+.text-tip{
+	color: var(--surface-tip);
 }

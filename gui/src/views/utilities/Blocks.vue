@@ -194,7 +194,7 @@ const block4 = ref(` <div class="surface-section px-4 py-8 md:px-6 lg:px-8">
  </div>`);
 
 const block5 = ref(` <div class="bg-bluegray-900 text-gray-100 p-3 flex justify-content-between lg:justify-content-center align-items-center flex-wrap">
-    <div class="font-bold mr-8">🔥 Hot Deals!</div>
+    <div class="font-bold mr-8">?? Hot Deals!</div>
     <div class="align-items-center hidden lg:flex">
         <span class="line-height-3">Libero voluptatum atque exercitationem praesentium provident odit.</span>
     </div>
@@ -209,10 +209,10 @@ const block5 = ref(` <div class="bg-bluegray-900 text-gray-100 p-3 flex justify-
 const block6 = ref(` <div class="surface-section px-4 py-5 md:px-6 lg:px-8">
     <ul class="list-none p-0 m-0 flex align-items-center font-medium mb-3">
         <li>
-            <a class="text-500 no-underline line-height-3 cursor-pointer">Application</a>
+            <a class="text-tip no-underline line-height-3 cursor-pointer">Application</a>
         </li>
         <li class="px-2">
-            <i class="pi pi-angle-right text-500 line-height-3"></i>
+            <i class="pi pi-angle-right text-tip line-height-3"></i>
         </li>
         <li>
             <span class="text-900 line-height-3">Analytics</span>
@@ -249,7 +249,7 @@ const block7 = ref(` <div class="surface-ground px-4 py-5 md:px-6 lg:px-8">
             <div class="surface-card shadow-2 p-3 border-round">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Orders</span>
+                        <span class="block text-tip font-medium mb-3">Orders</span>
                         <div class="text-900 font-medium text-xl">152</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width:2.5rem;height:2.5rem">
@@ -257,14 +257,14 @@ const block7 = ref(` <div class="surface-ground px-4 py-5 md:px-6 lg:px-8">
                     </div>
                 </div>
                 <span class="text-green-500 font-medium">24 new </span>
-                <span class="text-500">since last visit</span>
+                <span class="text-tip">since last visit</span>
             </div>
         </div>
         <div class="col-12 md:col-6 lg:col-3">
             <div class="surface-card shadow-2 p-3 border-round">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Revenue</span>
+                        <span class="block text-tip font-medium mb-3">Revenue</span>
                         <div class="text-900 font-medium text-xl">$2.100</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width:2.5rem;height:2.5rem">
@@ -272,14 +272,14 @@ const block7 = ref(` <div class="surface-ground px-4 py-5 md:px-6 lg:px-8">
                     </div>
                 </div>
                 <span class="text-green-500 font-medium">%52+ </span>
-                <span class="text-500">since last week</span>
+                <span class="text-tip">since last week</span>
             </div>
         </div>
         <div class="col-12 md:col-6 lg:col-3">
             <div class="surface-card shadow-2 p-3 border-round">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Customers</span>
+                        <span class="block text-tip font-medium mb-3">Customers</span>
                         <div class="text-900 font-medium text-xl">28441</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width:2.5rem;height:2.5rem">
@@ -287,14 +287,14 @@ const block7 = ref(` <div class="surface-ground px-4 py-5 md:px-6 lg:px-8">
                     </div>
                 </div>
                 <span class="text-green-500 font-medium">520  </span>
-                <span class="text-500">newly registered</span>
+                <span class="text-tip">newly registered</span>
             </div>
         </div>
         <div class="col-12 md:col-6 lg:col-3">
             <div class="surface-card shadow-2 p-3 border-round">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Comments</span>
+                        <span class="block text-tip font-medium mb-3">Comments</span>
                         <div class="text-900 font-medium text-xl">152 Unread</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width:2.5rem;height:2.5rem">
@@ -302,7 +302,7 @@ const block7 = ref(` <div class="surface-ground px-4 py-5 md:px-6 lg:px-8">
                     </div>
                 </div>
                 <span class="text-green-500 font-medium">85 </span>
-                <span class="text-500">responded</span>
+                <span class="text-tip">responded</span>
             </div>
         </div>
     </div>
@@ -337,17 +337,17 @@ const block8 = ref(` <div class="surface-card p-4 shadow-2 border-round w-full l
 
 const block9 = ref(` <div class="surface-section">
     <div class="font-medium text-3xl text-900 mb-3">Movie Information</div>
-    <div class="text-500 mb-5">Morbi tristique blandit turpis. In viverra ligula id nulla hendrerit rutrum.</div>
+    <div class="text-tip mb-5">Morbi tristique blandit turpis. In viverra ligula id nulla hendrerit rutrum.</div>
     <ul class="list-none p-0 m-0">
         <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-            <div class="text-500 w-6 md:w-2 font-medium">Title</div>
+            <div class="text-tip w-6 md:w-2 font-medium">Title</div>
             <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">Heat</div>
             <div class="w-6 md:w-2 flex justify-content-end">
                 <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
             </div>
         </li>
         <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-            <div class="text-500 w-6 md:w-2 font-medium">Genre</div>
+            <div class="text-tip w-6 md:w-2 font-medium">Genre</div>
             <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
                 <Chip label="Crime" class="mr-2"></Chip>
                 <Chip label="Drama" class="mr-2"></Chip>
@@ -358,21 +358,21 @@ const block9 = ref(` <div class="surface-section">
             </div>
         </li>
         <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-            <div class="text-500 w-6 md:w-2 font-medium">Director</div>
+            <div class="text-tip w-6 md:w-2 font-medium">Director</div>
             <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">Michael Mann</div>
             <div class="w-6 md:w-2 flex justify-content-end">
                 <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
             </div>
         </li>
         <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-            <div class="text-500 w-6 md:w-2 font-medium">Actors</div>
+            <div class="text-tip w-6 md:w-2 font-medium">Actors</div>
             <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">Robert De Niro, Al Pacino</div>
             <div class="w-6 md:w-2 flex justify-content-end">
                 <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
             </div>
         </li>
         <li class="flex align-items-center py-3 px-2 border-top-1 border-bottom-1 surface-border flex-wrap">
-            <div class="text-500 w-6 md:w-2 font-medium">Plot</div>
+            <div class="text-tip w-6 md:w-2 font-medium">Plot</div>
             <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 line-height-3">
                 A group of professional bank robbers start to feel the heat from police
                 when they unknowingly leave a clue at their latest heist.</div>
@@ -385,7 +385,7 @@ const block9 = ref(` <div class="surface-section">
 
 const block10 = ref(` <div class="surface-card p-4 shadow-2 border-round">
     <div class="text-3xl font-medium text-900 mb-3">Card Title</div>
-    <div class="font-medium text-500 mb-3">Vivamus id nisl interdum, blandit augue sit amet, eleifend mi.</div>
+    <div class="font-medium text-tip mb-3">Vivamus id nisl interdum, blandit augue sit amet, eleifend mi.</div>
     <div style="height: 150px" class="border-2 border-dashed surface-border"></div>
  </div>`);
 
@@ -597,7 +597,7 @@ const checked = ref(false);
 
         <BlockViewer header="Banner" :code="block5" containerClass="surface-section py-8" free>
             <div class="bg-bluegray-900 text-gray-100 p-3 flex justify-content-between lg:justify-content-center align-items-center flex-wrap">
-                <div class="font-bold mr-8">🔥 Hot Deals!</div>
+                <div class="font-bold mr-8">?? Hot Deals!</div>
                 <div class="align-items-center hidden lg:flex">
                     <span class="line-height-3">Libero voluptatum atque exercitationem praesentium provident odit.</span>
                 </div>
@@ -614,10 +614,10 @@ const checked = ref(false);
             <div class="surface-section px-4 py-5 md:px-6 lg:px-8">
                 <ul class="list-none p-0 m-0 flex align-items-center font-medium mb-3">
                     <li>
-                        <a class="text-500 no-underline line-height-3 cursor-pointer">Application</a>
+                        <a class="text-tip no-underline line-height-3 cursor-pointer">Application</a>
                     </li>
                     <li class="px-2">
-                        <i class="pi pi-angle-right text-500 line-height-3"></i>
+                        <i class="pi pi-angle-right text-tip line-height-3"></i>
                     </li>
                     <li>
                         <span class="text-900 line-height-3">Analytics</span>
@@ -656,7 +656,7 @@ const checked = ref(false);
                         <div class="surface-card shadow-2 p-3 border-round">
                             <div class="flex justify-content-between mb-3">
                                 <div>
-                                    <span class="block text-500 font-medium mb-3">Orders</span>
+                                    <span class="block text-tip font-medium mb-3">Orders</span>
                                     <div class="text-900 font-medium text-xl">152</div>
                                 </div>
                                 <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem">
@@ -664,14 +664,14 @@ const checked = ref(false);
                                 </div>
                             </div>
                             <span class="text-green-500 font-medium">24 new </span>
-                            <span class="text-500">since last visit</span>
+                            <span class="text-tip">since last visit</span>
                         </div>
                     </div>
                     <div class="col-12 md:col-6 lg:col-3">
                         <div class="surface-card shadow-2 p-3 border-round">
                             <div class="flex justify-content-between mb-3">
                                 <div>
-                                    <span class="block text-500 font-medium mb-3">Revenue</span>
+                                    <span class="block text-tip font-medium mb-3">Revenue</span>
                                     <div class="text-900 font-medium text-xl">$2.100</div>
                                 </div>
                                 <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
@@ -679,14 +679,14 @@ const checked = ref(false);
                                 </div>
                             </div>
                             <span class="text-green-500 font-medium">%52+ </span>
-                            <span class="text-500">since last week</span>
+                            <span class="text-tip">since last week</span>
                         </div>
                     </div>
                     <div class="col-12 md:col-6 lg:col-3">
                         <div class="surface-card shadow-2 p-3 border-round">
                             <div class="flex justify-content-between mb-3">
                                 <div>
-                                    <span class="block text-500 font-medium mb-3">Customers</span>
+                                    <span class="block text-tip font-medium mb-3">Customers</span>
                                     <div class="text-900 font-medium text-xl">28441</div>
                                 </div>
                                 <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
@@ -694,14 +694,14 @@ const checked = ref(false);
                                 </div>
                             </div>
                             <span class="text-green-500 font-medium">520 </span>
-                            <span class="text-500">newly registered</span>
+                            <span class="text-tip">newly registered</span>
                         </div>
                     </div>
                     <div class="col-12 md:col-6 lg:col-3">
                         <div class="surface-card shadow-2 p-3 border-round">
                             <div class="flex justify-content-between mb-3">
                                 <div>
-                                    <span class="block text-500 font-medium mb-3">Comments</span>
+                                    <span class="block text-tip font-medium mb-3">Comments</span>
                                     <div class="text-900 font-medium text-xl">152 Unread</div>
                                 </div>
                                 <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
@@ -709,7 +709,7 @@ const checked = ref(false);
                                 </div>
                             </div>
                             <span class="text-green-500 font-medium">85 </span>
-                            <span class="text-500">responded</span>
+                            <span class="text-tip">responded</span>
                         </div>
                     </div>
                 </div>
@@ -748,17 +748,17 @@ const checked = ref(false);
         <BlockViewer header="Description List" :code="block9" containerClass="surface-section px-4 py-8 md:px-6 lg:px-8" free>
             <div class="surface-section">
                 <div class="font-medium text-3xl text-900 mb-3">Movie Information</div>
-                <div class="text-500 mb-5">Morbi tristique blandit turpis. In viverra ligula id nulla hendrerit rutrum.</div>
+                <div class="text-tip mb-5">Morbi tristique blandit turpis. In viverra ligula id nulla hendrerit rutrum.</div>
                 <ul class="list-none p-0 m-0">
                     <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-                        <div class="text-500 w-6 md:w-2 font-medium">Title</div>
+                        <div class="text-tip w-6 md:w-2 font-medium">Title</div>
                         <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">Heat</div>
                         <div class="w-6 md:w-2 flex justify-content-end">
                             <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
                         </div>
                     </li>
                     <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-                        <div class="text-500 w-6 md:w-2 font-medium">Genre</div>
+                        <div class="text-tip w-6 md:w-2 font-medium">Genre</div>
                         <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
                             <Chip label="Crime" class="mr-2"></Chip>
                             <Chip label="Drama" class="mr-2"></Chip>
@@ -769,21 +769,21 @@ const checked = ref(false);
                         </div>
                     </li>
                     <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-                        <div class="text-500 w-6 md:w-2 font-medium">Director</div>
+                        <div class="text-tip w-6 md:w-2 font-medium">Director</div>
                         <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">Michael Mann</div>
                         <div class="w-6 md:w-2 flex justify-content-end">
                             <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
                         </div>
                     </li>
                     <li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-                        <div class="text-500 w-6 md:w-2 font-medium">Actors</div>
+                        <div class="text-tip w-6 md:w-2 font-medium">Actors</div>
                         <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">Robert De Niro, Al Pacino</div>
                         <div class="w-6 md:w-2 flex justify-content-end">
                             <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
                         </div>
                     </li>
                     <li class="flex align-items-center py-3 px-2 border-top-1 border-bottom-1 surface-border flex-wrap">
-                        <div class="text-500 w-6 md:w-2 font-medium">Plot</div>
+                        <div class="text-tip w-6 md:w-2 font-medium">Plot</div>
                         <div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 line-height-3">A group of professional bank robbers start to feel the heat from police when they unknowingly leave a clue at their latest heist.</div>
                         <div class="w-6 md:w-2 flex justify-content-end">
                             <Button label="Edit" icon="pi pi-pencil" class="p-button-text"></Button>
@@ -796,7 +796,7 @@ const checked = ref(false);
         <BlockViewer header="Card" :code="block10" containerClass="px-4 py-8 md:px-6 lg:px-8" free>
             <div class="surface-card p-4 shadow-2 border-round">
                 <div class="text-3xl font-medium text-900 mb-3">Card Title</div>
-                <div class="font-medium text-500 mb-3">Vivamus id nisl interdum, blandit augue sit amet, eleifend mi.</div>
+                <div class="font-medium text-tip mb-3">Vivamus id nisl interdum, blandit augue sit amet, eleifend mi.</div>
                 <div style="height: 150px" class="border-2 border-dashed surface-border"></div>
             </div>
         </BlockViewer>
