@@ -87,7 +87,7 @@ export default class ShellService {
 		} else {
 			args.unshift("./main");
 			const filePath = await appLocalDataDir();
-			const lib = `${filePath}/files/libpipy.so`;
+			const lib = `${filePath}/files/libztm.so`;
 			invoke('pipylib', {
 				lib,
 				argv: args,
