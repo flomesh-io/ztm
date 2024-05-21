@@ -98,7 +98,7 @@ const setHover = (key) =>{
 			</template>
 			
 			<div class="surface-section">
-				<!-- <div class="text-500 mb-5">xxx</div> -->
+				<!-- <div class="text-tip mb-5">xxx</div> -->
 				<div class="card" >
 					<HubApplications />
 				</div>

@@ -240,7 +240,7 @@ const expandedRows = ref({});
 						<Column expander style="width: 5rem" />
 						<Column header="Service">
 							<template #body="slotProps">
-								<span class="block text-500 font-medium"><i class="pi pi-server text-gray-500"></i> {{slotProps.data[0].name}}</span>
+								<span class="block text-tip font-medium"><i class="pi pi-server text-tip"></i> {{slotProps.data[0].name}}</span>
 							</template>
 						</Column>
 						<Column header="Endpoints">
@@ -255,12 +255,12 @@ const expandedRows = ref({});
 								 @click="mappingPort({service: slotProps.data[0],lb:slotProps.data})"
 								 v-if="!!portInfobyLb(slotProps.data[0].name)" 
 								 v-tooltip="'Port:'+portInfobyLb(slotProps.data[0].name)" 
-								 class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
+								 class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
 								 style="width: 2rem; height: 2rem">
-									 <i class="pi pi-circle text-green-500 text-xl"></i>
+									 <i class="pi pi-circle text-xl"></i>
 							 </div>
-							 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: slotProps.data[0],lb:slotProps.data[0]})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
-									 <i class="pi pi-circle text-primary-500 text-xl"></i>
+							 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: slotProps.data[0],lb:slotProps.data[0]})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2.5rem; height: 2.5rem">
+									 <i class="pi pi-circle text-xl"></i>
 							 </div>
 							</template>
 						</Column>
@@ -289,15 +289,15 @@ const expandedRows = ref({});
 															@click="mappingPort({service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})"
 															v-if="!!portInfo(slotProps.data.name,selectedMesh?.agent?.id)" 
 															v-tooltip="'Port:'+portInfo(slotProps.data.name,selectedMesh?.agent?.id)" 
-															class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
+															class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
 															style="width: 2rem; height: 2rem">
-																<i class="pi pi-circle text-green-500 text-xl"></i>
+																<i class="pi pi-circle text-xl"></i>
 														</div>
-														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
-															<i class="pi pi-circle text-primary-500 text-xl"></i>
+														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2rem; height: 2rem">
+															<i class="pi pi-circle text-xl"></i>
 														</div>
-														<div @click="showAtionMenu($event, {service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
-															<i class="pi pi-ellipsis-v text-gray-500 text-xl"></i>
+														<div @click="showAtionMenu($event, {service: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
+															<i class="pi pi-ellipsis-v text-tip text-xl"></i>
 														</div>
 													</div>
 												</template>
@@ -311,36 +311,27 @@ const expandedRows = ref({});
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between">
 											 <div>
-													<span class="block text-500 font-medium mb-3"><i class="pi pi-server text-gray-500"></i> {{lb[0].name}}</span>
+													<span class="block text-tip font-medium mb-3"><i class="pi pi-server text-tip"></i> {{lb[0].name}}</span>
 											 </div>
 											 <div class="flex">
 												 <div 
 													 @click="mappingPort({service: lb[0],lb})"
 													 v-if="!!portInfobyLb(lb[0].name)" 
 													 v-tooltip="'Port:'+portInfobyLb(lb[0].name)" 
-													 class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
+													 class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
 													 style="width: 2.5rem; height: 2.5rem">
-														 <i class="pi pi-circle text-green-500 text-xl"></i>
+														 <i class="pi pi-circle text-xl"></i>
 												 </div>
-												 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: lb[0],lb})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2.5rem; height: 2.5rem">
-														 <i class="pi pi-circle text-primary-500 text-xl"></i>
+												 <div v-else v-tooltip="'Connect'"  @click="mappingPort({service: lb[0],lb})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2.5rem; height: 2.5rem">
+														 <i class="pi pi-circle text-xl"></i>
 												 </div>
 											 </div>
-	<!-- 	       								<div v-tooltip="'Revoke'" @click="changeStatus(service, 3)" v-else-if="service.scope == 'Private'" class="pointer flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-													<i class="pi pi-spin pi-spinner text-purple-500 text-xl"></i>
-											</div> -->
-										<!-- 	<div v-badge.danger="'3'" v-tooltip="'Subscriptions'" @click="clients" class="mr-3 pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
-												<i class="pi pi-user text-gray-500 text-xl"></i>
-											</div>
-											<div v-tooltip="'Manage'" @click="newHub" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2.5rem; height: 2.5rem">
-												<i class="pi pi-pencil text-gray-500 text-xl"></i>
-											</div> -->
 									 </div>
 										<Fieldset :legend="lb.length+ (lb.length>1?' Endpoints':' Endpoint')" :toggleable="true">
-											<div class="surface-card border-round">
+											<div >
 												<div v-for="(service, sid) in lb" :key="sid" class="flex mb-3 w-full">
 													<div class="flex-item">
-														<div class="text-500 flex w-full">
+														<div class="text-tip flex w-full">
 															<span class="status-point run mr-4 relative vm" style="top: 12px;" ></span>
 															<div class="flex flex-item align-items-center" :class="{'flex-column': !!service.port || !!service.host}">
 																<div class="text-left w-full " v-tooltip="endpointMap[service.ep?.id]?.name" ><b class="text-ellipsis" style="width: 90%;">{{endpointMap[service.ep?.id]?.name|| 'Unnamed EP'}}</b></div>
@@ -353,15 +344,15 @@ const expandedRows = ref({});
 															@click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})"
 															v-if="!!portInfo(service.name,selectedMesh?.agent?.id)" 
 															v-tooltip="'Port:'+portInfo(service.name,selectedMesh?.agent?.id)" 
-															class="pointer flex align-items-center justify-content-center bg-green-100 border-round mr-2" 
+															class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
 															style="width: 2rem; height: 2rem">
-																<i class="pi pi-circle text-green-500 text-xl"></i>
+																<i class="pi pi-circle text-xl"></i>
 														</div>
-														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-100 border-round mr-2" style="width: 2rem; height: 2rem">
-															<i class="pi pi-circle text-primary-500 text-xl"></i>
+														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2rem; height: 2rem">
+															<i class="pi pi-circle text-xl"></i>
 														</div>
-														<div @click="showAtionMenu($event, {service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center bg-gray-100 border-round" style="width: 2rem; height: 2rem">
-															<i class="pi pi-ellipsis-v text-gray-500 text-xl"></i>
+														<div @click="showAtionMenu($event, {service: service,ep:{id:service.ep?.id, name: (endpointMap[service.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
+															<i class="pi pi-ellipsis-v text-tip text-xl"></i>
 														</div>
 													<!-- 	
 														<Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
@@ -382,7 +373,7 @@ const expandedRows = ref({});
 				<i class="pi pi-plus mr-2" /> Create
 			</template>
 			<ServiceCreate v-if="!!meshes && meshes.length>0" @save="save"/>
-			<div class="py-5 text-center text-gray-600 text-xl" v-else>
+			<div class="py-5 text-center text-tip text-xl" v-else>
 				<i class="pi pi-exclamation-circle"/> Join a mesh first.
 			</div>
 		</TabPanel>
@@ -422,10 +413,6 @@ const expandedRows = ref({});
 <style scoped lang="scss">
 :deep(.p-dataview-content) {
   background-color: transparent !important;
-}
-.drak-input{
-	border: none;
-	min-height: 33px !important;
 }
 :deep(.p-tabview-nav),
 :deep(.p-tabview-panels),

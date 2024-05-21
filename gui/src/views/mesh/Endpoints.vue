@@ -172,23 +172,23 @@ const deletePort = (port) => {
 							<b v-if="slotProps.node.type == 'ep'" class="relative" style="top: 2px;">
 								<Status style="top: -2px;" :run="slotProps.node.online" :tip="timeago(slotProps.node.heartbeat)"  />
 								EP: {{ slotProps.node.label || slotProps.node.id }} <span v-if="!!slotProps.node.username">({{slotProps.node.username}})</span>
-								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
+								<span v-if="!!slotProps.node.port" class="font-normal text-tip ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
 								<span class="ml-2"><Tag severity="contrast" class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
 							</b>
 							<b v-else-if="slotProps.node.type == 'service'">
 								<Avatar icon="pi pi-server" class="mr-2" />Service: {{ slotProps.node.label }}
-								<span v-if="!!slotProps.node.port" class="font-normal text-gray-500 ml-1">| {{slotProps.node.host}}:{{slotProps.node.port}}</span>
+								<span v-if="!!slotProps.node.port" class="font-normal text-tip ml-1">| {{slotProps.node.host}}:{{slotProps.node.port}}</span>
 								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.protocol}}</Tag></span>
 								<span v-tooltip="'Delete Service'"  @click="deleteService(slotProps.node)" class="pointer ml-4 vm" >
-									<i class="pi pi-times text-gray-500 text-sm"></i>
+									<i class="pi pi-times text-tip text-sm"></i>
 								</span>
 							</b>
 							<b class="flex justify-content-center align-items-center" v-else-if="slotProps.node.type == 'port'">
 								<Avatar icon="pi pi-bullseye" class="mr-2" />Port: {{ slotProps.node.label }}
-								<span v-if="!!slotProps.node.target" class="font-normal text-gray-500 ml-1">| {{slotProps.node.target.service}}</span>
+								<span v-if="!!slotProps.node.target" class="font-normal text-tip ml-1">| {{slotProps.node.target.service}}</span>
 								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.protocol}}</Tag></span>
 								<span v-tooltip="'Delete Port'"  @click="deletePort(slotProps.node)" class="pointer ml-4 vm" >
-									<i class="pi pi-times text-gray-500 text-sm"></i>
+									<i class="pi pi-times text-tip text-sm"></i>
 								</span>
 							</b>
 					</template>
@@ -202,10 +202,6 @@ const deletePort = (port) => {
 <style scoped lang="scss">
 :deep(.p-dataview-content) {
   background-color: transparent !important;
-}
-.drak-input{
-	border: none;
-	min-height: 33px !important;
 }
 :deep(.p-tabview-nav),
 :deep(.p-tabview-panels),

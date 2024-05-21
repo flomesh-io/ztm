@@ -132,7 +132,7 @@ const home = ref({
 			<div v-else class="surface-section">
 				<ul class="list-none p-0 m-0">
 					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-							<div class="text-500 w-8rem font-medium">Mesh</div>
+							<div class="text-tip w-8rem font-medium">Mesh</div>
 							<div class="text-900 flex-item">
 								<Chip class="pl-0 pr-3 mr-2">
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -145,7 +145,7 @@ const home = ref({
 							</div>
 					</li>
 					<li class="flex align-items-center py-3 px-2 surface-border flex-wrap border-bottom-1">
-							<div class="text-500 w-8rem font-medium">Protocol</div>
+							<div class="text-tip w-8rem font-medium">Protocol</div>
 							<div class="text-900 flex-item">
 								<Chip class="pl-0 pr-3" v-if="config.protocol == 'tcp'">
 										<span class=" border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -170,7 +170,7 @@ const home = ref({
 									<ul class="list-none p-0 m-0">
 										
 										<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">Endpoint</div>
+												<div class="text-tip w-8rem font-medium">Endpoint</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -190,7 +190,7 @@ const home = ref({
 												</div>
 										</li>
 										<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">IP</div>
+												<div class="text-tip w-8rem font-medium">IP</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -203,7 +203,7 @@ const home = ref({
 												</div>
 										</li>
 										<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">Port</div>
+												<div class="text-tip w-8rem font-medium">Port</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -223,7 +223,7 @@ const home = ref({
 									<h6><Tag severity="contrast" value="Contrast">To</Tag></h6>
 									<ul class="list-none p-0 m-0">
 										<li v-if="!!targetEndpoint?.id" class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">Endpoint</div>
+												<div class="text-tip w-8rem font-medium">Endpoint</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -236,7 +236,7 @@ const home = ref({
 												</div>
 										</li>
 										<li v-else class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">Endpoint</div>
+												<div class="text-tip w-8rem font-medium">Endpoint</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -256,7 +256,7 @@ const home = ref({
 												</div>
 										</li>
 										<li class="flex align-items-center py-3 px-2   surface-border flex-wrap">
-												<div class="text-500 w-8rem font-medium">Service</div>
+												<div class="text-tip w-8rem font-medium">Service</div>
 												<div class="text-900 flex-item">
 													<Chip class="pl-0 pr-3 mr-2">
 															<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">

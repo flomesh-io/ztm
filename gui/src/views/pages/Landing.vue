@@ -209,7 +209,7 @@ const logoUrl = computed(() => {
                     >
                         <div class="flex flex-column justify-content-center align-items-center text-center px-3 py-3 md:py-0">
                             <h3 class="text-gray-900 mb-2">Joséphine Miller</h3>
-                            <span class="text-gray-600 text-2xl">Peak Interactive</span>
+                            <span class="text-tip text-2xl">Peak Interactive</span>
                             <p class="text-gray-900 sm:line-height-2 md:line-height-4 text-2xl mt-4" style="max-width: 800px">
                                 “Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.”
                             </p>

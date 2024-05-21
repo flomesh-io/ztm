@@ -183,13 +183,13 @@ const typeOk = () => {
                     <Chip v-if="isValid" severity="success" >
 											<i class="pi pi-verified text-green-600 text-xl mr-2" />Configured
 											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
-												<i class="pi pi-times-circle relative text-gray-500" style="top: 1px;" />
+												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
 											</span>
 										</Chip>
                     <Chip v-else severity="error" >
 											<i class="pi pi-exclamation-circle text-red-600 text-xl mr-2" />Format error
 											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
-												<i class="pi pi-times-circle relative text-gray-500" style="top: 1px;" />
+												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
 											</span>
 										</Chip>
                 </div>
@@ -199,7 +199,7 @@ const typeOk = () => {
     <template #empty="{ chooseCallback }">
         <div v-if="!props.modelValue" class="flex align-items-center justify-content-center flex-column">
             <i class="pi pi-file-arrow-up pt-2 pb-4 text-6xl text-400 border-400 text-gray-300" />
-            <p class="mb-2 text-gray-500">Drag and drop {{props.label}} to here.</p>
+            <p class="mb-2 text-tip">Drag and drop {{props.label}} to here.</p>
         </div>
     </template>
 	</FileUpload>

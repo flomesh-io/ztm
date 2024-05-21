@@ -131,7 +131,7 @@ const active = ref(0);
 		<Breadcrumb :home="home" :model="[{label:route.params?.id}]" />
 	</div>
 	<div >
-		<BlockViewer text="Json" :header="props.title||'Create Service'" containerClass="surface-section px-1 py-3 md:px-1 md:py-7 lg:px-1" >
+		<BlockViewer text="Json" :header="props.title||'Create Service'" containerClass="surface-section px-1 py-3 md:px-1 md:pb-7 lg:px-1" >
 			<template #actions>
 				<Button class="mr-2" severity="secondary" v-if="!!props.pid" label="Cancel" size="small" @click="cancel"/>
 				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
@@ -140,10 +140,10 @@ const active = ref(0);
 			<TabView v-else class="tabview-vertical" v-model:activeIndex="active">
 				<TabPanel>
 					<template #header><i class="pi pi-cog mr-2"/>Config</template>
-					<div class="surface-section">
+					<div class="surface-section pl-4">
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Service</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Service</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -156,7 +156,7 @@ const active = ref(0);
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Mesh</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Mesh</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										
 										<Chip class="pl-0 pr-3 mr-2">
@@ -175,7 +175,7 @@ const active = ref(0);
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Endpoint</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Endpoint</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -195,7 +195,7 @@ const active = ref(0);
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap border-bottom-1">
-									<div class="text-500 w-6 md:w-2 font-medium">Protocol</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Protocol</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
 										<Chip class="pl-0 pr-3">
 												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -213,7 +213,7 @@ const active = ref(0);
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Host</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Host</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -226,7 +226,7 @@ const active = ref(0);
 									</div>
 							</li>
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Port</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Port</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -243,10 +243,10 @@ const active = ref(0);
 				</TabPanel>
 				<TabPanel>
 					<template #header><i class="pi pi-shield mr-2"/>Security</template>
-					<div class="surface-section">
+					<div class="surface-section pl-4">
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Scope</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Scope</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
 										<Chip class="pl-0 pr-3">
 												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -264,7 +264,7 @@ const active = ref(0);
 									</div>
 							</li>
 							<li v-if="scope == 'private'" class="flex align-items-center py-3 px-2  border-top-1 surface-border flex-wrap">
-									<div class="text-500 w-6 md:w-2 font-medium">Users</div>
+									<div class="text-tip w-6 md:w-2 font-medium">Users</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<ChipList icon="pi-user" direction="v" placeholder="Add user" v-model:list="config.users" />
 									</div>

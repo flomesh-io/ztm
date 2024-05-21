@@ -118,7 +118,7 @@ const timeago = computed(() => (ts) => {
 			</InputGroup>
 		</template>
 	</Card>
-	<div class="mt-3 flex text-center justify-content-center align-content-center">
+	<div v-if="!!endpoints && endpoints.length>0" class="mt-3 flex text-center justify-content-center align-content-center">
 		<Label class="px-3" style="padding-top: 10px;"><b>Endpoints:</b></Label>
 		<SelectButton class="small" @change="mergeLogs" v-model="selectEndpoints" :options="endpoints" optionLabel="name" optionValue="id" multiple aria-labelledby="multiple" />
 	</div>
@@ -157,10 +157,6 @@ const timeago = computed(() => (ts) => {
 <style scoped lang="scss">
 :deep(.p-dataview-content) {
   background-color: transparent !important;
-}
-.drak-input{
-	border: none;
-	min-height: 33px !important;
 }
 :deep(.p-tabview-nav),
 :deep(.p-tabview-panels),

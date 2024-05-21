@@ -20,7 +20,7 @@ app.use(PrimeVue, {
 		preset: MyPreset,
 		options: {
 				prefix: '',
-				// darkModeSelector: 'system',
+				darkModeSelector: 'system',
 				cssLayer: false
 		}
 	}

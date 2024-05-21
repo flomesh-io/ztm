@@ -702,7 +702,7 @@ onMounted(() => {
 			            <AccordionTab v-if="selectRowData.request" :header="`Timings (${ timingGroup.total })`">
 										<ul class="list-none p-0 m-0">
 											<li class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-													<div class="text-500 w-6 md:w-2 font-medium" style="word-break: break-all;padding-right: 15px;">{{selectRowData.request?.head_json?.path}}</div>
+													<div class="text-tip w-6 md:w-2 font-medium" style="word-break: break-all;padding-right: 15px;">{{selectRowData.request?.head_json?.path}}</div>
 													<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 														<MeterGroup :style="{width:timingGroup.width}" :value="timingGroup.list" >
 															<template #label="{ value }">
@@ -728,7 +728,7 @@ onMounted(() => {
 									<AccordionTab v-if="selectRowData.request" :header="`Size (${ sizeGroup.total })`">
 										<ul class="list-none p-0 m-0">
 											<li class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-													<div class="text-500 w-6 md:w-2 font-medium" style="word-break: break-all;padding-right: 15px;">{{selectRowData.request?.head_json?.path}}</div>
+													<div class="text-tip w-6 md:w-2 font-medium" style="word-break: break-all;padding-right: 15px;">{{selectRowData.request?.head_json?.path}}</div>
 													<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 														<MeterGroup :style="{width:sizeGroup.width}" :value="sizeGroup.list" >
 															<template #label="{ value }">
@@ -754,17 +754,17 @@ onMounted(() => {
 			            <AccordionTab header="Basic">
 										<ul class="list-none p-0 m-0" v-if="selectRowData.session">
 											<li class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-													<div class="text-500 w-6 md:w-2 font-medium">Url</div>
+													<div class="text-tip w-6 md:w-2 font-medium">Url</div>
 													<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">{{selectRowData.session.url}}</div>
 											</li>
 											<li class="flex align-items-center py-3 px-5 border-top-1 surface-border flex-wrap">
-													<div class="text-500 w-6 md:w-2 font-medium">Status</div>
+													<div class="text-tip w-6 md:w-2 font-medium">Status</div>
 													<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 														<Tag v-if="selectRowData.session.status>0" :severity="['','','success','warning','danger','danger'][(selectRowData.session.status+'').substr(0,1)]" :value="selectRowData.session.status"></Tag>
 													</div>
 											</li>
 											<li class="flex align-items-center py-3 px-5 border-top-1 surface-border flex-wrap">
-													<div class="text-500 w-6 md:w-2 font-medium">Client Ip</div>
+													<div class="text-tip w-6 md:w-2 font-medium">Client Ip</div>
 													<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">{{selectRowData.session.client_ip}}</div>
 											</li>
 										</ul>
@@ -782,14 +782,14 @@ onMounted(() => {
 											<AccordionTab header="Request" :key="0">
 												<ul class="list-none p-0 m-0" v-if="selectRowData.request?.head_json">
 													<li class="border-bottom-1 flex align-items-center py-3 px-5  surface-border flex-wrap">
-															<div class="text-500 w-6 md:w-2 font-medium">path</div>
+															<div class="text-tip w-6 md:w-2 font-medium">path</div>
 															<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1" >
 																<Tag v-if="selectRowData.request.head_json?.method" class="mr-2" severity="success">{{selectRowData.request.head_json?.method}}</Tag>
 																{{selectRowData.request.head_json?.path}}
 															</div>
 													</li>
 													<li class="border-bottom-1 flex align-items-center py-3 px-5  surface-border flex-wrap">
-															<div class="text-500 w-6 md:w-2 font-medium">protocol</div>
+															<div class="text-tip w-6 md:w-2 font-medium">protocol</div>
 															<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1" >
 																<Tag>{{selectRowData.request.head_json?.protocol}}</Tag>
 															</div>
@@ -799,7 +799,7 @@ onMounted(() => {
 													<TabPanel header="Headers">
 														<ul class="list-none p-0 m-0">
 															<li v-for="(key,index) in Object.keys(selectRowData.request.head_json?.headers)" :class="index>0?'border-top-1':''" class="flex align-items-center py-3 px-5  surface-border flex-wrap">
-																	<div class="text-500 w-6 md:w-2 font-medium">{{key}}</div>
+																	<div class="text-tip w-6 md:w-2 font-medium">{{key}}</div>
 																	<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1" style="word-break: break-all;">{{selectRowData.request.head_json?.headers[key]}}</div>
 															</li>
 														</ul>
@@ -818,13 +818,13 @@ onMounted(() => {
 												<ul class="list-none p-0 m-0" v-if="response?.head_json">
 													
 													<li class="border-bottom-1 flex align-items-center py-3 px-5  surface-border flex-wrap">
-															<div class="text-500 w-6 md:w-2 font-medium">status</div>
+															<div class="text-tip w-6 md:w-2 font-medium">status</div>
 															<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1" >
 																<Tag v-if="response.head_json?.status>0" :severity="['','','success','warning','danger','danger'][(response.head_json?.status+'').substr(0,1)]" :value="response.head_json?.status"></Tag>
 															</div>
 													</li>
 													<li class="border-bottom-1 flex align-items-center py-3 px-5  surface-border flex-wrap">
-															<div class="text-500 w-6 md:w-2 font-medium">protocol</div>
+															<div class="text-tip w-6 md:w-2 font-medium">protocol</div>
 															<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1" >
 																<Tag>{{response.head_json?.protocol}}</Tag>
 															</div>
@@ -834,7 +834,7 @@ onMounted(() => {
 													<TabPanel header="Headers">
 														<ul class="list-none p-0 m-0">
 															<li v-for="(key,index) in Object.keys(response.head_json?.headers)" :class="index>0?'border-top-1':''" class="flex align-items-center py-3 px-5  surface-border flex-wrap">
-																	<div class="text-500 w-6 md:w-2 font-medium">{{key}}</div>
+																	<div class="text-tip w-6 md:w-2 font-medium">{{key}}</div>
 																	<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1"  style="word-break: break-all;">{{response.head_json?.headers[key]}}</div>
 															</li>
 														</ul>
