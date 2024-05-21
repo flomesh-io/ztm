@@ -225,7 +225,7 @@ const expandedRows = ref({});
 	</Card>
 	
 	
-	<DataViewLayoutOptions v-if="active!=1" v-model="layout" class="absolute" style="right: 10px;position: absolute;margin-top: 25px;z-index: 2;"/>
+	<DataViewLayoutOptions v-if="active!=1" v-model="layout" class="absolute" style="right: 10px;position: absolute;margin-top: 1.5rem;z-index: 2;"/>
 	<TabView class="pt-3 pl-3 pr-3 relative" style="z-index: 1;" v-model:activeIndex="active">
 		<TabPanel>
 			<template #header>
