@@ -150,7 +150,7 @@ const active = ref(0);
 													<i class="pi pi-bookmark"/>
 												</span>
 												<span class="ml-2 font-medium">
-													<InputText :disabled="!!props.pid" placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
+													<InputText :disabled="!!props.pid" placeholder="Name your service" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
 												</span>
 										</Chip>
 									</div>

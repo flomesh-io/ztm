@@ -13,7 +13,7 @@ const props = defineProps({
 });
 </script>
 <template>
-    <div class="w-full text-center">
+    <div class="w-full text-center empty-result">
 				<img :src="freeSvg" class="w-4 h-4 mx-aut" style="margin: auto;"  />
         <h5 class="text-tip">{{props.title||'No data.'}}</h5>
         <p>{{props.sub}}</p>
