@@ -125,7 +125,7 @@ watch(() => permit.value,() => {
 			<div class="grid" v-else>
 				<div class="col-12 md:col-6">
 					<div class="surface-section">
-						<h6><Tag severity="contrast" value="Contrast">Name</Tag></h6>
+						<h6><Tag severity="contrast" value="Contrast">Names</Tag></h6>
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 									<div class="text-tip w-6 md:w-2 font-medium">Mesh</div>
@@ -164,7 +164,7 @@ watch(() => permit.value,() => {
 							<div class="flex flex-wrap gap-3 ml-8">
 							    <div class="flex align-items-center">
 							        <RadioButton v-model="permitType" inputId="ingredient1" name="pizza" value="Json" />
-							        <label for="ingredient1" class="ml-2 text-tip">Json</label>
+							        <label for="ingredient1" class="ml-2 text-tip">JSON</label>
 							    </div>
 							    <div class="flex align-items-center">
 							        <RadioButton v-model="permitType" inputId="ingredient2" name="pizza" value="Form" />
@@ -174,7 +174,7 @@ watch(() => permit.value,() => {
 						</h6>
 						<ul class="list-none p-0 m-0" v-if="permitType == 'Json'">
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Json</div>
+									<div class="text-tip w-6 md:w-2 font-medium">JSON</div>
 									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 										<CertificateUploder :placeholder="placeholder.json" v-model="permit" format="json" label="[permit.json]"/>
 									</div>
