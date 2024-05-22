@@ -336,32 +336,35 @@ function config(argv) {
 // Command: start
 //
 
-function start(argv, program) {
+function start(argv) {
   var type = readObjectType(argv, 'start')
   switch (type) {
-    case 'ca': return startCA(argv, program)
-    case 'hub': return startHub(argv, program)
-    case 'agent': return startAgent(argv, program)
+    case 'ca': return startCA(argv)
+    case 'hub': return startHub(argv)
+    case 'agent': return startAgent(argv)
     default: return errorObjectType(type, 'start')
   }
 }
 
 function startCA(argv) {
   var opts = parseOptions(optionsCA, argv, 'start ca')
-  startService('ca', opts)
+  var optsChanged = (argv.length > 0)
+  startService('ca', opts, optsChanged)
 }
 
 function startHub(argv) {
   var opts = parseOptions(optionsHub, argv, 'start hub')
-  startService('hub', opts)
+  var optsChanged = (argv.length > 0)
+  startService('hub', opts, optsChanged)
 }
 
 function startAgent(argv) {
   var opts = parseOptions(optionsAgent, argv, 'start agent')
-  startService('agent', opts)
+  var optsChanged = (argv.length > 0)
+  startService('agent', opts, optsChanged)
 }
 
-function startService(name, opts) {
+function startService(name, opts, optsChanged) {
   var args = []
   function append(k, v) {
     v = v.toString()
@@ -386,12 +389,49 @@ function startService(name, opts) {
     }
   )
   switch (os.platform) {
-    case 'darwin': return startServiceDarwin(name, args)
+    case 'linux': return startServiceLinux(name, args, optsChanged)
+    case 'darwin': return startServiceDarwin(name, args, optsChanged)
     default: throw `starting as service not supported on this platform`
   }
 }
 
+function stripIndentation(s) {
+  var lines = s.split('\n')
+  if (lines[0].trim() === '') lines.shift()
+  var depth = lines[0].length - lines[0].trimStart().length
+  return lines.map(l => l.substring(depth)).join('\n')
+}
+
+function startServiceLinux(name, args, optsChanged) {
+  var program = os.abspath(pipy.exec(['which', pipy.argv[0]]).toString().trim())
+  var user = pipy.exec('whoami').toString().trim()
+  var opts = args.map(
+    arg => arg.startsWith('-') ? arg : `'${arg}'`
+  ).join(' ')
+  var filename = `/etc/systemd/system/ztm-${name}.service`
+  if (optsChanged || !os.stat(filename)) {
+    os.write(filename, stripIndentation(`
+      [Unit]
+      Description = ztm ${name} service
+      After = network.target
+
+      [Service]
+      ExecStart='${program}' run ${name} ${opts}
+      ExecStop=/usr/bin/kill $MAINPID
+      Restart=on-failure
+      User=${user}
+      LimitNOFILE=655360
+
+      [Install]
+      WantedBy = multi-user.target
+    `))
+    pipy.exec(`systemctl daemon-reload`)
+  }
+  pipy.exec(`systemctl restart ztm-${name}`)
+}
+
 function startServiceDarwin(name, args) {
+  var filename = `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
   var plist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -414,7 +454,6 @@ function startServiceDarwin(name, args) {
 </dict>
 </plist>
 `
-  var filename = `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
   os.write(filename, plist)
   pipy.exec(`launchctl load ${filename}`)
 }
@@ -447,6 +486,7 @@ function stopAgent() {
 
 function stopService(name) {
   switch (os.platform) {
+    case 'linux': return pipy.exec(`systemctl stop ztm-${name}`)
     case 'darwin': return pipy.exec(`launchctl unload ${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`)
     default: throw `service not started`
   }
