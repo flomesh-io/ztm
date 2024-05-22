@@ -135,7 +135,7 @@ watch(() => permit.value,() => {
 													<i class="pi pi-bookmark"/>
 												</span>
 												<span class="ml-2 font-medium">
-													<InputText :disabled="!!props.pid" placeholder="Unset" class="add-tag-input xl" :unstyled="true" v-model="config.name" type="text" />
+													<InputText :disabled="!!props.pid" placeholder="Name your mesh" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
 												</span>
 										</Chip>
 									</div>
@@ -148,7 +148,7 @@ watch(() => permit.value,() => {
 													<i class="pi pi-user" />
 												</span>
 												<span class="font-medium ml-2">
-													<InputText :maxLength="20" placeholder="Unset" class="add-tag-input xxl" :unstyled="true" v-model="config.agent.name" type="text" />
+													<InputText :maxLength="20" placeholder="Name your endpoint" class="add-tag-input xxl" :unstyled="true" v-model="config.agent.name" type="text" />
 												</span>
 										</Chip>	
 									</div>
