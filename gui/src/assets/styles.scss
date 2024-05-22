@@ -745,6 +745,9 @@ fieldset{
 .link{
 	color: var(--primary-color)
 }
+.footer .p-button-text.p-button-help:not(:disabled):hover{
+	background-color: var(--primary-300);
+}
 
 @media (prefers-color-scheme: dark){
 	

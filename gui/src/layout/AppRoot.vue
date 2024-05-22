@@ -122,14 +122,13 @@ const errorMsg = computed(() => {
 })
 
 const startPipy = async () => {
-	await pause();
 	await shellService.startPipy(config.value.port, false, error => {
 		errors.value.push(error);
 		console.error(`command error: "${error}"`)
 	});
 }
 const pause = async () => {
-	await shellService.pausePipy();
+	await shellService.pausePipy(config.value.port);
 	playing.value = false;
 }
 const clickPause = () => {
@@ -173,7 +172,7 @@ const restart = ref(false);
 	  <div class="wave"></div>
 	  <div class="wave"></div>
 	  <div class="wave"></div>
-		<PipyVersion class="left-fixed"/>
+		<PipyVersion class="left-fixed" :playing="playing"/>
 		<div class="userinfo" v-if="user" v-tooltip="user?.id">
 			<Avatar icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
 			{{user?.id}}

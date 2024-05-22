@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { resourceDir, appLogDir, appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/plugin-os';
 import PipyProxyService from '@/service/PipyProxyService';
+import { relaunch } from "@tauri-apps/plugin-process";
 import store from "@/store";
 
 const pipyProxyService = new PipyProxyService();
@@ -15,7 +16,7 @@ export default class ShellService {
 		const appDataDirPath = await resourceDir();
 		open(appDataDirPath)
 	}
-	async takePipyVersion () {
+	async takePipyVersion (apiGet) {
 		const pm = await platform();
 		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
@@ -27,10 +28,11 @@ export default class ShellService {
 				//{"ztm":{"version":"v0.0.2","commit":"a73787b37cb500044410325b04558d2507a847f7","date":"Sat, 18 May 2024 18:55:27 +0800"},"pipy":{"version":"1.1.0-33","commit":"bd7450a98c9513394869493753456944aa26c1f7","date":"Sat, 18 May 2024 18:10:58 +0800"}}
 				store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
 			});
-		} else {
+		} else if(!!apiGet){
 			pipyProxyService.getVersion()
 				.then(res => {
 					if(!!res){
+						console.log(res)
 						store.commit('account/setVersion', res);
 					}
 				})
@@ -55,12 +57,7 @@ export default class ShellService {
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
 			
-			await this.pausePipy();
-			// if(reset){
-			// 	args.push("--reset");
-			// } else {
-			// 	args.push("");
-			// }
+			await this.pausePipy(port);
 			console.log(`[starting pipy:${args}]`);
 			const command = Command.sidecar("bin/ztm", args);
 			command.on('close', data => {
@@ -103,12 +100,15 @@ export default class ShellService {
 				argv: args,
 				argc: args.length
 			}).then((res)=>{
-				store.commit('account/setPid', res);
+				store.commit('account/setPid', 1);
+				setTimeout(()=>{
+					this.takePipyVersion(true);
+				},1000)
 				console.log(`[pipylib]Result: ${res}`);
 			});
 		}
 	}
-	async pausePipy (){
+	async pausePipy (port){
 		const pm = await platform();
 		if(pm != "android"){
 			let child = store.getters['account/child'];
@@ -123,13 +123,7 @@ export default class ShellService {
 			}
 			console.log('[paused pipy]');
 		} else {
-			let threadId = store.getters['account/pid'];
-			invoke('pausepipy', {
-				threadId,
-			}).then((res)=>{
-				store.commit('account/setPid', null);
-				console.log(`[pausepipy]Result: ${res}`);
-			});
+			await relaunch();
 		}
 	}
 }
