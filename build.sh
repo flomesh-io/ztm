@@ -1,5 +1,14 @@
 #!/bin/sh
 
+function check_version() {
+  if [ `printf '%s\n%s' $1 $2 | sort -V | head -n1` = $1 ]; then
+    echo $3
+    exit -1
+  fi
+}
+
+check_version `node -v` 'v16' 'Require Node.js version 16 or above'
+
 ZTM_DIR=$(cd "$(dirname "$0")" && pwd)
 ZTM_BIN="$ZTM_DIR/bin/ztm"
 
