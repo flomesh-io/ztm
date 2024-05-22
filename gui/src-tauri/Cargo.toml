@@ -1,7 +1,7 @@
 [package]
 name = "ztmapp"
 version = "0.0.3"
-description = "A ZTM App"
+description = "ZTM"
 authors = ["lindc"]
 edition = "2021"
 

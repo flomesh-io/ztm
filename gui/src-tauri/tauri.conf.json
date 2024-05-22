@@ -12,7 +12,7 @@
     "windows": [
       {
 				"dragDropEnabled": false,
-        "title": "ZTM App",
+        "title": "ZTM",
         "width": 455,
         "height": 350,
         "resizable": false,
