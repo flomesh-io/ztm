@@ -3,7 +3,7 @@
 check_version() {
   if [ `printf '%s\n%s' $1 $2 | sort -V | head -n1` = $1 ]; then
     echo $3
-    exit -1
+    exit 1
   fi
 }
 
@@ -14,6 +14,12 @@ ZTM_BIN="$ZTM_DIR/bin/ztm"
 
 cd "$ZTM_DIR"
 build/deps.sh
+
+if [ $? -ne 0 ]; then
+  exit 1
+fi
+
+cd "$ZTM_DIR"
 build/gui.sh
 build/pipy.sh
 
