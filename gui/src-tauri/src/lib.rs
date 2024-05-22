@@ -5,6 +5,7 @@ use std::os::raw::c_char;
 use std::ptr;
 use std::thread;
 
+
 #[command]
 fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> {
 			// 创建一个通道用于线程输出
@@ -45,19 +46,15 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 			
 }
 
-#[command]
-fn pausepipy(thread_id: String) -> Result<(), String> {
-	Ok(())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 		tauri::Builder::default()
 				.plugin(tauri_plugin_os::init())
 				.plugin(tauri_plugin_http::init())
 				.plugin(tauri_plugin_shell::init())
+				.plugin(tauri_plugin_process::init())
 				.invoke_handler(tauri::generate_handler![
-					pipylib,pausepipy
+					pipylib
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");

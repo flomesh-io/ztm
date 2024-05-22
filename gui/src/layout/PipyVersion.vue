@@ -4,6 +4,7 @@ import { useStore } from 'vuex';
 import PipySvg from "@/assets/img/pipy-white.png";
 import ShellService from '@/service/ShellService';
 
+const props = defineProps(['playing'])
 const shellService = new ShellService();
 const store = useStore();
 const restart = ref(false);
@@ -13,7 +14,7 @@ const version = computed(() => {
 
 onMounted(() => {
 	if(!version.value){
-		shellService.takePipyVersion();
+		shellService.takePipyVersion(!!props.playing);
 	}
 });
 const restartPipy = () => {
@@ -22,7 +23,7 @@ const restartPipy = () => {
 	setTimeout(()=>{
 		restart.value = false;
 	},1000);
-	shellService.takePipyVersion();
+	shellService.takePipyVersion(!!props.playing);
 }
 
 </script>

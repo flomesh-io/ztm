@@ -18,6 +18,7 @@
     "window:allow-set-resizable",
     "webview:allow-set-webview-size",
     "webview:allow-internal-toggle-devtools",
+		"process:allow-restart",
     {
       "identifier": "shell:allow-spawn",
       "allow": [
