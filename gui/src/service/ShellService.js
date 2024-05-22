@@ -103,6 +103,7 @@ export default class ShellService {
 				argv: args,
 				argc: args.length
 			}).then((res)=>{
+				store.commit('account/setPid', res);
 				console.log(`[pipylib]Result: ${res}`);
 			});
 		}
@@ -121,6 +122,14 @@ export default class ShellService {
 				store.commit('account/setPid', null);
 			}
 			console.log('[paused pipy]');
+		} else {
+			let threadId = store.getters['account/pid'];
+			invoke('pausepipy', {
+				threadId,
+			}).then((res)=>{
+				store.commit('account/setPid', null);
+				console.log(`[pausepipy]Result: ${res}`);
+			});
 		}
 	}
 }
