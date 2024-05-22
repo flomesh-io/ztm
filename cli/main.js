@@ -430,31 +430,34 @@ function startServiceLinux(name, args, optsChanged) {
   pipy.exec(`systemctl restart ztm-${name}`)
 }
 
-function startServiceDarwin(name, args) {
+function startServiceDarwin(name, args, optsChanged) {
+  var program = os.abspath(pipy.exec(['which', pipy.argv[0]]).toString().trim())
   var filename = `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
-  var plist = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>io.flomesh.ztm.${name}</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>${os.abspath(pipy.argv[0])}</string>
-    <string>run</string>
-    <string>${name}</string>
-    ${args.map(arg => `<string>${arg}</string>`).join('\n    ')}
-  </array>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <true/>
-  <key>StandardOutPath</key>
-  <string>/tmp/io.flomesh.ztm.${name}.log</string>
-</dict>
-</plist>
-`
-  os.write(filename, plist)
+  if (optsChanged || !os.stat(filename)) {
+    os.write(filename, stripIndentation(`
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>Label</key>
+        <string>io.flomesh.ztm.${name}</string>
+        <key>ProgramArguments</key>
+        <array>
+          <string>${program}</string>
+          <string>run</string>
+          <string>${name}</string>
+          ${args.map(arg => `<string>${arg}</string>`).join('')}
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <true/>
+        <key>StandardOutPath</key>
+        <string>/tmp/io.flomesh.ztm.${name}.log</string>
+      </dict>
+      </plist>
+    `))
+  }
   pipy.exec(`launchctl load ${filename}`)
 }
 
