@@ -30,7 +30,8 @@ $gutter: 1rem; //for primeflex grid system
 	width: auto;
 	background: #1e1e1e;
 }
-.app-top-bar .p-submenu-list .p-menubar-item-content{
+.app-top-bar .p-menubar-button{
+	color: #fff;
 }
 .app-top-bar.p-menubar .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content {
 		height: 50px;
