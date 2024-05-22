@@ -346,19 +346,77 @@ function start(argv, program) {
   }
 }
 
-function startCA(argv, program) {
+function startCA(argv) {
   var opts = parseOptions(optionsCA, argv, 'start ca')
-  println(program, opts)
+  startService('ca', opts)
 }
 
-function startHub(argv, program) {
+function startHub(argv) {
   var opts = parseOptions(optionsHub, argv, 'start hub')
-  println(program, opts)
+  startService('hub', opts)
 }
 
-function startAgent(argv, program) {
+function startAgent(argv) {
   var opts = parseOptions(optionsAgent, argv, 'start agent')
-  println(program, opts)
+  startService('agent', opts)
+}
+
+function startService(name, opts) {
+  var args = []
+  function append(k, v) {
+    v = v.toString()
+    if (v.startsWith('~/')) {
+      v = os.home() + v.substring(1)
+    }
+    args.push(k)
+    args.push(v)
+  }
+  Object.entries(opts).forEach(
+    ([k, v]) => {
+      if (k === 'args') return
+      switch (typeof v) {
+        case 'boolean':
+          if (v) args.push(k)
+          break
+        case 'object':
+          if (v instanceof Array) v.forEach(v => append(k, v))
+          break
+        default: append(k, v)
+      }
+    }
+  )
+  switch (os.platform) {
+    case 'darwin': return startServiceDarwin(name, args)
+    default: throw `starting as service not supported on this platform`
+  }
+}
+
+function startServiceDarwin(name, args) {
+  var plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>io.flomesh.ztm.${name}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>${os.abspath(pipy.argv[0])}</string>
+    <string>run</string>
+    <string>${name}</string>
+    ${args.map(arg => `<string>${arg}</string>`).join('\n    ')}
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/io.flomesh.ztm.${name}.log</string>
+</dict>
+</plist>
+`
+  var filename = `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
+  os.write(filename, plist)
+  pipy.exec(`launchctl load ${filename}`)
 }
 
 //
@@ -376,12 +434,22 @@ function stop(argv) {
 }
 
 function stopCA() {
+  stopService('ca')
 }
 
 function stopHub() {
+  stopService('hub')
 }
 
 function stopAgent() {
+  stopService('agent')
+}
+
+function stopService(name) {
+  switch (os.platform) {
+    case 'darwin': return pipy.exec(`launchctl unload ${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`)
+    default: throw `service not started`
+  }
 }
 
 //
