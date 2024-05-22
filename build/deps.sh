@@ -4,6 +4,10 @@ ZTM_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
 cd "$ZTM_DIR"
 git submodule update --init
+if [ $? -ne 0 ]; then
+  echo 'Cannot download Pipy from github.com'
+  exit 1
+fi
 
 cd "$ZTM_DIR/pipy"
 rm -f build/deps/codebases.tar.gz.h
