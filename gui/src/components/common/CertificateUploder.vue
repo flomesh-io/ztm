@@ -170,7 +170,7 @@ const typeOk = () => {
 									</div>
 								</OverlayPanel>
 						</div>
-            <ProgressBar :value="totalSizePercent" :showValue="false" :class="['md:w-10rem h-1rem w-full md:ml-auto', { 'exceeded-progress-bar': totalSizePercent > 100 }]"
+            <ProgressBar :value="totalSizePercent" :showValue="false" :class="['w-10rem h-1rem  md:ml-auto', { 'exceeded-progress-bar': totalSizePercent > 100 }]"
                 ><span class="white-space-nowrap">{{ totalSize }}B / 1Mb</span></ProgressBar
             >
 					</div>
