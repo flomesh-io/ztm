@@ -9,7 +9,7 @@ The following prerequisites are required to build on a Linux variant:
 
 * Clang (version 5.0 or above)
 * CMake (version 3.1 or above)
-* Node.js (version 12 or above)
+* Node.js (version 16 or above)
 
 For Ubuntu, for example, these tools can be installed by:
 
@@ -17,6 +17,13 @@ For Ubuntu, for example, these tools can be installed by:
 apt update
 apt install clang cmake npm
 ```
+
+> If the version of Node.js that comes with your Linux release isn't high enough, we recommend you to upgrade it with a _Node version manager_ such as [n](https://www.npmjs.com/package/n). Simply do:
+>
+> ```sh
+> npm install -g n
+> n 16
+> ```
 
 After that, clone the project and execute `build.sh`:
 
@@ -26,7 +33,7 @@ cd ztm
 ./build.sh
 ```
 
-The final output is a single executable file located at `ztm/bin/pipy`.
+The final output is a single executable file located at `ztm/bin/ztm`.
 
 ## Build for macOS
 
@@ -34,7 +41,7 @@ If you are on macOS, the following are required to build ZTM:
 
 * Xcode (version 15 or above)
 * [CMake](https://cmake.org/) (version 3.1 or above)
-* [Node.js](https://nodejs.org/) (version 12 or above)
+* [Node.js](https://nodejs.org/) (version 16 or above)
 
 Once you have all these tools installed, clone the project and execute `build.sh`:
 
@@ -44,7 +51,7 @@ cd ztm
 ./build.sh
 ```
 
-The final output is a single executable file located at `ztm/bin/pipy`.
+The final output is a single executable file located at `ztm/bin/ztm`.
 
 ## Build for Windows
 
@@ -52,7 +59,7 @@ For Windows users, the following tools need to be installed prior to build:
 
 * Microsoft Visual Studio 2022 or above
 * [CMake](https://cmake.org/) (version 3.1 or above)
-* [Node.js](https://nodejs.org/) (version 12 or above)
+* [Node.js](https://nodejs.org/) (version 16 or above)
 * [Perl](https://www.perl.org/) (ActiveState version 5.38 or above)
 * [NASM](https://nasm.us/) (version 2.16 or above)
 
@@ -64,4 +71,4 @@ cd ztm
 build.cmd
 ```
 
-The final output is a single executable file located at `ztm\bin\pipy.exe`.
+The final output is a single executable file located at `ztm\bin\ztm.exe`.
