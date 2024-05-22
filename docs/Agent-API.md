@@ -1,6 +1,6 @@
-# Agent REST API
+# Agent API
 
-This REST API is organized into 4 types of resources that can be accessed by the standard HTTP semantics. The 4 types of resources are:
+This API is organized into 4 types of resources that can be accessed by the standard HTTP semantics. The 4 types of resources are:
 
 - Meshes
 - Endpoints
