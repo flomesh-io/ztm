@@ -17,7 +17,7 @@ $gutter: 1rem; //for primeflex grid system
 .app-top-bar.p-menubar {
 	padding:0 0 0 0.75em;
 	height: 50px;
-	overflow: hidden;
+	// overflow: hidden;
 	background: #1e1e1e;
 	color: rgba(255, 255, 255, 0.87);
 	border: 0px solid rgba(255, 255, 255, 0.12);
@@ -59,6 +59,7 @@ $gutter: 1rem; //for primeflex grid system
 }
 .app-top-bar .logo{
 	margin-right: 1.25em;
+	margin-top: 4px;
 	margin-left: 0.75em;
 }
 .app-top-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived{
@@ -584,6 +585,13 @@ pre.app-code code{
 		padding: 0.875rem 1.125rem 1.125rem 1.125rem;
 	}
 }
+@media screen and (max-width: 768px){
+	
+	.empty-result img{
+		width: 100% !important;
+	}
+}
+
 .surface-border.flex-wrap>div{
 	line-height: 24px;
 }
@@ -748,7 +756,10 @@ fieldset{
 .footer .p-button-text.p-button-help:not(:disabled):hover{
 	background-color: var(--primary-300);
 }
-
+.p-paginator-rpp-dropdown{
+	border: none !important;
+	box-shadow: none !important;
+}
 @media (prefers-color-scheme: dark){
 	
 	.bg-primary-sec{

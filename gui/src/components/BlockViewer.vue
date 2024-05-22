@@ -212,12 +212,13 @@ pre[class*='language-'] {
 
 @media screen and (max-width: 575px) {
     .block-header {
-        flex-direction: column;
-        align-items: start;
+			padding-left: 1rem;
+        // flex-direction: column;
+        // align-items: start;
 
         .block-actions {
-            margin-top: 1rem;
-            margin-left: 0;
+            // margin-top: 1rem;
+            // margin-left: 0;
         }
     }
 }
