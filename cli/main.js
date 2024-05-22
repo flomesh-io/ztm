@@ -409,6 +409,7 @@ function startServiceLinux(name, args, optsChanged) {
     arg => arg.startsWith('-') ? arg : `'${arg}'`
   ).join(' ')
   var filename = `/etc/systemd/system/ztm-${name}.service`
+  var logdir = `/var/log/ztm`
   if (optsChanged || !os.stat(filename)) {
     os.write(filename, stripIndentation(`
       [Unit]
@@ -421,10 +422,12 @@ function startServiceLinux(name, args, optsChanged) {
       Restart=on-failure
       User=${user}
       LimitNOFILE=655360
+      StandardOutput=append:${logdir}/${name}.log
 
       [Install]
       WantedBy = multi-user.target
     `))
+    os.mkdir(logdir, { recursive: true })
     pipy.exec(`systemctl daemon-reload`)
   }
   pipy.exec(`systemctl restart ztm-${name}`)
