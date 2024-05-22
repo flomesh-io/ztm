@@ -1,0 +1,3 @@
+[submodule "pipy"]
+	path = pipy
+	url = git@github.com:flomesh-io/pipy.git
