@@ -1,6 +1,6 @@
 #!/bin/sh
 
-function check_version() {
+check_version() {
   if [ `printf '%s\n%s' $1 $2 | sort -V | head -n1` = $1 ]; then
     echo $3
     exit -1
