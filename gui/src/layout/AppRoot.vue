@@ -162,6 +162,10 @@ const goConsole = () => {
 const openFinder = () => {
 	shellService.openFinder();
 }
+const openLog = () => {
+	logOpen.value = true;
+	shellService.loadLog();
+}
 const restart = ref(false);
 </script>
 
@@ -243,7 +247,7 @@ const restart = ref(false);
 				</Button>
 			</div>
 			<div class="flex-item">
-				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => logOpen = true" >
+				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
 					<i class="iconfont icon-cmd text-3xl"  />
 				</Button>
 			</div>

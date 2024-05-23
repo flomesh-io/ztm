@@ -9,7 +9,7 @@
     "build": "vite build --emptyOutDir --outDir ../agent/gui",
     "preview": "vite preview --outDir ../agent/gui",
     "tauri": "tauri",
-		"android-init": "tauri android init && cp -rf ./src-android/app ./src-tauri/gen/android",
+    "android-init": "tauri android init && cp -rf ./src-android/app ./src-tauri/gen/android",
     "ca": "../bin/ztm run ca --listen=127.0.0.1:9999",
     "hub": "../bin/ztm run hub --listen=127.0.0.1:8888",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0-beta.11",
+    "@tauri-apps/plugin-fs": "^2.0.0-beta.3",
     "@tauri-apps/plugin-http": "^2.0.0-beta.3",
     "@tauri-apps/plugin-os": "^2.0.0-beta.3",
     "@tauri-apps/plugin-process": "^2.0.0-beta.3",

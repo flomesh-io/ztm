@@ -12,7 +12,7 @@ const hide = () => {
 const clear = () => {
 	store.commit('account/setLogs',null);
 }
-const level = ref('Error');
+const level = ref('All');
 </script>
 
 <template>
@@ -84,7 +84,7 @@ const level = ref('Error');
 	}
 	.actions{
 		position: fixed;
-		top: 0px;
+		top: 5px;
 		right: 10px;
 		:deep(.p-button){
 			padding-left: 5px;
@@ -214,4 +214,8 @@ const level = ref('Error');
 	    background: #ffffff;
 	  }
 	} 
+	:deep(.p-button){
+		width: 2rem;
+		height: 2rem;
+	}
 </style>

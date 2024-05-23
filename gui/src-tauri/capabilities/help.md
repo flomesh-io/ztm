@@ -1,334 +1,596 @@
-# Platform
-linux、macos、ios、freebsd、dragonfly、netbsd、openbsd、solaris、android、windows
-
-# Path Vars
-$AUDIO, 
-$CACHE, 
-$CONFIG, 
-$DATA, 
-$LOCALDATA, 
-$DESKTOP, 
-$DOCUMENT, 
-$DOWNLOAD, 
-$EXE, 
-$FONT, 
-$HOME, 
-$PICTURE, 
-$PUBLIC, 
-$RUNTIME, 
-$TEMPLATE, 
-$VIDEO, 
-$RESOURCE, 
-$APP, 
-$LOG, 
-$TEMP, 
-$APPCONFIG, 
-$APPDATA, 
-$APPLOCALDATA, 
-$APPCACHE, 
-$APPLOG.
-
-# Permission Scope
-app:default
-app:allow-app-hide
-app:allow-app-show
-app:allow-name
-app:allow-tauri-version
-app:allow-version
-app:deny-app-hide
-app:deny-app-show
-app:deny-name
-app:deny-tauri-version
-app:deny-version
-cli:default
-cli:allow-cli-matches
-cli:deny-cli-matches
-event:default
-event:allow-emit
-event:allow-emit-to
-event:allow-listen
-event:allow-unlisten
-event:deny-emit
-event:deny-emit-to
-event:deny-listen
-event:deny-unlisten
-http:default
-http:allow-fetch
-http:allow-fetch-cancel
-http:allow-fetch-read-body
-http:allow-fetch-send
-http:deny-fetch
-http:deny-fetch-cancel
-http:deny-fetch-read-body
-http:deny-fetch-send
-image:default
-image:allow-from-bytes
-image:allow-from-path
-image:allow-new
-image:allow-rgba
-image:allow-size
-image:deny-from-bytes
-image:deny-from-path
-image:deny-new
-image:deny-rgba
-image:deny-size
-menu:default
-menu:allow-append
-menu:allow-create-default
-menu:allow-get
-menu:allow-insert
-menu:allow-is-checked
-menu:allow-is-enabled
-menu:allow-items
-menu:allow-new
-menu:allow-popup
-menu:allow-prepend
-menu:allow-remove
-menu:allow-remove-at
-menu:allow-set-accelerator
-menu:allow-set-as-app-menu
-menu:allow-set-as-help-menu-for-nsapp
-menu:allow-set-as-window-menu
-menu:allow-set-as-windows-menu-for-nsapp
-menu:allow-set-checked
-menu:allow-set-enabled
-menu:allow-set-icon
-menu:allow-set-text
-menu:allow-text
-menu:deny-append
-menu:deny-create-default
-menu:deny-get
-menu:deny-insert
-menu:deny-is-checked
-menu:deny-is-enabled
-menu:deny-items
-menu:deny-new
-menu:deny-popup
-menu:deny-prepend
-menu:deny-remove
-menu:deny-remove-at
-menu:deny-set-accelerator
-menu:deny-set-as-app-menu
-menu:deny-set-as-help-menu-for-nsapp
-menu:deny-set-as-window-menu
-menu:deny-set-as-windows-menu-for-nsapp
-menu:deny-set-checked
-menu:deny-set-enabled
-menu:deny-set-icon
-menu:deny-set-text
-menu:deny-text
-os:allow-arch
-os:allow-exe-extension
-os:allow-family
-os:allow-hostname
-os:allow-locale
-os:allow-os-type
-os:allow-platform
-os:allow-version
-os:deny-arch
-os:deny-exe-extension
-os:deny-family
-os:deny-hostname
-os:deny-locale
-os:deny-os-type
-os:deny-platform
-os:deny-version
-path:default
-path:allow-basename
-path:allow-dirname
-path:allow-extname
-path:allow-is-absolute
-path:allow-join
-path:allow-normalize
-path:allow-resolve
-path:allow-resolve-directory
-path:deny-basename
-path:deny-dirname
-path:deny-extname
-path:deny-is-absolute
-path:deny-join
-path:deny-normalize
-path:deny-resolve
-path:deny-resolve-directory
-process:allow-exit
-process:allow-restart
-process:deny-exit
-process:deny-restart
-resources:default
-resources:allow-close
-resources:deny-close
-shell:allow-execute
-shell:allow-kill
-shell:allow-open
-shell:allow-stdin-write
-shell:deny-execute
-shell:deny-kill
-shell:deny-open
-shell:deny-stdin-write
-tray:default
-tray:allow-get-by-id
-tray:allow-new
-tray:allow-remove-by-id
-tray:allow-set-icon
-tray:allow-set-icon-as-template
-tray:allow-set-menu
-tray:allow-set-show-menu-on-left-click
-tray:allow-set-temp-dir-path
-tray:allow-set-title
-tray:allow-set-tooltip
-tray:allow-set-visible
-tray:deny-get-by-id
-tray:deny-new
-tray:deny-remove-by-id
-tray:deny-set-icon
-tray:deny-set-icon-as-template
-tray:deny-set-menu
-tray:deny-set-show-menu-on-left-click
-tray:deny-set-temp-dir-path
-tray:deny-set-title
-tray:deny-set-tooltip
-tray:deny-set-visible
-webview:default
-webview:allow-create-webview
-webview:allow-create-webview-window
-webview:allow-internal-toggle-devtools
-webview:allow-print
-webview:allow-reparent
-webview:allow-set-webview-focus
-webview:allow-set-webview-position
-webview:allow-set-webview-size
-webview:allow-webview-close
-webview:allow-webview-position
-webview:allow-webview-size
-webview:deny-create-webview
-webview:deny-create-webview-window
-webview:deny-internal-toggle-devtools
-webview:deny-print
-webview:deny-reparent
-webview:deny-set-webview-focus
-webview:deny-set-webview-position
-webview:deny-set-webview-size
-webview:deny-webview-close
-webview:deny-webview-position
-webview:deny-webview-size
-window:default
-window:allow-available-monitors
-window:allow-center
-window:allow-close
-window:allow-create
-window:allow-current-monitor
-window:allow-destroy
-window:allow-hide
-window:allow-inner-position
-window:allow-inner-size
-window:allow-internal-toggle-maximize
-window:allow-is-closable
-window:allow-is-decorated
-window:allow-is-focused
-window:allow-is-fullscreen
-window:allow-is-maximizable
-window:allow-is-maximized
-window:allow-is-minimizable
-window:allow-is-minimized
-window:allow-is-resizable
-window:allow-is-visible
-window:allow-maximize
-window:allow-minimize
-window:allow-outer-position
-window:allow-outer-size
-window:allow-primary-monitor
-window:allow-request-user-attention
-window:allow-scale-factor
-window:allow-set-always-on-bottom
-window:allow-set-always-on-top
-window:allow-set-closable
-window:allow-set-content-protected
-window:allow-set-cursor-grab
-window:allow-set-cursor-icon
-window:allow-set-cursor-position
-window:allow-set-cursor-visible
-window:allow-set-decorations
-window:allow-set-effects
-window:allow-set-focus
-window:allow-set-fullscreen
-window:allow-set-icon
-window:allow-set-ignore-cursor-events
-window:allow-set-max-size
-window:allow-set-maximizable
-window:allow-set-min-size
-window:allow-set-minimizable
-window:allow-set-position
-window:allow-set-progress-bar
-window:allow-set-resizable
-window:allow-set-shadow
-window:allow-set-size
-window:allow-set-skip-taskbar
-window:allow-set-title
-window:allow-set-visible-on-all-workspaces
-window:allow-show
-window:allow-start-dragging
-window:allow-theme
-window:allow-title
-window:allow-toggle-maximize
-window:allow-unmaximize
-window:allow-unminimize
-window:deny-available-monitors
-window:deny-center
-window:deny-close
-window:deny-create
-window:deny-current-monitor
-window:deny-destroy
-window:deny-hide
-window:deny-inner-position
-window:deny-inner-size
-window:deny-internal-toggle-maximize
-window:deny-is-closable
-window:deny-is-decorated
-window:deny-is-focused
-window:deny-is-fullscreen
-window:deny-is-maximizable
-window:deny-is-maximized
-window:deny-is-minimizable
-window:deny-is-minimized
-window:deny-is-resizable
-window:deny-is-visible
-window:deny-maximize
-window:deny-minimize
-window:deny-outer-position
-window:deny-outer-size
-window:deny-primary-monitor
-window:deny-request-user-attention
-window:deny-scale-factor
-window:deny-set-always-on-bottom
-window:deny-set-always-on-top
-window:deny-set-closable
-window:deny-set-content-protected
-window:deny-set-cursor-grab
-window:deny-set-cursor-icon
-window:deny-set-cursor-position
-window:deny-set-cursor-visible
-window:deny-set-decorations
-window:deny-set-effects
-window:deny-set-focus
-window:deny-set-fullscreen
-window:deny-set-icon
-window:deny-set-ignore-cursor-events
-window:deny-set-max-size
-window:deny-set-maximizable
-window:deny-set-min-size
-window:deny-set-minimizable
-window:deny-set-position
-window:deny-set-progress-bar
-window:deny-set-resizable
-window:deny-set-shadow
-window:deny-set-size
-window:deny-set-skip-taskbar
-window:deny-set-title
-window:deny-set-visible-on-all-workspaces
-window:deny-show
-window:deny-start-dragging
-window:deny-theme
-window:deny-title
-window:deny-toggle-maximize
-window:deny-unmaximize
-window:deny-unminimize
+fs:allow-appcacheas-read-recursive not found
+ expected one of app:default
+ app:allow-app-hide
+ app:allow-app-show
+ app:allow-name
+ app:allow-tauri-version
+ app:allow-version
+ app:deny-app-hide
+ app:deny-app-show
+ app:deny-name
+ app:deny-tauri-version
+ app:deny-version
+ cli:default
+ cli:allow-cli-matches
+ cli:deny-cli-matches
+ event:default
+ event:allow-emit
+ event:allow-emit-to
+ event:allow-listen
+ event:allow-unlisten
+ event:deny-emit
+ event:deny-emit-to
+ event:deny-listen
+ event:deny-unlisten
+ fs:default
+ fs:allow-copy-file
+ fs:allow-create
+ fs:allow-exists
+ fs:allow-fstat
+ fs:allow-ftruncate
+ fs:allow-lstat
+ fs:allow-mkdir
+ fs:allow-open
+ fs:allow-read
+ fs:allow-read-dir
+ fs:allow-read-file
+ fs:allow-read-text-file
+ fs:allow-read-text-file-lines
+ fs:allow-read-text-file-lines-next
+ fs:allow-remove
+ fs:allow-rename
+ fs:allow-seek
+ fs:allow-stat
+ fs:allow-truncate
+ fs:allow-unwatch
+ fs:allow-watch
+ fs:allow-write
+ fs:allow-write-file
+ fs:allow-write-text-file
+ fs:deny-copy-file
+ fs:deny-create
+ fs:deny-exists
+ fs:deny-fstat
+ fs:deny-ftruncate
+ fs:deny-lstat
+ fs:deny-mkdir
+ fs:deny-open
+ fs:deny-read
+ fs:deny-read-dir
+ fs:deny-read-file
+ fs:deny-read-text-file
+ fs:deny-read-text-file-lines
+ fs:deny-read-text-file-lines-next
+ fs:deny-remove
+ fs:deny-rename
+ fs:deny-seek
+ fs:deny-stat
+ fs:deny-truncate
+ fs:deny-unwatch
+ fs:deny-watch
+ fs:deny-webview-data-linux
+ fs:deny-webview-data-windows
+ fs:deny-write
+ fs:deny-write-file
+ fs:deny-write-text-file
+ fs:read-all
+ fs:read-dirs
+ fs:read-files
+ fs:read-meta
+ fs:scope
+ fs:scope-app
+ fs:scope-app-index
+ fs:scope-app-recursive
+ fs:scope-appcache
+ fs:scope-appcache-index
+ fs:scope-appcache-recursive
+ fs:scope-appconfig
+ fs:scope-appconfig-index
+ fs:scope-appconfig-recursive
+ fs:scope-appdata
+ fs:scope-appdata-index
+ fs:scope-appdata-recursive
+ fs:scope-applocaldata
+ fs:scope-applocaldata-index
+ fs:scope-applocaldata-recursive
+ fs:scope-applog
+ fs:scope-applog-index
+ fs:scope-applog-recursive
+ fs:scope-audio
+ fs:scope-audio-index
+ fs:scope-audio-recursive
+ fs:scope-cache
+ fs:scope-cache-index
+ fs:scope-cache-recursive
+ fs:scope-config
+ fs:scope-config-index
+ fs:scope-config-recursive
+ fs:scope-data
+ fs:scope-data-index
+ fs:scope-data-recursive
+ fs:scope-desktop
+ fs:scope-desktop-index
+ fs:scope-desktop-recursive
+ fs:scope-document
+ fs:scope-document-index
+ fs:scope-document-recursive
+ fs:scope-download
+ fs:scope-download-index
+ fs:scope-download-recursive
+ fs:scope-exe
+ fs:scope-exe-index
+ fs:scope-exe-recursive
+ fs:scope-font
+ fs:scope-font-index
+ fs:scope-font-recursive
+ fs:scope-home
+ fs:scope-home-index
+ fs:scope-home-recursive
+ fs:scope-localdata
+ fs:scope-localdata-index
+ fs:scope-localdata-recursive
+ fs:scope-log
+ fs:scope-log-index
+ fs:scope-log-recursive
+ fs:scope-picture
+ fs:scope-picture-index
+ fs:scope-picture-recursive
+ fs:scope-public
+ fs:scope-public-index
+ fs:scope-public-recursive
+ fs:scope-resource
+ fs:scope-resource-index
+ fs:scope-resource-recursive
+ fs:scope-runtime
+ fs:scope-runtime-index
+ fs:scope-runtime-recursive
+ fs:scope-temp
+ fs:scope-temp-index
+ fs:scope-temp-recursive
+ fs:scope-template
+ fs:scope-template-index
+ fs:scope-template-recursive
+ fs:scope-video
+ fs:scope-video-index
+ fs:scope-video-recursive
+ fs:write-all
+ fs:write-files
+ fs:allow-app-meta
+ fs:allow-app-meta-recursive
+ fs:allow-app-read
+ fs:allow-app-read-recursive
+ fs:allow-app-write
+ fs:allow-app-write-recursive
+ fs:allow-appcache-meta
+ fs:allow-appcache-meta-recursive
+ fs:allow-appcache-read
+ fs:allow-appcache-read-recursive
+ fs:allow-appcache-write
+ fs:allow-appcache-write-recursive
+ fs:allow-appconfig-meta
+ fs:allow-appconfig-meta-recursive
+ fs:allow-appconfig-read
+ fs:allow-appconfig-read-recursive
+ fs:allow-appconfig-write
+ fs:allow-appconfig-write-recursive
+ fs:allow-appdata-meta
+ fs:allow-appdata-meta-recursive
+ fs:allow-appdata-read
+ fs:allow-appdata-read-recursive
+ fs:allow-appdata-write
+ fs:allow-appdata-write-recursive
+ fs:allow-applocaldata-meta
+ fs:allow-applocaldata-meta-recursive
+ fs:allow-applocaldata-read
+ fs:allow-applocaldata-read-recursive
+ fs:allow-applocaldata-write
+ fs:allow-applocaldata-write-recursive
+ fs:allow-applog-meta
+ fs:allow-applog-meta-recursive
+ fs:allow-applog-read
+ fs:allow-applog-read-recursive
+ fs:allow-applog-write
+ fs:allow-applog-write-recursive
+ fs:allow-audio-meta
+ fs:allow-audio-meta-recursive
+ fs:allow-audio-read
+ fs:allow-audio-read-recursive
+ fs:allow-audio-write
+ fs:allow-audio-write-recursive
+ fs:allow-cache-meta
+ fs:allow-cache-meta-recursive
+ fs:allow-cache-read
+ fs:allow-cache-read-recursive
+ fs:allow-cache-write
+ fs:allow-cache-write-recursive
+ fs:allow-config-meta
+ fs:allow-config-meta-recursive
+ fs:allow-config-read
+ fs:allow-config-read-recursive
+ fs:allow-config-write
+ fs:allow-config-write-recursive
+ fs:allow-data-meta
+ fs:allow-data-meta-recursive
+ fs:allow-data-read
+ fs:allow-data-read-recursive
+ fs:allow-data-write
+ fs:allow-data-write-recursive
+ fs:allow-desktop-meta
+ fs:allow-desktop-meta-recursive
+ fs:allow-desktop-read
+ fs:allow-desktop-read-recursive
+ fs:allow-desktop-write
+ fs:allow-desktop-write-recursive
+ fs:allow-document-meta
+ fs:allow-document-meta-recursive
+ fs:allow-document-read
+ fs:allow-document-read-recursive
+ fs:allow-document-write
+ fs:allow-document-write-recursive
+ fs:allow-download-meta
+ fs:allow-download-meta-recursive
+ fs:allow-download-read
+ fs:allow-download-read-recursive
+ fs:allow-download-write
+ fs:allow-download-write-recursive
+ fs:allow-exe-meta
+ fs:allow-exe-meta-recursive
+ fs:allow-exe-read
+ fs:allow-exe-read-recursive
+ fs:allow-exe-write
+ fs:allow-exe-write-recursive
+ fs:allow-font-meta
+ fs:allow-font-meta-recursive
+ fs:allow-font-read
+ fs:allow-font-read-recursive
+ fs:allow-font-write
+ fs:allow-font-write-recursive
+ fs:allow-home-meta
+ fs:allow-home-meta-recursive
+ fs:allow-home-read
+ fs:allow-home-read-recursive
+ fs:allow-home-write
+ fs:allow-home-write-recursive
+ fs:allow-localdata-meta
+ fs:allow-localdata-meta-recursive
+ fs:allow-localdata-read
+ fs:allow-localdata-read-recursive
+ fs:allow-localdata-write
+ fs:allow-localdata-write-recursive
+ fs:allow-log-meta
+ fs:allow-log-meta-recursive
+ fs:allow-log-read
+ fs:allow-log-read-recursive
+ fs:allow-log-write
+ fs:allow-log-write-recursive
+ fs:allow-picture-meta
+ fs:allow-picture-meta-recursive
+ fs:allow-picture-read
+ fs:allow-picture-read-recursive
+ fs:allow-picture-write
+ fs:allow-picture-write-recursive
+ fs:allow-public-meta
+ fs:allow-public-meta-recursive
+ fs:allow-public-read
+ fs:allow-public-read-recursive
+ fs:allow-public-write
+ fs:allow-public-write-recursive
+ fs:allow-resource-meta
+ fs:allow-resource-meta-recursive
+ fs:allow-resource-read
+ fs:allow-resource-read-recursive
+ fs:allow-resource-write
+ fs:allow-resource-write-recursive
+ fs:allow-runtime-meta
+ fs:allow-runtime-meta-recursive
+ fs:allow-runtime-read
+ fs:allow-runtime-read-recursive
+ fs:allow-runtime-write
+ fs:allow-runtime-write-recursive
+ fs:allow-temp-meta
+ fs:allow-temp-meta-recursive
+ fs:allow-temp-read
+ fs:allow-temp-read-recursive
+ fs:allow-temp-write
+ fs:allow-temp-write-recursive
+ fs:allow-template-meta
+ fs:allow-template-meta-recursive
+ fs:allow-template-read
+ fs:allow-template-read-recursive
+ fs:allow-template-write
+ fs:allow-template-write-recursive
+ fs:allow-video-meta
+ fs:allow-video-meta-recursive
+ fs:allow-video-read
+ fs:allow-video-read-recursive
+ fs:allow-video-write
+ fs:allow-video-write-recursive
+ fs:deny-default
+ http:default
+ http:allow-fetch
+ http:allow-fetch-cancel
+ http:allow-fetch-read-body
+ http:allow-fetch-send
+ http:deny-fetch
+ http:deny-fetch-cancel
+ http:deny-fetch-read-body
+ http:deny-fetch-send
+ image:default
+ image:allow-from-bytes
+ image:allow-from-path
+ image:allow-new
+ image:allow-rgba
+ image:allow-size
+ image:deny-from-bytes
+ image:deny-from-path
+ image:deny-new
+ image:deny-rgba
+ image:deny-size
+ menu:default
+ menu:allow-append
+ menu:allow-create-default
+ menu:allow-get
+ menu:allow-insert
+ menu:allow-is-checked
+ menu:allow-is-enabled
+ menu:allow-items
+ menu:allow-new
+ menu:allow-popup
+ menu:allow-prepend
+ menu:allow-remove
+ menu:allow-remove-at
+ menu:allow-set-accelerator
+ menu:allow-set-as-app-menu
+ menu:allow-set-as-help-menu-for-nsapp
+ menu:allow-set-as-window-menu
+ menu:allow-set-as-windows-menu-for-nsapp
+ menu:allow-set-checked
+ menu:allow-set-enabled
+ menu:allow-set-icon
+ menu:allow-set-text
+ menu:allow-text
+ menu:deny-append
+ menu:deny-create-default
+ menu:deny-get
+ menu:deny-insert
+ menu:deny-is-checked
+ menu:deny-is-enabled
+ menu:deny-items
+ menu:deny-new
+ menu:deny-popup
+ menu:deny-prepend
+ menu:deny-remove
+ menu:deny-remove-at
+ menu:deny-set-accelerator
+ menu:deny-set-as-app-menu
+ menu:deny-set-as-help-menu-for-nsapp
+ menu:deny-set-as-window-menu
+ menu:deny-set-as-windows-menu-for-nsapp
+ menu:deny-set-checked
+ menu:deny-set-enabled
+ menu:deny-set-icon
+ menu:deny-set-text
+ menu:deny-text
+ os:allow-arch
+ os:allow-exe-extension
+ os:allow-family
+ os:allow-hostname
+ os:allow-locale
+ os:allow-os-type
+ os:allow-platform
+ os:allow-version
+ os:deny-arch
+ os:deny-exe-extension
+ os:deny-family
+ os:deny-hostname
+ os:deny-locale
+ os:deny-os-type
+ os:deny-platform
+ os:deny-version
+ path:default
+ path:allow-basename
+ path:allow-dirname
+ path:allow-extname
+ path:allow-is-absolute
+ path:allow-join
+ path:allow-normalize
+ path:allow-resolve
+ path:allow-resolve-directory
+ path:deny-basename
+ path:deny-dirname
+ path:deny-extname
+ path:deny-is-absolute
+ path:deny-join
+ path:deny-normalize
+ path:deny-resolve
+ path:deny-resolve-directory
+ process:allow-exit
+ process:allow-restart
+ process:deny-exit
+ process:deny-restart
+ resources:default
+ resources:allow-close
+ resources:deny-close
+ shell:allow-execute
+ shell:allow-kill
+ shell:allow-open
+ shell:allow-spawn
+ shell:allow-stdin-write
+ shell:deny-execute
+ shell:deny-kill
+ shell:deny-open
+ shell:deny-spawn
+ shell:deny-stdin-write
+ tray:default
+ tray:allow-get-by-id
+ tray:allow-new
+ tray:allow-remove-by-id
+ tray:allow-set-icon
+ tray:allow-set-icon-as-template
+ tray:allow-set-menu
+ tray:allow-set-show-menu-on-left-click
+ tray:allow-set-temp-dir-path
+ tray:allow-set-title
+ tray:allow-set-tooltip
+ tray:allow-set-visible
+ tray:deny-get-by-id
+ tray:deny-new
+ tray:deny-remove-by-id
+ tray:deny-set-icon
+ tray:deny-set-icon-as-template
+ tray:deny-set-menu
+ tray:deny-set-show-menu-on-left-click
+ tray:deny-set-temp-dir-path
+ tray:deny-set-title
+ tray:deny-set-tooltip
+ tray:deny-set-visible
+ webview:default
+ webview:allow-create-webview
+ webview:allow-create-webview-window
+ webview:allow-internal-toggle-devtools
+ webview:allow-print
+ webview:allow-reparent
+ webview:allow-set-webview-focus
+ webview:allow-set-webview-position
+ webview:allow-set-webview-size
+ webview:allow-set-webview-zoom
+ webview:allow-webview-close
+ webview:allow-webview-position
+ webview:allow-webview-size
+ webview:deny-create-webview
+ webview:deny-create-webview-window
+ webview:deny-internal-toggle-devtools
+ webview:deny-print
+ webview:deny-reparent
+ webview:deny-set-webview-focus
+ webview:deny-set-webview-position
+ webview:deny-set-webview-size
+ webview:deny-set-webview-zoom
+ webview:deny-webview-close
+ webview:deny-webview-position
+ webview:deny-webview-size
+ window:default
+ window:allow-available-monitors
+ window:allow-center
+ window:allow-close
+ window:allow-create
+ window:allow-current-monitor
+ window:allow-cursor-position
+ window:allow-destroy
+ window:allow-hide
+ window:allow-inner-position
+ window:allow-inner-size
+ window:allow-internal-toggle-maximize
+ window:allow-is-closable
+ window:allow-is-decorated
+ window:allow-is-focused
+ window:allow-is-fullscreen
+ window:allow-is-maximizable
+ window:allow-is-maximized
+ window:allow-is-minimizable
+ window:allow-is-minimized
+ window:allow-is-resizable
+ window:allow-is-visible
+ window:allow-maximize
+ window:allow-minimize
+ window:allow-outer-position
+ window:allow-outer-size
+ window:allow-primary-monitor
+ window:allow-request-user-attention
+ window:allow-scale-factor
+ window:allow-set-always-on-bottom
+ window:allow-set-always-on-top
+ window:allow-set-closable
+ window:allow-set-content-protected
+ window:allow-set-cursor-grab
+ window:allow-set-cursor-icon
+ window:allow-set-cursor-position
+ window:allow-set-cursor-visible
+ window:allow-set-decorations
+ window:allow-set-effects
+ window:allow-set-focus
+ window:allow-set-fullscreen
+ window:allow-set-icon
+ window:allow-set-ignore-cursor-events
+ window:allow-set-max-size
+ window:allow-set-maximizable
+ window:allow-set-min-size
+ window:allow-set-minimizable
+ window:allow-set-position
+ window:allow-set-progress-bar
+ window:allow-set-resizable
+ window:allow-set-shadow
+ window:allow-set-size
+ window:allow-set-skip-taskbar
+ window:allow-set-title
+ window:allow-set-visible-on-all-workspaces
+ window:allow-show
+ window:allow-start-dragging
+ window:allow-start-resize-dragging
+ window:allow-theme
+ window:allow-title
+ window:allow-toggle-maximize
+ window:allow-unmaximize
+ window:allow-unminimize
+ window:deny-available-monitors
+ window:deny-center
+ window:deny-close
+ window:deny-create
+ window:deny-current-monitor
+ window:deny-cursor-position
+ window:deny-destroy
+ window:deny-hide
+ window:deny-inner-position
+ window:deny-inner-size
+ window:deny-internal-toggle-maximize
+ window:deny-is-closable
+ window:deny-is-decorated
+ window:deny-is-focused
+ window:deny-is-fullscreen
+ window:deny-is-maximizable
+ window:deny-is-maximized
+ window:deny-is-minimizable
+ window:deny-is-minimized
+ window:deny-is-resizable
+ window:deny-is-visible
+ window:deny-maximize
+ window:deny-minimize
+ window:deny-outer-position
+ window:deny-outer-size
+ window:deny-primary-monitor
+ window:deny-request-user-attention
+ window:deny-scale-factor
+ window:deny-set-always-on-bottom
+ window:deny-set-always-on-top
+ window:deny-set-closable
+ window:deny-set-content-protected
+ window:deny-set-cursor-grab
+ window:deny-set-cursor-icon
+ window:deny-set-cursor-position
+ window:deny-set-cursor-visible
+ window:deny-set-decorations
+ window:deny-set-effects
+ window:deny-set-focus
+ window:deny-set-fullscreen
+ window:deny-set-icon
+ window:deny-set-ignore-cursor-events
+ window:deny-set-max-size
+ window:deny-set-maximizable
+ window:deny-set-min-size
+ window:deny-set-minimizable
+ window:deny-set-position
+ window:deny-set-progress-bar
+ window:deny-set-resizable
+ window:deny-set-shadow
+ window:deny-set-size
+ window:deny-set-skip-taskbar
+ window:deny-set-title
+ window:deny-set-visible-on-all-workspaces
+ window:deny-show
+ window:deny-start-dragging
+ window:deny-start-resize-dragging
+ window:deny-theme
+ window:deny-title
+ window:deny-toggle-maximize
+ window:deny-unmaximize
+ window:deny-unminimize

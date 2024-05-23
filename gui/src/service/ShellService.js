@@ -2,6 +2,7 @@ import { Command, Child, open } from '@tauri-apps/plugin-shell';
 import { invoke } from '@tauri-apps/api/core';
 import { resourceDir, appLogDir, appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/plugin-os';
+import { readTextFileLines, BaseDirectory } from '@tauri-apps/plugin-fs';
 import PipyProxyService from '@/service/PipyProxyService';
 import { relaunch } from "@tauri-apps/plugin-process";
 import store from "@/store";
@@ -15,6 +16,22 @@ export default class ShellService {
 	async openFinder() {
 		const appDataDirPath = await resourceDir();
 		open(appDataDirPath)
+	}
+	async loadLog() {
+		const pm = await platform();
+		if(pm == "android"){
+			const resourceDirPath = await resourceDir();
+			const lines = await readTextFileLines('ztm.log', { baseDir: BaseDirectory.Resource });
+			const logs = []
+			for await (const line of lines) {
+				if(line.indexOf("[INF]")>=0){
+					logs.push({level:'Info',msg:line});
+				} else {
+					logs.push({level:'Error',msg:line});
+				}
+			}
+			store.commit('account/setLogs', logs);
+		}
 	}
 	async takePipyVersion (apiGet) {
 		const pm = await platform();
