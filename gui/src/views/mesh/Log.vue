@@ -126,14 +126,6 @@ const filters = ref({
     type: { value: null, matchMode: FilterMatchMode.EQUALS }
 });
 
-const selectedCities = ref();
-const cities = ref([
-    { name: 'New York', code: 'NY' },
-    { name: 'Rome', code: 'RM' },
-    { name: 'London', code: 'LDN' },
-    { name: 'Istanbul', code: 'IST' },
-    { name: 'Paris', code: 'PRS' }
-]);
 </script>
 
 <template>
@@ -142,7 +134,7 @@ const cities = ref([
 			<InputGroup class="search-bar" >
 				<Button icon="pi pi-chart-scatter" />
 				<MultiSelect  v-model="selectEndpoints" @change="mergeLogs" :options="endpoints" optionLabel="name" optionValue="id" :filter="endpoints.length>8" placeholder="Endpoints"
-				            :maxSelectedLabels="3" style="max-width: 200px;" />
+				            :maxSelectedLabels="2" style="max-width: 200px;" />
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keyword" rows="1" cols="30" />
 				<Button :disabled="!typing" icon="pi pi-search"/>
 			</InputGroup>
