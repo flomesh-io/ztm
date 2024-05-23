@@ -9,6 +9,7 @@
     "build": "vite build --emptyOutDir --outDir ../agent/gui",
     "preview": "vite preview --outDir ../agent/gui",
     "tauri": "tauri",
+		"android-init": "tauri android init && cp -rf ./src-android/app ./src-tauri/gen/android",
     "ca": "../bin/ztm run ca --listen=127.0.0.1:9999",
     "hub": "../bin/ztm run hub --listen=127.0.0.1:8888",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
