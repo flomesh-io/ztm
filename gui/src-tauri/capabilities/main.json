@@ -23,7 +23,7 @@
       "identifier": "shell:allow-spawn",
       "allow": [
         {
-          "name": "bin/ztm",
+          "name": "bin/cli",
           "args": [
             {
               "validator": ".+"

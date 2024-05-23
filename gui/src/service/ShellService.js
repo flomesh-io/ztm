@@ -21,7 +21,7 @@ export default class ShellService {
 		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
 		if(pm != "android"){
-			let command = await Command.sidecar("bin/ztm", ['version','--json','','','','']);
+			let command = await Command.sidecar("bin/cli", ['version','--json','','','','']);
 			await command.spawn();
 			command.stdout.on('data', line => {
 				console.log(line)
@@ -59,7 +59,7 @@ export default class ShellService {
 			
 			await this.pausePipy(port);
 			console.log(`[starting pipy:${args}]`);
-			const command = Command.sidecar("bin/ztm", args);
+			const command = Command.sidecar("bin/cli", args);
 			command.on('close', data => {
 				console.log("[close]");
 				console.log(data);
