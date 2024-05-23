@@ -1,7 +1,7 @@
 {
-  "productName": "ZTMApp",
+  "productName": "ZTM",
   "version": "0.0.3",
-  "identifier": "com.ztm.ztmapp",
+  "identifier": "com.flomesh.ztm",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -29,7 +29,7 @@
     "active": true,
     "targets": "all",
     "resources": [],
-    "externalBin": ["bin/ztm"],
+    "externalBin": ["bin/cli"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
