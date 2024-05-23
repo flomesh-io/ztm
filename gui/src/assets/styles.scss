@@ -366,12 +366,15 @@ pre.app-code code{
 	
 	border-color: var(--primary-color) !important;
 }
-
-.search-bar .p-select{
+.search-bar .p-select,.search-bar .p-multiselect{
 	background-color: var(--primary-color) !important;
+	
 	border: none;
 }
-.search-bar .p-select .p-select-label{
+.search-bar .p-button{
+	height: 36px !important;
+}
+.search-bar .p-select .p-select-label,.search-bar .p-multiselect .p-multiselect-label{
 	color:#fff;
 	font-weight: bold;
 }
@@ -383,7 +386,7 @@ pre.app-code code{
 	padding-bottom: 0;
 	padding-top: 0;
 }
-.search-bar .p-select .p-select-trigger{
+.search-bar .p-select .p-select-trigger,.search-bar .p-multiselect-dropdown{
 	color:#fff;
 }
 .disabled{

@@ -125,21 +125,29 @@ const statuses = ref(['error','warn','info'])
 const filters = ref({
     type: { value: null, matchMode: FilterMatchMode.EQUALS }
 });
+
+const selectedCities = ref();
+const cities = ref([
+    { name: 'New York', code: 'NY' },
+    { name: 'Rome', code: 'RM' },
+    { name: 'London', code: 'LDN' },
+    { name: 'Istanbul', code: 'IST' },
+    { name: 'Paris', code: 'PRS' }
+]);
 </script>
 
 <template>
 	<Card class="nopd ml-3 mr-3 mt-3">
 		<template #content>
 			<InputGroup class="search-bar" >
-				<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
+				<Button icon="pi pi-chart-scatter" />
+				<MultiSelect  v-model="selectEndpoints" @change="mergeLogs" :options="endpoints" optionLabel="name" optionValue="id" :filter="endpoints.length>8" placeholder="Endpoints"
+				            :maxSelectedLabels="3" style="max-width: 200px;" />
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keyword" rows="1" cols="30" />
+				<Button :disabled="!typing" icon="pi pi-search"/>
 			</InputGroup>
 		</template>
 	</Card>
-	<div v-if="!!endpoints && endpoints.length>0" class="mt-3 flex  justify-content-center align-content-center">
-		<Label class="px-3" style="padding-top: 10px;"><b>Endpoints:</b></Label>
-		<SelectButton class="small" @change="mergeLogs" v-model="selectEndpoints" :options="endpoints" optionLabel="name" optionValue="id" multiple aria-labelledby="multiple" />
-	</div>
 	<Loading v-if="loading"/>
 	<div v-else-if="logsFilter && logsFilter.length >0" class="text-center">
 		<div class="grid text-left px-5 py-5" >
