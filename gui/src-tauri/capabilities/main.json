@@ -154,6 +154,16 @@
     "os:allow-os-type",
     "os:allow-version",
     "os:allow-platform",
-    "os:allow-hostname"
+    "os:allow-hostname",
+    "fs:allow-app-read",
+    "fs:allow-app-read-recursive",
+    "fs:allow-appcache-read",
+    "fs:allow-appcache-read-recursive",
+    "fs:allow-resource-meta",
+    "fs:allow-resource-meta-recursive",
+    "fs:allow-resource-read",
+    "fs:allow-resource-read-recursive",
+    "fs:allow-resource-write",
+    "fs:allow-resource-write-recursive"
   ]
 }
