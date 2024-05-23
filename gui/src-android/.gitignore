@@ -1,1 +1,3 @@
 ztm.keystore
+/app/src/main/assets/libc++_shared.so
+/app/src/main/assets/libztm.so
