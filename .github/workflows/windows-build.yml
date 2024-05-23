@@ -24,7 +24,7 @@ jobs:
     - name: build ztm
       run: |
         ./build.cmd
-        copy ./bin/ztm.exe './gui/src-tauri/bin/ztm-x86_64-pc-windows-msvc.exe'
+        copy ./bin/ztm.exe './gui/src-tauri/bin/cli-x86_64-pc-windows-msvc.exe'
     - name: build app
       run: |
         cd gui
@@ -33,4 +33,4 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: release
-        path: ./gui/src-tauri/target/release/bundle/nsis/ZTMApp_0.0.3_x64-setup.exe
+        path: ./gui/src-tauri/target/release/bundle/nsis/ZTM_0.0.3_x64-setup.exe
