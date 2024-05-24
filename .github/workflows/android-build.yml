@@ -47,17 +47,18 @@ jobs:
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
         NODE_OPTIONS="--max-old-space-size=4096" yarn tauri android build
-        
-    - name: Sign apk
+    - name: Decode keystore
       run: |
         echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > ./my-release-key.jks
-        jarsigner -verbose -keystore ./my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
+    - name: Sign apk
+      run: |
+        jarsigner -verbose -keystore ./my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
 
     - name: Align apk
       run: |
-        ${ANDROID_HOME}/build-tools/30.0.3/zipalign -v 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release.apk
-
+        ls ${ANDROID_HOME}/build-tools
+        ${ANDROID_HOME}/build-tools/30.0.3/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-release.apk
     - uses: actions/upload-artifact@v2
       with:
         name: release
-        path: ./gui/src-tauri/gen/android/app/universal/release/app-universal-release.apk
+        path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-release.apk
