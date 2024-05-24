@@ -40,8 +40,7 @@ jobs:
         cd gui
         export JAVA_HOME='/Users/runner/hostedtoolcache/Java_Oracle_jdk/17.0.10/arm64/Contents/Home'
         export ANDROID_HOME='/Users/runner/Library/Android/sdk'
-        ls -1 $ANDROID_HOME/ndk
-        export NDK_HOME='$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)'
+        export NDK_HOME='$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)'
         export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
         yarn install
         yarn android-init
