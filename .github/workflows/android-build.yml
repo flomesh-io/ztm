@@ -1,32 +1,36 @@
-# This is a basic workflow that is manually triggered
-
 name: android-build
 
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
-on:
-  workflow_dispatch:
-    # Inputs the workflow accepts.
-    inputs:
-      name:
-        # Friendly description to be shown in the UI instead of 'name'
-        description: 'Person to greet'
-        # Default value if no value is explicitly provided
-        default: 'World'
-        # Input has to be provided for the workflow to run
-        required: true
-        # The data type of the input
-        type: string
+on: workflow_dispatch
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
-  greet:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  build:
+    runs-on: macos-latest
     steps:
-    # Runs a single command using the runners shell
-    - name: Send greeting
-      run: echo "Hello ${{ inputs.name }}"
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+    - name: build ztm
+      run: |
+        cd gui
+        yarn download-ztm-android
+    - name: build apk
+      run: |
+        cd gui
+        yarn android-init
+        yarn tauri android build
+        NODE_OPTIONS="--max-old-space-size=4096" yarn tauri build
+        
+    - name: Sign apk
+      run: |
+        echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > app/my-release-key.jks
+        jarsigner -verbose -keystore app/my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
+
+    - name: Align apk
+      run: |
+        ${ANDROID_HOME}/build-tools/30.0.3/zipalign -v 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release.apk
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: release
+        path: ./gui/src-tauri/gen/android/app/universal/release/app-universal-release.apk
