@@ -21,7 +21,7 @@ jobs:
       uses: nttld/setup-ndk@v1.5.0
       with:
         # Exact version to use
-        ndk-version: '26.3.11579264'
+        ndk-version: r26d
         # Add installed NDK to the Android SDK
         link-to-sdk: true
     - name: Setup Rustup Target
