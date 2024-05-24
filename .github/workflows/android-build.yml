@@ -50,8 +50,8 @@ jobs:
         
     - name: Sign apk
       run: |
-        echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > app/my-release-key.jks
-        jarsigner -verbose -keystore app/my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
+        echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > ./my-release-key.jks
+        jarsigner -verbose -keystore ./my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} app/build/outputs/apk/release/app-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
 
     - name: Align apk
       run: |
