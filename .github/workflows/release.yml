@@ -80,34 +80,34 @@ jobs:
           name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
           path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
 
-  build-ztm-cli-linux-arm64:
-    needs: set-release-version
-    name: build-ztm-cli-linux-arm64
-    runs-on: [self-hosted, linux, ARM64]
-    steps:
-      - uses: actions/checkout@v4
+  # build-ztm-cli-linux-arm64:
+  #   needs: set-release-version
+  #   name: build-ztm-cli-linux-arm64
+  #   runs-on: [self-hosted, linux, ARM64]
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
 
-      - name: Build
-        id: build
-        env:
-          RELEASE_VERSION: ${{ needs.set-release-version.outputs.release_version }}
-          ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
-          ZTM_COMMIT_SHA: ${{needs.set-release-version.outputs.commit_sha}}
-          ZTM_COMMIT_DATE: ${{needs.set-release-version.outputs.commit_date}}
-        run: |
-          set -x
-          ./build.sh
-          ls -al
+  #     - name: Build
+  #       id: build
+  #       env:
+  #         RELEASE_VERSION: ${{ needs.set-release-version.outputs.release_version }}
+  #         ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
+  #         ZTM_COMMIT_SHA: ${{needs.set-release-version.outputs.commit_sha}}
+  #         ZTM_COMMIT_DATE: ${{needs.set-release-version.outputs.commit_date}}
+  #       run: |
+  #         set -x
+  #         ./build.sh
+  #         ls -al
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
-          path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
+  #     - name: Upload artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
+  #         path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
 
   build-ztm-cli-macos-x64:
     needs: set-release-version
@@ -260,7 +260,6 @@ jobs:
     needs:
       - set-release-version
       - build-ztm-cli-linux-x86_64
-      - build-ztm-cli-linux-arm64
       - build-ztm-cli-macos-x64
       - build-ztm-cli-macos-arm64
       - build-ztm-cli-win-x64
@@ -284,7 +283,6 @@ jobs:
           tag_name: ${{needs.set-release-version.outputs.release_version}}
           files: |
             ztm-cli-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz
-            ztm-cli-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz
             ztm-cli-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
             ztm-cli-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
             ztm-cli-${{env.ZTM_VERSION}}-win-x64.zip/ztm-cli-${{env.ZTM_VERSION}}-win-x64.zip
