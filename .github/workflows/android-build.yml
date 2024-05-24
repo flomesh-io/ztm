@@ -52,7 +52,9 @@ jobs:
         echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > ./my-release-key.jks
     - name: Sign apk
       run: |
-        jarsigner -verbose -keystore ./my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ${{ secrets.KEY_ALIAS }}
+        echo ${{ secrets.KEYSTORE_BASE64 }}
+        echo ${{ secrets.KEY_ALIAS }}
+        jarsigner -verbose -keystore ./my-release-key.jks -storepass ${{ secrets.KEYSTORE_PASSWORD }} -keypass ${{ secrets.KEY_PASSWORD }} ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk "${{ secrets.KEY_ALIAS }}"
 
     - name: Align apk
       run: |
