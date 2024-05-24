@@ -35,34 +35,39 @@ ZTM is written in ***PipyJS***, a JavaScript dialect designed for [***Pipy***](h
 
 The easiest way to get started is download the latest binary release of ZTM from our [release page](https://github.com/flomesh-io/ztm/releases). If you prefer to have your own build from the source, you can follow the instructions in [Build](docs/Build.md).
 
+> The official build releases of ZTM come in two forms of packaging: the CLI tool as a SEA (Single Executable Application), and the desktop application that wraps up the CLI tool and provides a GUI for desktop environments.
+>
+> In this guide, we'll be only utilizing the CLI for setting up a simple mesh. For more guides, including the usage of the desktop app, please check out our [Wiki](https://github.com/flomesh-io/ztm/wiki).
+
 ### Setup
 
-A common setup consists of 3 nodes: 1 node running the *CA* and a *hub*, the other 2 nodes running two *agents* who are to communicate with each other.
+A common setup consists of 3 nodes: 1 node running the *CA* and a *hub*, the other 2 nodes running two *agents* who wish to communicate with each other.
 
 ```
-                       Data Center
-               +------------------------+
-               |          CA            |
-               | (state in ~/ztm-ca.db) |
-               +------------------------+
+                      Data Center
+        +------------------------------------+
+        |                 CA                 |
+        |         (state in ~/ztm-ca.db)     |
+        +------------------------------------+
                       HTTP | Port 9999
                            |
-               +------------------------+
-               |          Hub           |
-               |      (stateless)       |
-               +------------------------+
-             HTTPS /   Port 8888   \ HTTPS
-  ----------------/-----------------\----------------
-                 /      Firewall     \
-  --------------/---------------------\--------------
-               /                       \
-              /        Internet         \
-             /                           \
-  -------------------------|-------------------------
-          Firewall         |        Firewall
-  -------------------------|-------------------------
-            |              |               |
-            |              |               |
+        +------------------------------------+
+        |                 Hub                |
+        |             (stateless)            |
+        +------------------------------------+
+      HTTPS | Port 8888            HTTPS | Port 8888
+            |                            |
+  ----------|----------------------------|-----------
+            |           Firewall         |
+  ----------|----------------------------|-----------
+            |                            |
+            |           Internet         |
+            |                            |
+  -----------------------  |  -----------------------
+        Firewall           |          Firewall
+  -----------------------  |  -----------------------
+            |              |             |
+            |              |             |
   +---------------------+  |  +---------------------+
   |    Agent @ Home     |  |  |  Agent @ Workplace  |
   | (state in ~/ztm.db) |  |  | (state in ~/ztm.db) |
@@ -71,81 +76,121 @@ A common setup consists of 3 nodes: 1 node running the *CA* and a *hub*, the oth
 
 ```
 
-> We'll only cover the setup of CA and hubs on Linux, since that's where they are usually run - a cloud-hosted Linux virtual machine. Although technically, one can also run CA and hubs in a Windows box, it can be relatively less convenient due to lack of a few handy tools such as `curl`.
->
-> For setup of endpoints, on the other hand, we mainly operate via the browser interface, so the procedure is consistant among different OSes.
+> We'll only cover the setup of CA and hubs on Linux, since that's where they are usually run - a cloud-hosted Linux virtual machine.
 
 #### Setup CA (Certificate Authority)
 
 Start the CA service:
 
 ```sh
-pipy repo://ztm/ca
+ztm start ca
 ```
 
 > The default listening port is `127.0.0.1:9999`. The default location of database is `~/ztm-ca.db`. These settings can be changed by command-line options:
 >
 > ```sh
-> pipy repo://ztm/ca --args --listen=127.0.0.1:1234 --database=~/my-data.db
-> ```
-
-Now a CA certificate is already generated and stored in the database. Retreive the CA certificate and save it to a file for later use:
-
-```sh
-curl http://localhost:9999/api/certificates/ca | tee ca.crt
-```
-
-We also need at least one *user certificate* in order to allow an endpoint onboard our mesh. Let's generate a certificate and the private key for user `root` and save them in files:
-
-```sh
-curl http://localhost:9999/api/certificates/root -X POST | tee root.key
-curl http://localhost:9999/api/certificates/root | tee root.crt
-```
-
-> The private key for a user certificate is only returned once as the certificate is generated. If you lose the key by accident, there's no way to find it back with the CA service. You'll have to delete that user certificate and generate a new one in the same way as above.
->
-> If you want to delete the certificate for user `root`, you can do:
->
-> ```sh
-> curl http://localhost:9999/api/certificates/root -X DELETE
+> ztm start ca --listen 127.0.0.1:1234 --database ~/my-data.db
 > ```
 
 #### Setup Hubs
 
-After the CA service is up and running, start a hub pointing to the CA service:
+After the CA service is up and running, start a hub service by typing:
 
 ```sh
-pipy repo://ztm/hub --args --ca=localhost:9999
+ztm start hub
 ```
 
 > Like the CA service, you can use `--listen` option for a custom listening port other than the default `0.0.0.0:8888`:
 >
 > ```sh
-> pipy repo://ztm/hub --args --ca=localhost:9999 --listen=0.0.0.0:1234
+> ztm start hub --listen 0.0.0.0:1234
+> ```
+
+#### Create Users
+
+We need at least one *user* in order to allow any endpoints onboard our mesh. Let's create a `root` user, who is defined by name as the administrator to our mesh:
+
+```sh
+ztm invite root --bootstrap x.x.x.x:8888 > permit.json # Where x.x.x.x is the public IP address of your hub
+```
+
+> The generated `permit.json` includes the private key for the user. The private key is NOT stored by ZTM for security concerns. It is your responsibility to keep it safe. If you lose the key by accident, there's no way to find it back with ZTM. You'll have to delete that user and create it again.
+>
+> To delete the user `root`, you can do:
+>
+> ```sh
+> ztm evict root
 > ```
 
 #### Setup Endpoints
 
-Now that we've set up all the foundation (most likely in the cloud), we can go on and add as many endpoints as we like to the mesh.
+Now that we've set up all the foundation (most likely in the cloud), we can go on and add as many endpoints as we like to the mesh by using the generated file `permit.json`.
 
 First, start an agent on an endpoint computer that is going to join our mesh:
 
 ```sh
-pipy repo://ztm/agent
+ztm start agent
 ```
+
+> On Windows, starting as a system service isn't supported yet. You'll have to do `ztm run agent` instead.
 
 > The default listening port is `127.0.0.1:7777`. The default location of database is `~/ztm.db`. These settings can be changed by command-line options:
 >
 > ```sh
-> pipy repo://ztm/agent --args --listen=127.0.0.1:1234 --database=~/my-data.db
+> ztm start agent --listen 127.0.0.1:1234 --database ~/my-data.db
 > ```
 
 Once the agent is up and running, open your browser and point it to `http://localhost:7777`.
 
-The first thing we do with the web interface is *joining the mesh*. Follow the instructions on screen to do that. The main information you provide while joining a mesh is the *address of the hub*. You'll also need 3 identify files during the process: the *CA certificate*, the *user certificate* and the user's *private key*, which we've already saved from above in files `ca.crt`, `root.crt` and `root.key` respectively.
+The first thing we do with the web interface is *joining the mesh*. As long as you have the generated `permit.json` file in hand, it's pretty straightfoward to do that just by following the instructions on screen. The main information you provide while joining a mesh is a *mesh name* of your choice and an *endpoint name* that would be seen by other endpoints in the same mesh, along with the file `permit.json`.
 
 Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via browser from any of the endpoints. Some day-to-day things include:
 
 - List endpoints and services in the mesh
 - Create services on any endpoint
 - Map ports on any endpoint to services on other endpoints
+
+You can also join a mesh on any endpoint running the ZTM agent by using the CLI tool:
+
+``` sh
+ztm join my-awesome-mesh --as my-awesome-endpoint --permit permit.json
+```
+
+#### CLI Commands Summary
+
+Here's a recap of what CLI commands you need to do on each computer node.
+
+```
+                       Cloud-hosted VM
+  +---------------------------------------------------------+
+  | ztm start ca                                            |
+  | ztm start hub                                           | ---+
+  | ztm invite root --bootstrap x.x.x.x:8888 > permit.json  |    |
+  +---------------------------------------------------------+    |
+              |          x.x.x.x:8888          |                 |
+  ------------|--------------------------------|-------------    |
+              |            Firewall            |                 |
+  ------------|--------------------------------|-------------    |
+              |                                |                 |
+              |            Internet            |                 | permit.json
+              |                                |                 |
+  --------------------------   |   --------------------------    |
+           Firewall            |            Firewall             |
+  --------------------------   |   --------------------------    |
+              |                |               |                 |
+              |                |               |                 |
+  +------------------------+   |   +------------------------+    |
+  | ztm start agent        |   |   | ztm start agent        |    |
+  | ztm join my-mesh \     |   |   | ztm join my-mesh \     | <--+
+  |   --as home \          |   |   |   --as home \          |
+  |   --permit permit.json |   |   |   --permit permit.json |
+  +------------------------+   |   +------------------------+
+           PC @ Home           |         PC @ Workplace
+
+```
+
+For more information on the CLI, please refer to:
+
+```sh
+ztm help
+```
