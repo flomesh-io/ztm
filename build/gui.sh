@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ZTM_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 

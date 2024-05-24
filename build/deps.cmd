@@ -17,7 +17,12 @@ CMD /c "npm install --no-audit"
 
 CD "%cur_dir%"
 
+if defined ZTM_VERSION (
+set VERSION=%ZTM_VERSION%
+) else (
 FOR /f %%i IN ('git describe --abbrev^=0 --tags') DO SET VERSION=%%i
+)
+
 FOR /f %%i IN ('git log -1 --format^=%%H') DO SET COMMIT=%%i
 FOR /f "eol= tokens=* delims=" %%i IN ('"git log -1 --format=%%cD"') DO SET COMMIT_DATE=%%i
 
