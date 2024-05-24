@@ -182,7 +182,7 @@ Here's a recap of what CLI commands you need to do on each computer node.
   +------------------------+   |   +------------------------+    |
   | ztm start agent        |   |   | ztm start agent        |    |
   | ztm join my-mesh \     |   |   | ztm join my-mesh \     | <--+
-  |   --as home \          |   |   |   --as home \          |
+  |   --as home \          |   |   |   --as workplace \     |
   |   --permit permit.json |   |   |   --permit permit.json |
   +------------------------+   |   +------------------------+
            PC @ Home           |         PC @ Workplace
