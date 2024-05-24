@@ -43,7 +43,7 @@ jobs:
         export ANDROID_HOME='/Users/runner/Library/Android/sdk'
         echo $ANDROID_HOME
         ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename
-        export NDK_HOME='$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)'
+        export NDK_HOME="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
         echo $NDK_HOME
         export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
         echo $OPENSSL_DIR
