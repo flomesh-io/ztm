@@ -21,7 +21,7 @@
     "download-ztm-macos": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/pipy-nightly/aarch64/binary/pipy-nightly-202404011409-macos-aarch64.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/bin/pipy ../src-tauri/bin/cli-aarch64-apple-darwin",
     "download-ztm-windows": "mkdir -p download && cd download && curl -o pipy.zip https://pipy-oss-1255617643.cos.accelerate.myqcloud.com/repo/pipy-repo-nightly/win32/binary/pipy-repo-nightly-202404011409-win32-x86_64.zip && unzip pipy.zip && copy pipy.exe ../src-tauri/bin/cli-x86_64-pc-windows-msvc.exe",
     "download-ztm-linux": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos-website.ap-beijing.myqcloud.com/repo/pipy-nightly/x86_64/binary/pipy-nightly-202404011409-generic_linux-x86_64.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/bin/pipy ../src-tauri/bin/cli-x86_64-unknown-linux-gnu",
-    "download-ztm-android": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos-website.ap-beijing.myqcloud.com/repo/pipy-nightly/arm64-v8a/binary/pipy-nightly-202405110426-android-arm64_v8a.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/bin/pipy ../src-tauri/bin/cli-aarch64-linux-android"
+    "download-ztm-android": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/ztm/arm64-v8a/library/libztm.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/lib/libztm.so ../src-android/app/src/main/assets/libztm.so && cp -f ./usr/local/lib/libc++_shared.so ../src-android/app/src/main/assets/libc++_shared.so"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0-beta.11",
