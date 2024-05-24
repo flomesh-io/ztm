@@ -10,6 +10,23 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4.2.1
+      with:
+        java-version: '17.0.10'
+
+    - name: Setup Android SDK
+      uses: Swisyn/setup-android-sdk@v1
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1.5.0
+      with:
+        # Exact version to use
+        ndk-version: '27.0.11718014'
+        # Add installed NDK to the Android SDK
+        link-to-sdk: true
+    - name: Setup Rustup Target
+      run: |
+        rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
     - name: build ztm
       run: |
         cd gui
@@ -17,6 +34,7 @@ jobs:
     - name: build apk
       run: |
         cd gui
+        export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
         yarn android-init
         yarn tauri android build
         NODE_OPTIONS="--max-old-space-size=4096" yarn tauri build
