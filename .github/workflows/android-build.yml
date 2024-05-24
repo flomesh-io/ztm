@@ -35,6 +35,7 @@ jobs:
       run: |
         cd gui
         export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
+        yarn install
         yarn android-init
         yarn tauri android build
         NODE_OPTIONS="--max-old-space-size=4096" yarn tauri build
