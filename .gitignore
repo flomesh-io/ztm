@@ -5,3 +5,5 @@ bin/
 cli/version.json
 agent/version.json
 agent/gui
+version.env
+usr/

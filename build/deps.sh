@@ -1,6 +1,21 @@
-#!/bin/sh
+#!/bin/bash
 
 ZTM_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+
+check_version() {
+  if [ `printf '%s\n%s' $1 $2 | sort -V | head -n1` = $1 ]; then
+    echo $3
+    exit 1
+  fi
+}
+
+if ! command -v node &> /dev/null
+then
+  echo "Can't find node command, exit..."
+  exit 1
+fi
+
+check_version `node -v` 'v16' 'Require Node.js version 16 or above'
 
 cd "$ZTM_DIR"
 git submodule update --init
@@ -10,7 +25,6 @@ if [ $? -ne 0 ]; then
 fi
 
 cd "$ZTM_DIR/pipy"
-rm -f build/deps/codebases.tar.gz.h
 npm install --no-audit
 
 cd "$ZTM_DIR/gui"
@@ -18,15 +32,14 @@ npm install --no-audit
 
 cd "$ZTM_DIR"
 
-if [ -n "$CI_COMMIT_SHA" ]; then
-  VERSION="$CI_COMMIT_TAG"
-  COMMIT="$CI_COMMIT_SHA"
-  COMMIT_DATE="$CI_COMMIT_DATE"
+if [ -n "$ZTM_VERSION" ]; then
+  VERSION="$ZTM_VERSION"
 else
   VERSION=`git describe --abbrev=0 --tags`
-  COMMIT=`git log -1 --format=%H`
-  COMMIT_DATE=`git log -1 --format=%cD`
 fi
+
+COMMIT=`git log -1 --format=%H`
+COMMIT_DATE=`git log -1 --format=%cD`
 
 VERSION_JSON="{
   \"version\": \"$VERSION\",
@@ -36,3 +49,7 @@ VERSION_JSON="{
 
 echo "$VERSION_JSON" > cli/version.json
 echo "$VERSION_JSON" > agent/version.json
+
+echo "VERSION=\"$VERSION\"" > version.env
+echo "COMMIT=\"$COMMIT\"" >> version.env
+echo "COMMIT_DATE=\"$COMMIT_DATE\"" >> version.env
