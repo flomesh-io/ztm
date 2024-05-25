@@ -28,21 +28,27 @@ jobs:
         ndk-version: r26d
         # Add installed NDK to the Android SDK
         link-to-sdk: true
+    - uses: seanmiddleditch/gha-setup-ninja@v4
+      id: setup-ninja
+      with:
+        version: 1.11.1
     - name: Setup Rustup Target
       run: |
         rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-    - name: build ztm
+    - name: Setup Path
       run: |
-        cd gui
-        yarn download-ztm-android
-    - name: build apk
-      run: |
-        cd gui
         export JAVA_HOME='/Users/runner/hostedtoolcache/Java_Oracle_jdk/17.0.10/arm64/Contents/Home'
         export ANDROID_HOME='/Users/runner/Library/Android/sdk'
         export NDK_HOME="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
+        export NDK="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
         export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
-        echo $OPENSSL_DIR
+    - name: Build ztm
+      run: |
+        cd gui
+        yarn build-ztm-android
+    - name: Build apk
+      run: |
+        cd gui
         yarn install
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
