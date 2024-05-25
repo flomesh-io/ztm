@@ -51,9 +51,9 @@ jobs:
       commit_date: ${{steps.version.outputs.commit_date}}
       commit_sha: ${{steps.version.outputs.commit_sha}}
 
-  build-ztm-cli-linux-x86_64:
+  build-ztm-aio-linux-x86_64:
     needs: set-release-version
-    name: build-ztm-cli-linux-x86_64
+    name: build-ztm-aio-linux-x86_64
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -77,12 +77,12 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
-          path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
 
-  # build-ztm-cli-linux-arm64:
+  # build-ztm-aio-linux-arm64:
   #   needs: set-release-version
-  #   name: build-ztm-cli-linux-arm64
+  #   name: build-ztm-aio-linux-arm64
   #   runs-on: [self-hosted, linux, ARM64]
   #   steps:
   #     - uses: actions/checkout@v4
@@ -106,12 +106,12 @@ jobs:
   #     - name: Upload artifacts
   #       uses: actions/upload-artifact@v4
   #       with:
-  #         name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
-  #         path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
+  #         name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
+  #         path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
 
-  build-ztm-cli-macos-x64:
+  build-ztm-aio-macos-x86_64:
     needs: set-release-version
-    name: build-ztm-cli-macos-x64
+    name: build-ztm-aio-macos-x86_64
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
@@ -136,12 +136,12 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-macos-x86_64.tar.gz
-          path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-macos-x86_64.tar.gz
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-macos-x86_64.tar.gz
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-macos-x86_64.tar.gz
 
-  build-ztm-cli-macos-arm64:
+  build-ztm-aio-macos-arm64:
     needs: set-release-version
-    name: build-ztm-cli-macos-arm64
+    name: build-ztm-aio-macos-arm64
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -166,12 +166,12 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-macos-arm64.tar.gz
-          path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-macos-arm64.tar.gz
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-macos-arm64.tar.gz
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-macos-arm64.tar.gz
 
-  build-ztm-cli-win-x64:
+  build-ztm-aio-win-x86_64:
     needs: set-release-version
-    name: build-ztm-cli-win-x64
+    name: build-ztm-aio-win-x86_64
     runs-on: windows-latest
     defaults:
       run:
@@ -210,8 +210,8 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ztm-cli-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
-          path: ztm-cli-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
 
   build-libztm-android:
     needs: set-release-version
@@ -259,10 +259,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - set-release-version
-      - build-ztm-cli-linux-x86_64
-      - build-ztm-cli-macos-x64
-      - build-ztm-cli-macos-arm64
-      - build-ztm-cli-win-x64
+      - build-ztm-aio-linux-x86_64
+      - build-ztm-aio-macos-x86_64
+      - build-ztm-aio-macos-arm64
+      - build-ztm-aio-win-x86_64
       - build-libztm-android
     env:
       ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
@@ -282,8 +282,8 @@ jobs:
           draft: true
           tag_name: ${{needs.set-release-version.outputs.release_version}}
           files: |
-            ztm-cli-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz
-            ztm-cli-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
-            ztm-cli-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
-            ztm-cli-${{env.ZTM_VERSION}}-win-x86_64.zip/ztm-cli-${{env.ZTM_VERSION}}-win-x86_64.zip
+            ztm-aio-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz
+            ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
+            ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
+            ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip/ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip
             libztm-${{env.ZTM_VERSION}}-android.tar.gz/libztm-${{env.ZTM_VERSION}}-android.tar.gz
