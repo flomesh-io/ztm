@@ -285,5 +285,5 @@ jobs:
             ztm-cli-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz
             ztm-cli-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
             ztm-cli-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-cli-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
-            ztm-cli-${{env.ZTM_VERSION}}-win-x64.zip/ztm-cli-${{env.ZTM_VERSION}}-win-x64.zip
-            lib-ztm-${{env.ZTM_VERSION}}-android.tar.gz/libztm-${{env.ZTM_VERSION}}-android.tar.gz
+            ztm-cli-${{env.ZTM_VERSION}}-win-x86_64.zip/ztm-cli-${{env.ZTM_VERSION}}-win-x86_64.zip
+            libztm-${{env.ZTM_VERSION}}-android.tar.gz/libztm-${{env.ZTM_VERSION}}-android.tar.gz
