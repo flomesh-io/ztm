@@ -36,8 +36,8 @@ jobs:
     - name: Build ztm
       run: |
         cd gui
-        ls /usr/lib/jvm/adoptopenjdk-17-amd64
-        export JAVA_HOME='/usr/lib/jvm/adoptopenjdk-17-amd64'
+        ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7
+        export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         ls /opt/android-sdk
         export ANDROID_HOME='/opt/android-sdk'
         ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename
@@ -46,7 +46,7 @@ jobs:
     - name: Build apk
       run: |
         cd gui
-        export JAVA_HOME='/usr/lib/jvm/adoptopenjdk-17-amd64'
+        export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/opt/android-sdk'
         export NDK_HOME="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
         yarn install
