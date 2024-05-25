@@ -107,7 +107,7 @@ then
 
   if [ -z "$BUILD_ZTM_SHARED" ]
   then
-    tar zcvf ztm-cli-${VERSION}-${OS_NAME}-${OS_ARCH}.tar.gz bin/ztm
+    tar zcvf ztm-aio-${VERSION}-${OS_NAME}-${OS_ARCH}.tar.gz bin/ztm
   else
     tar zcvf libztm-${VERSION}-android.tar.gz usr/local/lib/*.so
   fi
