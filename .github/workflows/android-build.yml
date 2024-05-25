@@ -4,11 +4,7 @@ on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: macos-latest
-    
-    env:
-      ACTIONS_RUNNER_DEBUG: true
-      ACTIONS_STEP_DEBUG: true
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
@@ -18,7 +14,7 @@ jobs:
       uses: actions/setup-java@v4.2.1
       with:
         java-version: '17.0.10'
-        distribution: oracle
+        distribution: adopt
     - name: Setup Android SDK
       uses: Swisyn/setup-android-sdk@v1
     - name: Setup Android NDK
@@ -28,27 +24,25 @@ jobs:
         ndk-version: r26d
         # Add installed NDK to the Android SDK
         link-to-sdk: true
-    - uses: seanmiddleditch/gha-setup-ninja@v4
-      id: setup-ninja
-      with:
-        version: 1.11.1
+    - name: Install Ninja
+      run: sudo apt-get install ninja-build
     - name: Setup Rustup Target
       run: |
         rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
     - name: Build ztm
       run: |
         cd gui
-        export JAVA_HOME='/Users/runner/hostedtoolcache/Java_Oracle_jdk/17.0.10/arm64/Contents/Home'
-        export ANDROID_HOME='/Users/runner/Library/Android/sdk'
+        export JAVA_HOME='/usr/lib/jvm/adoptopenjdk-17-amd64'
+        export ANDROID_HOME='/opt/android-sdk'
         export NDK="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
         yarn build-ztm-android
     - name: Build apk
       run: |
         cd gui
-        export JAVA_HOME='/Users/runner/hostedtoolcache/Java_Oracle_jdk/17.0.10/arm64/Contents/Home'
-        export ANDROID_HOME='/Users/runner/Library/Android/sdk'
+        export JAVA_HOME='/usr/lib/jvm/adoptopenjdk-17-amd64'
+        export ANDROID_HOME='/opt/android-sdk'
         export NDK_HOME="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
-        export OPENSSL_DIR='/opt/homebrew/Cellar/openssl@3/3.3.0'
+        export OPENSSL_DIR='/usr/lib/ssl'
         yarn install
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
