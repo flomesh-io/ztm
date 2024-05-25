@@ -24,16 +24,23 @@ jobs:
         ndk-version: r26d
         # Add installed NDK to the Android SDK
         link-to-sdk: true
-    - name: Install Ninja
-      run: sudo apt-get install ninja-build
+
+    - uses: seanmiddleditch/gha-setup-ninja@v4
+      id: setup-ninja
+      with:
+        version: 1.11.1
+
     - name: Setup Rustup Target
       run: |
         rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
     - name: Build ztm
       run: |
         cd gui
+        ls /usr/lib/jvm/adoptopenjdk-17-amd64
         export JAVA_HOME='/usr/lib/jvm/adoptopenjdk-17-amd64'
+        ls /opt/android-sdk
         export ANDROID_HOME='/opt/android-sdk'
+        ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename
         export NDK="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
         yarn build-ztm-android
     - name: Build apk
@@ -42,7 +49,6 @@ jobs:
         export JAVA_HOME='/usr/lib/jvm/adoptopenjdk-17-amd64'
         export ANDROID_HOME='/opt/android-sdk'
         export NDK_HOME="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
-        export OPENSSL_DIR='/usr/lib/ssl'
         yarn install
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
