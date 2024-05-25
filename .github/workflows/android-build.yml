@@ -47,6 +47,9 @@ jobs:
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
         NODE_OPTIONS="--max-old-space-size=4096" yarn tauri android build
+    - name: Align apk
+      run: |
+        $ANDROID_HOME/build-tools/30.0.3/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
     - name: Decode keystore
       run: |
         echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > ./my-release-key.jks
@@ -57,17 +60,14 @@ jobs:
                                                        --key-pass env:KEY_PASSWORD \
                                                        --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
                                                        --out ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-                                                       ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
+                                                       ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-    - name: Align apk
-      run: |
-        $ANDROID_HOME/build-tools/30.0.3/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned.apk
     - name: Verify APK
       run: |
-        $ANDROID_HOME/build-tools/30.0.3/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned.apk
+        $ANDROID_HOME/build-tools/30.0.3/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
     - uses: actions/upload-artifact@v2
       with:
         name: release
-        path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-aligned.apk
+        path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
