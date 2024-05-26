@@ -75,9 +75,7 @@ const home = () => {
         <div class="layout-main-container">
             <div class="layout-main">
 							
-							<button v-if="hasTauri" class="layout-config-button" style="border-width: 0;" type="button" @click="home()">
-									<i class="pi pi-window-minimize text-xl" style="position: relative;top: -1px;"></i>
-							</button>
+							<Button icon="pi pi-window-minimize" style="position: fixed;right: 15px;bottom: 130px;box-shadow:0 0 12px 12px rgba(0, 0, 0, 0.05);" v-if="hasTauri" raised rounded  @click="home()"></Button>
 							<router-view
 							  v-slot="{ Component }"
 							>

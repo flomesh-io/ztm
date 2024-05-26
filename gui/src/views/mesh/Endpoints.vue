@@ -56,7 +56,7 @@ const getEndpoints = () => {
 				ep.label = ep?.name;
 				ep.leaf = false;
 				ep.loading = false;
-			})
+			});
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
@@ -91,7 +91,7 @@ const expand = (node) => {
 				const _children = res;
 				_children.forEach((service,sid)=>{
 					service.key = node.key + '-s-' + sid,
-					service.label = service.name;
+					service.label = service.name +"xcxxxxxxxxxsc";
 					service.type = "service";
 					node.children.push(service);
 				});
@@ -149,6 +149,31 @@ const deletePort = (port) => {
 	});
 }
 
+const actionTarget = ref({})
+const actionMenu = ref();
+const actions = ref([
+    {
+        label: 'Actions',
+        items: [
+            {
+                label: 'Delete',
+                icon: 'pi pi-trash',
+								command: () => {
+									if(actionTarget.value?.type == 'port'){
+										deletePort(actionTarget.value?.node);
+									}else if(actionTarget.value?.type == 'service'){
+										deleteService(actionTarget.value?.node);
+									}
+								}
+            }
+        ]
+    }
+]);
+
+const showAtionMenu = (node, type) => {
+	actionTarget.value = { node, type };
+	actionMenu.value.toggle(event);
+};
 </script>
 
 <template>
@@ -169,31 +194,51 @@ const deletePort = (port) => {
 					loadingMode="icon" 
 					class="transparent">
 					<template #default="slotProps">
-							<b v-if="slotProps.node.type == 'ep'" class="relative" style="top: 2px;">
-								<Status style="top: -2px;" :run="slotProps.node.online" :tip="timeago(slotProps.node.heartbeat)"  />
-								EP: {{ slotProps.node.label || slotProps.node.id }} <span v-if="!!slotProps.node.username">({{slotProps.node.username}})</span>
-								<span v-if="!!slotProps.node.port" class="font-normal text-tip ml-1">| {{slotProps.node.ip}}:{{slotProps.node.port}}</span>
-								<span class="ml-2"><Tag severity="contrast" class="relative" style="top:-2px">{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
-							</b>
-							<b v-else-if="slotProps.node.type == 'service'">
-								<Avatar icon="pi pi-server" class="mr-2" />Service: {{ slotProps.node.label }}
-								<span v-if="!!slotProps.node.port" class="font-normal text-tip ml-1">| {{slotProps.node.host}}:{{slotProps.node.port}}</span>
-								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.protocol}}</Tag></span>
-								<span v-tooltip="'Delete Service'"  @click="deleteService(slotProps.node)" class="pointer ml-4 vm" >
-									<i class="pi pi-times text-tip text-sm"></i>
-								</span>
-							</b>
-							<b class="flex justify-content-center align-items-center" v-else-if="slotProps.node.type == 'port'">
-								<Avatar icon="pi pi-bullseye" class="mr-2" />Port: {{ slotProps.node.label }}
-								<span v-if="!!slotProps.node.target" class="font-normal text-tip ml-1">| {{slotProps.node.target.service}}</span>
-								<span class="ml-2"><Tag class="relative" style="top:-2px">{{slotProps.node.protocol}}</Tag></span>
-								<span v-tooltip="'Delete Port'"  @click="deletePort(slotProps.node)" class="pointer ml-4 vm" >
-									<i class="pi pi-times text-tip text-sm"></i>
-								</span>
-							</b>
+							<div v-if="slotProps.node.type == 'ep'" class="w-full text-left flex flex-wrap py-1" >
+								
+								<div>
+									<div>
+										<Status :run="slotProps.node.online" :tip="timeago(slotProps.node.heartbeat)"  /> <b>EP: {{ slotProps.node.label || slotProps.node.id }} <span v-if="!!slotProps.node.username">({{slotProps.node.username}})</span></b>
+										<span class="ml-3"><Tag severity="contrast" >{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
+									</div>
+									<div v-if="!!slotProps.node.port || !!slotProps.node.ip">
+										<span class="font-normal text-tip" style="margin-left: 24px;">{{slotProps.node.ip}}:{{slotProps.node.port}}</span>
+									</div>
+								</div>
+							</div>
+							<div v-else-if="slotProps.node.type == 'service'" class="flex align-items-center flex-wrap w-full text-left justify-content-center py-2">
+								
+								<Avatar icon="pi pi-server" />
+								<div class="ml-3">
+									<div>
+										<b>Service: {{ slotProps.node.label }}</b>
+									</div>
+									<div>
+										<span v-if="!!slotProps.node.port" class="font-normal text-tip mr-2">{{slotProps.node.host}}:{{slotProps.node.port}}</span>
+										<span><Tag>{{slotProps.node.protocol}}</Tag></span>
+									</div>
+								</div>
+								<Avatar shape="circle" icon="pi pi-ellipsis-v" v-tooltip="'Delete Service'"  @click="showAtionMenu(slotProps.node,'service')" class="pointer ml-4 vm" style="background-color: transparent;" />
+							</div>
+							<div class="flex flex-wrap w-full text-left align-items-center justify-content-center py-1" v-else-if="slotProps.node.type == 'port'">
+								
+								<Avatar icon="pi pi-bullseye" />
+								<div class="ml-3">
+									<div>
+										<b>Port: {{ slotProps.node.label }}</b>
+										
+									</div>
+									<div>
+										<span v-if="!!slotProps.node.target" class="font-normal text-tip mr-1">{{slotProps.node.target.service}}</span>
+										<span><Tag>{{slotProps.node.protocol}}</Tag></span>
+									</div>
+								</div>
+								<Avatar shape="circle" icon="pi pi-ellipsis-v" v-tooltip="'Delete Port'"  @click="showAtionMenu(slotProps.node, 'port')" class="pointer ml-4 vm" style="background-color: transparent;"/>
+							</div>
 					</template>
 				</Tree>
 				<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
+				<Menu ref="actionMenu" :model="actions" :popup="true" />
 			</div>
 		</TabPanel>
 	</TabView>
