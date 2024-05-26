@@ -175,8 +175,8 @@ const select = (selected) => {
 			</template>
 			<template #end >
 					<div class="flex align-items-center ">
-						<Avatar v-if="!!username" icon="pi pi-user" style="background-color: #9855f7;" shape="circle" />
-						<span v-if="!!username" class="pl-2 pr-4">{{username}}</span>
+						<Avatar v-if="!!username" class="mobile-hidden" icon="pi pi-user" style="background-color: #9855f7;" shape="circle" />
+						<span v-if="!!username" class="pl-2 pr-4 mobile-hidden">{{username}}</span>
 						<MeshSelector
 							:full="true" 
 							@load="load" 

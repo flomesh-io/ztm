@@ -590,7 +590,9 @@ pre.app-code code{
 	}
 }
 @media screen and (max-width: 768px){
-	
+	.mobile-hidden{
+		display: none !important;
+	}
 	.empty-result img{
 		width: 100% !important;
 	}
