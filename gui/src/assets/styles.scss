@@ -706,6 +706,12 @@ fieldset{
 .p-inputgroup.search-bar .p-inputtextarea::placeholder{
 	color: #d1d1d1;
 }
+.p-inputgroup.search-bar .p-multiselect-label{
+	height: 100%;
+	padding-top: 0;
+	padding-bottom: 0;
+	line-height: 36px;
+}
 .app-top-bar .p-menubar-end .p-select{
 	
 	background-color: var(--primary-color) !important;
@@ -724,7 +730,7 @@ fieldset{
 	color: #fff;
 }
 
-.p-tabview-tablist-link{
+.p-tabview-tablist-link,.p-datatable-column-filter-button{
 	outline: none !important;
 }
 .p-tabview-tablist-item,.p-tabview-tablist-item>a,.p-row-even,.p-row-odd{
@@ -796,3 +802,4 @@ fieldset{
 		color: var(--primary-300) !important;
 	}
 }
+
