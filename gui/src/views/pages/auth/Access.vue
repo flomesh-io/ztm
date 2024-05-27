@@ -1,5 +1,4 @@
 <script setup>
-import AppConfig from '@/layout/AppConfig.vue';
 import freeSvg from "@/assets/img/asset-access.svg";
 </script>
 
@@ -24,5 +23,4 @@ import freeSvg from "@/assets/img/asset-access.svg";
             </div>
         </div>
     </div>
-    <AppConfig simple />
 </template>

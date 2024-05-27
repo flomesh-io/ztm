@@ -263,11 +263,8 @@ const restart = ref(false);
 	</div>
 	<div class="config-pannel transparent-form" v-if="configOpen">
 		<div class="config-body" >
-			<Button  v-tooltip.left="'Close'" class="pointer close" severity="help" text rounded aria-label="Filter" @click="() => configOpen = false" >
-				<i class="pi pi-times " />
-			</Button>
+			<Button icon="pi pi-times" v-tooltip.left="'Close'" class="pointer close" severity="help" text rounded aria-label="Filter" @click="() => configOpen = false" ></Button>
 			<div>
-				<!-- <div class="text-tip mb-5">xxx</div> -->
 				<ul class="list-none p-0 m-0">
 					
 					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">

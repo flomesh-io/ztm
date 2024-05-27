@@ -3,7 +3,6 @@ import { computed, watch, ref } from 'vue';
 import AppTopbar from './AppTopbar.vue';
 import AppFooter from './AppFooter.vue';
 import AppSidebar from './AppSidebar.vue';
-import AppConfig from './AppConfig.vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';

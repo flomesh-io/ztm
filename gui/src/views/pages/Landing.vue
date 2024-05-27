@@ -1,7 +1,6 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
 import { computed } from 'vue';
-import AppConfig from '@/layout/AppConfig.vue';
 import freeSvg from "@/assets/img/free.svg";
 
 const { layoutConfig } = useLayout();
@@ -407,7 +406,6 @@ const logoUrl = computed(() => {
             </div>
         </div>
     </div>
-    <AppConfig simple />
 </template>
 
 <!-- <style scoped>

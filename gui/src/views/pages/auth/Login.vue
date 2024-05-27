@@ -1,7 +1,6 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
 import { ref, computed } from 'vue';
-import AppConfig from '@/layout/AppConfig.vue';
 import PipyProxyService from '@/service/PipyProxyService';
 import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useToast } from "primevue/usetoast";
@@ -113,7 +112,6 @@ const onClose = () => {
             </div>
         </div>
     </div>
-    <AppConfig simple />
 </template>
 
 <style scoped>
