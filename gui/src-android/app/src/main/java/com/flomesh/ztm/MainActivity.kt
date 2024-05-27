@@ -10,5 +10,7 @@ class MainActivity : TauriActivity() {
         super.onCreate(savedInstanceState)
         // 调用CopyBinaryActivity来复制binary文件
         CopyBinaryActivity.start(this);
+				val intent = Intent(this, FloatingWindowService::class.java)
+				startService(intent);
     }
 }
