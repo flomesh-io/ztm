@@ -120,8 +120,7 @@ const active = ref(0);
 													</span>
 													
 													<div class="text-900 font-medium text-xl">
-														<Status :run="port.open" :error="port.error"  />
-														{{port.listen.port}}
+														<Status :run="port.open" :error="port.error" :text="port.listen.port"/>
 													</div>
 											 </div>
 											 <div class="flex">
