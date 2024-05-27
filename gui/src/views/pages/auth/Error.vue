@@ -1,6 +1,4 @@
 <script setup>
-import AppConfig from '@/layout/AppConfig.vue';
-
 import assetError from "@/assets/img/asset-error.svg";
 </script>
 
@@ -25,5 +23,4 @@ import assetError from "@/assets/img/asset-error.svg";
             </div>
         </div>
     </div>
-    <AppConfig simple />
 </template>
