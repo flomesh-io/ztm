@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:background="@drawable/gradient_background"
+		android:orientation="horizontal"
+		android:alpha="0.5"
+		android:visibility="gone"
+    android:padding="10dp">
+
+		<ImageView
+        android:id="@+id/floating_image"
+				android:layout_width="30dp"
+				android:layout_height="30dp"
+        android:src="@drawable/loading" />
+
+    <ImageButton
+        android:id="@+id/close_button"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:background="@drawable/close"
+        android:contentDescription="Close" 
+				android:visibility="gone"/>
+</LinearLayout>
