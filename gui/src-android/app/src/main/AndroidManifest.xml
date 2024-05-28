@@ -6,8 +6,10 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         android:required="false"/>
 		<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+		<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <application
+				android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.ztm"
@@ -26,8 +28,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".CopyBinaryActivity" />
-        <service android:name=".FloatingWindowService"
-            android:exported="false" />
+        <service android:name=".FloatingWindowService" android:permission="android.permission.FOREGROUND_SERVICE"/>
         <provider
           android:name="androidx.core.content.FileProvider"
           android:authorities="${applicationId}.fileprovider"
@@ -37,5 +38,11 @@
             android:name="android.support.FILE_PROVIDER_PATHS"
             android:resource="@xml/file_paths" />
         </provider>
+
+        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
