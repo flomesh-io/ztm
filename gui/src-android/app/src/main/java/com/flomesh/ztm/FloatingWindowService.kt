@@ -21,6 +21,10 @@ import android.widget.ImageView
 import android.animation.ObjectAnimator
 import android.util.Log
 import android.view.animation.LinearInterpolator
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import android.app.NotificationChannel
+import android.app.NotificationManager
 
 class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks {
 
@@ -33,11 +37,37 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
 
     override fun onCreate() {
         super.onCreate()
+				createNotificationChannel()
         requestOverlayPermissionIfNeeded()
-        (applicationContext as Application).registerActivityLifecycleCallbacks(this)
+        (applicationContext as Application).registerActivityLifecycleCallbacks(this);
+				startForegroundService();
         Log.d("FloatingWindowService", "Service Created")
     }
 
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "floating_window_channel",
+                "Floating Window Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Channel for Floating Window Service"
+            }
+            val manager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+    private fun startForegroundService() {
+        val notification = NotificationCompat.Builder(this, "floating_window_channel")
+            .setContentTitle("Floating Window Service")
+            .setContentText("Floating window is running")
+            .setSmallIcon(R.drawable.ic_launcher)
+            .build()
+        
+        startForeground(1, notification)
+    }
+		
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         Log.d("FloatingWindowService", "onActivityCreated")
     }
@@ -48,12 +78,16 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
 
     override fun onActivityResumed(activity: Activity) {
         Log.d("FloatingWindowService", "onActivityResumed")
-				floatingView.visibility = View.INVISIBLE
+				if(floatingView != null){
+					floatingView.visibility = View.INVISIBLE
+				}
     }
 
     override fun onActivityPaused(activity: Activity) {
         Log.d("FloatingWindowService", "onActivityPaused")
-				floatingView.visibility = View.VISIBLE
+				if(floatingView != null){
+					floatingView.visibility = View.VISIBLE
+				}
     }
 
     override fun onActivityStopped(activity: Activity) {
@@ -66,7 +100,9 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
 
     override fun onActivityDestroyed(activity: Activity) {
         Log.d("FloatingWindowService", "onActivityDestroyed")
-				floatingView.visibility = View.INVISIBLE
+				if(floatingView != null){
+					floatingView.visibility = View.INVISIBLE
+				}
     }
 
     private fun requestOverlayPermissionIfNeeded() {
@@ -102,52 +138,54 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         params.y = 100
 
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        windowManager.addView(floatingView, params)
+				if(floatingView != null){
+					windowManager.addView(floatingView, params)
+					floatingView.findViewById<View>(R.id.close_button).setOnClickListener {
+							stopSelf()
+					}
 
-        floatingView.findViewById<View>(R.id.close_button).setOnClickListener {
-            stopSelf()
-        }
+					val floatingImage = floatingView.findViewById<ImageView>(R.id.floating_image)
+					startImageRotation(floatingImage)
+					
+					floatingView.setOnTouchListener(object : View.OnTouchListener {
+							private var initialX: Int = 0
+							private var initialY: Int = 0
+							private var initialTouchX: Float = 0f
+							private var initialTouchY: Float = 0f
 
-        val floatingImage = floatingView.findViewById<ImageView>(R.id.floating_image)
-        startImageRotation(floatingImage)
-        
-        floatingView.setOnTouchListener(object : View.OnTouchListener {
-            private var initialX: Int = 0
-            private var initialY: Int = 0
-            private var initialTouchX: Float = 0f
-            private var initialTouchY: Float = 0f
-
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        initialX = params.x
-                        initialY = params.y
-                        initialTouchX = event.rawX
-                        initialTouchY = event.rawY
-												floatingView.alpha = 0.8f;
-                        return true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        params.x = initialX - (event.rawX - initialTouchX).toInt()
-                        params.y = initialY - (event.rawY - initialTouchY).toInt()
-                        windowManager.updateViewLayout(floatingView, params)
-                        return true
-                    }
-                    MotionEvent.ACTION_UP -> {
-											floatingView.alpha = 0.5f;
-											if((event.rawX - initialTouchX).toInt() == 0 && (event.rawY - initialTouchY).toInt() ==0){
-												val intent = Intent(applicationContext, MainActivity::class.java)
-												intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-												startActivity(intent)
+							override fun onTouch(v: View, event: MotionEvent): Boolean {
+									when (event.action) {
+											MotionEvent.ACTION_DOWN -> {
+													initialX = params.x
+													initialY = params.y
+													initialTouchX = event.rawX
+													initialTouchY = event.rawY
+													floatingView.alpha = 0.8f;
+													return true
 											}
-											return true
-                    }
-										
-										
-                }
-                return false
-            }
-        })
+											MotionEvent.ACTION_MOVE -> {
+													params.x = initialX - (event.rawX - initialTouchX).toInt()
+													params.y = initialY - (event.rawY - initialTouchY).toInt()
+													windowManager.updateViewLayout(floatingView, params)
+													return true
+											}
+											MotionEvent.ACTION_UP -> {
+												floatingView.alpha = 0.5f;
+												if((event.rawX - initialTouchX).toInt() == 0 && (event.rawY - initialTouchY).toInt() ==0){
+													val intent = Intent(applicationContext, MainActivity::class.java)
+													intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+													startActivity(intent)
+												}
+												return true
+											}
+											
+											
+									}
+									return false
+							}
+					})
+					
+				}
     }
 
     private fun startImageRotation(imageView: ImageView) {
@@ -161,10 +199,10 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
     
     override fun onDestroy() {
         super.onDestroy()
-        if (this::floatingView.isInitialized) {
-            windowManager.removeView(floatingView)
-            (applicationContext as Application).unregisterActivityLifecycleCallbacks(this)
-        }
+				floatingView?.let {
+						windowManager.removeView(it)
+				}
+				(applicationContext as Application).unregisterActivityLifecycleCallbacks(this)
         Log.d("FloatingWindowService", "Service Destroyed")
     }
 }
