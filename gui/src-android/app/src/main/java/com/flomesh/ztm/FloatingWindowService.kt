@@ -48,7 +48,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
 
     override fun onActivityResumed(activity: Activity) {
         Log.d("FloatingWindowService", "onActivityResumed")
-				floatingView.visibility = View.VISIBLE
+				floatingView.visibility = View.INVISIBLE
     }
 
     override fun onActivityPaused(activity: Activity) {
@@ -66,6 +66,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
 
     override fun onActivityDestroyed(activity: Activity) {
         Log.d("FloatingWindowService", "onActivityDestroyed")
+				floatingView.visibility = View.INVISIBLE
     }
 
     private fun requestOverlayPermissionIfNeeded() {
