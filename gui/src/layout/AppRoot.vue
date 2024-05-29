@@ -49,7 +49,7 @@ const user = computed(() => {
 	return store.getters['account/user'];
 });
 const placeholder = computed(() => {
-	const _vs = !!version.value?.ztm?.version? `ZTM (${version.value?.ztm?.version}) : ` : "";
+	const _vs = !!version.value?.ztm?.version? `ZTM (${version.value?.ztm?.version}) : ` : "ZTM : ";
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
