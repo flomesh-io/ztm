@@ -26,6 +26,7 @@ import androidx.core.app.NotificationManagerCompat
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ComponentName
+import android.content.pm.ServiceInfo
 import android.widget.Toast
 
 class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks {
@@ -43,7 +44,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         requestOverlayPermissionIfNeeded()
 				requestIgnoreBatteryOptimizations()
         (applicationContext as Application).registerActivityLifecycleCallbacks(this);
-				startForegroundService();
+				startForegroundService(this);
 				openAutoStartSettings(this)
         Log.d("FloatingWindowService", "Service Created")
     }
@@ -62,14 +63,27 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
             manager.createNotificationChannel(channel)
         }
     }
-    private fun startForegroundService() {
-        val notification = NotificationCompat.Builder(this, "floating_window_channel")
-            .setContentTitle("Floating Window Service")
-            .setContentText("Floating window is running")
-            .setSmallIcon(R.drawable.ic_launcher)
-            .build()
+    private fun startForegroundService(context: Context) {
+			try {
         
-        startForeground(1, notification)
+				val notification = NotificationCompat.Builder(context, "floating_window_channel")
+						.setContentTitle("Floating Window Service")
+						.setContentText("ZTM is running")
+						.setSmallIcon(R.drawable.ic_launcher)
+						.setPriority(NotificationCompat.PRIORITY_DEFAULT)
+						.setCategory(NotificationCompat.CATEGORY_SERVICE)
+						.build()
+
+				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+						startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+				} else {
+						startForeground(1, notification)
+				}
+			} catch (e: Exception) {
+					Log.e("FloatingWindowService", "Error starting foreground service", e)
+					e.printStackTrace()
+					Toast.makeText(context, "Build floating_window_channel error", Toast.LENGTH_LONG).show()
+			}
     }
 		
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
