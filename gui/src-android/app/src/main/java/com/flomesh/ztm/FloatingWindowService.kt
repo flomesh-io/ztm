@@ -247,7 +247,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         } catch (e: Exception) {
             e.printStackTrace()
             // 如果找不到对应厂商的自启动设置页面，可以提示用户手动设置
-            Toast.makeText(context, "请在设置中允许应用的自启动权限", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Please allow the app to auto-start in the settings.", Toast.LENGTH_LONG).show()
         }
     }
 		
