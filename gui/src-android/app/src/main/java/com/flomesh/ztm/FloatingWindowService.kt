@@ -41,6 +41,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         super.onCreate()
 				createNotificationChannel()
         requestOverlayPermissionIfNeeded()
+				requestIgnoreBatteryOptimizations()
         (applicationContext as Application).registerActivityLifecycleCallbacks(this);
 				startForegroundService();
 				openAutoStartSettings(this)
@@ -122,6 +123,23 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         }
     }
 
+    private fun requestIgnoreBatteryOptimizations() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                try {
+                    val intent = Intent()
+                    intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                    intent.data = Uri.parse("package:$packageName")
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+		
     private fun createFloatingWindow() {
         floatingView = LayoutInflater.from(this).inflate(R.layout.layout_floating_window, null)
 
