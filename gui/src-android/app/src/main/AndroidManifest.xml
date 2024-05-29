@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".CopyBinaryActivity" />
-        <service android:name=".FloatingWindowService" android:permission="android.permission.FOREGROUND_SERVICE"/>
+        <service android:name=".FloatingWindowService" android:exported="true" android:permission="android.permission.FOREGROUND_SERVICE"/>
         <provider
           android:name="androidx.core.content.FileProvider"
           android:authorities="${applicationId}.fileprovider"
@@ -39,7 +39,7 @@
             android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="false">
+        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>

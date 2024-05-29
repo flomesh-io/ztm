@@ -25,6 +25,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.ComponentName
+import android.widget.Toast
 
 class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks {
 
@@ -41,6 +43,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         requestOverlayPermissionIfNeeded()
         (applicationContext as Application).registerActivityLifecycleCallbacks(this);
 				startForegroundService();
+				openAutoStartSettings(this)
         Log.d("FloatingWindowService", "Service Created")
     }
 
@@ -196,7 +199,40 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         animator.interpolator = LinearInterpolator()
         animator.start()
     }
-    
+
+    private fun openAutoStartSettings(context: Context) {
+        val intent = Intent()
+        try {
+            // 适配不同厂商的自启动设置页面
+            when (Build.MANUFACTURER.toLowerCase()) {
+                "xiaomi" -> {
+                    intent.component = ComponentName(
+                        "com.miui.securitycenter",
+                        "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                    )
+                }
+                "huawei" -> {
+                    intent.component = ComponentName(
+                        "com.huawei.systemmanager",
+                        "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
+                    )
+                }
+                "samsung" -> {
+                    intent.component = ComponentName(
+                        "com.samsung.android.sm_cn",
+                        "com.samsung.android.sm.ui.ram.AutoRunActivity"
+                    )
+                }
+                // 添加其他厂商
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // 如果找不到对应厂商的自启动设置页面，可以提示用户手动设置
+            Toast.makeText(context, "请在设置中允许应用的自启动权限", Toast.LENGTH_LONG).show()
+        }
+    }
+		
     override fun onDestroy() {
         super.onDestroy()
 				floatingView?.let {
