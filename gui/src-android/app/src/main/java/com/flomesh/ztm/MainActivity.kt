@@ -21,26 +21,20 @@ class MainActivity : TauriActivity() {
         overlayPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (Settings.canDrawOverlays(this)) {
-                    startFloatingWindowService()
-                }
-            }
+					if (Settings.canDrawOverlays(this)) {
+							startFloatingWindowService()
+					}
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
-                )
-                overlayPermissionLauncher.launch(intent)
-            } else {
-                startFloatingWindowService()
-            }
-        } else {
-            startFloatingWindowService()
-        }
+				if (!Settings.canDrawOverlays(this)) {
+						val intent = Intent(
+								Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+								Uri.parse("package:$packageName")
+						)
+						overlayPermissionLauncher.launch(intent)
+				} else {
+						startFloatingWindowService()
+				}
     }
 
     private fun startFloatingWindowService() {
