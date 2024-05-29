@@ -233,7 +233,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         val intent = Intent()
         try {
             // 适配不同厂商的自启动设置页面
-            when (Build.MANUFACTURER.toLowerCase()) {
+            when (Build.MANUFACTURER.lowercase()) {
                 "xiaomi" -> {
                     intent.component = ComponentName(
                         "com.miui.securitycenter",
