@@ -44,8 +44,8 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         requestOverlayPermissionIfNeeded()
 				requestIgnoreBatteryOptimizations()
         (applicationContext as Application).registerActivityLifecycleCallbacks(this);
-				startForegroundService(this);
-				openAutoStartSettings(this)
+				startForegroundService();
+				openAutoStartSettings()
         Log.d("FloatingWindowService", "Service Created")
     }
 
@@ -58,23 +58,21 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
             ).apply {
                 description = "Channel for Floating Window Service"
             }
-            val manager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
     }
-    private fun startForegroundService(context: Context) {
+    private fun startForegroundService() {
 			try {
-        
-				val notification = NotificationCompat.Builder(context, "floating_window_channel")
+        // .setSmallIcon(R.drawable.ic_launcher)
+				val notification = NotificationCompat.Builder(this, "floating_window_channel")
 						.setContentTitle("Floating Window Service")
 						.setContentText("ZTM is running")
-						.setSmallIcon(R.drawable.ic_launcher)
 						.setPriority(NotificationCompat.PRIORITY_DEFAULT)
 						.setCategory(NotificationCompat.CATEGORY_SERVICE)
 						.build()
 
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 						startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
 				} else {
 						startForeground(1, notification)
@@ -82,7 +80,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
 			} catch (e: Exception) {
 					Log.e("FloatingWindowService", "Error starting foreground service", e)
 					e.printStackTrace()
-					Toast.makeText(context, "Build floating_window_channel error", Toast.LENGTH_LONG).show()
+					Toast.makeText(this, "Build floating_window_channel error", Toast.LENGTH_LONG).show()
 			}
     }
 		
@@ -124,34 +122,30 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
     }
 
     private fun requestOverlayPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-            } else {
-                createFloatingWindow()
-            }
-        } else {
-            createFloatingWindow()
-        }
+			if (!Settings.canDrawOverlays(this)) {
+					val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+					intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+					startActivity(intent)
+			} else {
+					createFloatingWindow()
+			}
     }
 
     private fun requestIgnoreBatteryOptimizations() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                try {
-                    val intent = Intent()
-                    intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                    intent.data = Uri.parse("package:$packageName")
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(intent)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+					val powerManager = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+					if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+							try {
+									val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+									intent.data = Uri.parse("package:$packageName")
+									intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+									startActivity(intent)
+							} catch (e: Exception) {
+									e.printStackTrace()
+									Toast.makeText(this, "Please allow the app to ignore battery optimizations in the settings.", Toast.LENGTH_LONG).show()
+							}
+					}
+			}
     }
 		
     private fun createFloatingWindow() {
@@ -160,7 +154,10 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+								WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+						else
+								WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         )
@@ -229,7 +226,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         animator.start()
     }
 
-    private fun openAutoStartSettings(context: Context) {
+    private fun openAutoStartSettings() {
         val intent = Intent()
         try {
             // 适配不同厂商的自启动设置页面
@@ -252,13 +249,16 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
                         "com.samsung.android.sm.ui.ram.AutoRunActivity"
                     )
                 }
-                // 添加其他厂商
+                else -> {
+										Toast.makeText(this, "Please allow the app to auto-start in the settings.", Toast.LENGTH_LONG).show()
+										return
+								}
             }
-            context.startActivity(intent)
+            startActivity(intent)
         } catch (e: Exception) {
             e.printStackTrace()
             // 如果找不到对应厂商的自启动设置页面，可以提示用户手动设置
-            Toast.makeText(context, "Please allow the app to auto-start in the settings.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Please allow the app to auto-start in the settings.", Toast.LENGTH_LONG).show()
         }
     }
 		
