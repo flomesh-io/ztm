@@ -50,7 +50,7 @@ async function copyCode(event) {
 
 <template>
     <div class="block-section">
-        <div class="block-header">
+        <div class="block-header" v-if="!!header">
             <span class="block-title">
                 <span class="mr-2">{{ header }}</span>
                 <span class="badge-new mr-1" v-if="recent">New</span>

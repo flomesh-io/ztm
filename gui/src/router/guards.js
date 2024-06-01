@@ -7,6 +7,7 @@ import "nprogress/nprogress.css";
 import { useToast } from "primevue/usetoast";
 import { getCurrent, LogicalSize } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import { platform } from '@tauri-apps/plugin-os';
 import { useStore } from 'vuex';
 NProgress.configure({ showSpinner: true });
 
@@ -62,14 +63,21 @@ const loginGuard = (to, from, next, options) => {
 		resize(408,455,false);
     next();
   } else if(to.path == "/root"){
-		if(!!window.__TAURI_INTERNALS__){
-			resize(455,350,false);
-			next();
+		if(!!window.__TAURI_INTERNALS__ ){
+			platform().then((pm)=>{
+				if(pm != "android"){
+					resize(455,350,false);
+					next();
+				}else {
+					next("/mesh/list");
+				}
+			});
 		} else {
 			next("/mesh/list");
 		}
   } else {
-		resize(1280,860,true);
+		const test = false;
+		resize(test?508:1280,860,true);
 		if(to.path != "/"){
 			const _meshes = store.getters['account/meshes']
 			if(!!_meshes && _meshes.length>0){

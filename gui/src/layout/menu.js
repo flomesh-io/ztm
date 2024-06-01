@@ -1,24 +1,36 @@
-const menu = [
-	{
-			label: 'Meshes', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
-	},
-	{
-			label: 'Services', icon: 'pi pi-fw pi-server', route: '/mesh/services'
-	},
-	{
-			label: 'Endpoints', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
-	},
-	{
-			label: 'Local Ports', icon: 'pi pi-fw pi-bullseye', route: '/mesh/ports'
-	},
-	{
-			label: 'Logs', icon: 'pi pi-fw pi-book', route: '/mesh/log'
-	},
-]
 
 const prodMenu = {
-	client: menu,
-	server: menu
+	base: [
+		{
+				label: 'Meshes', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+		},
+		{
+				label: 'Services', icon: 'pi pi-fw pi-server', route: '/mesh/services'
+		},
+		{
+				label: 'Endpoints', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
+		},
+		{
+				label: 'Local Port', icon: 'pi pi-fw pi-bullseye', route: '/mesh/ports'
+		},
+		{
+				label: 'Logs', icon: 'pi pi-fw pi-book', route: '/mesh/log'
+		},
+	],
+	chat: [
+		{
+				label: 'Channels', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+		},
+		{
+				label: 'Message', icon: 'pi pi-comment', route: '/message/list'
+		},
+		{
+				label: 'Contacts', icon: 'pi pi-fw pi-users', route: '/mesh/endpoints'
+		},
+		{
+				label: 'Workplace', icon: 'pi pi-fw pi-objects-column', route: '/workplace'
+		},
+	]
 };
 
 		
@@ -106,7 +118,8 @@ const devMenu = [
 		    ]
 		},
     {
-        label: 'UI Components',
+        label: 'Cpts',
+		    icon: 'pi pi-fw pi-briefcase',
         items: [
             { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', route: '/uikit/formlayout' },
             { label: 'Input', icon: 'pi pi-fw pi-check-square', route: '/uikit/input' },
@@ -130,10 +143,11 @@ const devMenu = [
     }
 ]
 
-export function getMenu(isAdmin){
-	const menu = prodMenu[isAdmin?'server':'client'];
+export function getMenu(){
+	const isChat = import.meta.env.VITE_APP_MODE == 'chat';
+	const menu = prodMenu[isChat?'chat':'base'];
 	return process.env.NODE_ENV === "development"?[
-		...menu,
-		...devMenu
+		...menu
+		// ...devMenu
 	]:menu;
 }

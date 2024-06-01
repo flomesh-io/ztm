@@ -8,7 +8,7 @@ import { useStore } from 'vuex';
 const store = useStore();
 import _ from "lodash"
 const props = defineProps(['pid','title']);
-const emits = defineEmits(['save','cancel']);
+const emits = defineEmits(['save','back']);
 const route = useRoute();
 const toast = useToast();
 const pipyProxyService = new PipyProxyService();
@@ -17,6 +17,7 @@ const user = computed(() => {
 });
 const loading = ref(false);
 
+const isChat = computed(() => store.getters['account/isChat']);
 const placeholder = ref({
 	c:`-----BEGIN CERTIFICATE-----`,
 	ca:`-----BEGIN CERTIFICATE-----`,
@@ -94,9 +95,6 @@ const loaddata = () => {
 			loading.value = false;
 		}); 
 }
-const cancel = () => {
-	emits("cancel");
-}
 const permitType = ref('Json');
 const permit = ref('');
 watch(() => permit.value,() => {
@@ -109,51 +107,54 @@ watch(() => permit.value,() => {
 		}
 	}
 })
+
+const back = () => {
+	emits('back')
+}
+const windowWidth = computed(() =>  window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
-	<div v-if="route.params?.id" style="padding-left: 0px;padding-top: 0;padding-right: 0;m">
-		<Breadcrumb :home="home" :model="[{label:route.params?.id}]" />
-	</div>
-	<div >
-		<BlockViewer text="Json" :header="props.title||'Join Mesh'" containerClass="surface-section px-3 py-3 md:px-4 md:pb-7 lg:px-5" >
-			<template #actions>
-				<Button class="mr-2" severity="secondary" v-if="!!props.pid" label="Cancel" size="small" @click="cancel"/>
-				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
-			</template>
+	
+	<div class="min-h-screen surface-ground">
+		<AppHeader :back="back">
+				<template #center>
+					<b>{{props.title||'Join Mesh'}}</b>
+				</template>
+		
+				<template #end> 
+					<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
+				</template>
+		</AppHeader>
+		<div class="md:m-3">
+			<BlockViewer containerClass="surface-section px-3 md:px-4 md:pb-7 lg:px-5 pt-4" >
 			<Loading v-if="loading" />
 			<div class="grid" v-else>
 				<div class="col-12 md:col-6">
 					<div class="surface-section">
 						<h6><Tag severity="contrast" value="Contrast">Names</Tag></h6>
 						<ul class="list-none p-0 m-0">
-							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Mesh</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-bookmark"/>
-												</span>
-												<span class="ml-2 font-medium">
-													<InputText :disabled="!!props.pid" placeholder="Name your mesh" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
-												</span>
-										</Chip>
-									</div>
-							</li>
-							<li class="flex align-items-center border-top-1 py-3 px-2 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Join As</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 align-items-top"  >
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-user" />
-												</span>
-												<span class="font-medium ml-2">
-													<InputText :maxLength="20" placeholder="Name your endpoint" class="add-tag-input xxl" :unstyled="true" v-model="config.agent.name" type="text" />
-												</span>
-										</Chip>	
-									</div>
-							</li>
-							
+							<FormItem :label="isChat?'Channel':'Mesh'">
+								<Chip class="pl-0 pr-3 mr-2">
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-bookmark"/>
+										</span>
+										<span class="ml-2 font-medium">
+											<InputText :disabled="!!props.pid" placeholder="Name your mesh" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
+										</span>
+								</Chip>
+							</FormItem>
+							<FormItem label="Join As">
+								<Chip class="pl-0 pr-3 align-items-top"  >
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-user" />
+										</span>
+										<span class="font-medium ml-2">
+											<InputText :maxLength="20" placeholder="Name your endpoint" class="add-tag-input xxl" :unstyled="true" v-model="config.agent.name" type="text" />
+										</span>
+								</Chip>	
+							</FormItem>
 						</ul>
 					</div>
 				</div>
@@ -161,56 +162,43 @@ watch(() => permit.value,() => {
 					<div class="surface-section">
 						<h6 class="flex">
 							<Tag severity="contrast" value="Contrast">Permit</Tag>
-							<div class="flex flex-wrap gap-3 ml-8">
-							    <div class="flex align-items-center">
-							        <RadioButton v-model="permitType" inputId="ingredient1" name="pizza" value="Json" />
-							        <label for="ingredient1" class="ml-2 text-tip">JSON</label>
-							    </div>
-							    <div class="flex align-items-center">
-							        <RadioButton v-model="permitType" inputId="ingredient2" name="pizza" value="Form" />
-							        <label for="ingredient2" class="ml-2 text-tip">Form</label>
-							    </div>
+							<div class="flex justify-content-end flex-item gap-3">
+									<div class="flex align-items-center">
+											<RadioButton v-model="permitType" inputId="ingredient1" name="pizza" value="Json" />
+											<label for="ingredient1" class="ml-2 text-tip">JSON</label>
+									</div>
+									<div class="flex align-items-center">
+											<RadioButton v-model="permitType" inputId="ingredient2" name="pizza" value="Form" />
+											<label for="ingredient2" class="ml-2 text-tip">Form</label>
+									</div>
 							</div>
 						</h6>
 						<ul class="list-none p-0 m-0" v-if="permitType == 'Json'">
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
+									<div class="text-900 w-full">
 										<CertificateUploder :placeholder="placeholder.json" v-model="permit" format="json" label="your permit"/>
 									</div>
 							</li>
 						</ul>
 						<ul class="list-none p-0 m-0" v-else>
-							
-							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 pr-2 font-medium">Hubs</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
-										<ChipList icon="pi-desktop" placeholder="Host:Port" v-model:list="config.bootstraps" />
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 pr-2 font-medium">CA Certificate</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<CertificateUploder :placeholder="placeholder.ca" v-model="config.ca"/>
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2 border-top-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 pr-2 font-medium">Certificate</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<CertificateUploder :placeholder="placeholder.c" v-model="config.agent.certificate"/>
-									</div>
-							</li>
-							<li class="flex align-items-center pr-2 py-3 px-2 border-top-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Private Key</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<CertificateUploder :placeholder="placeholder.p" v-model="config.agent.privateKey"/>
-									</div>
-							</li>
-							
+							<FormItem label="Hubs">
+								<ChipList icon="pi-desktop" placeholder="Host:Port" v-model:list="config.bootstraps" />
+							</FormItem>
+							<FormItem label="CA Certificate">
+								<CertificateUploder :placeholder="placeholder.ca" v-model="config.ca"/>
+							</FormItem>
+							<FormItem label="Certificate">
+								<CertificateUploder :placeholder="placeholder.c" v-model="config.agent.certificate"/>
+							</FormItem>
+							<FormItem label="Private Key">
+								<CertificateUploder :placeholder="placeholder.p" v-model="config.agent.privateKey"/>
+							</FormItem>
 						</ul>
 					</div>
 				</div>
 			</div>
-		</BlockViewer>
+			</BlockViewer>
+		</div>
 	</div>
 </template>
 

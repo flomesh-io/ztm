@@ -3,11 +3,13 @@
     flex-direction: column;
     min-height: calc(100vh - 50px);
     justify-content: space-between;
-    padding: 0 0 4rem 0;
+    padding: 0;
     transition: margin-left $transitionDuration;
+		flex: 1;
 		overflow-x: hidden;
 }
 
 .layout-main {
     flex: 1 1 auto;
+		display: flex;flex-direction: column;
 }

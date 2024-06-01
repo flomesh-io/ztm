@@ -17,10 +17,8 @@ const selectedMesh = computed(() => {
 const store = useStore();
 const confirm = useConfirm();
 const model = computed(() => {
-	return getMenu(false)
+	return getMenu(true)
 });
-const emits = defineEmits(['collapse']);
-
 const { layoutConfig, onMenuToggle } = useLayout();
 
 const outsideClickListener = ref(null);
@@ -143,41 +141,17 @@ const select = (selected) => {
 </script>
 
 <template>
-	<Menubar class="app-top-bar mobile-hidden" :model="model" breakpoint="0px">
-			<template #start>
-				<div class="flex flex-column justify-content-center align-items-center py-3">
-						<Avatar size="large" icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
-						<b >{{selectedMesh?.agent?.name||'Agent'}}</b>
-						<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
-				</div>
-				<!-- <img class="logo" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="logoHover?HoverXeyeSvg:XeyeSvg" height="40"/> -->
-			</template>
+	<Menubar class="app-bottom-bar mobile-show" :model="model" breakpoint="0px">
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">
-									<Badge v-if="item.label == 'Message'" value="2" severity="danger" class="absolute" style="right: 10px;top:3px"/>
+									<Badge v-if="item.label == 'Message'" value="2" severity="danger" class="absolute" style="margin-left: 24px;top:3px"/>
 									<div class="menu-icon" :class="item.icon" />
 									<div class="text-sm" >{{ item.label }}</div>
 							</a>
 					</router-link>
-					<a class="flex flex-column" v-else-if="!item.route" v-ripple :href="item.url" :target="item.target" v-bind="props.action">
-							<div class="menu-icon" :class="item.icon" />
-							<div class="text-sm">{{ item.label }} </div>
-							<!-- <span v-if="hasSubmenu" class="pi pi-fw pi-angle-right ml-2 relative" style="top: 2px;" /> -->
-					</a>
-			</template>
-			<template #end >
-					<div class="flex align-items-center flex-column w-full">
-						<MeshSelector
-							:full="true" 
-							@load="load" 
-							@select="select"/>
-						<!-- <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" @click="menuClick"/> -->
-					</div>
-					
 			</template>
 	</Menubar>
-   
 </template>
 
 <style scoped lang="scss">

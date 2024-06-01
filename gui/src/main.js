@@ -25,12 +25,23 @@ app.use(PrimeVue, {
 		}
 	}
 });
+
+app.mixin({
+  mounted() {
+    document.querySelectorAll('button:not(.link)').forEach(button => {
+      button.addEventListener('click', event => {
+        event.preventDefault();
+      });
+    });
+  }
+});
+
+useComponent(app);
+useDirective(app);
 app.use(store);
 app.use(ToastService);
 app.use(DialogService);
 app.use(ConfirmationService);
-useComponent(app);
-useDirective(app);
 
 async function setRouter() {
   const router = await initRouter({ store });
