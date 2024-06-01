@@ -30,12 +30,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: rpm
-        path: ./gui/src-tauri/target/release/bundle/rpm/ztm-0.0.3-1.x86_64.rpm
+        path: ./gui/src-tauri/target/release/bundle/rpm/ztm-${{ vars.APP_VERSION }}-1.x86_64.rpm
     - uses: actions/upload-artifact@v2
       with:
         name: deb
-        path: ./gui/src-tauri/target/release/bundle/deb/ztm_0.0.3_amd64.deb
+        path: ./gui/src-tauri/target/release/bundle/deb/ztm_${{ vars.APP_VERSION }}_amd64.deb
     - uses: actions/upload-artifact@v2
       with:
         name: appimage
-        path: ./gui/src-tauri/target/release/bundle/appimage/ztm_0.0.3_amd64.AppImage
+        path: ./gui/src-tauri/target/release/bundle/appimage/ztm_${{ vars.APP_VERSION }}_amd64.AppImage

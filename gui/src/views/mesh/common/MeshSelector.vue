@@ -78,19 +78,20 @@ const select = () => {
 					<span></span>
 				</template>
 				 <template #value="slotProps">
-					 <Status style="margin-right: 0 !important;margin-bottom: 5px;" v-if="slotProps.value" :run="slotProps.value.connected" :errors="slotProps.value.errors" />
-					 <div v-else class="pi pi-arrow-right-arrow-left"></div>
-					 <div v-if="slotProps.value">{{ decodeURI(slotProps.value.name) }}</div>
-					 <div v-else>
-					 		{{ slotProps.placeholder }}
-					 </div>
-						<!-- 	<div v-if="slotProps.value" class="flex align-items-center">
-									<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
-									<div>{{ decodeURI(slotProps.value.name) }}</div>
-							</div>
-							<span v-else>
+					 <div class="topbar-mesh-select">
+						 <div class="topbar-mesh-select-cell" >
+							 <div class="mb-1" v-if="slotProps.value">
+								<Status style="margin-right: 0 !important;"  :run="slotProps.value.connected" :errors="slotProps.value.errors" />
+							 </div>
+							 <div v-else class="pi pi-arrow-right-arrow-left"></div>
+							 <div v-if="slotProps.value"  v-tooltip.right="decodeURI(slotProps.value.name)">
+								<b class="text-ellipsis w-full text-sm">{{ decodeURI(slotProps.value.name) }}</b>
+							 </div>
+							 <div v-else>
 									{{ slotProps.placeholder }}
-							</span> -->
+							 </div>
+						 </div>
+					 </div>
 					</template>
 		</Select>
 		
@@ -130,4 +131,14 @@ const select = () => {
 </template>
 
 <style scoped lang="scss">
+	.topbar-mesh-select{
+		display: table;
+		width: 100%;
+	}
+	.topbar-mesh-select-cell{
+		height: 40px;
+		display: table-cell;
+		vertical-align: middle;
+		width: 100%;
+	}
 </style>
