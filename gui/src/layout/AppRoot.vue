@@ -227,8 +227,8 @@ const restart = ref(false);
 				
 			</div>
 	
-			<div class="name mt-3">
-				{{ztmVersion}}
+			<div class="name mt-3 opacity-60">
+				<Tag>{{ztmVersion}}</Tag>
 			</div>
 	  </div>
 		
@@ -410,6 +410,9 @@ const restart = ref(false);
 	  font-size: 12px;
 	  font-weight: 300;
 		color: rgba(255, 255, 255, 0.5);
+		.p-tag{
+			transform: scale(0.8);
+		}
 	}
 	
 	.wave:nth-child(2),
