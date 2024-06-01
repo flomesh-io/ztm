@@ -1,19 +1,14 @@
 name: macos-m1-chat-build
 
-on: 
-  workflow_dispatch:
-  push:
-    branches:
-      - chat
-  pull_request:
-    branches:
-      - chat
+on: workflow_dispatch
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: chat
     - uses: actions/setup-node@v2
       with:
         node-version: '21'

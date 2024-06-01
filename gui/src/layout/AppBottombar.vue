@@ -147,7 +147,7 @@ const select = (selected) => {
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">
 									<Badge v-if="item.label == 'Message'" value="2" severity="danger" class="absolute" style="margin-left: 24px;top:3px"/>
 									<div class="menu-icon" :class="item.icon" />
-									<div class="text-sm" >{{ item.label }}</div>
+									<div class="text-sm" >{{ item.short }}</div>
 							</a>
 					</router-link>
 			</template>

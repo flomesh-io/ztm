@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
-const store = useStore();
 import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
@@ -20,6 +19,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { resourceDir } from '@tauri-apps/api/path';
 
+const store = useStore();
 const playing = ref(false);
 const loading = ref(false);
 const version = computed(() => {
@@ -49,8 +49,11 @@ const isLogined = computed(() => {
 const user = computed(() => {
 	return store.getters['account/user'];
 });
+const ztmVersion = computed(() => {
+	return !!version.value?.ztm?.version? `${version.value?.ztm?.version}` : "";
+});
 const placeholder = computed(() => {
-	const _vs = !!version.value?.ztm?.version? `ZTM (${version.value?.ztm?.version}) : ` : "ZTM : ";
+	const _vs = "ZTM : ";
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
@@ -216,7 +219,7 @@ const restart = ref(false);
 										<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
 										<div>{{ decodeURI(slotProps.value.name) }}</div>
 								</div>
-								<span v-else>
+								<span v-else >
 										{{ slotProps.placeholder }}
 								</span>
 						</template>
@@ -224,8 +227,8 @@ const restart = ref(false);
 				
 			</div>
 	
-			<div class="name">
-				
+			<div class="name mt-3">
+				{{ztmVersion}}
 			</div>
 	  </div>
 		
@@ -332,7 +335,7 @@ const restart = ref(false);
 	.pi-cog:hover{
 	}
 	.e-card {
-	  background: transparent;
+	  background-color: #af40ff;
 	  box-shadow: 0px 8px 28px -9px rgba(0,0,0,0.45);
 	  position: fixed;
 		left: 0;
@@ -404,11 +407,9 @@ const restart = ref(false);
 	}
 	
 	.name {
-	  font-size: 14px;
-	  font-weight: 100;
-	  position: relative;
-	  top: 1em;
-	  text-transform: lowercase;
+	  font-size: 12px;
+	  font-weight: 300;
+		color: rgba(255, 255, 255, 0.5);
 	}
 	
 	.wave:nth-child(2),
@@ -505,8 +506,8 @@ const restart = ref(false);
 @media screen and (max-width: 768px){
 	.android{
 		.logo{
-			height: 110px;
-			width: 110px;
+			height: 90px;
+			width: 90px;
 			opacity: 0.85;
 			margin-bottom: 30px;
 		}

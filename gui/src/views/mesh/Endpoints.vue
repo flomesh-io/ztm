@@ -6,7 +6,6 @@ import MeshSelector from './common/MeshSelector.vue'
 import EndpointDetail from './EndpointDetail.vue'
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
-import freeSvg from "@/assets/img/free.svg";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
@@ -223,7 +222,7 @@ const toggleLeft = () => {
 							</div>
 					</template>
 			</DataView>
-			<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
+			<Empty v-else />
 			<Menu ref="actionMenu" :model="actions" :popup="true" />
 		</div>
 
