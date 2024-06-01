@@ -15,7 +15,7 @@ jobs:
         cd gui
         yarn install
         yarn build-ztm-macos-x64
-        NODE_OPTIONS="--max-old-space-size=4096" yarn tauri build
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build
     - uses: actions/upload-artifact@v2
       with:
         name: release
