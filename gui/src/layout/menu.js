@@ -2,33 +2,33 @@
 const prodMenu = {
 	base: [
 		{
-				label: 'Meshes', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+				label: 'Meshes',short:'Mesh', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
 		},
 		{
-				label: 'Services', icon: 'pi pi-fw pi-server', route: '/mesh/services'
+				label: 'Services',short:'SVC', icon: 'pi pi-fw pi-server', route: '/mesh/services'
 		},
 		{
-				label: 'Endpoints', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
+				label: 'Endpoints',short:'EP', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Local Port', icon: 'pi pi-fw pi-bullseye', route: '/mesh/ports'
+				label: 'Local Port',short:'Port', icon: 'pi pi-fw pi-bullseye', route: '/mesh/ports'
 		},
 		{
-				label: 'Logs', icon: 'pi pi-fw pi-book', route: '/mesh/log'
+				label: 'Logs',short:'Log', icon: 'pi pi-fw pi-book', route: '/mesh/log'
 		},
 	],
 	chat: [
 		{
-				label: 'Channels', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+				label: 'Channels',short:'Channel', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
 		},
 		{
-				label: 'Message', icon: 'pi pi-comment', route: '/message/list'
+				label: 'Message',short:'Msg', icon: 'pi pi-comment', route: '/message/list'
 		},
 		{
-				label: 'Contacts', icon: 'pi pi-fw pi-users', route: '/mesh/endpoints'
+				label: 'Contacts',short:'Contact', icon: 'pi pi-fw pi-users', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Workplace', icon: 'pi pi-fw pi-objects-column', route: '/workplace'
+				label: 'Workplace',short:'More', icon: 'pi pi-fw pi-objects-column', route: '/workplace'
 		},
 	]
 };
