@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed,onActivated,onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
 const props = defineProps(['main','back'])
@@ -18,11 +18,27 @@ const back = () => {
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
 }
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const home = () => {
-	router.push("/mesh/list");
+	if(hasTauri.value){
+		router.push('/root');
+	}else{
+		router.push("/mesh/list");
+	}
 }
-const windowWidth = computed(() => window.innerWidth);
+const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
+onActivated(()=>{
+	setTimeout(()=>{
+		windowWidth.value = window.innerWidth;
+	},500)
+})
+onMounted(()=>{
+	setTimeout(()=>{
+		windowWidth.value = window.innerWidth;
+	},500)
+})
+
 </script>
 
 <template>
@@ -31,7 +47,6 @@ const isMobile = computed(() => windowWidth.value<=768);
 					<Button v-if="props.main && isMobile" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
 					<Button v-else-if="props.main && !isMobile" @click="home" icon="pi pi-home" text />
 					<Button v-else @click="back" icon="pi pi-angle-left" severity="secondary" text />
-					
 			</template>
 	
 			<template #center>

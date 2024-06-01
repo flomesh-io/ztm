@@ -102,8 +102,6 @@ const toggleLeft = () => {
             </div>
             <!-- <app-footer></app-footer> -->
 						<app-bottombar></app-bottombar>
-						
-						<Button icon="pi pi-window-minimize" class="backHomeBtn" v-if="hasTauri && !isMobile || true" raised rounded  @click="home()"></Button>
         </div>
         <app-config></app-config>
         <div class="layout-mask"></div>
