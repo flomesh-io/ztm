@@ -26,7 +26,7 @@ jobs:
         cd gui
         yarn install
         yarn build-ztm-linux
-        NODE_OPTIONS="--max-old-space-size=4096" yarn build
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
     - uses: actions/upload-artifact@v2
       with:
         name: rpm
