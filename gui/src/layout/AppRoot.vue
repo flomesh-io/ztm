@@ -227,7 +227,7 @@ const restart = ref(false);
 				
 			</div>
 	
-			<div class="name mt-4">
+			<div class="name mt-3">
 				{{ztmVersion}}
 			</div>
 	  </div>
@@ -407,8 +407,9 @@ const restart = ref(false);
 	}
 	
 	.name {
-	  font-size: 14px;
-	  font-weight: 200;
+	  font-size: 12px;
+	  font-weight: 300;
+		color: rgba(255, 255, 255, 0.5);
 	}
 	
 	.wave:nth-child(2),
