@@ -47,5 +47,5 @@ yarn tauri build
 
 ### About macOS "can’t be opened" Error
 ```sh
-sudo xattr -rd com.apple.quarantine /Applications/ZTMesh.app
+sudo xattr -rd com.apple.quarantine /Applications/ZTM.app
 ```

@@ -29,7 +29,7 @@ jobs:
       run: |
         cd gui
         yarn install
-        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:base
     - uses: actions/upload-artifact@v2
       with:
         name: release
