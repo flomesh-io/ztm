@@ -52,7 +52,7 @@ jobs:
         yarn install
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
-        NODE_OPTIONS="--max-old-space-size=4096" yarn tauri android build
+        NODE_OPTIONS="--max-old-space-size=4096" yarn android-build
     - name: Align apk
       run: |
         $ANDROID_HOME/build-tools/30.0.3/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
