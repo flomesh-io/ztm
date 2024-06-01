@@ -50,10 +50,10 @@ const user = computed(() => {
 	return store.getters['account/user'];
 });
 const ztmVersion = computed(() => {
-	return !!version.value?.ztm?.version? `ZTM (${version.value?.ztm?.version})` : "ZTM";
+	return !!version.value?.ztm?.version? `${version.value?.ztm?.version}` : "";
 });
 const placeholder = computed(() => {
-	const _vs = "";
+	const _vs = "ZTM : ";
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
@@ -219,7 +219,7 @@ const restart = ref(false);
 										<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
 										<div>{{ decodeURI(slotProps.value.name) }}</div>
 								</div>
-								<span v-else>
+								<span v-else >
 										{{ slotProps.placeholder }}
 								</span>
 						</template>
