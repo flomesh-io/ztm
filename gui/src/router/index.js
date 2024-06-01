@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { isAdmin } from "@/service/common/authority-utils";
 import baseOptions from '@/router/config';
+import chatOptions from '@/router/config.chat';
 
 const loginIgnore = {
   names: ["404", "403", "Login", "Root"],
@@ -11,7 +12,7 @@ const loginIgnore = {
 };
 
 function resetRoutes(router, store) {
-	const options = baseOptions;
+	const options = import.meta.env.VITE_APP_MODE=='chat' ? chatOptions : baseOptions;
 	if(!!router){
 		const oldRoutes = router.getRoutes();
 		oldRoutes.forEach((oldRoute) => {
