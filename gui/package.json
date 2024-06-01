@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "tauri": "tauri",
-    "build": "vite build --emptyOutDir --outDir ../agent/gui && tauri build",
+    "build": "vite build --emptyOutDir --outDir ../agent/gui",
+    "build:base": "vite build --emptyOutDir --outDir ../agent/gui && tauri build",
     "build:chat": "vite build --mode=chat --emptyOutDir --outDir ../agent/gui && tauri build",
     "android-init": "tauri android init && cp -rf ./src-android/app ./src-tauri/gen/android",
     "android-dev": "cp -rf ./src-android/app ./src-tauri/gen/android && tauri android dev",
