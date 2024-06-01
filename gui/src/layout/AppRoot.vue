@@ -228,7 +228,7 @@ const restart = ref(false);
 			</div>
 	
 			<div class="name mt-3 opacity-60">
-				<Tag>{{ztmVersion}}</Tag>
+				<Tag v-if="!!ztmVersion" :value="ztmVersion" />
 			</div>
 	  </div>
 		
