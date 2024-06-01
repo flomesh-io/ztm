@@ -1,6 +1,13 @@
 name: macos-m1-chat-build
 
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+  push:
+    branches:
+      - chat
+  pull_request:
+    branches:
+      - chat
 
 jobs:
   build:
