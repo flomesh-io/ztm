@@ -1,6 +1,8 @@
 <script setup>
-import { computed, watch, ref } from 'vue';
+import { computed, watch, ref, onMounted } from 'vue';
+import AppRoot from './AppRoot.vue';
 import AppTopbar from './AppTopbar.vue';
+import AppBottombar from './AppBottombar.vue';
 import AppFooter from './AppFooter.vue';
 import AppSidebar from './AppSidebar.vue';
 import { useLayout } from '@/layout/composables/layout';
@@ -20,6 +22,9 @@ watch(isSidebarActive, (newVal) => {
     }
 });
 
+const mobileLeftbar = computed(() => {
+	return store.getters['account/mobileLeftbar'];
+});
 const containerClass = computed(() => {
     return {
         'layout-theme-light': layoutConfig.darkTheme.value === 'light',
@@ -30,7 +35,8 @@ const containerClass = computed(() => {
         'layout-overlay-active': layoutState.overlayMenuActive.value,
         'layout-mobile-active': layoutState.staticMenuMobileActive.value,
         'p-input-filled': layoutConfig.inputStyle.value === 'filled',
-        'p-ripple-disabled': !layoutConfig.ripple.value
+        'p-ripple-disabled': !layoutConfig.ripple.value,
+				'mobile-transform-layout':!!mobileLeftbar.value
     };
 });
 const bindOutsideClickListener = () => {
@@ -62,19 +68,26 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const home = () => {
 	router.push('/root');
 }
+const windowWidth = computed(() => window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', false);
+}
 </script>
 
 <template>
-    <div class="layout-wrapper" :class="containerClass">
+		<div class="embed-root" v-if="isMobile && hasTauri">
+			<AppRoot :embed="true"/>
+		</div>
+		<div class="layout-wrapper" :class="containerClass" @click="toggleLeft">
         <app-topbar></app-topbar>
 <!--        <div class="layout-sidebar">
             <app-sidebar></app-sidebar>
         </div> -->
-        <div class="layout-main-container">
-            <div class="layout-main">
+        <div class="layout-main-container"  >
+            <div class="layout-main" >
 							
-							<Button icon="pi pi-window-minimize" style="position: fixed;right: 15px;bottom: 130px;box-shadow:0 0 12px 12px rgba(0, 0, 0, 0.05);" v-if="hasTauri" raised rounded  @click="home()"></Button>
 							<router-view
 							  v-slot="{ Component }"
 							>
@@ -87,11 +100,21 @@ const home = () => {
 							  </keep-alive>
 							</router-view>
             </div>
-            <app-footer></app-footer>
+            <!-- <app-footer></app-footer> -->
+						<app-bottombar></app-bottombar>
+						
+						<Button icon="pi pi-window-minimize" class="backHomeBtn" v-if="hasTauri && !isMobile || true" raised rounded  @click="home()"></Button>
         </div>
         <app-config></app-config>
         <div class="layout-mask"></div>
     </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+	.backHomeBtn{
+		position: fixed !important;
+		right: 15px;
+		bottom: 15px;
+		box-shadow:0 0 12px 12px rgba(0, 0, 0, 0.05);
+	}
+</style>

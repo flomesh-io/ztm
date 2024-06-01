@@ -28,6 +28,7 @@ const version = computed(() => {
 const pipyProxyService = new PipyProxyService();
 const shellService = new ShellService();
 const confirm = useConfirm();
+const props = defineProps(['embed']);
 const emits = defineEmits(['collapse']);
 const router = useRouter();
 const meshes = ref([]);
@@ -172,7 +173,6 @@ const restart = ref(false);
 <template>
 	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen,'android':platform=='android'}">
 	  <div class="image"></div>
-	  
 	  <div class="wave"></div>
 	  <div class="wave"></div>
 	  <div class="wave"></div>
@@ -241,7 +241,7 @@ const restart = ref(false);
 					<i class="pi pi-cog "  />
 				</Button>
 			</div>
-			<div class="flex-item">
+			<div class="flex-item" v-if="!props.embed">
 				<Button :disabled="!playing" v-tooltip="'Mesh Console'" class="pointer" severity="help" text rounded aria-label="Filter" @click="goConsole" >
 					<i class="pi pi-desktop " />
 				</Button>
@@ -339,6 +339,7 @@ const restart = ref(false);
 		right: 0;
 		top: 0;
 		bottom: 0;
+		z-index: 0;
 	  border-radius: 0px;
 	  overflow: hidden;
 	}
@@ -465,15 +466,17 @@ const restart = ref(false);
 		top: 12px;
 	}
 	.config-pannel{
-		position: absolute;
+		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
+		z-index: 3;
 	}
 	.config-body{
 		position: relative;
 		padding: 2rem;
+		z-index: 4;
 		color: rgba(255, 255, 255, 0.9);
 	}
 	.config-pannel:before {
@@ -487,7 +490,7 @@ const restart = ref(false);
 	  backdrop-filter: blur(10px);
 	}
 	.config-body .close{
-		position: absolute;
+		position: absolute !important;
 		right: 15px;
 		top: 15px;
 		color: rgba(255, 255, 255, 0.7);

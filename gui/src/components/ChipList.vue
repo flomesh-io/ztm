@@ -59,7 +59,7 @@ const typing = (e,idx) => {
 						<i class="pi" :class="icon"/>
 					</span>
 					<span class="ml-2 font-medium">
-						<InputText @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
+						<InputText @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
 						<i class="pi pi-arrow-down-left" />
 					</span>
 			</Chip>

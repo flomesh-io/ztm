@@ -16,10 +16,11 @@ const scopeType = ref('All');
 onMounted(() => {
 	loaddata();
 });
+const isChat = computed(() => store.getters['account/isChat']);
 const loading = ref(false);
 const loader = ref(false);
 const loaddata = () => {
-	active.value = 0;
+	visibleEditor.value = false;
 	loading.value = true;
 	loader.value = true;
 	pipyProxyService.getMeshes()
@@ -56,9 +57,8 @@ const deleteMesh = () => {
 const changeStatus = (mesh,val) => {
 	status.value[`${mesh.host}:${mesh.port}`] = val;
 }
-const active = ref(0);
 const join = () => {
-	active.value = 0;
+	visibleEditor.value = false;
 	setTimeout(()=>{
 		loaddata();
 	},1000);
@@ -100,53 +100,53 @@ const openEditor = () => {
 </script>
 
 <template>
-	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
-	    <TabPanel>
-				<template #header>
-					<div>
-						<i class="pi pi-star-fill mr-2" style="color: orange;"/>My Meshes
-						<i @click="loaddata" class="pi pi-refresh ml-2 refresh-icon" :class="{'spiner':loader}"/>
-					</div>
-				</template>
-				<Loading v-if="loading"/>
-				<div v-else-if="meshes && meshes.length >0" class="text-center">
-					<div class="grid mt-1 text-left" >
-							<div class="col-12 md:col-6 lg:col-3" v-for="(mesh,hid) in meshes" :key="hid">
-	               <div class="surface-card shadow-2 p-3 border-round">
-	                   <div class="flex justify-content-between mb-3">
-	                       <div>
-	                            <span class="block text-tip font-medium mb-3">
-																
-																{{decodeURI(mesh.name)}}
-															</span>
-															<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
-	                       </div>
-												 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
-												 <Menu ref="actionMenu" :model="actions" :popup="true" />
-	                   </div>
-	                    <span class="text-tip">Hubs: </span>
-											<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
-	               </div>
-	           </div>
-					</div>
+	<div class="flex flex-row">
+		<div :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+			<AppHeader :main="true">
+					<template #center>
+						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
+						<b>My {{isChat?'Channels':'Meshes'}} ({{meshes.length}})</b>
+					</template>
+			
+					<template #end> 
+						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
+						<Button icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
+					</template>
+			</AppHeader>
+			<Loading v-if="loading"/>
+			<div v-else-if="meshes && meshes.length >0" class="text-center px-3">
+				<div class="grid mt-1 text-left" >
+						<div :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
+							 <div class="surface-card shadow-2 p-3 border-round">
+									 <div class="flex justify-content-between mb-3">
+											 <div>
+														<span class="block text-tip font-medium mb-3">
+															
+															{{decodeURI(mesh.name)}}
+														</span>
+														<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
+											 </div>
+											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
+											 <Menu ref="actionMenu" :model="actions" :popup="true" />
+									 </div>
+										<span class="text-tip">Hubs: </span>
+										<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
+							 </div>
+					 </div>
 				</div>
-				<Empty v-else />
-			</TabPanel>
-	    <TabPanel >
-				<template #header>
-					<i class="pi pi-angle-double-up mr-2" /> Join
-				</template>
-	      <MeshJoin @save="join"/>
-	    </TabPanel>
-	</TabView>
-	<Dialog :closable="false" class="noheader" v-model:visible="visibleEditor" modal header="Edit Mesh" :style="{ width: '90%' }">
-		<MeshJoin 
-			title="Edit Mesh" 
-			v-if="selectedMesh" 
-			:pid="selectedMesh?.name" 
-			@save="join" 
-			@cancel="() => visibleEditor=false"/>
-	</Dialog>
+			</div>
+			<Empty v-else />
+		</div>
+		<div class="flex-item" v-if="!!visibleEditor">
+			<div class="shadow mobile-fixed">
+				<MeshJoin
+					:title="!!selectedMesh?(isChat?'Edit Channel':'Edit Mesh'):null" 
+					:pid="selectedMesh?.name" 
+					@save="join" 
+					@back="() => {selectedMesh=null;visibleEditor=false;}"/>
+			</div>
+		</div>
+	</div>
 </template>
 
 <style scoped lang="scss">

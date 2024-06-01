@@ -60,7 +60,7 @@ const select = () => {
 		optionLabel="name" 
 		@change="select"
 		placeholder="Mesh" 
-		:style="full?'':'max-width: 300px;'"
+		class="w-full"
 		:class="innerClass">
 <!-- 				    <template #optiongroup="slotProps">
 						<div class="flex align-items-center">
@@ -74,14 +74,23 @@ const select = () => {
 								<div>{{ decodeURI(slotProps.option.name) }}</div>
 						</div>
 				</template>
+				<template #dropdownicon>
+					<span></span>
+				</template>
 				 <template #value="slotProps">
-							<div v-if="slotProps.value" class="flex align-items-center">
+					 <Status style="margin-right: 0 !important;margin-bottom: 5px;" v-if="slotProps.value" :run="slotProps.value.connected" :errors="slotProps.value.errors" />
+					 <div v-else class="pi pi-arrow-right-arrow-left"></div>
+					 <div v-if="slotProps.value">{{ decodeURI(slotProps.value.name) }}</div>
+					 <div v-else>
+					 		{{ slotProps.placeholder }}
+					 </div>
+						<!-- 	<div v-if="slotProps.value" class="flex align-items-center">
 									<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
 									<div>{{ decodeURI(slotProps.value.name) }}</div>
 							</div>
 							<span v-else>
 									{{ slotProps.placeholder }}
-							</span>
+							</span> -->
 					</template>
 		</Select>
 		

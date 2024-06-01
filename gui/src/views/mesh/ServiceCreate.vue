@@ -9,7 +9,7 @@ import { useStore } from 'vuex';
 import _ from "lodash"
 
 const props = defineProps(['pid','mesh','ep','proto','title']);
-const emits = defineEmits(['save','cancel']);
+const emits = defineEmits(['save','back']);
 const store = useStore();
 const meshes = computed(() => {
 	return store.getters['account/meshes']
@@ -120,160 +120,142 @@ const loaddata = () => {
 			loading.value = false;
 		}); 
 }
-const cancel = () => {
-	emits("cancel");
-}
 const active = ref(0);
+
+const back = () => {
+	emits('back')
+}
+const windowWidth = computed(() =>  window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
-	<div v-if="route.params?.id" style="padding-left: 0px;padding-top: 0;padding-right: 0;m">
-		<Breadcrumb :home="home" :model="[{label:route.params?.id}]" />
-	</div>
-	<div >
-		<BlockViewer text="Json" :header="props.title||'Create Service'" containerClass="surface-section px-1 py-3 md:px-1 md:pb-7 lg:px-1" >
-			<template #actions>
-				<Button class="mr-2" severity="secondary" v-if="!!props.pid" label="Cancel" size="small" @click="cancel"/>
-				<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
-			</template>
+
+	<div class="min-h-screen surface-ground">
+		<AppHeader :back="back">
+				<template #center>
+					<b>{{props.title||'Create Service'}}</b>
+				</template>
+		
+				<template #end> 
+					<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
+				</template>
+		</AppHeader>
+		<div class="md:m-3">
+		<BlockViewer containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
 			<Loading v-if="loading" />
-			<TabView v-else class="tabview-vertical" v-model:activeIndex="active">
+			<TabView v-else :class="{'tabview-vertical':!isMobile}" v-model:activeIndex="active">
 				<TabPanel>
 					<template #header><i class="pi pi-cog mr-2"/>Config</template>
-					<div class="surface-section pl-4">
+					<div>
 						<ul class="list-none p-0 m-0">
-							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Service</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-bookmark"/>
-												</span>
-												<span class="ml-2 font-medium">
-													<InputText :disabled="!!props.pid" placeholder="Name your service" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
-												</span>
-										</Chip>
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Mesh</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-globe"/>
-												</span>
-												<span class="font-medium">
-													<MeshSelector 
-														:form="true" 
-														:full="true" 
-														v-model="selected"
-														 :disabled="!!props.pid"
-														innerClass="flex"/>
-												</span>
-										</Chip>
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Endpoint</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-chart-scatter"/>
-												</span>
-												<span class="font-medium">
-													<Select
-													 :disabled="!!props.pid"
-														v-model="config.ep" 
-														:options="endpoints" 
-														optionLabel="name" 
-														optionValue="id"
-														placeholder="Endpoint" 
-														class="flex"></Select>
-												</span>
-										</Chip>
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap border-bottom-1">
-									<div class="text-tip w-6 md:w-2 font-medium">Protocol</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
-										<Chip class="pl-0 pr-3">
-												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<RadioButton  :disabled="!!props.pid" v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
-												</span>
-												<span class="ml-2 font-medium">TCP</span>
-										</Chip>
-										
-										<Chip class="ml-2 pl-0 pr-3">
-												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<RadioButton  :disabled="!!props.pid" v-model="config.protocol" inputId="scopeType3" name="scopeType" value="udp" />
-												</span>
-												<span class="ml-2 font-medium">UDP</span>
-										</Chip>
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Host</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-bookmark"/>
-												</span>
-												<span class="ml-2 font-medium">
-													<InputText placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.host" type="text" />
-												</span>
-										</Chip>
-									</div>
-							</li>
-							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Port</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-sort"/>
-												</span>
-												<span class="ml-2 font-medium">
-													<InputNumber :useGrouping="false" :min="1" :max="65535" placeholder="1-65535" class="add-tag-input" :unstyled="true" v-model="config.port" type="text" />
-												</span>
-										</Chip>
-									</div>
-							</li>
+							<FormItem label="Service">
+								<Chip class="pl-0 pr-3 mr-2">
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-bookmark"/>
+										</span>
+										<span class="ml-2 font-medium">
+											<InputText :disabled="!!props.pid" placeholder="Name your service" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
+										</span>
+								</Chip>
+							</FormItem>
+							<FormItem label="Mesh">
+								<Chip class="pl-0 pr-3 mr-2">
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-globe"/>
+										</span>
+										<span class="font-medium">
+											<MeshSelector 
+												:form="true" 
+												:full="true" 
+												v-model="selected"
+												 :disabled="!!props.pid"
+												innerClass="flex"/>
+										</span>
+								</Chip>
+							</FormItem>
+							<FormItem label="Endpoint">
+								<Chip class="pl-0 pr-3 mr-2">
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-chart-scatter"/>
+										</span>
+										<span class="font-medium">
+											<Select
+											 :disabled="!!props.pid"
+												v-model="config.ep" 
+												:options="endpoints" 
+												optionLabel="name" 
+												optionValue="id"
+												placeholder="Endpoint" 
+												class="flex"></Select>
+										</span>
+								</Chip>
+							</FormItem>
+							<FormItem label="Protocol">
+								<Chip class="pl-0 pr-3">
+										<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<RadioButton  :disabled="!!props.pid" v-model="config.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
+										</span>
+										<span class="ml-2 font-medium">TCP</span>
+								</Chip>
+								<Chip class="ml-2 pl-0 pr-3">
+										<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<RadioButton  :disabled="!!props.pid" v-model="config.protocol" inputId="scopeType3" name="scopeType" value="udp" />
+										</span>
+										<span class="ml-2 font-medium">UDP</span>
+								</Chip>
+							</FormItem>
+							<FormItem label="Host">
+								<Chip class="pl-0 pr-3 mr-2">
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-bookmark"/>
+										</span>
+										<span class="ml-2 font-medium">
+											<InputText placeholder="Name" class="add-tag-input xl" :unstyled="true" v-model="config.host" type="text" />
+										</span>
+								</Chip>
+							</FormItem>
+							<FormItem label="Port" :border="false">
+								<Chip class="pl-0 pr-3 mr-2">
+										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<i class="pi pi-sort"/>
+										</span>
+										<span class="ml-2 font-medium">
+											<InputNumber :useGrouping="false" :min="1" :max="65535" placeholder="1-65535" class="add-tag-input" :unstyled="true" v-model="config.port" type="text" />
+										</span>
+								</Chip>
+							</FormItem>
 						</ul>
 					</div>
 				</TabPanel>
 				<TabPanel>
 					<template #header><i class="pi pi-shield mr-2"/>Security</template>
-					<div class="surface-section pl-4">
+					<div class="surface-section" >
 						<ul class="list-none p-0 m-0">
-							<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Scope</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1 bootstrap">
-										<Chip class="pl-0 pr-3">
-												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<RadioButton  v-model="scope" inputId="scopeType2" name="scopeType" value="public" />
-												</span>
-												<span class="ml-2 font-medium">Public</span>
-										</Chip>
-										
-										<Chip class="ml-2 pl-0 pr-3">
-												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<RadioButton  v-model="scope" inputId="scopeType3" name="scopeType" value="private" />
-												</span>
-												<span class="ml-2 font-medium">Private</span>
-										</Chip>
-									</div>
-							</li>
-							<li v-if="scope == 'private'" class="flex align-items-center py-3 px-2  border-top-1 surface-border flex-wrap">
-									<div class="text-tip w-6 md:w-2 font-medium">Users</div>
-									<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
-										<ChipList icon="pi-user" direction="v" placeholder="Add user" v-model:list="config.users" />
-									</div>
-							</li>
+							<FormItem label="Scope" :border="scope == 'private'">
+								<Chip class="pl-0 pr-3">
+										<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<RadioButton  v-model="scope" inputId="scopeType2" name="scopeType" value="public" />
+										</span>
+										<span class="ml-2 font-medium">Public</span>
+								</Chip>
+								
+								<Chip class="ml-2 pl-0 pr-3">
+										<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+											<RadioButton  v-model="scope" inputId="scopeType3" name="scopeType" value="private" />
+										</span>
+										<span class="ml-2 font-medium">Private</span>
+								</Chip>
+							</FormItem>
+							<FormItem v-if="scope == 'private'" label="Users" :border="false">
+								<ChipList icon="pi-user" direction="v" placeholder="Add user" v-model:list="config.users" />
+							</FormItem>
 						</ul>
 					</div>
 				</TabPanel>
 			</TabView>
-		</BlockViewer>
+			</BlockViewer>
+		</div>
 	</div>
 </template>
 

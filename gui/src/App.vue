@@ -1,3 +1,8 @@
+<template>
+	<Toast />
+	<ConfirmDialog></ConfirmDialog>
+	<router-view />
+</template>
 <script setup>
 import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useToast } from "primevue/usetoast";
@@ -18,10 +23,4 @@ store.commit('notice/setConfirm', confirm);
 // 	invoke('close_splashscreen');
 // },1000)
 </script>
-
-<template>
-	<Toast />
-	<router-view />
-</template>
-
 <style scoped></style>

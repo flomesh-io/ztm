@@ -3,14 +3,15 @@ import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue'
+import EndpointDetail from './EndpointDetail.vue'
 import { useStore } from 'vuex';
-const store = useStore();
 import { useConfirm } from "primevue/useconfirm";
 import freeSvg from "@/assets/img/free.svg";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime)
 
+const store = useStore();
 const router = useRouter();
 const pipyProxyService = new PipyProxyService();
 const confirm = useConfirm();
@@ -19,6 +20,7 @@ const loader = ref(false);
 const status = ref({});
 const endpoints = ref([]);
 
+const isChat = computed(() => store.getters['account/isChat']);
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
@@ -72,7 +74,6 @@ watch(()=>selectedMesh,()=>{
 	immediate:true
 })
 
-const active = ref(0);
 
 const expandNode = ref();
 const expand = (node) => {
@@ -174,74 +175,64 @@ const showAtionMenu = (node, type) => {
 	actionTarget.value = { node, type };
 	actionMenu.value.toggle(event);
 };
+const selectEp = ref();
+const select = (node) => {
+	selectEp.value = node
+}
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
+}
 </script>
 
 <template>
-	<TabView class="pt-3 pl-3 pr-3" v-model:activeIndex="active">
-		<TabPanel>
-			<template #header>
-				<div>
-					<i class="pi pi-chart-scatter mr-2"/> Endpoints
-					<i @click="getEndpoints" class="pi pi-refresh ml-2 refresh-icon" :class="{'spiner':loader}"/>
-				</div>
-			</template>
+	
+	<div class="flex flex-row">
+		<div :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
+			<AppHeader :main="true">
+					<template #start>
+						<Button @click="toggleLeft" class="mobile-show" icon="pi pi-bars" text  />
+					</template>
+			
+					<template #center>
+						<b>{{isChat?'Contacts':'Endpoints'}} ({{endpoints.length}})</b>
+					</template>
+			
+					<template #end> 
+						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
+					</template>
+			</AppHeader>
 			<Loading v-if="loading"/>
-			<div v-else class="text-center">
-				<Tree 
-					v-if="endpoints && endpoints.length >0" 
-					:value="endpoints" 
-					@node-expand="expand" 
-					loadingMode="icon" 
-					class="transparent">
-					<template #default="slotProps">
-							<div v-if="slotProps.node.type == 'ep'" class="w-full text-left flex flex-wrap py-1" >
-								
-								<div>
-									<div>
-										<Status :run="slotProps.node.online" :tip="timeago(slotProps.node.heartbeat)"  /> <b>EP: {{ slotProps.node.label || slotProps.node.id }} <span v-if="!!slotProps.node.username">({{slotProps.node.username}})</span></b>
-										<span class="ml-3"><Tag severity="contrast" >{{slotProps.node.isLocal?'Local':'Remote'}}</Tag></span>
-									</div>
-									<div v-if="!!slotProps.node.port || !!slotProps.node.ip">
-										<span class="font-normal text-tip" style="margin-left: 24px;">{{slotProps.node.ip}}:{{slotProps.node.port}}</span>
-									</div>
+			<DataView v-else-if="endpoints && endpoints.length >0"  class="message-list" :value="endpoints">
+					<template #list="slotProps">
+							<div class="flex flex-col message-item pointer" v-for="(node, index) in slotProps.items" :key="index" @click="select(node)">
+								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+										<div class="w-40 relative">
+											<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
+											<span class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >{{node.isLocal?'Local':'Remote'}}</Tag></span>
+										</div>
+										<div class="flex-item">
+												<div class="flex">
+													<div class="flex-item pt-1">
+														<b>{{ node.label || node.id }} <span v-if="!!node.username">({{node.username}})</span></b>
+														
+													</div>
+													<Status :run="node.online" :tip="timeago(node.heartbeat)"  style="top: 12px;margin-right: 0;right: -10px;"/>
+												</div>
+										</div>
 								</div>
-							</div>
-							<div v-else-if="slotProps.node.type == 'service'" class="flex align-items-center flex-wrap w-full text-left justify-content-center py-2">
-								
-								<Avatar icon="pi pi-server" />
-								<div class="ml-3">
-									<div>
-										<b>Service: {{ slotProps.node.label }}</b>
-									</div>
-									<div>
-										<span v-if="!!slotProps.node.port" class="font-normal text-tip mr-2">{{slotProps.node.host}}:{{slotProps.node.port}}</span>
-										<span><Tag>{{slotProps.node.protocol}}</Tag></span>
-									</div>
-								</div>
-								<Avatar shape="circle" icon="pi pi-ellipsis-v" v-tooltip="'Delete Service'"  @click="showAtionMenu(slotProps.node,'service')" class="pointer ml-4 vm" style="background-color: transparent;" />
-							</div>
-							<div class="flex flex-wrap w-full text-left align-items-center justify-content-center py-1" v-else-if="slotProps.node.type == 'port'">
-								
-								<Avatar icon="pi pi-bullseye" />
-								<div class="ml-3">
-									<div>
-										<b>Port: {{ slotProps.node.label }}</b>
-										
-									</div>
-									<div>
-										<span v-if="!!slotProps.node.target" class="font-normal text-tip mr-1">{{slotProps.node.target.service}}</span>
-										<span><Tag>{{slotProps.node.protocol}}</Tag></span>
-									</div>
-								</div>
-								<Avatar shape="circle" icon="pi pi-ellipsis-v" v-tooltip="'Delete Port'"  @click="showAtionMenu(slotProps.node, 'port')" class="pointer ml-4 vm" style="background-color: transparent;"/>
 							</div>
 					</template>
-				</Tree>
-				<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
-				<Menu ref="actionMenu" :model="actions" :popup="true" />
+			</DataView>
+			<img v-else :src="freeSvg" class="w-5 h-5 mx-aut" style="margin: auto;"  />
+			<Menu ref="actionMenu" :model="actions" :popup="true" />
+		</div>
+
+		<div class="flex-item" v-if="!!selectEp">
+			<div class="shadow mobile-fixed">
+				<EndpointDetail @back="() => selectEp=false" :ep="selectEp"/>
 			</div>
-		</TabPanel>
-	</TabView>
+		</div>
+	</div>
 </template>
 
 <style scoped lang="scss">

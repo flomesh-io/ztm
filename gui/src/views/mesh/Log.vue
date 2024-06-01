@@ -23,6 +23,7 @@ const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
 
+const isChat = computed(() => store.getters['account/isChat']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -88,7 +89,6 @@ watch(()=>selectedMesh,()=>{
 	deep:true,
 	immediate:true
 })
-const active = ref(0);
 const severityMap = computed(() => (severity) => {
 	if(severity == 'error'){
 		return "danger";
@@ -125,11 +125,24 @@ const statuses = ref(['error','warn','info'])
 const filters = ref({
     type: { value: null, matchMode: FilterMatchMode.EQUALS }
 });
+const back = () => {
+	router.go(-1)
+}
 
 </script>
 
 <template>
-	<Card class="nopd ml-3 mr-3 mt-3">
+	<AppHeader :main="!isChat" >
+			<template #center>
+				<i class="pi pi-book mr-2" />
+				<b>Logs</b>
+			</template>
+	
+			<template #end> 
+				<Button icon="pi pi-refresh" text @click="mergeLogs"  :loading="loading"/>
+			</template>
+	</AppHeader>
+	<Card class="nopd">
 		<template #content>
 			<InputGroup class="search-bar" >
 				<Button icon="pi pi-chart-scatter" />
@@ -142,7 +155,7 @@ const filters = ref({
 	</Card>
 	<Loading v-if="loading"/>
 	<div v-else-if="logsFilter && logsFilter.length >0" class="text-center">
-		<div class="grid text-left px-5 py-5" >
+		<div class="grid text-left px-3 py-3" >
 			<DataTable v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" :value="logsFilter" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" tableStyle="min-width: 50rem">
 				
 				<Column style="width: 160px;" header="Time" sortable field="time">
