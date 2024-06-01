@@ -1,13 +1,6 @@
 name: android-chat-build
 
-on:
-  workflow_dispatch: 
-  push:
-    branches:
-      - chat
-  pull_request:
-    branches:
-      - chat
+on: workflow_dispatch
 
 jobs:
   build:
@@ -16,6 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
+        ref: chat
         node-version: '21'
     - name: Setup Java JDK
       uses: actions/setup-java@v4.2.1
