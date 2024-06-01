@@ -6,8 +6,6 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-    - name: testpath
-      run: echo "./gui/src-tauri/target/release/bundle/dmg/ZTM_${{ vars.APP_VERSION }}_aarch64.dmg"
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
