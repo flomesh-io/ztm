@@ -13,9 +13,6 @@ const meshes = ref([]);
 const status = ref({});
 const scopeType = ref('All');
 
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
-
 const platform = computed(() => {
 	return store.getters['account/platform']
 });
@@ -111,40 +108,34 @@ const visibleEditor = ref(false);
 const openEditor = () => {
 	visibleEditor.value = true;
 }
-const toggleLeft = () => {
-	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
-}
-
-const hasTauri = ref(!!window.__TAURI_INTERNALS__);
-const home = () => {
-	if(hasTauri.value){
-		router.push('/root');
-	}else{
-		router.push("/mesh/list");
-	}
-}
 </script>
 
 <template>
 	<div class="flex flex-row">
 		<div :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
-			<!--FIX ANDROID DISPLAY-->
-			<Toolbar class="nopd-header">
+			<!--FIX ANDROID DISPLAY Start-->
+			<Toolbar class="nopd-header" style="display: none;">
 					<template #start>
-							<Button v-if="isMobile" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
-							<Button v-else @click="home" icon="iconfont icon-home" text />
 					</template>
-			
+					<template #center>
+					</template>
+					<template #end> 
+					</template>
+			</Toolbar>
+			<div style="display: none;">
+				<AppHeader><template #center></template><template #end></template></AppHeader>
+			</div>
+			<!--FIX ANDROID DISPLAY End-->
+			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
 						<b>My {{isChat?'Channels':'Meshes'}} ({{meshes.length}})</b>
 					</template>
-			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
 						<Button icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
 					</template>
-			</Toolbar>
+			</AppHeader>
 			<Loading v-if="loading"/>
 			<div v-else-if="meshes && meshes.length >0" class="text-center px-3">
 				<div class="grid mt-1 text-left" >

@@ -178,9 +178,6 @@ const selectEp = ref();
 const select = (node) => {
 	selectEp.value = node
 }
-const toggleLeft = () => {
-	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
-}
 </script>
 
 <template>
@@ -188,10 +185,6 @@ const toggleLeft = () => {
 	<div class="flex flex-row">
 		<div :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
-					<template #start>
-						<Button @click="toggleLeft" class="mobile-show" icon="pi pi-bars" text  />
-					</template>
-			
 					<template #center>
 						<b>{{isChat?'Contacts':'Endpoints'}} ({{endpoints.length}})</b>
 					</template>
