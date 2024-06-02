@@ -117,7 +117,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 
 <template>
 	
-	<div class="min-h-screen surface-ground">
+	<div class="surface-ground" :style="{'minHeight':`calc(100vh - 20px)`}">
 		<AppHeader :back="back">
 				<template #center>
 					<b>{{props.title||'Join Mesh'}}</b>

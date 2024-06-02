@@ -242,7 +242,7 @@ const emptyMsg = computed(()=>{
 
 <template>
 	<div class="flex flex-row">
-		<div :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+		<div :class="{'w-24rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
 			<AppHeader v-if="!props.embed" :main="!isChat" >
 					<template #center>
 						<b>Services</b>
@@ -405,6 +405,7 @@ const emptyMsg = computed(()=>{
 		<div class="flex-item" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed">
 				<ServiceCreate
+					:embed="props.embed"
 					:title="!!selectedService?(isChat?'Edit Service':'Edit Service'):null" 
 					:mesh="selectedMesh?.name" 
 					:pid="selectedService?.service?.name" 

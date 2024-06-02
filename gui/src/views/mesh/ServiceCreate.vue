@@ -8,7 +8,7 @@ import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
 import _ from "lodash"
 
-const props = defineProps(['pid','mesh','ep','proto','title']);
+const props = defineProps(['embed','pid','mesh','ep','proto','title']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
 const meshes = computed(() => {
@@ -131,7 +131,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 
 <template>
 
-	<div class="min-h-screen surface-ground">
+	<div class="surface-ground" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
 		<AppHeader :back="back">
 				<template #center>
 					<b>{{props.title||'Create Service'}}</b>
