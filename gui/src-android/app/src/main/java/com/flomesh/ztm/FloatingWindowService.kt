@@ -230,6 +230,7 @@ class FloatingWindowService : Service(), Application.ActivityLifecycleCallbacks 
         val intent = Intent()
         try {
             // 适配不同厂商的自启动设置页面
+						Log.d("FloatingWindowService-MANUFACTURER:", Build.MANUFACTURER.lowercase())
             when (Build.MANUFACTURER.lowercase()) {
                 "xiaomi" -> {
                     intent.component = ComponentName(
