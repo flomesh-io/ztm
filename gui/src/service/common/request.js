@@ -70,8 +70,9 @@ async function request(url, method, params, config) {
 			body: !!params?JSON.stringify(params):null,
 			...config
 		}).then((res) => res.json()).catch((e)=>{
-			if(method != METHOD.GET)
-			toastMessage(e);
+			if(!!method && method != METHOD.GET){
+				toastMessage(e);
+			}
 		});
 	}
 }

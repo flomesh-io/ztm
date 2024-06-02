@@ -13,8 +13,22 @@ const meshes = ref([]);
 const status = ref({});
 const scopeType = ref('All');
 
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
+
+const platform = computed(() => {
+	return store.getters['account/platform']
+});
 onMounted(() => {
-	loaddata();
+	if(platform.value=='android'){
+		loading.value = true;
+		loader.value = true;
+		setTimeout(() => {
+			loaddata();
+		},3000)
+	}else{
+		loaddata();
+	}
 });
 const isChat = computed(() => store.getters['account/isChat']);
 const loading = ref(false);
@@ -97,12 +111,30 @@ const visibleEditor = ref(false);
 const openEditor = () => {
 	visibleEditor.value = true;
 }
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
+}
+
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const home = () => {
+	if(hasTauri.value){
+		router.push('/root');
+	}else{
+		router.push("/mesh/list");
+	}
+}
 </script>
 
 <template>
 	<div class="flex flex-row">
 		<div :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
-			<AppHeader :main="true">
+			<!--FIX ANDROID DISPLAY-->
+			<Toolbar class="nopd-header">
+					<template #start>
+							<Button v-if="isMobile" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
+							<Button v-else @click="home" icon="iconfont icon-home" text />
+					</template>
+			
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
 						<b>My {{isChat?'Channels':'Meshes'}} ({{meshes.length}})</b>
@@ -112,7 +144,7 @@ const openEditor = () => {
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
 						<Button icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
 					</template>
-			</AppHeader>
+			</Toolbar>
 			<Loading v-if="loading"/>
 			<div v-else-if="meshes && meshes.length >0" class="text-center px-3">
 				<div class="grid mt-1 text-left" >
