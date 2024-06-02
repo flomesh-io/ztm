@@ -4,9 +4,9 @@ import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter, useRoute } from 'vue-router';
 import { getMenu } from './menu';
-import XeyeSvg from "@/assets/img/web-logo.png";
+import XeyeSvg from "@/assets/img/loading.png";
 import MeshSelector from '@/views/mesh/common/MeshSelector.vue'
-import HoverXeyeSvg from "@/assets/img/hover-web-logo.png";
+import HoverXeyeSvg from "@/assets/img/white.png";
 import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
@@ -145,12 +145,7 @@ const select = (selected) => {
 <template>
 	<Menubar class="app-top-bar mobile-hidden" :model="model" breakpoint="0px">
 			<template #start>
-				<div class="flex flex-column justify-content-center align-items-center py-3">
-						<Avatar size="large" icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
-						<b >{{selectedMesh?.agent?.name||'Agent'}}</b>
-						<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
-				</div>
-				<!-- <img class="logo" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="logoHover?HoverXeyeSvg:XeyeSvg" height="40"/> -->
+				<img class="logo mt-3 mb-1 spiner" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="logoHover?HoverXeyeSvg:XeyeSvg" height="50"/>
 			</template>
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
@@ -168,6 +163,12 @@ const select = (selected) => {
 			</template>
 			<template #end >
 					<div class="flex align-items-center flex-column w-full">
+						
+							<div v-tooltip="`${selectedMesh?.agent?.name} (${selectedMesh?.agent?.username})`" class="w-full flex flex-column justify-content-center align-items-center py-3">
+									<Avatar icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
+									<div class="text-ellipsis w-full text-sm px-2 text-center"><b>{{selectedMesh?.agent?.name||'Agent'}}</b></div>
+									<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
+							</div>
 						<MeshSelector
 							:full="true" 
 							@load="load" 

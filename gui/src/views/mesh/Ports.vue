@@ -93,7 +93,6 @@ const typing = ref('');
 <template>
 	<AppHeader v-if="!props.embed" :main="!isChat" >
 			<template #center>
-				<i class="pi pi-sitemap mr-2" />
 				<b>Local Ports ({{portsFilter.length}})</b>
 			</template>
 	
