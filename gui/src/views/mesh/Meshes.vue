@@ -115,7 +115,6 @@ const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
 }
 
-
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const home = () => {
 	if(hasTauri.value){
