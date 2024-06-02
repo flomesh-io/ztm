@@ -40,6 +40,7 @@ const config = ref({
 	port: getPort(),
 });
 
+const isChat = computed(() => store.getters['account/isChat']);
 const platform = computed(() => {
 	return store.getters['account/platform']
 });
@@ -54,6 +55,8 @@ const ztmVersion = computed(() => {
 });
 const placeholder = computed(() => {
 	const _vs = "ZTM : ";
+	const unit = isChat.value?'Channel':'Mesh';
+	const units = isChat.value?'Channels':'Meshes';
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
@@ -61,11 +64,11 @@ const placeholder = computed(() => {
 	} else if(!playing.value){
 		return `${_vs}Off.`;
 	} else if(!meshes.value || meshes.value.length ==0){
-		return `${props.embed?'':_vs}First, join a Mesh.`;
+		return `${props.embed?'':_vs}First, join a ${unit}.`;
 	} else if(meshes.value.length == 1){
-		return `${_vs}1 Mesh Joined.`;
+		return `${_vs}1 ${unit} Joined.`;
 	} else {
-		return `${_vs}${meshes.value.length} ${meshes.value.length>1?'Meshes':'Mesh'} Joined.`;
+		return `${_vs}${meshes.value.length} ${meshes.value.length>1?units:unit} Joined.`;
 	}
 });
 onMounted(() => {

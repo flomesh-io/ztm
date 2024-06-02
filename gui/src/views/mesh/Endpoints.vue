@@ -73,111 +73,17 @@ watch(()=>selectedMesh,()=>{
 	immediate:true
 })
 
-
-const expandNode = ref();
-const expand = (node) => {
-	if (!!node) {
-		node.loading = true;
-		node.children = [];
-		expandNode.value = node;
-		/*
-		 * get services
-		 */
-		pipyProxyService.getServices({
-			mesh:selectedMesh.value?.name,
-			ep:node?.id
-		})
-			.then(res => {
-				const _children = res;
-				_children.forEach((service,sid)=>{
-					service.key = node.key + '-s-' + sid,
-					service.label = service.name +"xcxxxxxxxxxsc";
-					service.type = "service";
-					node.children.push(service);
-				});
-				node.loading = false;
-			})
-			.catch(err => {
-				node.loading = false;
-				console.log('Request Failed', err)
-			}); 
-
-		/*
-		 * get ports
-		 */
-		pipyProxyService.getPorts({
-			mesh:selectedMesh.value?.name,
-			ep:node?.id
-		})
-			.then(res => {
-				const _children = res;
-				_children.forEach((port,pid)=>{
-					port.key = node.key + '-p-' + pid,
-					port.label = `${port.listen?.ip}:${port.listen?.port}`;
-					port.type = "port";
-					node.children.push(port);
-				});
-			})
-			.catch(err => console.log('Request Failed', err)); 
-	}
-};
-
-const deleteService = (service) => {
-	pipyProxyService.deleteService({
-		mesh:selectedMesh.value?.name,
-		ep:expandNode.value?.id,
-		name: service.name,
-		proto: service.protocol,
-	},() => {
-		console.log('Delete Success', err)
-		setTimeout(()=>{
-			expand(expandNode.value);
-		},1000)
-	}); 
-}
-const deletePort = (port) => {
-	pipyProxyService.deletePort({
-		mesh:selectedMesh.value?.name,
-		ep:expandNode.value?.id,
-		proto: port.protocol,
-		ip: port?.listen?.ip,
-		port: port?.listen?.port
-	},() => {
-		setTimeout(()=>{
-			expand(expandNode.value);
-		},1000)
-	});
-}
-
-const actionTarget = ref({})
-const actionMenu = ref();
-const actions = ref([
-    {
-        label: 'Actions',
-        items: [
-            {
-                label: 'Delete',
-                icon: 'pi pi-trash',
-								command: () => {
-									if(actionTarget.value?.type == 'port'){
-										deletePort(actionTarget.value?.node);
-									}else if(actionTarget.value?.type == 'service'){
-										deleteService(actionTarget.value?.node);
-									}
-								}
-            }
-        ]
-    }
-]);
-
-const showAtionMenu = (node, type) => {
-	actionTarget.value = { node, type };
-	actionMenu.value.toggle(event);
-};
 const selectEp = ref();
 const select = (node) => {
 	selectEp.value = node
 }
+const emptyMsg = computed(()=>{
+	if(!!selectedMesh.value?.name){
+		return 'No endpoint.'
+	} else {
+		return `First, join a ${isChat.value?'Channel':'Mesh'}.`
+	}
+});
 </script>
 
 <template>
@@ -215,8 +121,7 @@ const select = (node) => {
 							</div>
 					</template>
 			</DataView>
-			<Empty v-else />
-			<Menu ref="actionMenu" :model="actions" :popup="true" />
+			<Empty v-else :title="emptyMsg"/>
 		</div>
 
 		<div class="flex-item" v-if="!!selectEp">

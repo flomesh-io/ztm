@@ -230,6 +230,14 @@ const toggleLeft = () => {
 }
 const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
+
+const emptyMsg = computed(()=>{
+	if(!!selectedMesh.value?.name){
+		return 'No service.'
+	} else {
+		return `First, join a ${isChat.value?'Channel':'Mesh'}.`
+	}
+});
 </script>
 
 <template>
@@ -392,7 +400,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 				</div>
 				<Menu ref="actionMenu" :model="actions" :popup="true" />
 			</div>
-			<Empty v-else />
+			<Empty v-else :title="emptyMsg"/>
 		</div>
 		<div class="flex-item" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed">

@@ -50,26 +50,31 @@ const getEndpoints = () => {
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
-
 const getPorts = () => {
-	loading.value = true;
-	loader.value = true;
-	setTimeout(()=>{
-		pipyProxyService.getPorts({
-			mesh:selectedMesh.value?.name,
-			ep:props.embed?props.ep:selectedMesh.value?.agent?.id
-		})
-			.then(res => {
-				console.log("ports:")
-				console.log(res)
-				loading.value = false;
-				setTimeout(() => {
-					loader.value = false;
-				},1400)
-				ports.value = res || [];
+	const _ep = props.embed?props.ep:selectedMesh.value?.agent?.id;
+	if(!!_ep){
+		loading.value = true;
+		loader.value = true;
+		setTimeout(()=>{
+			pipyProxyService.getPorts({
+				mesh:selectedMesh.value?.name,
+				ep:_ep
 			})
-			.catch(err => console.log('Request Failed', err)); 
-	},600);
+				.then(res => {
+					console.log("ports:")
+					console.log(res)
+					loading.value = false;
+					setTimeout(() => {
+						loader.value = false;
+					},1400)
+					ports.value = res || [];
+				})
+				.catch(err => {
+					loading.value = false;
+					loader.value = false;
+				}); 
+		},600);
+	}
 }
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
@@ -88,6 +93,14 @@ const portsFilter = computed(() => {
 
 const typing = ref('');
 
+const emptyMsg = computed(()=>{
+	const _ep = props.embed?props.ep:selectedMesh.value?.agent?.id;
+	if(!!_ep){
+		return 'No port.'
+	} else {
+		return `First, join a ${isChat.value?'Channel':'Mesh'}.`
+	}
+});
 </script>
 
 <template>
@@ -165,7 +178,7 @@ const typing = ref('');
 			 </div>
 		</div>
 	</div>
-	<Empty v-else />
+	<Empty v-else :title="emptyMsg"/>
 </template>
 
 <style scoped lang="scss">
