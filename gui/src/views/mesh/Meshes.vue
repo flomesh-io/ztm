@@ -22,7 +22,7 @@ onMounted(() => {
 		loader.value = true;
 		setTimeout(() => {
 			loaddata();
-		},3000)
+		},2000)
 	}else{
 		loaddata();
 	}
@@ -41,7 +41,7 @@ const loaddata = () => {
 			setTimeout(() => {
 				loader.value = false;
 			},2000)
-			meshes.value = res;
+			meshes.value = res || [];
 			store.commit('account/setMeshes', res);
 		})
 		.catch(err => {
@@ -112,24 +112,25 @@ const openEditor = () => {
 const emptyMsg = computed(()=>{
 	return `First, join a ${isChat.value?'Channel':'Mesh'}.`
 });
+
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
+}
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const home = () => {
+	if(hasTauri.value){
+		router.push('/root');
+	}else{
+		router.push("/mesh/list");
+	}
+}
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
 	<div class="flex flex-row">
 		<div :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
-			<!--FIX ANDROID DISPLAY Start-->
-			<Toolbar class="nopd-header" style="display: none;">
-					<template #start>
-					</template>
-					<template #center>
-					</template>
-					<template #end> 
-					</template>
-			</Toolbar>
-			<div style="display: none;">
-				<AppHeader><template #center></template><template #end></template></AppHeader>
-			</div>
-			<!--FIX ANDROID DISPLAY End-->
 			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
@@ -141,7 +142,7 @@ const emptyMsg = computed(()=>{
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
-			<div v-else-if="meshes && meshes.length >0" class="text-center px-3">
+			<div v-else-if="meshes.length >0" class="text-center px-3">
 				<div class="grid mt-1 text-left" >
 						<div :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">

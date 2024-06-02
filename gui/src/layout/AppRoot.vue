@@ -104,10 +104,10 @@ const pipyInit = async (pause) => {
 	loading.value = true;
 	setTimeout(() => {
 		startPipy();
-	},platform.value=='android'?1000:300)
+	},platform.value=='android'?600:300)
 	setTimeout(() => {
 		loaddata();
-	},platform.value=='android'?3000:1500)
+	},platform.value=='android'?2000:1500)
 }
 const pipyPlay = async () => {
 	await startPipy();
