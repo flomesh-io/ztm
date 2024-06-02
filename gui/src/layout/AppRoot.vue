@@ -52,18 +52,16 @@ const user = computed(() => {
 const ztmVersion = computed(() => {
 	return !!version.value?.ztm?.version? `${version.value?.ztm?.version}` : "";
 });
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
 const placeholder = computed(() => {
-	const _vs = isMobile?"":"ZTM : ";
+	const _vs = "ZTM : ";
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
-		return `${_vs}Check for errors.`;
+		return `${props.embed?'':_vs}Check for errors.`;
 	} else if(!playing.value){
 		return `${_vs}Off.`;
 	} else if(!meshes.value || meshes.value.length ==0){
-		return `${_vs}First, join a Mesh.`;
+		return `${props.embed?'':_vs}First, join a Mesh.`;
 	} else if(meshes.value.length == 1){
 		return `${_vs}1 Mesh Joined.`;
 	} else {
@@ -103,10 +101,10 @@ const pipyInit = async (pause) => {
 	loading.value = true;
 	setTimeout(() => {
 		startPipy();
-	},300)
+	},platform.value=='android'?1000:300)
 	setTimeout(() => {
 		loaddata();
-	},isMobile?3000:1500)
+	},platform.value=='android'?3000:1500)
 }
 const pipyPlay = async () => {
 	await startPipy();
