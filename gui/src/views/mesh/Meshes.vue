@@ -108,6 +108,10 @@ const visibleEditor = ref(false);
 const openEditor = () => {
 	visibleEditor.value = true;
 }
+
+const emptyMsg = computed(()=>{
+	return `First, join a ${isChat.value?'Channel':'Mesh'}.`
+});
 </script>
 
 <template>
@@ -158,7 +162,7 @@ const openEditor = () => {
 					 </div>
 				</div>
 			</div>
-			<Empty v-else />
+			<Empty v-else :title="emptyMsg"/>
 		</div>
 		<div class="flex-item" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed">
