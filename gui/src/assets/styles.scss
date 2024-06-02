@@ -95,6 +95,7 @@ $gutter: 1rem; //for primeflex grid system
 .app-top-bar.p-menubar .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content .p-menubar-item-link{
 	padding: 14px 0px 10px 0px;
 	border-radius: 10px;
+	
 	width: 70px;
 	justify-content: center;
 	text-align: center;
@@ -119,14 +120,13 @@ $gutter: 1rem; //for primeflex grid system
 		
 }
 .app-top-bar .logo{
-	margin-right: 1.25em;
 	margin-top: 4px;
-	margin-left: 0.75em;
 }
 .app-top-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived,
 .app-bottom-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived{
 	background: var(--primary-color) !important;
 	color: var(--primary-color-text) !important;
+	box-shadow: 0 0 6px 6px rgba(90,0,150,0.5);
 	font-weight: bold;
 }
 .p-menubar .p-menubar-item.p-highlight > .p-menubar-item-content{
@@ -438,7 +438,7 @@ pre.app-code code{
 }
 .search-bar .p-inputtextarea{
 	min-height: 36px !important;
-	padding-top: 10px;
+	line-height: 22px;
 	border: none;
 }
 .p-chip .p-select-label{
