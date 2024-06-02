@@ -134,7 +134,6 @@ const back = () => {
 <template>
 	<AppHeader :main="!isChat" >
 			<template #center>
-				<i class="pi pi-book mr-2" />
 				<b>Logs</b>
 			</template>
 	
