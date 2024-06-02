@@ -228,6 +228,8 @@ const back = () => {
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
 }
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
@@ -240,7 +242,7 @@ const toggleLeft = () => {
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="getServices"  :loading="loader"/>
-						<DataViewLayoutOptions v-model="layout" style="z-index: 2;"/>
+						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
 						<Button icon="pi pi-plus"  :label="visibleEditor?null:'Create'" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>

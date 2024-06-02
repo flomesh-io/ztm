@@ -52,8 +52,10 @@ const user = computed(() => {
 const ztmVersion = computed(() => {
 	return !!version.value?.ztm?.version? `${version.value?.ztm?.version}` : "";
 });
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 const placeholder = computed(() => {
-	const _vs = "ZTM : ";
+	const _vs = isMobile?"":"ZTM : ";
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
@@ -104,7 +106,7 @@ const pipyInit = async (pause) => {
 	},300)
 	setTimeout(() => {
 		loaddata();
-	},1500)
+	},isMobile?3000:1500)
 }
 const pipyPlay = async () => {
 	await startPipy();
