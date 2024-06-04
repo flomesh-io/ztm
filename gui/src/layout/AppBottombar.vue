@@ -34,9 +34,6 @@ onBeforeUnmount(() => {
     unbindOutsideClickListener();
 });
 
-const logoUrl = computed(() => {
-    return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
-});
 const username = computed(() => {
 	const agent = selectedMesh.value?.agent;
 	if(!!agent?.name && !!agent?.username){
