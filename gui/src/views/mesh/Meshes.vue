@@ -113,19 +113,6 @@ const emptyMsg = computed(()=>{
 	return `First, join a ${isChat.value?'Channel':'Mesh'}.`
 });
 
-const toggleLeft = () => {
-	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
-}
-const hasTauri = ref(!!window.__TAURI_INTERNALS__);
-const home = () => {
-	if(hasTauri.value){
-		router.push('/root');
-	}else{
-		router.push("/mesh/list");
-	}
-}
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
