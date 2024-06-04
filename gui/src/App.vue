@@ -18,9 +18,5 @@ setAuthorization({
 store.commit('account/setUser', {id:''});
 store.commit('notice/setToast', toast);
 store.commit('notice/setConfirm', confirm);
-// import { invoke } from '@tauri-apps/api/core'
-// setTimeout(()=>{
-// 	invoke('close_splashscreen');
-// },1000)
 </script>
 <style scoped></style>
