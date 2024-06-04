@@ -33,7 +33,7 @@
     "@tauri-apps/plugin-os": "^2.0.0-beta.3",
     "@tauri-apps/plugin-process": "^2.0.0-beta.3",
     "@tauri-apps/plugin-shell": "^2.0.0-beta.4",
-    "@vee-validate/rules": "^4.12.7",
+    "@vee-validate/rules": "4.12.7",
     "axios": "^0.21.1",
     "chart.js": "3.3.2",
     "dayjs": "^1.11.10",
@@ -45,7 +45,7 @@
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primevue": "4.0.0-beta.3",
-    "vee-validate": "^4.12.7",
+    "vee-validate": "4.12.8",
     "vue": "^3.2.41",
     "vue-router": "^4.1.5",
     "vuex": "^4.0.2"
