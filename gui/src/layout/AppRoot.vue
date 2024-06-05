@@ -6,6 +6,7 @@ import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
 import PipyVersion from './PipyVersion.vue';
 import PipyLog from './PipyLog.vue';
+import Apps from './Apps.vue';
 import XeyeSvg from "@/assets/img/white.png";
 import HoverXeyeSvg from "@/assets/img/loading.png";
 import PipySvg from "@/assets/img/pipy-white.png";
@@ -174,6 +175,7 @@ const openLog = () => {
 	shellService.loadLog();
 }
 const restart = ref(false);
+const appsOpen = ref(false);
 </script>
 
 <template>
@@ -242,6 +244,18 @@ const restart = ref(false);
 				</Button>
 			</div> -->
 			
+			
+			<div class="flex-item">
+				<Button v-tooltip="'Import App'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
+					<i class="pi pi-plus text-3xl"  />
+				</Button>
+			</div>
+			
+			<div class="flex-item">
+				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
+					<i class="pi pi-th-large text-3xl"  />
+				</Button>
+			</div>
 			<div class="flex-item">
 				<Button :disabled="!!playing" v-tooltip="'Setting'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => configOpen = true" >
 					<i class="pi pi-cog "  />
@@ -252,11 +266,11 @@ const restart = ref(false);
 					<i class="pi pi-desktop " />
 				</Button>
 			</div>
-			<div class="flex-item">
+<!-- 			<div class="flex-item">
 				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
 					<i class="iconfont icon-cmd text-3xl"  />
 				</Button>
-			</div>
+			</div> -->
 			<div class="flex-item">
 				<Button v-tooltip.left="'Start'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
 					<i class="pi pi-play " />
@@ -301,6 +315,7 @@ const restart = ref(false);
 		</div>
 	</div>
 	<PipyLog v-if="logOpen" @close="() => logOpen = false"/>
+	<Apps v-if="appsOpen" @close="() => appsOpen = false"/>
 	<ConfirmDialog></ConfirmDialog>
 </template>
 
@@ -493,7 +508,7 @@ const restart = ref(false);
 	  left: 0;
 	  right: 0;
 	  bottom: 0;
-	  background-color: rgba(175, 151, 251, 0.5);
+	  background-color: rgba(175, 151, 251, 0.8);
 	  backdrop-filter: blur(10px);
 	}
 	.config-body .close{
