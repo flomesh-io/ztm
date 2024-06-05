@@ -24,9 +24,6 @@ const status = ref({});
 const endpoints = ref([]);
 
 const isChat = computed(() => store.getters['account/isChat']);
-const meshes = computed(() => {
-	return store.getters['account/meshes']
-});
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -39,86 +36,8 @@ const timeago = computed(() => (ts) => {
 		return label + "None";
 	}
 })
-onActivated(()=>{
-	getEndpoints();
-})
-const getEndpoints = () => {
-	loading.value = true;
-	loader.value = true;
-	pipyProxyService.getEndpoints(selectedMesh.value?.name)
-		.then(res => {
-			console.log("Endpoints:")
-			console.log(res)
-			loading.value = false;
-			setTimeout(() => {
-				loader.value = false;
-			},2000)
-			endpoints.value = res || [];
-			endpoints.value.forEach((ep,ei)=>{
-				ep.key = `${ei}`;
-				ep.index = ei;
-				ep.type = "ep";
-				ep.label = ep?.name;
-				ep.leaf = false;
-				ep.loading = false;
-			});
-		})
-		.catch(err => console.log('Request Failed', err)); 
-}
 
 const typing = ref('');
-
-watch(()=>selectedMesh,()=>{
-	if(selectedMesh.value){
-		getEndpoints();
-	}
-},{
-	deep:true,
-	immediate:true
-})
-
-
-const expandNode = ref();
-const expand = (node) => {
-	if (!!props.ep) {
-		node.loading = true;
-		node.children = [];
-		expandNode.value = node;
-		/*
-		 * get services
-		 */
-		pipyProxyService.getServices({
-			mesh:selectedMesh.value?.name,
-			ep:props.ep?.id
-		})
-			.then(res => {
-				const _children = res;
-				_children.forEach((service,sid)=>{
-					service.type = "service";
-				});
-				node.loading = false;
-			})
-			.catch(err => {
-				node.loading = false;
-				console.log('Request Failed', err)
-			}); 
-
-		/*
-		 * get ports
-		 */
-		pipyProxyService.getPorts({
-			mesh:selectedMesh.value?.name,
-			ep:props.ep?.id
-		})
-			.then(res => {
-				const _children = res;
-				_children.forEach((port,pid)=>{
-					port.type = "port";
-				});
-			})
-			.catch(err => console.log('Request Failed', err)); 
-	}
-};
 
 const back = () => {
 	emits('back')
@@ -134,7 +53,7 @@ const go = (path) => {
 	<AppHeader :back="back">
 			<template #center>
 				<Status v-if="!!props.ep" :run="props.ep.online" :tip="timeago(props.ep.heartbeat)"  style=""/>
-				<b v-if="!!props.ep">{{ props.ep.label|| 'Unknow EP' }} <span v-if="!!props.ep.username">({{props.ep.username}})</span></b>
+				<b v-if="!!props.ep">{{ props.ep.name|| 'Unknow EP' }} <span v-if="!!props.ep.username">({{props.ep.username}})</span></b>
 				<span v-else>Loading...</span>
 				
 			</template>
