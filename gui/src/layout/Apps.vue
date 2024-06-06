@@ -38,13 +38,17 @@ const openWebview = (app)=>{
 		const webview = new WebviewWindow(`${app.name}-webview`, {
 			url: app.url,
 			proxyUrl: proxy,
-			title: app.name,
+			title: `${app.name} ${proxy}=>${app.url}`,
 			width:960
 		});
-		webview.once('tauri://created', function () {
+		webview.once('tauri://created', function (d) {
+			console.log('tauri://created')
+			console.log(d)
 		// webview successfully created
 		});
 		webview.once('tauri://error', function (e) {
+			console.log('tauri://error')
+			console.log(e)
 		// an error happened creating the webview
 		});
 	}catch(e){
@@ -52,6 +56,9 @@ const openWebview = (app)=>{
 	}
 	
 }
+const target = computed(()=>{
+	return store.getters['webview/target']
+})
 </script>
 
 <template>

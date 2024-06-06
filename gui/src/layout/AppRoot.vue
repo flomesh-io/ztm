@@ -164,15 +164,15 @@ const upload = (d)=>{
 	if(!!d){
 		try{
 			const appJSON = JSON.parse(d);
-			appService.newApp(appJSON).then(()=>{
-				loaddata(true);
+			appService.newApp(appJSON,()=>{
+				loaddata(true, 1500);
 			})
 			console.log(config.value)
 		}catch(e){
 		}
 	}
 }
-const loaddata = async (open) => {
+const loaddata = async (open, timer) => {
 	loading.value = true;
 	setTimeout(async () => {
 		apps.value = await appService.loadApps();
@@ -180,7 +180,7 @@ const loaddata = async (open) => {
 		loading.value = false;
 		playing.value = true;
 		errors.value = [];
-	}, 100);
+	}, timer||100);
 }
 
 </script>
@@ -269,11 +269,11 @@ const loaddata = async (open) => {
 					<i class="pi pi-cog "  />
 				</Button>
 			</div> -->
-<!-- 			<div class="flex-item" v-if="!props.embed">
+			<div class="flex-item" v-if="!props.embed">
 				<Button :disabled="!playing" v-tooltip="'Mesh Console'" class="pointer" severity="help" text rounded aria-label="Filter" @click="goConsole" >
 					<i class="pi pi-desktop " />
 				</Button>
-			</div> -->
+			</div>
 <!-- 			<div class="flex-item">
 				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
 					<i class="iconfont icon-cmd text-3xl"  />
