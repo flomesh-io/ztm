@@ -38,7 +38,7 @@ const openWebview = (app)=>{
 		const webview = new WebviewWindow(`${app.name}-webview`, {
 			url: app.url,
 			proxyUrl: proxy,
-			title: `${app.name} ${proxy}=>${app.url}`,
+			title: app.name,
 			width:960
 		});
 		webview.once('tauri://created', function (d) {

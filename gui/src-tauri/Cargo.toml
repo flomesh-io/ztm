@@ -14,7 +14,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 [build-dependencies]
 tauri-build = { version = "2.0.0-beta", features = [] }
 
-# tauri = { version = "2.0.0-beta", features = ["devtools"] }
+# tauri = { version = "2.0.0-beta", features = ["devtools"] } 
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri = { version = "=2.0.0-beta.19", features = ["macos-proxy"] }
