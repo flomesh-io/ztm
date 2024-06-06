@@ -12,6 +12,7 @@ android.md
 /node_modules
 package-lock.json
 permit.json
+app.json
 yarn.lock
 .DS_Store
 dist

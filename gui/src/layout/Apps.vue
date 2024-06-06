@@ -1,22 +1,57 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
+		
+const router = useRouter();
 const store = useStore();
 const logs = computed(() => {
 	return store.getters['account/logs']
 });
+const props = defineProps(['apps']);
 const emits = defineEmits(['close']);
 const hide = () => {
 	emits('close','')
 }
 const clear = () => {
 }
-const pages = ref([1,2]);
-const apps = ref([{a:1},{},{},{},{},{},{a:7},{},{},{}]);
+const pages = computed(()=>{
+	const _pages = Math.ceil((props.apps||[]).length/8);
+	return _pages>0?new Array(_pages):[];
+});
 const appPageSize = 8;
 const appPage = computed(()=>(page)=>{
-	return apps.value.filter((n,i) => i>=page*appPageSize && i< (page+1)*appPageSize);
+	return (props.apps||[]).filter((n,i) => i>=page*appPageSize && i< (page+1)*appPageSize);
 })
+const openWebview = (app)=>{
+	const proxy = "socks5://"+(app?.port?.listen?.ip||'127.0.0.1')+':'+app?.port?.listen?.port;
+	store.commit('webview/setTarget', {
+		icon: app.icon,
+		name: app.name,
+		url: app.url,
+		proxy,
+	});
+	
+	try{
+		// const appWindow = new Window(`${app.name}-window`);
+		const webview = new WebviewWindow(`${app.name}-webview`, {
+			url: app.url,
+			proxyUrl: proxy,
+			title: app.name,
+			width:960
+		});
+		webview.once('tauri://created', function () {
+		// webview successfully created
+		});
+		webview.once('tauri://error', function (e) {
+		// an error happened creating the webview
+		});
+	}catch(e){
+		console.log(e)
+	}
+	
+}
 </script>
 
 <template>
@@ -28,21 +63,24 @@ const appPage = computed(()=>(page)=>{
 					<i class="pi pi-times " />
 				</Button>
 			</div>
-	    <div class="terminal_body py-2 px-4">
+	    <div class="terminal_body py-2 px-4" v-if="pages.length > 0">
 				<Carousel :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
 						<template #item="slotProps">
 							<div class="pt-5" style="min-height: 250px;">
 								<div class="grid text-center" >
-										<div class="col-3 py-4" v-for="(app) in appPage(slotProps.index)">
-											<Avatar class="pointer" style="border-radius: 4px; overflow: hidden;" image="https://flomesh.io/img/fsm.jpg" size="xlarge" />
+										<div @click="openWebview(app)" class="col-3 py-4" v-for="(app) in appPage(slotProps.index)">
+											<img :src="app.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;"/>
 											<div class="mt-1">
-												<b class="text-white opacity-90">App name</b>
+												<b class="text-white opacity-90">{{app.name}}</b>
 											</div>
 										</div>
 								</div>
 							</div>
 						</template>
 				</Carousel>
+	    </div>
+	    <div class="terminal_body px-4 text-white-alpha-70 text-3xl text-center" style="padding-top: 25%;" v-else>
+				First, import an App
 	    </div>
 	</div>
 	</ScrollPanel>

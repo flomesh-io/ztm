@@ -33,3 +33,4 @@ tauri-plugin-cli = "2.0.0-beta"
 
 [target.'cfg(any(target_os = "android"))']
 linker = "~/Library/Android/sdk/ndk/27.0.11718014/toolchains/llvm/prebuilt/darwin-x86_64/bin"
+

@@ -12,6 +12,7 @@ import HoverXeyeSvg from "@/assets/img/loading.png";
 import PipySvg from "@/assets/img/pipy-white.png";
 import { useConfirm } from "primevue/useconfirm";
 import PipyProxyService from '@/service/PipyProxyService';
+import AppService from '@/service/AppService';
 import ShellService from '@/service/ShellService';
 import { checkAuthorization } from "@/service/common/request";
 import { isAdmin } from "@/service/common/authority-utils";
@@ -27,12 +28,12 @@ const version = computed(() => {
 	return store.getters['account/version']
 });
 const pipyProxyService = new PipyProxyService();
+const appService = new AppService();
 const shellService = new ShellService();
 const confirm = useConfirm();
 const props = defineProps(['embed']);
 const emits = defineEmits(['collapse']);
 const router = useRouter();
-const meshes = ref([]);
 const configOpen = ref(false);
 const logOpen = ref(false);
 const logoHover = ref(false);
@@ -41,7 +42,6 @@ const config = ref({
 	port: getPort(),
 });
 
-const isChat = computed(() => store.getters['account/isChat']);
 const platform = computed(() => {
 	return store.getters['account/platform']
 });
@@ -56,42 +56,24 @@ const ztmVersion = computed(() => {
 });
 const placeholder = computed(() => {
 	const _vs = "ZTM : ";
-	const unit = isChat.value?'Channel':'Mesh';
-	const units = isChat.value?'Channels':'Meshes';
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
 		return `${props.embed?'':_vs}Check for errors.`;
 	} else if(!playing.value){
 		return `${_vs}Off.`;
-	} else if(!meshes.value || meshes.value.length ==0){
-		return `${props.embed?'':_vs}First, join a ${unit}.`;
-	} else if(meshes.value.length == 1){
-		return `${_vs}1 ${unit} Joined.`;
+	} else if(!apps.value || apps.value.length ==0){
+		return `${props.embed?'':_vs}First, import an App.`;
+	} else if(apps.value.length == 1){
+		return `${_vs}1 App.`;
 	} else {
-		return `${_vs}${meshes.value.length} ${meshes.value.length>1?units:unit} Joined.`;
+		return `${_vs}${apps.value.length} ${apps.value.length>1?'Apps':'App'}.`;
 	}
 });
 onMounted(() => {
 	pipyInit();
 });
 
-const loaddata = () => {
-	loading.value = true;
-	pipyProxyService.getMeshes()
-		.then(res => {
-			loading.value = false;
-			if(!!res){
-				playing.value = true;
-				meshes.value = res;
-				errors.value = [];
-			}
-		})
-		.catch(err => {
-			loading.value = false;
-			console.log('Request Failed', err)
-		}); 
-}
 const play = () => {
 	pipyPlay();
 }
@@ -134,6 +116,7 @@ const startPipy = async () => {
 		errors.value.push(error);
 		console.error(`command error: "${error}"`)
 	});
+	
 }
 const pause = async () => {
 	await shellService.pausePipy(config.value.port);
@@ -175,7 +158,31 @@ const openLog = () => {
 	shellService.loadLog();
 }
 const restart = ref(false);
+const apps = ref([]);
 const appsOpen = ref(false);
+const upload = (d)=>{
+	if(!!d){
+		try{
+			const appJSON = JSON.parse(d);
+			appService.newApp(appJSON).then(()=>{
+				loaddata(true);
+			})
+			console.log(config.value)
+		}catch(e){
+		}
+	}
+}
+const loaddata = async (open) => {
+	loading.value = true;
+	setTimeout(async () => {
+		apps.value = await appService.loadApps();
+		appsOpen.value = !!open;
+		loading.value = false;
+		playing.value = true;
+		errors.value = [];
+	}, 100);
+}
+
 </script>
 
 <template>
@@ -200,9 +207,9 @@ const appsOpen = ref(false);
 				<Button v-if="!isLogined" class="w-20rem" @click="goLogin">Login</Button>
 				<Select 
 				v-else
-				:options="meshes" 
+				:options="apps" 
 				optionLabel="label" 
-				:filter="meshes.length>10"
+				:filter="apps.length>10"
 				:loading="loading"
 				:placeholder="placeholder" 
 				class="transparent">
@@ -246,9 +253,10 @@ const appsOpen = ref(false);
 			
 			
 			<div class="flex-item">
-				<Button v-tooltip="'Import App'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
+				<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
 					<i class="pi pi-plus text-3xl"  />
-				</Button>
+				</FileUploderSmall>
+		
 			</div>
 			
 			<div class="flex-item">
@@ -256,16 +264,16 @@ const appsOpen = ref(false);
 					<i class="pi pi-th-large text-3xl"  />
 				</Button>
 			</div>
-			<div class="flex-item">
+		<!-- 	<div class="flex-item">
 				<Button :disabled="!!playing" v-tooltip="'Setting'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => configOpen = true" >
 					<i class="pi pi-cog "  />
 				</Button>
-			</div>
-			<div class="flex-item" v-if="!props.embed">
+			</div> -->
+<!-- 			<div class="flex-item" v-if="!props.embed">
 				<Button :disabled="!playing" v-tooltip="'Mesh Console'" class="pointer" severity="help" text rounded aria-label="Filter" @click="goConsole" >
 					<i class="pi pi-desktop " />
 				</Button>
-			</div>
+			</div> -->
 <!-- 			<div class="flex-item">
 				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
 					<i class="iconfont icon-cmd text-3xl"  />
@@ -315,7 +323,7 @@ const appsOpen = ref(false);
 		</div>
 	</div>
 	<PipyLog v-if="logOpen" @close="() => logOpen = false"/>
-	<Apps v-if="appsOpen" @close="() => appsOpen = false"/>
+	<Apps :apps="apps" v-if="appsOpen" @close="() => appsOpen = false"/>
 	<ConfirmDialog></ConfirmDialog>
 </template>
 
@@ -475,11 +483,13 @@ const appsOpen = ref(false);
 	}
 	
 	
-	:deep(.footer .p-button){
+	:deep(.footer .p-button),:deep(.footer .p-fileupload-choose-button){
 		width: 46px;
 		height: 46px;
 		padding: 0;
 		text-align: center;
+		border-radius: 50%;
+		background-color: transparent;
 	}
 	
 	.left-fixed{
