@@ -129,15 +129,21 @@ export default class ShellService {
 		const pm = await platform();
 		if(pm != "android"){
 			let child = store.getters['account/child'];
-			let pid = store.getters['account/pid'];
+			let pid = localStorage.getItem("PID");
 			if(!!child){
 				child.kill();
-				store.commit('account/setPid', null);
-			}else if(!!pid){
+			}
+			if(!!pid){
 				const findChild = new Child(pid*1);
 				findChild.kill();
-				store.commit('account/setPid', null);
+				const findChild2 = new Child(pid*1+1);
+				findChild2.kill();
+				const command = Command.create("kill", [`${pid*1}`]);
+				command.execute();
+				const command2 = Command.create("kill", [`${pid*1+1}`]);
+				command2.execute();
 			}
+			store.commit('account/setPid', null);
 			console.log('[paused pipy]');
 		} else {
 			await relaunch();

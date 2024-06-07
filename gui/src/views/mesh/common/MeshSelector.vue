@@ -85,7 +85,7 @@ const select = () => {
 							 </div>
 							 <div v-else class="pi pi-arrow-right-arrow-left"></div>
 							 <div v-if="slotProps.value"  v-tooltip.right="decodeURI(slotProps.value.name)">
-								<b class="text-ellipsis w-full text-sm">{{ decodeURI(slotProps.value.name) }}</b>
+								<b class="text-ellipsis w-4rem text-sm">{{ decodeURI(slotProps.value.name) }}</b>
 							 </div>
 							 <div v-else>
 									{{ slotProps.placeholder }}

@@ -161,9 +161,9 @@ const select = (selected) => {
 			<template #end >
 					<div class="flex align-items-center flex-column w-full">
 						
-							<div v-tooltip="`${selectedMesh?.agent?.name} (${selectedMesh?.agent?.username})`" class="w-full flex flex-column justify-content-center align-items-center py-3">
+							<div v-tooltip="`${selectedMesh?.agent?.name||'Unname'} (${selectedMesh?.agent?.username})`" class="w-full flex flex-column justify-content-center align-items-center py-3">
 									<Avatar icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
-									<div class="text-ellipsis w-full text-sm px-2 text-center"><b>{{selectedMesh?.agent?.name||'Agent'}}</b></div>
+									<div class="text-ellipsis w-full text-sm px-2 text-center"><b>{{selectedMesh?.agent?.name||selectedMesh?.agent?.username||'Agent'}}</b></div>
 									<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
 							</div>
 						<MeshSelector

@@ -27,12 +27,12 @@
     "download-ztm-android": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/ztm/arm64-v8a/library/libztm.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/lib/libztm.so ../src-android/app/src/main/assets/libztm.so && cp -f ./usr/local/lib/libc++_shared.so ../src-android/app/src/main/assets/libc++_shared.so"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.0.0-beta.11",
-    "@tauri-apps/plugin-fs": "^2.0.0-beta.3",
-    "@tauri-apps/plugin-http": "^2.0.0-beta.3",
-    "@tauri-apps/plugin-os": "^2.0.0-beta.3",
-    "@tauri-apps/plugin-process": "^2.0.0-beta.3",
-    "@tauri-apps/plugin-shell": "^2.0.0-beta.4",
+    "@tauri-apps/api": "2.0.0-beta.13",
+    "@tauri-apps/plugin-fs": "2.0.0-beta.5",
+    "@tauri-apps/plugin-http": "2.0.0-beta.5",
+    "@tauri-apps/plugin-os": "2.0.0-beta.5",
+    "@tauri-apps/plugin-process": "2.0.0-beta.5",
+    "@tauri-apps/plugin-shell": "2.0.0-beta.5",
     "@vee-validate/rules": "4.12.7",
     "axios": "^0.21.1",
     "chart.js": "3.3.2",
