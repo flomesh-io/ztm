@@ -77,6 +77,41 @@ async function request(url, method, params, config) {
 	}
 }
 
+async function requestNM(url, method, params, config) {
+	if(!window.__TAURI_INTERNALS__){
+		switch (method) {
+		  case METHOD.GET:
+		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
+		  case METHOD.POST:
+		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					//toastMessage(e);
+				});
+		  case METHOD.DELETE:
+		    return axios.delete(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					//toastMessage(e);
+				});
+		  case METHOD.PUT:
+		    return axios.put(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					//toastMessage(e);
+				});
+		  default:
+		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
+		}
+	} else {
+		return fetch(getUrl(url), {
+			method,
+			header:{
+				"Content-Type": "application/json"
+			},
+			body: !!params?JSON.stringify(params):null,
+			...config
+		}).then((res) => res.json()).catch((e)=>{
+			if(!!method && method != METHOD.GET){
+				//toastMessage(e);
+			}
+		});
+	}
+}
 async function mock(d) {
   return new Promise((resolve) => {
 		resolve(d);
@@ -174,6 +209,7 @@ export {
   METHOD,
   AUTH_TYPE,
   request,
+	requestNM,
   merge,
   spread,
 	mock,
