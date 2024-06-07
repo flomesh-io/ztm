@@ -301,7 +301,6 @@ const restart = ref(false);
 		</div>
 	</div>
 	<PipyLog v-if="logOpen" @close="() => logOpen = false"/>
-	<ConfirmDialog></ConfirmDialog>
 </template>
 
 <style lang="scss" scoped>
