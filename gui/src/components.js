@@ -101,6 +101,7 @@ import FloatField from '@/components/common/FloatField.vue';
 import HiddenField from '@/components/common/HiddenField.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 import CertificateUploder from '@/components/common/CertificateUploder.vue';
+import FileUploderSmall from '@/components/common/FileUploderSmall.vue';
 import { Field, Form, ErrorMessage } from 'vee-validate';
 
 export function useComponent(app){
@@ -208,5 +209,6 @@ export function useComponent(app){
 	app.component('FloatField', FloatField);
 	app.component('HiddenField', HiddenField);
 	app.component('CertificateUploder', CertificateUploder);
+	app.component('FileUploderSmall', FileUploderSmall);
 	app.component('Empty', Empty);
 }
