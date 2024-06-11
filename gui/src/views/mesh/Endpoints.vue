@@ -75,7 +75,10 @@ watch(()=>selectedMesh,()=>{
 
 const selectEp = ref();
 const select = (node) => {
-	selectEp.value = node
+	selectEp.value = null;
+	setTimeout(()=>{
+		selectEp.value = node;
+	},100)
 }
 const emptyMsg = computed(()=>{
 	if(!!selectedMesh.value?.name){
