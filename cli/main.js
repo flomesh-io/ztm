@@ -403,7 +403,7 @@ function stripIndentation(s) {
 }
 
 function startServiceLinux(name, args, optsChanged) {
-  var program = os.abspath(pipy.exec(['which', pipy.argv[0]]).toString().trim())
+  var program = os.abspath(pipy.exec(['sh', '-c', `command -v ${pipy.argv[0]}`]).toString().trim())
   var user = pipy.exec('whoami').toString().trim()
   var opts = args.map(
     arg => arg.startsWith('-') ? arg : `'${arg}'`
@@ -434,7 +434,7 @@ function startServiceLinux(name, args, optsChanged) {
 }
 
 function startServiceDarwin(name, args, optsChanged) {
-  var program = os.abspath(pipy.exec(['which', pipy.argv[0]]).toString().trim())
+  var program = os.abspath(pipy.exec(['sh', '-c', `command -v ${pipy.argv[0]}`]).toString().trim())
   var filename = `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
   if (optsChanged || !os.stat(filename)) {
     os.write(filename, stripIndentation(`
