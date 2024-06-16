@@ -91,8 +91,8 @@ const emptyMsg = computed(()=>{
 
 <template>
 	
-	<div class="flex flex-row">
-		<div class="relative" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
+	<div class="flex flex-row min-h-screen">
+		<div class="relative h-full" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
 					<template #center>
 						<b>{{isChat?'Contacts':'Endpoints'}} ({{endpoints.length}})</b>
