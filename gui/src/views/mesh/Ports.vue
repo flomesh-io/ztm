@@ -50,6 +50,7 @@ const getEndpoints = () => {
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
+const error = ref();
 const getPorts = () => {
 	const _ep = props.embed?props.ep:selectedMesh.value?.agent?.id;
 	if(!!_ep){
@@ -67,9 +68,11 @@ const getPorts = () => {
 					setTimeout(() => {
 						loader.value = false;
 					},1400)
+					error.value = null;
 					ports.value = res || [];
 				})
 				.catch(err => {
+					error.value = err;
 					loading.value = false;
 					loader.value = false;
 				}); 
@@ -86,9 +89,11 @@ watch(()=>selectedMesh,()=>{
 	immediate:true
 })
 const portsFilter = computed(() => {
-	return ports.value.filter((port)=>{
+	console.log(typeof(ports.value))
+	console.log(ports.value)
+	return !!ports.value?ports.value.filter((port)=>{
 		return (typing.value == '' || typing.value == port.target.service|| typing.value == port.listen.port );
-	})
+	}):[]
 });
 
 const typing = ref('');
@@ -113,7 +118,7 @@ const emptyMsg = computed(()=>{
 				<Button icon="pi pi-refresh" text @click="getPorts"  :loading="loader"/>
 			</template>
 	</AppHeader>
-	<Card class="nopd">
+	<Card class="nopd" v-if="!error">
 		<template #content>
 			<InputGroup class="search-bar" >
 				<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
@@ -178,7 +183,7 @@ const emptyMsg = computed(()=>{
 			 </div>
 		</div>
 	</div>
-	<Empty v-else :title="emptyMsg"/>
+	<Empty v-else :title="emptyMsg" :error="error"/>
 </template>
 
 <style scoped lang="scss">

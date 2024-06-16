@@ -92,7 +92,7 @@ const emptyMsg = computed(()=>{
 <template>
 	
 	<div class="flex flex-row">
-		<div :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
+		<div class="relative" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
 					<template #center>
 						<b>{{isChat?'Contacts':'Endpoints'}} ({{endpoints.length}})</b>
@@ -103,7 +103,8 @@ const emptyMsg = computed(()=>{
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
-			<DataView v-else-if="endpoints && endpoints.length >0"  class="message-list" :value="endpoints">
+			<ScrollPanel class="w-full absolute" style="top:35px;bottom: 0;" v-else-if="endpoints && endpoints.length >0">
+			<DataView class="message-list" :value="endpoints">
 					<template #list="slotProps">
 							<div class="flex flex-col message-item pointer" v-for="(node, index) in slotProps.items" :key="index" @click="select(node)">
 								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
@@ -124,6 +125,7 @@ const emptyMsg = computed(()=>{
 							</div>
 					</template>
 			</DataView>
+			</ScrollPanel>
 			<Empty v-else :title="emptyMsg"/>
 		</div>
 
