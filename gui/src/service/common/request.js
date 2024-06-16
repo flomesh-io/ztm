@@ -45,7 +45,15 @@ async function request(url, method, params, config) {
 	if(!window.__TAURI_INTERNALS__){
 		switch (method) {
 		  case METHOD.GET:
-		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
+		    return axios.get(getUrl(url), { params, ...config }).then((res) => {
+					if (res.status >= 400) {
+						const error = new Error(res.message);
+						error.status = res.status;
+						return Promise.reject(error);
+					} else {
+						return res?.data;
+					}
+				});
 		  case METHOD.POST:
 		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
 					toastMessage(e);
@@ -59,7 +67,15 @@ async function request(url, method, params, config) {
 					toastMessage(e);
 				});
 		  default:
-		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
+		    return axios.get(getUrl(url), { params, ...config }).then((res) => {
+					if (res.status >= 400) {
+						const error = new Error(res.message);
+						error.status = res.status;
+						return Promise.reject(error);
+					} else {
+						return res?.data;
+					}
+				});
 		}
 	} else {
 		return fetch(getUrl(url), {
@@ -69,7 +85,15 @@ async function request(url, method, params, config) {
 			},
 			body: !!params?JSON.stringify(params):null,
 			...config
-		}).then((res) => res.json()).catch((e)=>{
+		}).then((res) => res.json()).then((res) => {
+				if (res.status >= 400) {
+					const error = new Error(res.message);
+					error.status = res.status;
+					return Promise.reject(error);
+				} else {
+					return res;
+				}
+			}).catch((e)=>{
 			if(!!method && method != METHOD.GET){
 				toastMessage(e);
 			}
@@ -81,7 +105,15 @@ async function requestNM(url, method, params, config) {
 	if(!window.__TAURI_INTERNALS__){
 		switch (method) {
 		  case METHOD.GET:
-		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
+		    return axios.get(getUrl(url), { params, ...config }).then((res) => {
+					if (res.status >= 400) {
+						const error = new Error(res.message);
+						error.status = res.status;
+						return Promise.reject(error);
+					} else {
+						return res?.data;
+					}
+				});
 		  case METHOD.POST:
 		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
 					//toastMessage(e);
@@ -95,7 +127,15 @@ async function requestNM(url, method, params, config) {
 					//toastMessage(e);
 				});
 		  default:
-		    return axios.get(getUrl(url), { params, ...config }).then((res) => res?.data);
+		    return axios.get(getUrl(url), { params, ...config }).then((res) => {
+					if (res.status >= 400) {
+						const error = new Error(res.message);
+						error.status = res.status;
+						return Promise.reject(error);
+					} else {
+						return res?.data;
+					}
+				});
 		}
 	} else {
 		return fetch(getUrl(url), {
@@ -105,7 +145,15 @@ async function requestNM(url, method, params, config) {
 			},
 			body: !!params?JSON.stringify(params):null,
 			...config
-		}).then((res) => res.json()).catch((e)=>{
+		}).then((res) => res.json()).then((res) => {
+				if (res.status >= 400) {
+					const error = new Error(res.message);
+					error.status = res.status;
+					return Promise.reject(error);
+				} else {
+					return res;
+				}
+		}).catch((e)=>{
 			if(!!method && method != METHOD.GET){
 				//toastMessage(e);
 			}

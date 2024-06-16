@@ -68,7 +68,7 @@ const getEndpoints = () => {
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
-
+const error = ref();
 const getServices = () => {
 	visibleEditor.value = false;
 	loading.value = true;
@@ -85,9 +85,15 @@ const getServices = () => {
 				setTimeout(() => {
 					loader.value = false;
 				},2000)
+				error.value = null;
 				services.value = res || [];
 			})
-			.catch(err => console.log('Request Failed', err)); 
+			.catch(err => {
+				loading.value = false;
+				loader.value = false;
+				error.value = err;
+				console.log('Request Failed', err)
+			}); 
 	}
 }
 
@@ -98,7 +104,7 @@ const getPorts = () => {
 		ep:props.embed?props.ep:selectedMesh.value?.agent?.id
 	})
 		.then(res => {
-			res.forEach((port)=>{
+			(res||[]).forEach((port)=>{
 				portMap.value[`${port.target?.service}-${port.target?.endpoint||''}`] = `${port.listen.ip}:${port.listen.port}:${port.protocol}`;
 			})
 		})
@@ -254,7 +260,7 @@ const emptyMsg = computed(()=>{
 						<Button icon="pi pi-plus"  :label="visibleEditor?null:'Create'" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>
-			<Card class="nopd">
+			<Card class="nopd" v-if="!error">
 				<template #content>
 					<InputGroup class="search-bar" >
 						<Button :disabled="!typing" icon="pi pi-search"  :label="props.embed?null:selectedMesh?.name"/>
@@ -400,7 +406,7 @@ const emptyMsg = computed(()=>{
 				</div>
 				<Menu ref="actionMenu" :model="actions" :popup="true" />
 			</div>
-			<Empty v-else :title="emptyMsg"/>
+			<Empty v-else :title="emptyMsg" :error="error"/>
 		</div>
 		<div class="flex-item" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed">
