@@ -116,8 +116,8 @@ const emptyMsg = computed(()=>{
 </script>
 
 <template>
-	<div class="flex flex-row">
-		<div :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+	<div class="flex flex-row min-h-screen">
+		<div class="relative h-full" :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
 			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
@@ -129,7 +129,8 @@ const emptyMsg = computed(()=>{
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
-			<div v-else-if="meshes.length >0" class="text-center px-3">
+			<ScrollPanel class="w-full absolute" style="top:35px;bottom: 0;" v-else-if="meshes.length >0">
+			<div class="text-center px-3">
 				<div class="grid mt-1 text-left" >
 						<div :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
@@ -150,6 +151,7 @@ const emptyMsg = computed(()=>{
 					 </div>
 				</div>
 			</div>
+			</ScrollPanel>
 			<Empty v-else :title="emptyMsg"/>
 		</div>
 		<div class="flex-item" v-if="!!visibleEditor">

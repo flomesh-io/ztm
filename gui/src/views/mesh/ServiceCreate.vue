@@ -43,6 +43,9 @@ const getEndpoints = () => {
 			console.log("Endpoints:")
 			console.log(res)
 			endpoints.value = res || [];
+			endpoints.value.forEach((ep)=>{
+				ep.label = ep.name || ep.username || 'Unknow EP'
+			})
 			if(!props.pid){
 				if(!!res.find((ep)=> ep.id == agentId)){
 					config.value.ep = agentId;
@@ -184,7 +187,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 											 :disabled="!!props.pid"
 												v-model="config.ep" 
 												:options="endpoints" 
-												optionLabel="name" 
+												optionLabel="label" 
 												optionValue="id"
 												placeholder="Endpoint" 
 												class="flex"></Select>
