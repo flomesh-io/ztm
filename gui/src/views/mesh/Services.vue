@@ -247,9 +247,9 @@ const emptyMsg = computed(()=>{
 </script>
 
 <template>
-	<div class="flex flex-row">
-		<div :class="{'w-24rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
-			<AppHeader v-if="!props.embed" :main="!isChat" >
+	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':props.embed}">
+		<div  class="relative h-full" :class="{'w-24rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+			<AppHeader :main="!isChat" v-if="!props.embed">
 					<template #center>
 						<b>Services</b>
 					</template>
@@ -270,7 +270,8 @@ const emptyMsg = computed(()=>{
 				</template>
 			</Card>
 			<Loading v-if="loading"/>
-			<div v-else-if="servicesLb && servicesLb.length >0" class="text-center">
+			<ScrollPanel class="w-full absolute" style="bottom: 0;"  :style="{'top':props.embed?'35px':'75px'}" v-else-if="servicesLb && servicesLb.length >0">
+			<div class="text-center">
 				<DataTable v-if="layout == 'list'" class="nopd-header w-full" v-model:expandedRows="expandedRows" :value="servicesLb" dataKey="id" tableStyle="min-width: 50rem">
 						<Column expander style="width: 5rem" />
 						<Column header="Service">
@@ -406,6 +407,7 @@ const emptyMsg = computed(()=>{
 				</div>
 				<Menu ref="actionMenu" :model="actions" :popup="true" />
 			</div>
+			</ScrollPanel>
 			<Empty v-else :title="emptyMsg" :error="error"/>
 		</div>
 		<div class="flex-item" v-if="!!visibleEditor">

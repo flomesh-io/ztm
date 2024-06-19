@@ -815,6 +815,10 @@ fieldset{
 	border-radius: 0px;
 	width: auto !important;
 }
+.embed-ep-header{
+	min-height: calc(100vh - 100px) !important;
+	height: calc(100vh - 100px) !important;
+}
 .p-inputgroup.search-bar .p-select-dropdown{
 	color: #fff;
 	border-radius: 0px;

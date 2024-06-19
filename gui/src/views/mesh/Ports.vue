@@ -109,81 +109,87 @@ const emptyMsg = computed(()=>{
 </script>
 
 <template>
-	<AppHeader v-if="!props.embed" :main="!isChat" >
-			<template #center>
-				<b>Local Ports ({{portsFilter.length}})</b>
-			</template>
-	
-			<template #end> 
-				<Button icon="pi pi-refresh" text @click="getPorts"  :loading="loader"/>
-			</template>
-	</AppHeader>
-	<Card class="nopd" v-if="!error">
-		<template #content>
-			<InputGroup class="search-bar" >
-				<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
-				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | port" rows="1" cols="30" />
-			</InputGroup>
-		</template>
-	</Card>
-	<Loading v-if="loading"/>
-	<div v-else-if="portsFilter && portsFilter.length >0" class="text-center">
-		<div class="mt-1 grid text-left px-3">
-				<div class="col-12 md:col-6 lg:col-3" v-for="(port,hid) in portsFilter" :key="hid">
-					 <div class="surface-card shadow-2 p-3 border-round">
-							 <div class="flex justify-content-between mb-1">
-									 <div>
-											<span class="block text-tip font-medium mb-3">
-												 {{port.listen.ip}} | {{port.protocol}}
-											</span>
-											
-											<div class="text-900 font-medium text-xl">
-												<Status :run="port.open" :error="port.error" :text="port.listen.port"/>
+	<div class="flex flex-row min-h-screen" :class="{'embed-ep-header':props.embed}" >
+		<div class="relative w-full h-full" >
+			<AppHeader :main="!isChat" v-if="!props.embed">
+					<template #center>
+						<b>Local Ports ({{portsFilter.length}})</b>
+					</template>
+			
+					<template #end> 
+						<Button icon="pi pi-refresh" text @click="getPorts"  :loading="loader"/>
+					</template>
+			</AppHeader>
+			<Card class="nopd" v-if="!error">
+				<template #content>
+					<InputGroup class="search-bar" >
+						<Button :disabled="!typing" icon="pi pi-search" :label="selectedMesh?.name" />
+						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type service | port" rows="1" cols="30" />
+					</InputGroup>
+				</template>
+			</Card>
+			<Loading v-if="loading"/>
+			<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top':props.embed?'35px':'75px'}" v-else-if="portsFilter && portsFilter.length >0">
+			<div  class="text-center">
+				<div class="mt-1 grid text-left px-3">
+						<div class="col-12" :class="props.embed?'md:col-6 lg:col-4':'md:col-6 lg:col-3'" v-for="(port,hid) in portsFilter" :key="hid">
+							 <div class="surface-card shadow-2 p-3 border-round">
+									 <div class="flex justify-content-between mb-1">
+											 <div>
+													<span class="block text-tip font-medium mb-3">
+														 {{port.listen.ip}} | {{port.protocol}}
+													</span>
+													
+													<div class="text-900 font-medium text-xl">
+														<Status :run="port.open" :error="port.error" :text="port.listen.port"/>
+													</div>
+											 </div>
+											 <div class="flex">
+												 <div v-tooltip="'Delete Port'"  @click="deletePort(port)" class="pointer flex align-items-center justify-content-center p-button-secondary border-round mr-2" style="width: 2.5rem; height: 2.5rem">
+														 <i class="pi pi-trash text-tip text-xl"></i>
+												 </div>
+											 </div>
+									 </div>
+										<Fieldset legend="Target" :toggleable="true" >
+											<div class="mb-2" v-if="port?.mesh">
+												<Chip class="pl-0 pr-3 mr-2">
+														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+															<i class="pi pi-globe"/>
+														</span>
+														<span class="font-medium ml-2">
+															Mesh: {{decodeURI(port.mesh)}}
+														</span>
+												</Chip>
 											</div>
-									 </div>
-									 <div class="flex">
-										 <div v-tooltip="'Delete Port'"  @click="deletePort(port)" class="pointer flex align-items-center justify-content-center p-button-secondary border-round mr-2" style="width: 2.5rem; height: 2.5rem">
-												 <i class="pi pi-trash text-tip text-xl"></i>
-										 </div>
-									 </div>
+											<div class="mb-2">
+												<Chip class="pl-0 pr-3 mr-2">
+														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+															<i class="pi pi-server"/>
+														</span>
+														<span class="font-medium ml-2">
+															Service: {{port.target?.service}}
+														</span>
+												</Chip>
+											</div>
+											<div class="mb-2" v-if="port.target?.endpoint">
+												<Chip class="pl-0 pr-3 mr-2">
+														<span style="min-width: 28px;" class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+															<i class="pi pi-chart-scatter"/>
+														</span>
+														<span class="font-medium ml-2">
+															EP: {{endpointMap[port.target?.endpoint]?.name||'Unnamed EP' }}
+														</span>
+												</Chip>
+											</div>
+										</Fieldset>
 							 </div>
-								<Fieldset legend="Target" :toggleable="true" >
-									<div class="mb-2" v-if="port?.mesh">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-globe"/>
-												</span>
-												<span class="font-medium ml-2">
-													Mesh: {{decodeURI(port.mesh)}}
-												</span>
-										</Chip>
-									</div>
-									<div class="mb-2">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-server"/>
-												</span>
-												<span class="font-medium ml-2">
-													Service: {{port.target?.service}}
-												</span>
-										</Chip>
-									</div>
-									<div class="mb-2" v-if="port.target?.endpoint">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span style="min-width: 28px;" class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-chart-scatter"/>
-												</span>
-												<span class="font-medium ml-2">
-													EP: {{endpointMap[port.target?.endpoint]?.name||'Unnamed EP' }}
-												</span>
-										</Chip>
-									</div>
-								</Fieldset>
 					 </div>
-			 </div>
+				</div>
+			</div>
+			</ScrollPanel>
+			<Empty v-else :title="emptyMsg" :error="error"/>
 		</div>
 	</div>
-	<Empty v-else :title="emptyMsg" :error="error"/>
 </template>
 
 <style scoped lang="scss">
