@@ -3,6 +3,7 @@ import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import PipyProxyService from '@/service/PipyProxyService';
 import MeshSelector from './common/MeshSelector.vue';
+import EndpointInfo from './EndpointInfo.vue';
 import Services from './Services.vue';
 import Ports from './Ports.vue';
 import { useStore } from 'vuex';
@@ -65,6 +66,15 @@ const go = (path) => {
 	</AppHeader>
 	<div class="text-center">
 		<TabView class="" v-model:activeIndex="active">
+			
+			<TabPanel>
+				<template #header>
+					<div>
+						<i class="pi pi-info-circle mr-2" />Info
+					</div>
+				</template>
+				<EndpointInfo :ep="props.ep"/>
+			</TabPanel>
 			<TabPanel>
 				<template #header>
 					<div>
