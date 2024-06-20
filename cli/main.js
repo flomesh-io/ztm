@@ -25,7 +25,7 @@ var optionsConfig = {
 
 var optionsCA = {
   defaults: {
-    '--listen': '0.0.0.0:9999',
+    '--listen': '127.0.0.1:9999',
     '--database': '~/ztm-ca.db',
   },
   shorthands: {
