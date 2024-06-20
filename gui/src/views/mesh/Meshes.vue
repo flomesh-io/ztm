@@ -51,7 +51,7 @@ const loaddata = () => {
 		}); 
 }
 const deleteMesh = () => {
-	const name = selectedMesh.value?.name;
+	const name = selectedMenu.value?.name;
 	if(!name){
 		return
 	}
@@ -60,7 +60,7 @@ const deleteMesh = () => {
 			loaddata();
 			store.dispatch('account/meshes');
 		},1000);
-		selectedMesh.value = null;
+		selectedMenu.value = null;
 		visibleEditor.value = false;
 	});
 	
@@ -73,11 +73,11 @@ const join = () => {
 	setTimeout(()=>{
 		loaddata();
 	},1000);
-	selectedMesh.value = null;
+	selectedMenu.value = null;
 	visibleEditor.value = false;
 }
 
-const selectedMesh = ref();
+const selectedMenu = ref();
 const actionMenu = ref();
 const actions = ref([
     {
@@ -101,7 +101,7 @@ const actions = ref([
     }
 ]);
 const showAtionMenu = (event, mesh) => {
-	selectedMesh.value = mesh;
+	selectedMenu.value = mesh;
 	actionMenu.value[0].toggle(event);
 };
 const visibleEditor = ref(false);
@@ -112,7 +112,12 @@ const openEditor = () => {
 const emptyMsg = computed(()=>{
 	return `First, join a ${isChat.value?'Channel':'Mesh'}.`
 });
-
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
+const select = (mesh) => {
+	store.commit('account/setSelectedMesh', mesh);
+}
 </script>
 
 <template>
@@ -133,20 +138,20 @@ const emptyMsg = computed(()=>{
 			<div class="text-center px-3">
 				<div class="grid mt-1 text-left" >
 						<div :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
-							 <div class="surface-card shadow-2 p-3 border-round">
+							 <div :class="selectedMesh?.name == mesh.name?'surface-card-selected':''" class="surface-card surface-card-hover shadow-2 p-3 border-round relative" @click="select(mesh)">
 									 <div class="flex justify-content-between mb-3">
 											 <div>
-														<span class="block text-tip font-medium mb-3">
-															
-															{{decodeURI(mesh.name)}}
-														</span>
-														<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
+													<span class="block text-tip font-medium mb-3">
+														{{decodeURI(mesh.name)}}
+													</span>
+													<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
 											 </div>
 											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
 											 <Menu ref="actionMenu" :model="actions" :popup="true" />
 									 </div>
 										<span class="text-tip">Hubs: </span>
 										<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
+										<i v-if="selectedMesh?.name == mesh.name" class="iconfont icon-check text-primary-500 text-4xl absolute" style="right: 10px;bottom: 10px;"/>
 							 </div>
 					 </div>
 				</div>
@@ -157,10 +162,10 @@ const emptyMsg = computed(()=>{
 		<div class="flex-item" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed">
 				<MeshJoin
-					:title="!!selectedMesh?(isChat?'Edit Channel':'Edit Mesh'):null" 
-					:pid="selectedMesh?.name" 
+					:title="!!selectedMenu?(isChat?'Edit Channel':'Edit Mesh'):null" 
+					:pid="selectedMenu?.name" 
 					@save="join" 
-					@back="() => {selectedMesh=null;visibleEditor=false;}"/>
+					@back="() => {selectedMenu=null;visibleEditor=false;}"/>
 			</div>
 		</div>
 	</div>
