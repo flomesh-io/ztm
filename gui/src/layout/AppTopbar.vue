@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter, useRoute } from 'vue-router';

@@ -995,6 +995,17 @@ fieldset{
 .message-list .message-item:hover{
 	background-color: var(--primary-100);
 }
+.surface-card-selected{
+	background-color: var(--primary-200) !important;
+}
+.surface-card-hover{
+	cursor: pointer;
+	transition: .3s all;
+}
+.surface-card-hover:hover{
+	
+	background-color: var(--primary-100) !important;
+}
 @media (prefers-color-scheme: dark){
 		
 	.message-list .message-item:hover{
@@ -1030,5 +1041,12 @@ fieldset{
 	}
 	.link{
 		color: var(--primary-300) !important;
+	}
+	.surface-card-selected{
+		background-color: var(--primary-800) !important;
+	}
+	.surface-card-hover:hover{
+		
+		background-color: var(--primary-900) !important;
 	}
 }
