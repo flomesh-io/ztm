@@ -7,7 +7,7 @@ var opt = options(pipy.argv, {
   defaults: {
     '--help': false,
     '--database': '~/ztm-ca.db',
-    '--listen': '0.0.0.0:9999',
+    '--listen': '127.0.0.1:9999',
   },
   shorthands: {
     '-h': '--help',
@@ -20,7 +20,7 @@ if (opt['--help']) {
   println('Options:')
   println('  -h, --help      Show available options')
   println('  -d, --database  Pathname of the database file (default: ~/ztm-ca.db)')
-  println('  -l, --listen    Port number to listen (default: 0.0.0.0:9999)')
+  println('  -l, --listen    Port number to listen (default: 127.0.0.1:9999)')
   return
 }
 
