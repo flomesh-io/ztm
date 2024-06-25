@@ -112,8 +112,70 @@ function delMesh(name) {
   db.sql('DELETE FROM services WHERE mesh = ?')
     .bind(1, name)
     .exec()
+  db.sql('DELETE FROM apps WHERE mesh = ?')
+    .bind(1, name)
+    .exec()
   db.sql('DELETE FROM meshes WHERE name = ?')
     .bind(1, name)
+    .exec()
+}
+
+function recordToApp(rec) {
+  return {
+    provider: rec.provider,
+    name: rec.name,
+    tag: rec.tag,
+    username: rec.username,
+  }
+}
+
+function allApps(mesh) {
+  return (
+    db.sql('SELECT * FROM apps WHERE mesh = ?')
+      .bind(1, mesh)
+      .exec()
+      .map(recordToApp)
+  )
+}
+
+function getApp(mesh, provider, name) {
+  return (
+    db.sql('SELECT * FROM apps WHERE mesh = ? AND provider = ? AND name = ?')
+      .bind(1, mesh)
+      .bind(2, provider)
+      .bind(3, name)
+      .exec()
+      .slice(0, 1)
+      .map(recordToMesh)[0]
+  )
+}
+
+function setApp(mesh, provider, name, app) {
+  var old = getApp(name)
+  if (old) {
+    db.sql('UPDATE apps SET tag = ?, username = ? WHERE mesh = ? AND provider = ? AND name = ?')
+      .bind(1, app.tag || old.tag)
+      .bind(2, app.username || old.username)
+      .bind(3, mesh)
+      .bind(4, provider)
+      .bind(5, name)
+      .exec()
+  } else {
+    db.sql('INSERT INTO apps(mesh, provider, name, tag, username) VALUES(?, ?, ?, ?, ?)')
+      .bind(1, mesh)
+      .bind(2, provider)
+      .bind(3, name)
+      .bind(4, app.tag || '')
+      .bind(5, app.username)
+      .exec()
+  }
+}
+
+function delApp(mesh, provider, name) {
+  db.sql('DELETE FROM apps WHERE mesh = ? AND provider = ? AND name = ?')
+    .bind(1, mesh)
+    .bind(2, provider)
+    .bind(3, name)
     .exec()
 }
 
@@ -270,6 +332,10 @@ export default {
   getMesh,
   setMesh,
   delMesh,
+  allApps,
+  getApp,
+  setApp,
+  delApp,
   allServices,
   getService,
   setService,

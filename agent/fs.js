@@ -126,10 +126,10 @@ export default function(storeDir) {
   }
 
   function hash(path, data) {
-    var size = data.size
     var h = new crypto.Hash('sha256')
     h.update(data)
-    h.update(`${size},${path}`)
+    h.update(data.size.toString())
+    h.update(path)
     return h.digest().toString('hex')
   }
 

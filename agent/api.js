@@ -128,25 +128,49 @@ function getFileDataFromEP(mesh, ep, hash) {
 }
 
 function allApps(mesh, ep) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve([])
+  return m.discoverApps(ep)
 }
 
-function getApp(mesh, ep, username, app) {
-  return Promise.resolve(null)
-}
-
-function setApp(mesh, ep, username, app, state) {
+function getApp(mesh, ep, provider, app) {
   var m = findMesh(mesh)
-  if (ep === m.config.agent.id) {
-    var info = m.findApp(username, app)
-    if ('isPublished' in state && state.isPublished != info.isPublished) {
-      if (state.isPublished) {
-        m.publishApp(username, app)
+  if (!m) return Promise.resolve(null)
+  return m.findApp(ep, provider, app)
+}
+
+function setApp(mesh, ep, provider, app, state) {
+  var m = findMesh(mesh)
+  if (!m) return Promise.resolve(null)
+  return m.findApp(ep, provider, app).then(info => {
+    if (info) return info
+    return m.installApp(ep, provider, app).then(() => m.findApp(ep, provider, app))
+  }).then(info => {
+    if ('isRunning' in state && state.isRunning != info.isRunning) {
+      if (state.isRunning) {
+        return m.startApp(ep, provider, app).then(info)
       } else {
-        m.unpublishApp(username, app)
+        return m.stopApp(ep, provider.app).then(info)
       }
     }
-  }
-  return getApp(mesh, ep, username, app)
+    return info
+  }).then(info => {
+    if (ep !== m.config.agent.id) return info
+    if ('isPublished' in state && state.isPublished != info.isPublished) {
+      if (state.isPublished) {
+        m.publishApp(provider, app)
+      } else {
+        m.unpublishApp(provider, app)
+      }
+    }
+    return m.findApp(ep, provider, app)
+  })
+}
+
+function delApp(mesh, ep, provider, app) {
+  var m = findMesh(mesh)
+  if (!m) return Promise.resolve()
+  return m.uninstallApp(ep, provider, app)
 }
 
 function allServices(mesh, ep) {
@@ -292,6 +316,7 @@ export default {
   allApps,
   getApp,
   setApp,
+  delApp,
   allServices,
   getService,
   setService,
@@ -300,7 +325,4 @@ export default {
   getPort,
   setPort,
   delPort,
-  allApps,
-  getApp,
-  setApp,
 }

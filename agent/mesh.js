@@ -722,20 +722,20 @@ export default function (rootDir, config) {
     return hubs[0].findFile(pathname)
   }
 
-  function findApp(username, appname) {
-    var isInstalled = apps.list(username).includes(appname)
-    var isPublished = Boolean(fs.stat(`/home/${username}/apps/pkg/${appname}`))
+  function findApp(ep, provider, appname) {
+    var isInstalled = apps.list(provider).includes(appname)
+    var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pkg/${appname}`))
     if (isInstalled || isPublished) {
       var i = appname.indexOf('@')
       var name = (i < 0 ? appname : appname.substring(0,i))
       var tag = (i < 0 ? '' : appname.substring(i+1))
-      return {
+      return Promise.resolve({
         name,
-        username,
         tag,
+        provider,
         isInstalled,
         isPublished,
-      }
+      })
     }
   }
 
@@ -748,19 +748,54 @@ export default function (rootDir, config) {
   }
 
   function discoverApps() {
+    return hubs[0].discoverFiles().then(files => {
+      var apps = []
+      Object.keys(files).forEach(pathname => {
+        if (!pathname.startsWith('/home/')) return
+        pathname = pathname.substring(6)
+        var i = pathname.indexOf('/')
+        if (i < 0) return
+        var provider = pathname.substring(0, i)
+        pathname = pathname.substring(i)
+        if (!pathname.startsWith('/apps/pkg/')) return
+        pathname = pathname.substring(10)
+        if (pathname.indexOf('/') >= 0) return
+        i = pathname.indexOf('@')
+        if (i === 0) return
+        apps.push({
+          name: i > 0 ? pathname.substring(0, i) : pathname,
+          tag: i > 0 ? pathname.substring(i + 1) : '',
+          provider,
+        })
+      })
+      return apps
+    })
   }
 
-  function publishApp(username, appname) {
-    return apps.pack(username, appname).then(data => {
-      fs.write(`/home/${username}/apps/pkg/${appname}`, data)
+  function publishApp(provider, app) {
+    return apps.pack(provider, app).then(data => {
+      fs.write(`/home/${provider}/apps/pkg/${app}`, data)
       advertiseFilesystem()
     })
   }
 
-  function unpublishApp(username, appname) {
-    fs.remove(`/home/${username}/apps/pkg/${appname}`)
+  function unpublishApp(provider, app) {
+    fs.remove(`/home/${provider}/apps/pkg/${app}`)
     advertiseFilesystem()
   }
+
+  function installApp(ep, provider, app) {
+  }
+
+  function uninstallApp(ep, provider, app) {
+  }
+
+  function startApp(ep, provider, app) {
+  }
+
+  function stopApp(ep, provider, app) {
+  }
+
 
   function downloadFile(ep, hash) {
     return selectHubWithThrow(ep).then(
@@ -778,10 +813,11 @@ export default function (rootDir, config) {
   function syncFile(pathname) {
     return findFile(pathname).then(meta => {
       if (!meta) return null
+      pathname = os.path.normalize(pathname)
 
+      var hash = meta.hash
       var st = fs.stat(pathname)
-      var hash = st?.hash
-      if (hash === meta.hash) return fs.raw(hash)
+      if (st?.hash === hash) return fs.raw(hash)
 
       var sources = [...meta.sources]
       return pickOne()
@@ -1057,6 +1093,10 @@ export default function (rootDir, config) {
     discoverApps,
     publishApp,
     unpublishApp,
+    installApp,
+    uninstallApp,
+    startApp,
+    stopApp,
     downloadFile,
     syncFile,
     discoverServices,
