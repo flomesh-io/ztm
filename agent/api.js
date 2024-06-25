@@ -1,4 +1,6 @@
 import db from './db.js'
+import fs from './fs.js'
+import apps from './apps.js'
 import Mesh from './mesh.js'
 
 //
@@ -12,6 +14,7 @@ import Mesh from './mesh.js'
 //     - Services (others)
 //
 
+var rootDir = ''
 var meshes = {}
 
 function findMesh(name) {
@@ -20,10 +23,14 @@ function findMesh(name) {
   throw `Mesh not found: ${name}`
 }
 
-function init() {
+function init(dirname) {
+  rootDir = os.path.resolve(dirname)
   db.allMeshes().forEach(
     function (mesh) {
-      meshes[mesh.name] = Mesh(mesh)
+      meshes[mesh.name] = Mesh(
+        os.path.join(rootDir, 'meshes', mesh.name),
+        mesh
+      )
     }
   )
 }
@@ -53,7 +60,10 @@ function setMesh(name, mesh) {
     delete meshes[name]
   }
   mesh = db.getMesh(name)
-  meshes[name] = Mesh(mesh)
+  meshes[name] = Mesh(
+    os.path.join(rootDir, 'meshes', mesh.name),
+    mesh
+  )
   return getMesh(name)
 }
 
@@ -91,6 +101,52 @@ function getEndpointLog(mesh, ep) {
   } else {
     return m.remoteQueryLog(ep)
   }
+}
+
+function allFiles(mesh) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.discoverFiles()
+}
+
+function getFileInfo(mesh, pathname) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.findFile(pathname)
+}
+
+function getFileData(mesh, pathname) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.syncFile(pathname)
+}
+
+function getFileDataFromEP(mesh, ep, hash) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.downloadFile(ep, hash)
+}
+
+function allApps(mesh, ep) {
+}
+
+function getApp(mesh, ep, username, app) {
+  return Promise.resolve(null)
+}
+
+function setApp(mesh, ep, username, app, state) {
+  var m = findMesh(mesh)
+  if (ep === m.config.agent.id) {
+    var info = m.findApp(username, app)
+    if ('isPublished' in state && state.isPublished != info.isPublished) {
+      if (state.isPublished) {
+        m.publishApp(username, app)
+      } else {
+        m.unpublishApp(username, app)
+      }
+    }
+  }
+  return getApp(mesh, ep, username, app)
 }
 
 function allServices(mesh, ep) {
@@ -229,6 +285,13 @@ export default {
   allEndpoints,
   getEndpoint,
   getEndpointLog,
+  allFiles,
+  getFileInfo,
+  getFileData,
+  getFileDataFromEP,
+  allApps,
+  getApp,
+  setApp,
   allServices,
   getService,
   setService,
@@ -237,4 +300,7 @@ export default {
   getPort,
   setPort,
   delPort,
+  allApps,
+  getApp,
+  setApp,
 }

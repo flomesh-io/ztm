@@ -1,6 +1,8 @@
 import db from './db.js'
+import initFilesystem from './fs.js'
+import initApps from './apps.js'
 
-export default function (config) {
+export default function (rootDir, config) {
   var meshName = config.name
   var username
   var caCert
@@ -8,6 +10,8 @@ export default function (config) {
   var agentKey
   var agentLog = []
   var meshErrors = []
+  var fs = null
+  var apps = null
   var services = []
   var ports = {}
   var exited = false
@@ -41,6 +45,13 @@ export default function (config) {
     }
   } else {
     meshError('Missing agent private key')
+  }
+
+  try {
+    fs = initFilesystem(os.path.join(rootDir, 'fs'))
+    apps = initApps(os.path.join(rootDir, 'apps'))
+  } catch (e) {
+    meshError(e.toString())
   }
 
   var tlsOptions = {
@@ -114,6 +125,7 @@ export default function (config) {
                 logInfo(`Connected to hub ${address}`)
                 meshErrors.length = 0
                 connections.add(conn)
+                advertiseFilesystem(filesystemLatest)
                 if (serviceList) updateServiceList(serviceList)
               } else if (conn.state === 'closed') {
                 connections.delete(conn)
@@ -155,6 +167,45 @@ export default function (config) {
 
     // Establish a pull session to the hub
     reverseServer.spawn()
+
+    // Start advertising filesystem
+    var filesystemLatest = null
+    var filesystemUpdate = null
+    var filesystemSending = null
+    sendFilesystemUpdate()
+
+    function sendFilesystemUpdate() {
+      if (closed) return
+      new Timeout(1).wait().then(() => {
+        if (filesystemUpdate) {
+          filesystemSending = filesystemUpdate
+          filesystemUpdate = null
+        }
+        if (filesystemSending) {
+          var size = Object.keys(filesystemSending).length
+          logInfo(`Sending filesystem to ${address} (size = ${size})...`)
+          requestHub.spawn(
+            new Message(
+              {
+                method: 'POST',
+                path: '/api/filesystem',
+              },
+              JSON.encode(filesystemSending)
+            )
+          ).then(res => {
+            if (res && res.head.status === 201) {
+              logInfo(`Sent filesystem to ${address} (size = ${size})`)
+              filesystemSending = null
+            } else {
+              logError(`Unable to send filesystem to ${address} (status = ${res?.head?.status})`)
+            }
+            sendFilesystemUpdate()
+          })
+        } else {
+          sendFilesystemUpdate()
+        }
+      })
+    }
 
     // Start sending service list updates
     pipeline($=>$
@@ -215,6 +266,11 @@ export default function (config) {
       )
     }
 
+    function advertiseFilesystem(files) {
+      filesystemLatest = files
+      filesystemUpdate = files
+    }
+
     function discoverEndpoints() {
       return requestHub.spawn(
         new Message({ method: 'GET', path: '/api/endpoints' })
@@ -222,6 +278,30 @@ export default function (config) {
         function (res) {
           if (res && res.head.status === 200) {
             return JSON.decode(res.body)
+          } else {
+            return []
+          }
+        }
+      )
+    }
+
+    function discoverFiles() {
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: '/api/filesystem' })
+      ).then(
+        function (res) {
+          if (res && res.head.status === 200) {
+            return Object.fromEntries(
+              Object.entries(JSON.decode(res.body)).map(
+                ([k, v]) => [
+                  k, {
+                    size: v['$'],
+                    time: v['T'],
+                    hash: v['#'],
+                  }
+                ]
+              )
+            )
           } else {
             return []
           }
@@ -257,6 +337,26 @@ export default function (config) {
       )
     }
 
+    function findFile(pathname) {
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: os.path.join('/api/filesystem', pathname) })
+      ).then(
+        function (res) {
+          if (res && res.head.status === 200) {
+            var meta = JSON.decode(res.body)
+            return {
+              size: meta['$'],
+              time: meta['T'],
+              hash: meta['#'],
+              sources: meta['@'],
+            }
+          } else {
+            return null
+          }
+        }
+      )
+    }
+
     function findService(proto, svc) {
       return requestHub.spawn(
         new Message({ method: 'GET', path: `/api/services/${proto}/${svc}`})
@@ -282,10 +382,13 @@ export default function (config) {
       isConnected: () => connections.size > 0,
       address,
       heartbeat,
+      advertiseFilesystem,
       updateServiceList,
       discoverEndpoints,
+      discoverFiles,
       discoverServices,
       findEndpoint,
+      findFile,
       findService,
       leave,
     }
@@ -404,6 +507,13 @@ export default function (config) {
         'GET': function () {
           return response(200, getLog())
         }
+      },
+
+      '/api/file-data/{hash}': {
+        'GET': function (params) {
+          var data = fs.raw(params.hash)
+          return data ? response(200, data) : response(404)
+        },
       },
 
     }).map(
@@ -540,6 +650,9 @@ export default function (config) {
     }
   }
 
+  // Advertise the filesystem
+  advertiseFilesystem()
+
   // Publish services
   db.allServices(meshName).forEach(
     function (s) {
@@ -585,12 +698,115 @@ export default function (config) {
     })
   }
 
+  function advertiseFilesystem() {
+    var prefix = os.path.join('/home', username)
+    var files = {}
+    fs.list(prefix).forEach(filename => {
+      var stat = fs.stat(filename)
+      if (stat) {
+        files[filename] = {
+          'T': stat.time,
+          '#': stat.hash,
+          '$': stat.size,
+        }
+      }
+    })
+    hubs[0].advertiseFilesystem(files)
+  }
+
   function findEndpoint(ep) {
     return hubs[0].findEndpoint(ep)
   }
 
+  function findFile(pathname) {
+    return hubs[0].findFile(pathname)
+  }
+
+  function findApp(username, appname) {
+    var isInstalled = apps.list(username).includes(appname)
+    var isPublished = Boolean(fs.stat(`/home/${username}/apps/pkg/${appname}`))
+    if (isInstalled || isPublished) {
+      var i = appname.indexOf('@')
+      var name = (i < 0 ? appname : appname.substring(0,i))
+      var tag = (i < 0 ? '' : appname.substring(i+1))
+      return {
+        name,
+        username,
+        tag,
+        isInstalled,
+        isPublished,
+      }
+    }
+  }
+
   function discoverEndpoints() {
     return hubs[0].discoverEndpoints()
+  }
+
+  function discoverFiles() {
+    return hubs[0].discoverFiles()
+  }
+
+  function discoverApps() {
+  }
+
+  function publishApp(username, appname) {
+    return apps.pack(username, appname).then(data => {
+      fs.write(`/home/${username}/apps/pkg/${appname}`, data)
+      advertiseFilesystem()
+    })
+  }
+
+  function unpublishApp(username, appname) {
+    fs.remove(`/home/${username}/apps/pkg/${appname}`)
+    advertiseFilesystem()
+  }
+
+  function downloadFile(ep, hash) {
+    return selectHubWithThrow(ep).then(
+      (hub) => httpAgents.get(hub).request(
+        'GET', `/api/endpoints/${ep}/file-data/${hash}`
+      ).then(
+        res => {
+          remoteCheckResponse(res, 200)
+          return res.body
+        }
+      )
+    )
+  }
+
+  function syncFile(pathname) {
+    return findFile(pathname).then(meta => {
+      if (!meta) return null
+
+      var st = fs.stat(pathname)
+      var hash = st?.hash
+      if (hash === meta.hash) return fs.raw(hash)
+
+      var sources = [...meta.sources]
+      return pickOne()
+
+      function pickOne() {
+        if (sources.length === 0) return null
+        var i = Math.floor(Math.random() * sources.length) % sources.length
+        var ep = sources.splice(i, 1)[0]
+        return downloadFile(ep, hash).then(data => {
+          if (!data) {
+            logError(`Download of file ${hash} from ep ${ep} is null`)
+            return pickOne()
+          }
+          if (fs.hash(pathname, data) !== hash) {
+            logError(`Download of file ${hash} from ep ${ep} is corrupted`)
+            return pickOne()
+          }
+          fs.write(pathname, data)
+          return data
+        }).catch(ret => {
+          logError(`Download of file ${hash} from ep ${ep} failed: ${JSON.stringify(ret)}`)
+          return pickOne()
+        })
+      }
+    })
   }
 
   function discoverServices(ep) {
@@ -834,7 +1050,15 @@ export default function (config) {
     getLog,
     getErrors,
     findEndpoint,
+    findFile,
+    findApp,
     discoverEndpoints,
+    discoverFiles,
+    discoverApps,
+    publishApp,
+    unpublishApp,
+    downloadFile,
+    syncFile,
     discoverServices,
     publishService,
     deleteService,
@@ -855,6 +1079,7 @@ export default function (config) {
 function response(status, body) {
   if (!body) return new Message({ status })
   if (typeof body === 'string') return responseCT(status, 'text/plain', body)
+  if (body instanceof Data) return responseCT(status, 'application/octet-stream', body)
   return responseCT(status, 'application/json', JSON.encode(body))
 }
 
