@@ -24,8 +24,8 @@ export default function (rootDir) {
     })
   }
 
-  function list(username) {
-    var dirname = os.path.join(rootDir, username)
+  function list(provider) {
+    var dirname = os.path.join(rootDir, provider)
     return os.readDir(dirname).filter(name => {
       if (name.startsWith('.') || !name.endsWith('/')) return false
       if (os.stat(os.path.join(dirname, name, 'ztm.json'))?.isFile?.()) {
@@ -37,8 +37,8 @@ export default function (rootDir) {
     )
   }
 
-  function pack(username, app) {
-    var dirname = os.path.join(rootDir, username, app)
+  function pack(provider, app) {
+    var dirname = os.path.join(rootDir, provider, app)
     var filenames = []
     listRecursive(dirname, '/', filenames)
 
@@ -70,7 +70,7 @@ export default function (rootDir) {
     return packFile()
   }
 
-  function unpack(username, app, data) {
+  function unpack(provider, app, data) {
   }
 
   return {

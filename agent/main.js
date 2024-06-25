@@ -251,22 +251,20 @@ var routes = Object.entries({
   //
   // App
   //   name: string
-  //   username: string
   //   tag: string
-  //   hash: string
-  //   isInstalled: boolean
-  //   isPublished: boolean
+  //   provider: string
+  //   username: string
   //   isRunning: boolean
-  //   status: string
+  //   isPublished: boolean
   //   log: string[]
   //
 
   '/api/meshes/{mesh}/apps': {
-    'GET': function ({ mesh }) {},
-  },
-
-  '/api/meshes/{mesh}/apps/{username}/{app}': {
-    'GET': function ({ mesh, username, app }) {},
+    'GET': function ({ mesh }) {
+      return api.allApps(mesh).then(
+        ret => response(200, ret)
+      )
+    },
   },
 
   '/api/meshes/{mesh}/endpoints/{ep}/apps': {
@@ -277,17 +275,21 @@ var routes = Object.entries({
     },
   },
 
-  '/api/meshes/{mesh}/endpoints/{ep}/apps/{username}/{app}': {
-    'GET': function ({ mesh, ep, username, app }) {
-      return api.getApp(mesh, ep, username, app).then(
+  '/api/meshes/{mesh}/endpoints/{ep}/apps/{provider}/{app}': {
+    'GET': function ({ mesh, ep, provider, app }) {
+      return api.getApp(mesh, ep, provider, app).then(
         ret => response(200, ret)
       )
     },
 
-    'POST': function ({ mesh, ep, username, app }, req) {
-      return api.setApp(mesh, ep, username, app, JSON.decode(req.body)).then(
+    'POST': function ({ mesh, ep, provider, app }, req) {
+      return api.setApp(mesh, ep, provider, app, JSON.decode(req.body)).then(
         ret => response(201, ret)
       )
+    },
+
+    'DELETE': function ({ mesh, ep, provider, app }) {
+      return api.delApp(mesh, ep, provider, app).then(response(204))
     },
   },
 
