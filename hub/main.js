@@ -40,12 +40,25 @@ var routes = Object.entries({
     'CONNECT': () => connectEndpoint,
   },
 
+  '/api/endpoints/{ep}/file-data/{hash}': {
+    'GET': () => getFileData,
+  },
+
   '/api/endpoints/{ep}/services': {
     'GET': () => getServices,
   },
 
   '/api/endpoints/{ep}/services/{proto}/{svc}': {
     'CONNECT': () => connectService,
+  },
+
+  '/api/filesystem': {
+    'GET': () => getFilesystem,
+    'POST': () => findCurrentEndpointSession() ? postFilesystem : noSession,
+  },
+
+  '/api/filesystem/*': {
+    'GET': () => getFileInfo,
   },
 
   '/api/services': {
@@ -240,6 +253,76 @@ var getEndpoint = pipeline($=>$
         heartbeat: ep.heartbeat,
         online: isEndpointOnline(ep),
       })
+    }
+  )
+)
+
+var getFilesystem = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      var fs = {}
+      Object.values(endpoints).forEach(ep => {
+        if (!ep.files) return
+        ep.files.forEach(f => {
+          updateFileInfo(fs, f, ep.id)
+        })
+      })
+      return response(200, fs)
+    }
+  )
+)
+
+var postFilesystem = pipeline($=>$
+  .replaceMessage(
+    function (req) {
+      var body = JSON.decode(req.body)
+      $endpoint.files = Object.entries(body).map(
+        ([k, v]) => ({
+          pathname: k,
+          time: v['T'],
+          hash: v['#'],
+          size: v['$'],
+        })
+      )
+      return new Message({ status: 201 })
+    }
+  )
+)
+
+var getFileInfo = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      var fs = {}
+      var pathname = '/' + $params['*']
+      Object.values(endpoints).forEach(ep => {
+        if (!ep.files) return
+        ep.files.forEach(f => {
+          if (f.pathname === pathname) {
+            updateFileInfo(fs, f, ep.id)
+          }
+        })
+      })
+      var info = fs[pathname]
+      return info ? response(200, info) : response(404)
+    }
+  )
+)
+
+var getFileData = pipeline($=>$
+  .pipe(
+    function (req) {
+      if (req instanceof MessageStart) {
+        var id = $params.ep
+        var ep = endpoints[id]
+        if (!ep) return notFound
+        sessions[id]?.forEach?.(h => $hubSelected = h)
+        if (!$hubSelected) return notFound
+        var hash = $params.hash
+        req.head.path = `/api/file-data/${hash}`
+        return muxToAgent
+      }
     }
   )
 )
@@ -474,6 +557,28 @@ function findCurrentEndpointSession() {
   }
   $endpoint.isConnected = true
   return true
+}
+
+function updateFileInfo(fs, f, ep) {
+  var e = (fs[f.pathname] ??= {
+    'T': 0,
+    '$': 0,
+    '#': null,
+    '@': null,
+  })
+  var t1 = e['T']
+  var h1 = e['#']
+  var t2 = f.time
+  var h2 = f.hash
+  if (h2 === h1) {
+    e['@'].push(ep)
+    e['T'] = Math.max(t1, t2)
+  } else if (t2 > t1) {
+    e['#'] = h2
+    e['$'] = f.size
+    e['@'] = [ep]
+    e['T'] = t2
+  }
 }
 
 function canSee(username, ep) {

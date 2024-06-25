@@ -1,10 +1,6 @@
 var db = null
 
-function open(pathname, reset) {
-  if (reset) {
-    os.rm(pathname)
-  }
-
+function open(pathname) {
   db = sqlite(pathname)
 
   db.exec(`
@@ -13,6 +9,25 @@ function open(pathname, reset) {
       ca TEXT NOT NULL,
       agent TEXT NOT NULL,
       bootstraps TEXT NOT NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS apps (
+      mesh TEXT NOT NULL,
+      name TEXT NOT NULL,
+      tag TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      username TEXT NOT NULL
+    )
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS storage (
+      mesh TEXT NOT NULL,
+      app TEXT NOT NULL,
+      path TEXT NOT NULL,
+      data TEXT NOT NULL
     )
   `)
 
