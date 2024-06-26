@@ -1,6 +1,4 @@
 import db from './db.js'
-import fs from './fs.js'
-import apps from './apps.js'
 import Mesh from './mesh.js'
 
 //
@@ -142,29 +140,24 @@ function getApp(mesh, ep, provider, app) {
 function setApp(mesh, ep, provider, app, state) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve(null)
-  return m.findApp(ep, provider, app).then(info => {
-    if (info) return info
-    return m.installApp(ep, provider, app).then(() => m.findApp(ep, provider, app))
-  }).then(info => {
-    if ('isRunning' in state && state.isRunning != info.isRunning) {
-      if (state.isRunning) {
-        return m.startApp(ep, provider, app).then(info)
-      } else {
-        return m.stopApp(ep, provider.app).then(info)
-      }
+  return m.findApp(ep, provider, app).then(ret => {
+    if (ret) return
+    return m.installApp(ep, provider, app)
+  }).then(() => {
+    if (!('isRunning' in state)) return
+    if (state.isRunning) {
+      m.startApp(ep, provider, app)
+    } else {
+      m.stopApp(ep, provider.app)
     }
-    return info
-  }).then(info => {
-    if (ep !== m.config.agent.id) return info
-    if ('isPublished' in state && state.isPublished != info.isPublished) {
-      if (state.isPublished) {
-        m.publishApp(provider, app)
-      } else {
-        m.unpublishApp(provider, app)
-      }
+  }).then(() => {
+    if (!('isPublished' in state)) return
+    if (state.isPublished) {
+      return m.publishApp(ep, provider, app)
+    } else {
+      return m.unpublishApp(ep, provider, app)
     }
-    return m.findApp(ep, provider, app)
-  })
+  }).then(() => m.findApp(ep, provider, app))
 }
 
 function delApp(mesh, ep, provider, app) {

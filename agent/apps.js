@@ -24,11 +24,17 @@ export default function (rootDir) {
     })
   }
 
+  function listProviders() {
+    return os.readDir(rootDir)
+      .filter(name => name.endsWith('/'))
+      .map(name => name.substring(0, name.length - 1))
+  }
+
   function list(provider) {
     var dirname = os.path.join(rootDir, provider)
     return os.readDir(dirname).filter(name => {
       if (name.startsWith('.') || !name.endsWith('/')) return false
-      if (os.stat(os.path.join(dirname, name, 'ztm.json'))?.isFile?.()) {
+      if (os.stat(os.path.join(dirname, name, 'main.js'))?.isFile?.()) {
         return true
       }
       return false
@@ -71,11 +77,39 @@ export default function (rootDir) {
   }
 
   function unpack(provider, app, data) {
+    remove(provider, app)
+    var dirname = os.path.join(rootDir, provider, app)
+    return pipeline($=>$
+      .onStart([data, new StreamEnd])
+      .decodeHTTPRequest()
+      .handleMessage(msg => {
+        var path = os.path.normalize(msg.head.path)
+        path = os.path.join(dirname, path)
+        os.mkdir(os.path.dirname(path), { recursive: true, force: true })
+        os.write(path, msg.body)
+      })
+    ).spawn()
+  }
+
+  function start(provider, app) {
+  }
+
+  function stop(provider, app) {
+  }
+
+  function remove(provider, app) {
+    stop(provider, app)
+    var dirname = os.path.join(rootDir, provider, app)
+    os.rmdir(dirname, { recursive: true, force: true })
   }
 
   return {
+    listProviders,
     list,
     pack,
     unpack,
+    start,
+    stop,
+    remove,
   }
 }
