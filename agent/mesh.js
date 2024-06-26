@@ -510,9 +510,54 @@ export default function (rootDir, config) {
       },
 
       '/api/file-data/{hash}': {
-        'GET': function (params) {
-          var data = fs.raw(params.hash)
+        'GET': function ({ hash }) {
+          var data = fs.raw(hash)
           return data ? response(200, data) : response(404)
+        },
+      },
+
+      '/api/apps': {
+        'GET': function () {
+          return discoverApps(config.agent.id).then(
+            ret => response(200, ret)
+          )
+        }
+      },
+
+      '/api/apps/{provider}/{app}': {
+        'GET': function ({ provider, app }) {
+          return findApp(config.agent.id, provider, app).then(
+            ret => ret ? response(200, ret) : response(404)
+          )
+        },
+
+        'POST': function ({ provider, app }, req) {
+          var ep = config.agent.id
+          var state = JSON.decode(req.body)
+          return findApp(ep, provider, app).then(ret => {
+            if (!ret) return installApp(ep, provider, app)
+          }).then(() => {
+            if ('isRunning' in state) {
+              if (state.isRunning) {
+                apps.start(provider, app)
+              } else {
+                apps.stop(provider, app)
+              }
+            }
+            return response(201)
+          }).then(() => {
+            if ('isPublished' in state) {
+              if (state.isPublished) {
+                return publishApp(ep, provider, app)
+              } else {
+                return unpublishApp(ep, provider, app)
+              }
+            }
+          }).then(response(201))
+        },
+
+        'DELETE': function ({ provider, app }) {
+          return uninstallApp(config.agent.id, provider, app).then(response(204))
         },
       },
 
@@ -534,7 +579,14 @@ export default function (rootDir, config) {
           var params
           var path = req.head.path
           var route = routes.find(r => Boolean(params = r.match(path)))
-          if (route) return route.handler(params, req)
+          if (route) {
+            try {
+              var res = route.handler(params, req)
+              return res instanceof Promise ? res.catch(responseError) : res
+            } catch (e) {
+              return responseError(e)
+            }
+          }
           return response(404)
         }
       )
@@ -722,20 +774,30 @@ export default function (rootDir, config) {
     return hubs[0].findFile(pathname)
   }
 
-  function findApp(ep, provider, appname) {
-    var isInstalled = apps.list(provider).includes(appname)
-    var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pkg/${appname}`))
-    if (isInstalled || isPublished) {
-      var i = appname.indexOf('@')
-      var name = (i < 0 ? appname : appname.substring(0,i))
-      var tag = (i < 0 ? '' : appname.substring(i+1))
-      return Promise.resolve({
-        name,
-        tag,
-        provider,
-        isInstalled,
-        isPublished,
-      })
+  function findApp(ep, provider, app) {
+    if (ep === config.agent.id) {
+      var isInstalled = apps.list(provider).includes(app)
+      var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pkg/${app}`))
+      if (isPublished || isInstalled) {
+        return Promise.resolve({
+          ...getAppNameTag(app),
+          provider,
+          isPublished,
+          isRunning: false,
+        })
+      } else {
+        return Promise.resolve(null)
+      }
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'GET', `/api/forward/${ep}/apps/${provider}/${app}`
+        ).then(
+          res => {
+            return res.head?.status === 200 ? JSON.decode(res.body) : null
+          }
+        )
+      )
     }
   }
 
@@ -747,55 +809,164 @@ export default function (rootDir, config) {
     return hubs[0].discoverFiles()
   }
 
-  function discoverApps() {
-    return hubs[0].discoverFiles().then(files => {
-      var apps = []
-      Object.keys(files).forEach(pathname => {
-        if (!pathname.startsWith('/home/')) return
-        pathname = pathname.substring(6)
-        var i = pathname.indexOf('/')
-        if (i < 0) return
-        var provider = pathname.substring(0, i)
-        pathname = pathname.substring(i)
-        if (!pathname.startsWith('/apps/pkg/')) return
-        pathname = pathname.substring(10)
-        if (pathname.indexOf('/') >= 0) return
-        i = pathname.indexOf('@')
-        if (i === 0) return
-        apps.push({
-          name: i > 0 ? pathname.substring(0, i) : pathname,
-          tag: i > 0 ? pathname.substring(i + 1) : '',
-          provider,
+  function discoverApps(ep) {
+    if (ep === config.agent.id) {
+      var list = []
+      apps.listProviders().forEach(provider => {
+        apps.list(provider).forEach(app => {
+          list.push({
+            ...getAppNameTag(app),
+            provider,
+            isPublished: false,
+            isRunning: false,
+          })
+        })
+        fs.list(`/home/${provider}/apps/pkg/`).forEach(pathname => {
+          var dirname = os.path.dirname(pathname)
+          var app = pathname.substring(dirname.length + 1)
+          var idx = getAppNameTag(app)
+          var obj = list.find(a => a.name === idx.name && a.tag === idx.tag)
+          if (obj) {
+            obj.isPublished = true
+          } else {
+            list.push({
+              ...idx,
+              provider,
+              isPublished: true,
+              isRunning: false,
+            })
+          }
         })
       })
-      return apps
-    })
+      return Promise.resolve(list)
+    } else if (ep) {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'GET', `/api/forward/${ep}/apps`
+        ).then(res => {
+          if (res.head?.status === 200) {
+            return JSON.decode(res.body)
+          } else {
+            return []
+          }
+        })
+      )
+    } else {
+      return hubs[0].discoverFiles().then(files => {
+        var apps = []
+        Object.keys(files).forEach(pathname => {
+          if (!pathname.startsWith('/home/')) return
+          pathname = pathname.substring(6)
+          var i = pathname.indexOf('/')
+          if (i < 0) return
+          var provider = pathname.substring(0, i)
+          pathname = pathname.substring(i)
+          if (!pathname.startsWith('/apps/pkg/')) return
+          var app = pathname.substring(10)
+          if (app.indexOf('/') >= 0) return
+          if (app.indexOf('@') == 0) return
+          apps.push({ ...getAppNameTag(app), provider })
+        })
+        return apps
+      })
+    }
   }
 
-  function publishApp(provider, app) {
-    return apps.pack(provider, app).then(data => {
-      fs.write(`/home/${provider}/apps/pkg/${app}`, data)
-      advertiseFilesystem()
-    })
+  function publishApp(ep, provider, app) {
+    if (ep === config.agent.id) {
+      var packagePathname = `/home/${provider}/apps/pkg/${app}`
+      if (fs.stat(packagePathname)) return Promise.resolve()
+      return apps.pack(provider, app).then(data => {
+        fs.write(packagePathname, data)
+        advertiseFilesystem()
+      })
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({ isPublished: true })
+        )
+      )
+    }
   }
 
-  function unpublishApp(provider, app) {
-    fs.remove(`/home/${provider}/apps/pkg/${app}`)
-    advertiseFilesystem()
+  function unpublishApp(ep, provider, app) {
+    if (ep === config.agent.id) {
+      var packagePathname = `/home/${provider}/apps/pkg/${app}`
+      if (fs.stat(packagePathname)) {
+        fs.remove(packagePathname)
+        advertiseFilesystem()
+      }
+      return Promise.resolve()
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({ isPublished: false })
+        )
+      )
+    }
   }
 
   function installApp(ep, provider, app) {
+    logInfo(`App ${provider}/${app} installing to ${ep}...`)
+    if (ep === config.agent.id) {
+      return syncFile(`/home/${provider}/apps/pkg/${app}`).then(data => {
+        if (data) {
+          apps.unpack(provider, app, data)
+          logInfo(`App ${provider}/${app} installed locally`)
+        } else {
+          logError(`App ${provider}/${app} installation failed`)
+        }
+      })
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({})
+        ).then(
+          res => {
+            if (res.head?.status === 201) {
+              logInfo(`App ${provider}/${app} installed remotely`)
+            } else {
+              logError(`App ${provider}/${app} remote installation failed, status = ${res.head?.status} ${res.head?.statusText}, body: ${res.body?.toString?.()}`)
+            }
+          }
+        )
+      )
+    }
   }
 
   function uninstallApp(ep, provider, app) {
+    logInfo(`App ${provider}/${app} uninstalling from ${ep}...`)
+    if (ep === config.agent.id) {
+      apps.remove(provider, app)
+      logInfo(`App ${provider}/${app} uninstalled locally`)
+      return unpublishApp(ep, provider, app)
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'DELETE', `/api/forward/${ep}/apps/${provider}/${app}`,
+        ).then(
+          res => {
+            if (res.head?.status === 204) {
+              logInfo(`App ${provider}/${app} uninstalled remotely`)
+            } else {
+              logError(`App ${provider}/${app} remote uninstallation failed, status = ${res.head?.status} ${res.head?.statusText}, body: ${res.body?.toString?.()}`)
+            }
+          }
+        )
+      )
+    }
   }
 
   function startApp(ep, provider, app) {
+    apps.start(provider, app)
   }
 
   function stopApp(ep, provider, app) {
+    apps.stop(provider, app)
   }
-
 
   function downloadFile(ep, hash) {
     return selectHubWithThrow(ep).then(
@@ -1116,6 +1287,18 @@ export default function (rootDir, config) {
   }
 }
 
+function getAppNameTag(app) {
+  var i = app.indexOf('@')
+  if (i < 0) {
+    return { name: app, tag: '' }
+  } else {
+    return {
+      name: app.substring(0, i),
+      tag: app.substring(i + 1),
+    }
+  }
+}
+
 function response(status, body) {
   if (!body) return new Message({ status })
   if (typeof body === 'string') return responseCT(status, 'text/plain', body)
@@ -1131,4 +1314,12 @@ function responseCT(status, ct, body) {
     },
     body
   )
+}
+
+function responseError(e) {
+  if (typeof e === 'object') {
+    return response(e.status || 500, e)
+  } else {
+    return response(500, { status: 500, message: e })
+  }
 }

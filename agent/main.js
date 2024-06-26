@@ -278,7 +278,7 @@ var routes = Object.entries({
   '/api/meshes/{mesh}/endpoints/{ep}/apps/{provider}/{app}': {
     'GET': function ({ mesh, ep, provider, app }) {
       return api.getApp(mesh, ep, provider, app).then(
-        ret => response(200, ret)
+        ret => ret ? response(200, ret) : response(404)
       )
     },
 
