@@ -86,13 +86,11 @@ async function request(url, method, params, config) {
 				},
 				body: !!params?JSON.stringify(params):null,
 				...config
-			}).then((res) => res.json()).then((res) => {
-				if (res.status >= 400) {
-					const error = new Error(res.message);
-					error.status = res.status;
-					return Promise.reject(error);
-				} else {
-					return res;
+			}).then((res) => {
+				if(typeof(res) == 'object' && res.status >= 400){
+					return Promise.reject(res);
+				} else if(typeof(res) == 'object'){
+					return res.json();
 				}
 			}).catch((e)=>{
 				toastMessage(e);
@@ -106,22 +104,11 @@ async function request(url, method, params, config) {
 				body: !!params?JSON.stringify(params):null,
 				...config
 			}).then((res) => {
-				console.log("fetch(getUrl")
-				console.log(res)
-				console.log("fetch(getUrl end")
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
 				} else if(typeof(res) == 'object'){
 					return res.json();
 				}
-				// const rtn = res.json();
-				// if (rtn.status >= 400) {
-				// 	const error = new Error(rtn.message);
-				// 	error.status = rtn.status;
-				// 	return Promise.reject(error);
-				// } else {
-				// 	return rtn;
-				// }
 			});
 		}
 	}
