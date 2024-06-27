@@ -16,7 +16,13 @@ export default function (rootDir, config) {
   var ports = {}
   var exited = false
 
-  var meshApi = {
+  var epInfo = {
+    id: config.agent.id,
+    name: config.agent.name,
+  }
+
+  var meshInfo = {
+    name: meshName,
     discover,
     connect,
     read,
@@ -56,7 +62,7 @@ export default function (rootDir, config) {
 
   try {
     fs = initFilesystem(os.path.join(rootDir, 'fs'))
-    apps = initApps(os.path.join(rootDir, 'apps'), `mount-mesh-${meshName}`, meshApi)
+    apps = initApps(os.path.join(rootDir, 'apps'), `mount-mesh-${meshName}`, meshInfo, epInfo)
   } catch (e) {
     meshError(e.toString())
   }
@@ -419,7 +425,10 @@ export default function (rootDir, config) {
 
     function findApp(provider, app) {
       return requestHub.spawn(
-        new Message({ method: 'GET', path: `/api/apps/${provider}/${app}` })
+        new Message({
+          method: 'GET',
+          path: provider ? `/api/apps/${provider}/${app}` : `/api/apps/${app}`
+        })
       ).then(
         function (res) {
           if (res && res.head.status === 200) {
@@ -472,9 +481,13 @@ export default function (rootDir, config) {
   } // End of class Hub
 
   var matchServices = new http.Match('/api/services/{proto}/{svc}')
+  var matchApp = new http.Match('/api/apps/{app}')
+  var matchProviderApp = new http.Match('/api/apps/{provider}/{app}')
   var response200 = new Message({ status: 200 })
   var response404 = new Message({ status: 404 })
 
+  var $requestedApp
+  var $requestedAppPipeline
   var $requestedService
   var $selectedEp
   var $selectedHub
@@ -493,8 +506,12 @@ export default function (rootDir, config) {
         function (evt) {
           if (evt instanceof MessageStart) {
             if (evt.head.method === 'CONNECT') {
-              var params = matchServices(evt.head.path)
-              if (params) return proxyToLocal
+              var path = evt.head.path
+              if (matchProviderApp(path) || matchApp(path)) {
+                return toLocalApp
+              } else if (matchServices(path)) {
+                return proxyToLocal
+              }
             }
             return serveOtherAgents
           }
@@ -676,6 +693,76 @@ export default function (rootDir, config) {
       )
     )
   })()
+
+  //
+  // Agent proxying to local apps: mesh -> local
+  //
+  //   Remote App ----> Remote Agent ----> Hub ----\                  /----> Local App
+  //   Remote App ----> Remote Agent ----> Hub -----)----> Agent ----(-----> Local App
+  //   Remote App ----> Remote Agent ----> Hub ----/                  \----> Local App
+  //
+
+  var toLocalApp = pipeline($=>$
+    .acceptHTTPTunnel(
+      function (req) {
+        var path = req.head.path
+        var params = matchApp(path) || matchProviderApp(path)
+        if (params) {
+          $requestedApp = params.app
+          $requestedAppPipeline = apps.connect(params.provider, $requestedApp)
+          if ($requestedAppPipeline) {
+            logInfo(`Proxy to local app ${$requestedApp}`)
+            return response200
+          }
+          logError(`Local app ${$requestedApp} not found`)
+        }
+        return response404
+      }
+    ).to($=>$
+      .pipe(() => $requestedAppPipeline, () => ({ source: 'peer' }))
+      .onEnd(() => logInfo(`Proxy to local app ${$requestedApp} ended`))
+    )
+  )
+
+  //
+  // Agent proxying to remote apps: local -> mesh
+  //
+  //   Local App ----\                  /----> Hub ----> Remote Agent ----> Remote App
+  //   Local App -----)----> Agent ----(-----> Hub ----> Remote Agent ----> Remote App
+  //   Local App ----/                  \----> Hub ----> Remote Agent ----> Remote App
+  //
+
+  var toRemoteApp = (ep, provider, app) => pipeline($=>$
+    .onStart(() => {
+      $selectedEp = ep
+      return selectHub(ep).then(hub => {
+        $selectedHub = hub
+        return new Data
+      })
+    })
+    .pipe(() => $selectedHub ? 'proxy' : 'deny', {
+      'proxy': ($=>$
+        .onStart(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub}`))
+        .connectHTTPTunnel(() => (
+          new Message({
+            method: 'CONNECT',
+            path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}` : `/api/endpoints/${ep}/apps/${app}`,
+          })
+        )).to($=>$
+          .muxHTTP(() => $selectedHub, { version: 2 }).to($=>$
+            .connectTLS(tlsOptions).to($=>$
+              .connect(() => $selectedHub)
+            )
+          )
+        )
+        .onEnd(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub} ended`))
+      ),
+      'deny': ($=>$
+        .onStart(() => logError(`No route to endpoint ${ep}`))
+        .replaceData(new StreamEnd)
+      ),
+    })
+  )
 
   //
   // Agent proxying to local services: mesh -> local
@@ -1197,13 +1284,9 @@ export default function (rootDir, config) {
   // Mesh API exposed to apps
   //
 
-  function discover(app) {
+  function discover(app, provider) {
     if (app) {
-      var segs = app.split('/')
-      var provider = segs[0]
-      var appname = segs[1]
-      if (segs.length !== 2 || !provider || !appname) throw 'Illegal app name'
-      return hubs[0].findApp(provider, appname).then(ret => ret?.endpoints || [])
+      return hubs[0].findApp(provider, app).then(ret => ret?.endpoints || [])
     } else {
       return discoverEndpoints().then(
         ret => ret.map(
@@ -1213,7 +1296,8 @@ export default function (rootDir, config) {
     }
   }
 
-  function connect(ep, app) {
+  function connect(ep, app, provider) {
+    return toRemoteApp(ep, provider, app)
   }
 
   function read(pathname) {

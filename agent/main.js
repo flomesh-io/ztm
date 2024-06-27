@@ -408,9 +408,10 @@ var routes = Object.entries({
 var gui = new http.Directory('gui')
 var appApiMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}')
 var appPreMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}/*')
-var appNotFound = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
+var appNotFound = pipeline($=>$.serveHTTP(new Message({ status: 404 })))
 
 var $params
+var $appPipeline
 
 pipy.listen(opt['--listen'], $=>$
   .demuxHTTP().to($=>$
@@ -446,15 +447,15 @@ pipy.listen(opt['--listen'], $=>$
             return new Message({ status: 404 })
           }
         ),
-        'app': $=>$.pipe(
-          () => {
-            var p = api.connectApp(
+        'app': ($=>$
+          .muxHTTP(() => {
+            $appPipeline = api.connectApp(
               $params.mesh,
               $params.provider,
               $params.app,
-            )
-            return p || appNotFound
-          }, () => ({ source: 'api' })
+            ) || appNotFound
+            return $appPipeline
+          }).to($=>$.pipe(() => $appPipeline, () => ({ source: 'api' })))
         ),
         'gui': $=>$.replaceMessage(
           req => gui.serve(req) || new Message({ status: 404 })
