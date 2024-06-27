@@ -223,7 +223,10 @@ const showAtionMenu = (event, svc) => {
 	actionMenu.value.toggle(event);
 };
 const openEditor = () => {
-	visibleEditor.value = true;
+	visibleEditor.value = false;
+	setTimeout(()=>{
+		visibleEditor.value = true;
+	},300);
 }
 const layout = ref('grid');
 const expandedRows = ref({});
@@ -410,8 +413,8 @@ const emptyMsg = computed(()=>{
 			</ScrollPanel>
 			<Empty v-else :title="emptyMsg" :error="error"/>
 		</div>
-		<div class="flex-item" v-if="!!visibleEditor">
-			<div class="shadow mobile-fixed">
+		<div class="flex-item h-full" v-if="!!visibleEditor">
+			<div class="shadow mobile-fixed h-full">
 				<ServiceCreate
 					:embed="props.embed"
 					:title="!!selectedService?(isChat?'Edit Service':'Edit Service'):null" 
