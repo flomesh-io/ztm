@@ -16,6 +16,13 @@ export default function (rootDir, config) {
   var ports = {}
   var exited = false
 
+  var meshApi = {
+    discover,
+    connect,
+    read,
+    write,
+  }
+
   if (config.ca) {
     try {
       caCert = new crypto.Certificate(config.ca)
@@ -49,7 +56,7 @@ export default function (rootDir, config) {
 
   try {
     fs = initFilesystem(os.path.join(rootDir, 'fs'))
-    apps = initApps(os.path.join(rootDir, 'apps'), `mount-mesh-${meshName}`)
+    apps = initApps(os.path.join(rootDir, 'apps'), `mount-mesh-${meshName}`, meshApi)
   } catch (e) {
     meshError(e.toString())
   }
@@ -134,6 +141,7 @@ export default function (rootDir, config) {
                 meshErrors.length = 0
                 connections.add(conn)
                 advertiseFilesystem(filesystemLatest)
+                advertiseAppStates(appStateLatest)
                 if (serviceList) updateServiceList(serviceList)
               } else if (conn.state === 'closed') {
                 connections.delete(conn)
@@ -215,6 +223,45 @@ export default function (rootDir, config) {
       })
     }
 
+    // Start advertising app states
+    var appStateLatest = null
+    var appStateUpdate = null
+    var appStateSending = null
+    sendAppStateUpdate()
+
+    function sendAppStateUpdate() {
+      if (closed) return
+      new Timeout(1).wait().then(() => {
+        if (appStateUpdate) {
+          appStateSending = appStateUpdate
+          appStateUpdate = null
+        }
+        if (appStateSending) {
+          var size = appStateSending.length
+          logInfo(`Sending app states to ${address} (size = ${size})...`)
+          requestHub.spawn(
+            new Message(
+              {
+                method: 'POST',
+                path: '/api/apps',
+              },
+              JSON.encode(appStateSending)
+            )
+          ).then(res => {
+            if (res && res.head.status === 201) {
+              logInfo(`Sent app states to ${address} (size = ${size})`)
+              appStateSending = null
+            } else {
+              logError(`Unable to send app states to ${address} (status = ${res?.head?.status})`)
+            }
+            sendAppStateUpdate()
+          })
+        } else {
+          sendAppStateUpdate()
+        }
+      })
+    }
+
     // Start sending service list updates
     pipeline($=>$
       .onStart(new Data)
@@ -277,6 +324,11 @@ export default function (rootDir, config) {
     function advertiseFilesystem(files) {
       filesystemLatest = files
       filesystemUpdate = files
+    }
+
+    function advertiseAppStates(apps) {
+      appStateLatest = apps
+      appStateUpdate = apps
     }
 
     function discoverEndpoints() {
@@ -365,6 +417,20 @@ export default function (rootDir, config) {
       )
     }
 
+    function findApp(provider, app) {
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: `/api/apps/${provider}/${app}` })
+      ).then(
+        function (res) {
+          if (res && res.head.status === 200) {
+            return JSON.decode(res.body)
+          } else {
+            return null
+          }
+        }
+      )
+    }
+
     function findService(proto, svc) {
       return requestHub.spawn(
         new Message({ method: 'GET', path: `/api/services/${proto}/${svc}`})
@@ -391,12 +457,14 @@ export default function (rootDir, config) {
       address,
       heartbeat,
       advertiseFilesystem,
+      advertiseAppStates,
       updateServiceList,
       discoverEndpoints,
       discoverFiles,
       discoverServices,
       findEndpoint,
       findFile,
+      findApp,
       findService,
       leave,
     }
@@ -718,8 +786,9 @@ export default function (rootDir, config) {
     }
   }
 
-  // Advertise the filesystem
+  // Advertise the filesystem & app states
   advertiseFilesystem()
+  advertiseAppStates()
 
   // Publish services
   db.allServices(meshName).forEach(
@@ -782,6 +851,11 @@ export default function (rootDir, config) {
     hubs[0].advertiseFilesystem(files)
   }
 
+  function advertiseAppStates() {
+    var list = apps.listRunning()
+    hubs[0].advertiseAppStates(list)
+  }
+
   function findEndpoint(ep) {
     return hubs[0].findEndpoint(ep)
   }
@@ -792,7 +866,7 @@ export default function (rootDir, config) {
 
   function findApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var isInstalled = apps.list(provider).includes(app)
+      var isInstalled = apps.listInstalled(provider).includes(app)
       var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pkg/${app}`))
       if (isPublished || isInstalled) {
         return Promise.resolve({
@@ -829,7 +903,7 @@ export default function (rootDir, config) {
     if (ep === config.agent.id) {
       var list = []
       apps.listProviders().forEach(provider => {
-        apps.list(provider).forEach(app => {
+        apps.listInstalled(provider).forEach(app => {
           list.push({
             ...getAppNameTag(app),
             provider,
@@ -957,6 +1031,7 @@ export default function (rootDir, config) {
   function uninstallApp(ep, provider, app) {
     logInfo(`App ${provider}/${app} uninstalling from ${ep}...`)
     if (ep === config.agent.id) {
+      stopApp(ep, provider, app)
       apps.remove(provider, app)
       logInfo(`App ${provider}/${app} uninstalled locally`)
       return unpublishApp(ep, provider, app)
@@ -991,6 +1066,7 @@ export default function (rootDir, config) {
           apps.start(provider, app, username)
           return new Timeout(1).wait().then(() => {
             db.setApp(meshName, provider, nt.name, nt.tag, { username, state: 'running' })
+            advertiseAppStates()
             logInfo(`App ${provider}/${app} started locally`)
           })
         } catch (e) {
@@ -1025,6 +1101,7 @@ export default function (rootDir, config) {
       var nt = getAppNameTag(app)
       db.setApp(meshName, provider, nt.name, nt.tag, { state: 'stopped' })
       apps.stop(provider, app)
+      advertiseAppStates()
       logInfo(`App ${provider}/${app} exited locally`)
       return Promise.resolve()
     } else {
@@ -1114,6 +1191,35 @@ export default function (rootDir, config) {
         })
       }
     })
+  }
+
+  //
+  // Mesh API exposed to apps
+  //
+
+  function discover(app) {
+    if (app) {
+      var segs = app.split('/')
+      var provider = segs[0]
+      var appname = segs[1]
+      if (segs.length !== 2 || !provider || !appname) throw 'Illegal app name'
+      return hubs[0].findApp(provider, appname).then(ret => ret?.endpoints || [])
+    } else {
+      return discoverEndpoints().then(
+        ret => ret.map(
+          ({ id, name, username }) => ({ id, name, username })
+        )
+      )
+    }
+  }
+
+  function connect(ep, app) {
+  }
+
+  function read(pathname) {
+  }
+
+  function write(pathname) {
   }
 
   function discoverServices(ep) {
