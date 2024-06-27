@@ -1,4 +1,4 @@
-export default function (rootDir, mountName) {
+export default function (rootDir, mountName, meshApi) {
   rootDir = os.path.resolve(rootDir)
   pipy.mount(mountName, rootDir)
 
@@ -31,7 +31,7 @@ export default function (rootDir, mountName) {
       .map(name => name.substring(0, name.length - 1))
   }
 
-  function list(provider) {
+  function listInstalled(provider) {
     var dirname = os.path.join(rootDir, provider)
     return os.readDir(dirname).filter(name => {
       if (name.startsWith('.') || !name.endsWith('/')) return false
@@ -41,6 +41,16 @@ export default function (rootDir, mountName) {
       return false
     }).map(
       name => name.substring(0, name.length - 1)
+    )
+  }
+
+  function listRunning() {
+    return apps.filter(app => app.isRunning()).map(
+      app => ({
+        name: app.appname,
+        provider: app.provider,
+        username: app.username,
+      })
     )
   }
 
@@ -159,6 +169,7 @@ export default function (rootDir, mountName) {
         username,
         log,
         onExit,
+        mesh: { ...meshApi },
       })
     }
 
@@ -187,6 +198,7 @@ export default function (rootDir, mountName) {
     return {
       provider,
       appname,
+      username,
       start,
       stop,
       isRunning: () => Boolean(entryPipeline),
@@ -197,7 +209,8 @@ export default function (rootDir, mountName) {
 
   return {
     listProviders,
-    list,
+    listInstalled,
+    listRunning,
     isInstalled,
     isRunning,
     pack,
