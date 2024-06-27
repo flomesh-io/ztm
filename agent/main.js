@@ -398,28 +398,60 @@ var routes = Object.entries({
 )
 
 var gui = new http.Directory('gui')
+var appReqMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}/*')
+var appNotFound = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
+
+var $params
 
 pipy.listen(opt['--listen'], $=>$
-  .serveHTTP(
-    function (req) {
-      var path = req.head.path
-      if (path.startsWith('/api/')) {
-        var params = null
-        var route = routes.find(r => Boolean(params = r.match(path)))
-        if (route) {
-          try {
-            var res = route.handler(params, req)
-            return res instanceof Promise ? res.catch(responseError) : res
-          } catch (e) {
-            return responseError(e)
+  .demuxHTTP().to($=>$
+    .pipe(
+      function (evt) {
+        if (evt instanceof MessageStart) {
+          var path = evt.head.path
+          if (path.startsWith('/api/')) {
+            if ($params = appReqMatch(path)) {
+              evt.head.path = '/' + $params['*']
+              return 'app'
+            } else {
+              return 'api'
+            }
+          } else {
+            return 'gui'
           }
         }
-      } else {
-        var res = gui.serve(req)
-        if (res) return res
+      }, {
+        'api': $=>$.replaceMessage(
+          req => {
+            var path = req.head.path
+            var params = null
+            var route = routes.find(r => Boolean(params = r.match(path)))
+            if (route) {
+              try {
+                var res = route.handler(params, req)
+                return res instanceof Promise ? res.catch(responseError) : res
+              } catch (e) {
+                return responseError(e)
+              }
+            }
+            return new Message({ status: 404 })
+          }
+        ),
+        'app': $=>$.pipe(
+          () => {
+            var p = api.connectApp(
+              $params.mesh,
+              $params.provider,
+              $params.app,
+            )
+            return p || appNotFound
+          }, () => ({ source: 'api' })
+        ),
+        'gui': $=>$.replaceMessage(
+          req => gui.serve(req) || new Message({ status: 404 })
+        ),
       }
-      return new Message({ status: 404 })
-    }
+    )
   )
 )
 

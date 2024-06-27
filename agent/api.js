@@ -146,9 +146,9 @@ function setApp(mesh, ep, provider, app, state) {
   }).then(() => {
     if (!('isRunning' in state)) return
     if (state.isRunning) {
-      m.startApp(ep, provider, app)
+      return m.startApp(ep, provider, app)
     } else {
-      m.stopApp(ep, provider.app)
+      return m.stopApp(ep, provider, app)
     }
   }).then(() => {
     if (!('isPublished' in state)) return
@@ -164,6 +164,12 @@ function delApp(mesh, ep, provider, app) {
   var m = findMesh(mesh)
   if (!m) return Promise.resolve()
   return m.uninstallApp(ep, provider, app)
+}
+
+function connectApp(mesh, provider, app) {
+  var m = findMesh(mesh)
+  if (!m) return null
+  return m.connectApp(provider, app)
 }
 
 function allServices(mesh, ep) {
@@ -310,6 +316,7 @@ export default {
   getApp,
   setApp,
   delApp,
+  connectApp,
   allServices,
   getService,
   setService,

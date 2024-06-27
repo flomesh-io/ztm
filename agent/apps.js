@@ -1,5 +1,6 @@
-export default function (rootDir) {
+export default function (rootDir, mountName) {
   rootDir = os.path.resolve(rootDir)
+  pipy.mount(mountName, rootDir)
 
   var st = os.stat(rootDir)
   if (st) {
@@ -43,8 +44,21 @@ export default function (rootDir) {
     )
   }
 
-  function pack(provider, app) {
-    var dirname = os.path.join(rootDir, provider, app)
+  function isInstalled(provider, appname) {
+    var dirname = os.path.join(rootDir, provider, appname)
+    var st = os.stat(dirname)
+    if (!st?.isDirectory?.()) return false
+    if (!os.stat(os.path.join(dirname, 'main.js'))?.isFile?.()) return false
+    return true
+  }
+
+  function isRunning(provider, appname) {
+    var app = findApp(provider, appname)
+    return app ? app.isRunning() : false
+  }
+
+  function pack(provider, appname) {
+    var dirname = os.path.join(rootDir, provider, appname)
     var filenames = []
     listRecursive(dirname, '/', filenames)
 
@@ -76,9 +90,9 @@ export default function (rootDir) {
     return packFile()
   }
 
-  function unpack(provider, app, data) {
-    remove(provider, app)
-    var dirname = os.path.join(rootDir, provider, app)
+  function unpack(provider, appname, data) {
+    remove(provider, appname)
+    var dirname = os.path.join(rootDir, provider, appname)
     return pipeline($=>$
       .onStart([data, new StreamEnd])
       .decodeHTTPRequest()
@@ -91,25 +105,101 @@ export default function (rootDir) {
     ).spawn()
   }
 
-  function start(provider, app) {
+  var apps = []
+
+  function findApp(provider, appname) {
+    return apps.find(a => a.provider === provider && a.appname === appname)
   }
 
-  function stop(provider, app) {
+  function start(provider, appname, username) {
+    var app = findApp(provider, appname)
+    if (!app) {
+      app = App(provider, appname, username)
+      apps.push(app)
+    }
+    app.start()
   }
 
-  function remove(provider, app) {
-    stop(provider, app)
-    var dirname = os.path.join(rootDir, provider, app)
+  function stop(provider, appname) {
+    var app = findApp(provider, appname)
+    if (app) {
+      app.stop()
+    }
+  }
+
+  function connect(provider, appname) {
+    var app = findApp(provider, appname)
+    return app ? app.connect() : null
+  }
+
+  function remove(provider, appname) {
+    stop(provider, appname)
+    var dirname = os.path.join(rootDir, provider, appname)
     os.rmdir(dirname, { recursive: true, force: true })
+  }
+
+  function App(provider, appname, username) {
+    var appRootDir = os.path.join('/', mountName, provider, appname)
+    var appLog = []
+    var entryPipeline = null
+    var exitCallbacks = []
+
+    function start() {
+      if (entryPipeline) return
+      var mainFunc = pipy.import(os.path.join(appRootDir, 'main.js')).default
+      if (typeof mainFunc !== 'function') throw `The default export from ${provider}/${appName} main script is not a function`
+      entryPipeline = mainFunc({
+        provider,
+        appname,
+        username,
+        log,
+        onExit,
+      })
+    }
+
+    function stop() {
+      exitCallbacks.forEach(f => {
+        try { f() } catch {}
+      })
+      entryPipeline = null
+    }
+
+    function log(s) {
+      if (appLog.length > 100) {
+        appLog.splice(0, appLog.length - 100)
+      }
+      appLog.push({
+        time: new Date().toISOString(),
+        message: msg,
+      })
+    }
+
+    function onExit(cb) {
+      if (typeof cb !== 'function') throw 'onExit() expects a function as argument'
+      exitCallbacks.push(cb)
+    }
+
+    return {
+      provider,
+      appname,
+      start,
+      stop,
+      isRunning: () => Boolean(entryPipeline),
+      connect: () => entryPipeline,
+      log: () => appLog,
+    }
   }
 
   return {
     listProviders,
     list,
+    isInstalled,
+    isRunning,
     pack,
     unpack,
     start,
     stop,
+    connect,
     remove,
   }
 }
