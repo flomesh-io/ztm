@@ -49,7 +49,7 @@ export default function (rootDir, config) {
 
   try {
     fs = initFilesystem(os.path.join(rootDir, 'fs'))
-    apps = initApps(os.path.join(rootDir, 'apps'))
+    apps = initApps(os.path.join(rootDir, 'apps'), `mount-mesh-${meshName}`)
   } catch (e) {
     meshError(e.toString())
   }
@@ -539,9 +539,9 @@ export default function (rootDir, config) {
           }).then(() => {
             if ('isRunning' in state) {
               if (state.isRunning) {
-                apps.start(provider, app)
+                startApp(ep, provider, app)
               } else {
-                apps.stop(provider, app)
+                stopApp(ep, provider, app)
               }
             }
             return response(201)
@@ -783,7 +783,7 @@ export default function (rootDir, config) {
           ...getAppNameTag(app),
           provider,
           isPublished,
-          isRunning: false,
+          isRunning: apps.isRunning(provider, app),
         })
       } else {
         return Promise.resolve(null)
@@ -818,7 +818,7 @@ export default function (rootDir, config) {
             ...getAppNameTag(app),
             provider,
             isPublished: false,
-            isRunning: false,
+            isRunning: apps.isRunning(provider, app),
           })
         })
         fs.list(`/home/${provider}/apps/pkg/`).forEach(pathname => {
@@ -913,8 +913,9 @@ export default function (rootDir, config) {
     if (ep === config.agent.id) {
       return syncFile(`/home/${provider}/apps/pkg/${app}`).then(data => {
         if (data) {
-          apps.unpack(provider, app, data)
-          logInfo(`App ${provider}/${app} installed locally`)
+          apps.unpack(provider, app, data).then(() => {
+            logInfo(`App ${provider}/${app} installed locally`)
+          })
         } else {
           logError(`App ${provider}/${app} installation failed`)
         }
@@ -961,11 +962,40 @@ export default function (rootDir, config) {
   }
 
   function startApp(ep, provider, app) {
-    apps.start(provider, app)
+    if (ep === config.agent.id) {
+      if (apps.isRunning(provider, app)) return Promise.resolve()
+      return (apps.isInstalled(provider, app)
+        ? Promise.resolve()
+        : installApp(ep, provider, app)
+      ).then(() => {
+        apps.start(provider, app, username)
+      })
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({ isRunning: true })
+        )
+      )
+    }
   }
 
   function stopApp(ep, provider, app) {
-    apps.stop(provider, app)
+    if (ep === config.agent.id) {
+      apps.stop(provider, app)
+      return Promise.resolve()
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({ isRunning: false })
+        )
+      )
+    }
+  }
+
+  function connectApp(provider, app) {
+    return apps.connect(provider, app)
   }
 
   function downloadFile(ep, hash) {
@@ -1007,6 +1037,7 @@ export default function (rootDir, config) {
             return pickOne()
           }
           fs.write(pathname, data)
+          advertiseFilesystem()
           return data
         }).catch(ret => {
           logError(`Download of file ${hash} from ep ${ep} failed: ${JSON.stringify(ret)}`)
@@ -1268,6 +1299,7 @@ export default function (rootDir, config) {
     uninstallApp,
     startApp,
     stopApp,
+    connectApp,
     downloadFile,
     syncFile,
     discoverServices,
