@@ -151,12 +151,12 @@ function getApp(mesh, provider, name, tag) {
       .bind(4, tag)
       .exec()
       .slice(0, 1)
-      .map(recordToMesh)[0]
+      .map(recordToApp)[0]
   )
 }
 
 function setApp(mesh, provider, name, tag, app) {
-  var old = getApp(name)
+  var old = getApp(mesh, provider, name, tag)
   if (old) {
     db.sql('UPDATE apps SET username = ?, state = ? WHERE mesh = ? AND provider = ? AND name = ? AND tag = ?')
       .bind(1, 'username' in app ? app.username : old.username)

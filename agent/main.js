@@ -398,7 +398,8 @@ var routes = Object.entries({
 )
 
 var gui = new http.Directory('gui')
-var appReqMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}/*')
+var appApiMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}')
+var appPreMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}/*')
 var appNotFound = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
 
 var $params
@@ -410,8 +411,8 @@ pipy.listen(opt['--listen'], $=>$
         if (evt instanceof MessageStart) {
           var path = evt.head.path
           if (path.startsWith('/api/')) {
-            if ($params = appReqMatch(path)) {
-              evt.head.path = '/' + $params['*']
+            if ($params = appApiMatch(path) || appPreMatch(path)) {
+              evt.head.path = '/' + ($params['*'] || '')
               return 'app'
             } else {
               return 'api'
