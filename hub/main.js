@@ -48,6 +48,14 @@ var routes = Object.entries({
     'GET': () => getServices,
   },
 
+  '/api/endpoints/{ep}/apps/{app}': {
+    'CONNECT': () => connectApp,
+  },
+
+  '/api/endpoints/{ep}/apps/{provider}/{app}': {
+    'CONNECT': () => connectApp,
+  },
+
   '/api/endpoints/{ep}/services/{proto}/{svc}': {
     'CONNECT': () => connectService,
   },
@@ -63,6 +71,10 @@ var routes = Object.entries({
 
   '/api/apps': {
     'POST': () => findCurrentEndpointSession() ? postAppStates : noSession,
+  },
+
+  '/api/apps/{app}': {
+    'GET': () => getAppState,
   },
 
   '/api/apps/{provider}/{app}': {
@@ -353,7 +365,9 @@ var getAppState = pipeline($=>$
       var runners = []
       Object.values(endpoints).forEach(ep => {
         if (!ep.apps) return
-        var app = ep.apps.find(a => a.provider === provider && a.name === name)
+        var app = ep.apps.find(
+          a => a.name === name && (!provider || a.provider === provider)
+        )
         if (app) {
           runners.push({
             id: ep.id,
@@ -362,7 +376,6 @@ var getAppState = pipeline($=>$
           })
         }
       })
-      println(provider, name, runners)
       return response(200, { name, provider, endpoints: runners })
     }
   )
@@ -470,6 +483,28 @@ var connectEndpoint = pipeline($=>$
       sessions[id]?.delete?.($hub)
       console.info(`Endpoint ${endpointName(id)} left, connections = ${sessions[id]?.size || 0}`)
     })
+  )
+)
+
+var connectApp = pipeline($=>$
+  .acceptHTTPTunnel(
+    function () {
+      var app = $params.app
+      var id = $params.ep
+      var ep = endpoints[id]
+      if (!ep) return response(404, 'Endpoint not found')
+      sessions[id]?.forEach?.(h => $hubSelected = h)
+      if (!$hubSelected) return response(404, 'Agent not found')
+      console.info(`Forward to app ${app} at ${endpointName(id)}`)
+      return response(200)
+    }
+  ).to($=>$
+    .connectHTTPTunnel(
+      () => new Message({
+        method: 'CONNECT',
+        path: $params.provider ? `/api/apps/${$params.provider}/${$params.app}` : `/api/apps/${$params.app}`,
+      })
+    ).to(muxToAgent)
   )
 )
 

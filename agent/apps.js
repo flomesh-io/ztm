@@ -1,4 +1,4 @@
-export default function (rootDir, mountName, meshApi) {
+export default function (rootDir, mountName, meshInfo, epInfo) {
   rootDir = os.path.resolve(rootDir)
   pipy.mount(mountName, rootDir)
 
@@ -118,7 +118,9 @@ export default function (rootDir, mountName, meshApi) {
   var apps = []
 
   function findApp(provider, appname) {
-    return apps.find(a => a.provider === provider && a.appname === appname)
+    return apps.find(
+      a => a.appname === appname && (!provider || a.provider === provider)
+    )
   }
 
   function start(provider, appname, username) {
@@ -164,12 +166,15 @@ export default function (rootDir, mountName, meshApi) {
       var mainFunc = pipy.import(os.path.join(appRootDir, 'main.js')).default
       if (typeof mainFunc !== 'function') throw `The default export from ${provider}/${appName} main script is not a function`
       entryPipeline = mainFunc({
-        provider,
-        appname,
-        username,
-        log,
-        onExit,
-        mesh: { ...meshApi },
+        app: {
+          name: appname,
+          provider,
+          username,
+          endpoint: { ...epInfo },
+          log,
+          onExit,
+        },
+        mesh: { ...meshInfo },
       })
     }
 
