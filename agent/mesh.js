@@ -569,6 +569,14 @@ export default function (rootDir, config) {
         },
       },
 
+      '/api/apps/{provider}/{app}/log': {
+        'GET': function ({ provider, app }) {
+          return dumpAppLog(config.agent.id, provider, app).then(
+            ret => ret ? response(200, ret) : response(404)
+          )
+        },
+      },
+
     }).map(
       function ([path, methods]) {
         var match = new http.Match(path)
@@ -1037,6 +1045,24 @@ export default function (rootDir, config) {
     }
   }
 
+  function dumpAppLog(ep, provider, app) {
+    if (ep === config.agent.id) {
+      return Promise.resolve(apps.log(provider, app))
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'GET', `/api/forward/${ep}/apps/${provider}/${app}/log`
+        ).then(res => {
+          if (res.head?.status === 200) {
+            return JSON.decode(res.body)
+          } else {
+            return null
+          }
+        })
+      )
+    }
+  }
+
   function connectApp(provider, app) {
     return apps.connect(provider, app)
   }
@@ -1342,6 +1368,7 @@ export default function (rootDir, config) {
     uninstallApp,
     startApp,
     stopApp,
+    dumpAppLog,
     connectApp,
     downloadFile,
     syncFile,

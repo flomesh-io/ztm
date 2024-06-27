@@ -132,6 +132,11 @@ export default function (rootDir, mountName) {
     return app ? app.connect() : null
   }
 
+  function log(provider, appname) {
+    var app = findApp(provider, appname)
+    return app ? app.log() : null
+  }
+
   function remove(provider, appname) {
     stop(provider, appname)
     var dirname = os.path.join(rootDir, provider, appname)
@@ -164,7 +169,7 @@ export default function (rootDir, mountName) {
       entryPipeline = null
     }
 
-    function log(s) {
+    function log(msg) {
       if (appLog.length > 100) {
         appLog.splice(0, appLog.length - 100)
       }
@@ -200,6 +205,7 @@ export default function (rootDir, mountName) {
     start,
     stop,
     connect,
+    log,
     remove,
   }
 }

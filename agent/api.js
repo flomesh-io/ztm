@@ -166,6 +166,12 @@ function delApp(mesh, ep, provider, app) {
   return m.uninstallApp(ep, provider, app)
 }
 
+function getAppLog(mesh, ep, provider, app) {
+  var m = findMesh(mesh)
+  if (!m) return Promise.resolve()
+  return m.dumpAppLog(ep, provider, app)
+}
+
 function connectApp(mesh, provider, app) {
   var m = findMesh(mesh)
   if (!m) return null
@@ -316,6 +322,7 @@ export default {
   getApp,
   setApp,
   delApp,
+  getAppLog,
   connectApp,
   allServices,
   getService,

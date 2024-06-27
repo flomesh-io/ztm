@@ -293,6 +293,14 @@ var routes = Object.entries({
     },
   },
 
+  '/api/meshes/{mesh}/endpoints/{ep}/apps/{provider}/{app}/log': {
+    'GET': function ({ mesh, ep, provider, app }) {
+      return api.getAppLog(mesh, ep, provider, app).then(
+        ret => ret ? response(200, ret) : response(404)
+      )
+    }
+  },
+
   //
   // Service
   //   name: string
