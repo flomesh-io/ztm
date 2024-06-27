@@ -78,14 +78,15 @@ async function request(url, method, params, config) {
 				});
 		}
 	} else {
-		return fetch(getUrl(url), {
-			method,
-			header:{
-				"Content-Type": "application/json"
-			},
-			body: !!params?JSON.stringify(params):null,
-			...config
-		}).then((res) => res.json()).then((res) => {
+		if(!!method && method != METHOD.GET){
+			return fetch(getUrl(url), {
+				method,
+				header:{
+					"Content-Type": "application/json"
+				},
+				body: !!params?JSON.stringify(params):null,
+				...config
+			}).then((res) => res.json()).then((res) => {
 				if (res.status >= 400) {
 					const error = new Error(res.message);
 					error.status = res.status;
@@ -94,10 +95,35 @@ async function request(url, method, params, config) {
 					return res;
 				}
 			}).catch((e)=>{
-			if(!!method && method != METHOD.GET){
 				toastMessage(e);
-			}
-		});
+			});
+		} else {
+			return fetch(getUrl(url), {
+				method,
+				header:{
+					"Content-Type": "application/json"
+				},
+				body: !!params?JSON.stringify(params):null,
+				...config
+			}).then((res) => {
+				console.log("fetch(getUrl")
+				console.log(res)
+				console.log("fetch(getUrl end")
+				if(typeof(res) == 'object' && res.status >= 400){
+					return Promise.reject(res);
+				} else if(typeof(res) == 'object'){
+					return res.json();
+				}
+				// const rtn = res.json();
+				// if (rtn.status >= 400) {
+				// 	const error = new Error(rtn.message);
+				// 	error.status = rtn.status;
+				// 	return Promise.reject(error);
+				// } else {
+				// 	return rtn;
+				// }
+			});
+		}
 	}
 }
 

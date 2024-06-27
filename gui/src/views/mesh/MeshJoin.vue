@@ -117,7 +117,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 
 <template>
 	
-	<div class="surface-ground" :style="{'minHeight':`calc(100vh - 20px)`}">
+	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - 20px)`}">
 		<AppHeader :back="back">
 				<template #center>
 					<b>{{props.title||'Join Mesh'}}</b>
@@ -127,7 +127,8 @@ const isMobile = computed(() => windowWidth.value<=768);
 					<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 				</template>
 		</AppHeader>
-		<div class="md:m-3">
+		<div class="md:m-3 relative h-full">
+			<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
 			<BlockViewer containerClass="surface-section px-3 md:px-4 md:pb-7 lg:px-5 pt-4" >
 			<Loading v-if="loading" />
 			<div class="grid" v-else>
@@ -198,6 +199,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 				</div>
 			</div>
 			</BlockViewer>
+			</ScrollPanel>
 		</div>
 	</div>
 </template>

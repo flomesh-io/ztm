@@ -57,7 +57,7 @@ const getEndpoints = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 const enabled = computed(() => {
-	return selected.value && config.value.name.length>0 && selected.value && !!agentId;
+	return selected.value && config.value?.name.length>0 && selected.value && !!agentId;
 });
 watch(()=> selected,()=>{
 	getEndpoints();
@@ -99,8 +99,15 @@ onMounted(() => {
 		config.value = _.cloneDeep(newConfig);
 	}
 });
+const error = ref();
 const loaddata = () => {
 	loading.value = true;
+			console.log({
+		name:props.pid,
+		ep:props.ep,
+		mesh:props.mesh,
+		proto:props.proto,
+	});
 	pipyProxyService.getService({
 		name:props.pid,
 		ep:props.ep,
@@ -108,6 +115,7 @@ const loaddata = () => {
 		proto:props.proto,
 	})
 		.then(res => {
+			console.log("getService loaddata");
 			console.log(res);
 			loading.value = false;
 			config.value = res;
@@ -118,8 +126,12 @@ const loaddata = () => {
 			} else {
 				scope.value = 'private';
 			}
+			error.value = null;
 		})
 		.catch(err => {
+			error.value = err;
+			console.log("getService catch");
+			console.log(err);
 			loading.value = false;
 		}); 
 }
@@ -134,7 +146,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 
 <template>
 
-	<div class="surface-ground" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
+	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
 		<AppHeader :back="back">
 				<template #center>
 					<b>{{props.title||'Create Service'}}</b>
@@ -144,8 +156,10 @@ const isMobile = computed(() => windowWidth.value<=768);
 					<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
 				</template>
 		</AppHeader>
-		<div class="md:m-3">
-		<BlockViewer containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
+		<div class="md:m-3 h-full relative">
+		<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
+		<Empty v-if="error" :error="error"/>
+		<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
 			<Loading v-if="loading" />
 			<TabView v-else :class="{'tabview-vertical':!isMobile}" v-model:activeIndex="active">
 				<TabPanel>
@@ -258,6 +272,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 				</TabPanel>
 			</TabView>
 			</BlockViewer>
+			</ScrollPanel>
 		</div>
 	</div>
 </template>

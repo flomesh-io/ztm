@@ -159,8 +159,8 @@ const select = (mesh) => {
 			</ScrollPanel>
 			<Empty v-else :title="emptyMsg"/>
 		</div>
-		<div class="flex-item" v-if="!!visibleEditor">
-			<div class="shadow mobile-fixed">
+		<div class="flex-item h-full" v-if="!!visibleEditor">
+			<div class="shadow mobile-fixed h-full">
 				<MeshJoin
 					:title="!!selectedMenu?(isChat?'Edit Channel':'Edit Mesh'):null" 
 					:pid="selectedMenu?.name" 
