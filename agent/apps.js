@@ -1,6 +1,5 @@
 export default function (rootDir, mountName, meshInfo, epInfo) {
   rootDir = os.path.resolve(rootDir)
-  pipy.mount(mountName, rootDir)
 
   var st = os.stat(rootDir)
   if (st) {
@@ -10,6 +9,8 @@ export default function (rootDir, mountName, meshInfo, epInfo) {
   } else {
     os.mkdir(rootDir, { recursive: true })
   }
+
+  pipy.mount(mountName, rootDir)
 
   function listRecursive(path, base, list) {
     os.readDir(path).forEach(name => {
