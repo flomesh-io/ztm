@@ -16,17 +16,15 @@ export default function (rootDir, config) {
   var ports = {}
   var exited = false
 
-  var epInfo = {
+  var epEnv = {
     id: config.agent.id,
     name: config.agent.name,
   }
 
-  var meshInfo = {
+  var meshEnv = {
     name: meshName,
     discover,
     connect,
-    read,
-    write,
   }
 
   if (config.ca) {
@@ -62,7 +60,13 @@ export default function (rootDir, config) {
 
   try {
     fs = initFilesystem(os.path.join(rootDir, 'fs'))
-    apps = initApps(os.path.join(rootDir, 'apps'), `mount-mesh-${meshName}`, meshInfo, epInfo)
+    apps = initApps(
+      os.path.join(rootDir, 'apps'),
+      `mount-mesh-${meshName}`,
+      epEnv,
+      meshEnv,
+      makeAppFilesystem,
+    )
   } catch (e) {
     meshError(e.toString())
   }
@@ -369,7 +373,7 @@ export default function (rootDir, config) {
               )
             )
           } else {
-            return []
+            return {}
           }
         }
       )
@@ -954,7 +958,7 @@ export default function (rootDir, config) {
   function findApp(ep, provider, app) {
     if (ep === config.agent.id) {
       var isInstalled = apps.listInstalled(provider).includes(app)
-      var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pkg/${app}`))
+      var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pub/${app}`))
       if (isPublished || isInstalled) {
         return Promise.resolve({
           ...getAppNameTag(app),
@@ -998,7 +1002,7 @@ export default function (rootDir, config) {
             isRunning: apps.isRunning(provider, app),
           })
         })
-        fs.list(`/home/${provider}/apps/pkg/`).forEach(pathname => {
+        fs.list(`/home/${provider}/apps/pub/`).forEach(pathname => {
           var dirname = os.path.dirname(pathname)
           var app = pathname.substring(dirname.length + 1)
           var idx = getAppNameTag(app)
@@ -1038,7 +1042,7 @@ export default function (rootDir, config) {
           if (i < 0) return
           var provider = pathname.substring(0, i)
           pathname = pathname.substring(i)
-          if (!pathname.startsWith('/apps/pkg/')) return
+          if (!pathname.startsWith('/apps/pub/')) return
           var app = pathname.substring(10)
           if (app.indexOf('/') >= 0) return
           if (app.indexOf('@') == 0) return
@@ -1051,7 +1055,7 @@ export default function (rootDir, config) {
 
   function publishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/apps/pkg/${app}`
+      var packagePathname = `/home/${provider}/apps/pub/${app}`
       if (fs.stat(packagePathname)) return Promise.resolve()
       return apps.pack(provider, app).then(data => {
         fs.write(packagePathname, data)
@@ -1069,7 +1073,7 @@ export default function (rootDir, config) {
 
   function unpublishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/apps/pkg/${app}`
+      var packagePathname = `/home/${provider}/apps/pub/${app}`
       if (fs.stat(packagePathname)) {
         fs.remove(packagePathname)
         advertiseFilesystem()
@@ -1088,7 +1092,7 @@ export default function (rootDir, config) {
   function installApp(ep, provider, app) {
     logInfo(`App ${provider}/${app} installing to ${ep}...`)
     if (ep === config.agent.id) {
-      return syncFile(`/home/${provider}/apps/pkg/${app}`).then(data => {
+      return syncFile(`/home/${provider}/apps/pub/${app}`).then(data => {
         if (data) {
           apps.unpack(provider, app, data).then(() => {
             logInfo(`App ${provider}/${app} installed locally`)
@@ -1300,10 +1304,52 @@ export default function (rootDir, config) {
     return toRemoteApp(ep, provider, app)
   }
 
-  function read(pathname) {
-  }
+  function makeAppFilesystem(provider, app) {
+    var basepath = `/home/${provider}/apps/etc/${app}/`
 
-  function write(pathname) {
+    function dir(prefix) {
+      prefix = os.path.normalize(prefix || '')
+      if (!prefix.endsWith('/')) prefix += '/'
+      return discoverFiles().then(
+        files => Object.keys(files).filter(
+          path => path.startsWith(basepath)
+        ).map(
+          path => path.substring(basepath.length - 1)
+        ).filter(
+          path => path.startsWith(prefix) && !path.startsWith('/local/')
+        ).concat(
+          db.allFiles(meshName, provider, app).filter(
+            path => path.startsWith(prefix)
+          ).map(
+            path => '/local' + path
+          )
+        ).sort()
+      )
+    }
+
+    function read(pathname) {
+      var path = os.path.normalize(pathname)
+      if (path.startsWith('/local/')) {
+        return Promise.resolve(
+          db.getFile(meshName, provider, app, path.substring(6))
+        )
+      } else {
+        return syncFile(os.path.join(basepath, path))
+      }
+    }
+
+    function write(pathname, data) {
+      if (typeof data === 'string') data = new Data(data)
+      var path = os.path.normalize(pathname)
+      if (path.startsWith('/local/')) {
+        db.setFile(meshName, provider, app, path.substring(6), data)
+      } else {
+        fs.write(os.path.join(basepath, path), data)
+        advertiseFilesystem()
+      }
+    }
+
+    return { dir, read, write }
   }
 
   function discoverServices(ep) {

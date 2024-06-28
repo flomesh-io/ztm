@@ -24,11 +24,10 @@ function open(pathname) {
   `)
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS storage (
+    CREATE TABLE IF NOT EXISTS files (
       mesh TEXT NOT NULL,
-      name TEXT NOT NULL,
-      tag TEXT NOT NULL,
       provider TEXT NOT NULL,
+      app TEXT NOT NULL,
       path TEXT NOT NULL,
       data TEXT NOT NULL
     )
@@ -184,6 +183,55 @@ function delApp(mesh, provider, name, tag) {
     .bind(2, provider)
     .bind(3, name)
     .bind(4, tag)
+    .exec()
+}
+
+function allFiles(mesh, provider, app, path) {
+  return (
+    db.sql('SELECT path FROM files WHERE mesh = ? AND provider = ? AND app = ?')
+      .bind(1, mesh)
+      .bind(2, provider)
+      .bind(3, app)
+      .exec()
+      .map(rec => rec.path)
+  )
+}
+
+function getFile(mesh, provider, app, path) {
+  var sql = db.sql('SELECT data FROM files WHERE mesh = ? AND provider = ? AND app = ? AND path = ?')
+    .bind(1, mesh)
+    .bind(2, provider)
+    .bind(3, app)
+    .bind(4, path)
+  if (sql.step()) return null
+  return sql.column(0)
+}
+
+function setFile(mesh, provider, app, path, data) {
+  if (getFile(mesh, provider, app, path)) {
+    db.sql('UPDATE files SET data = ? WHERE mesh = ? AND provider = ? AND app = ? AND path = ?')
+      .bind(1, data)
+      .bind(2, mesh)
+      .bind(3, app)
+      .bind(4, path)
+      .exec()
+  } else {
+    db.sql('INSERT INTO files(mesh, provider, app, path, data) VALUES(?, ?, ?, ?, ?)')
+      .bind(1, mesh)
+      .bind(2, provider)
+      .bind(3, app)
+      .bind(4, path)
+      .bind(5, data)
+      .exec()
+  }
+}
+
+function delFile(mesh, provider, app, path) {
+  db.sql('DELETE FROM files WHERE mesh = ? AND provider = ? AND app = ? AND path = ?')
+    .bind(1, mesh)
+    .bind(2, provider)
+    .bind(3, app)
+    .bind(4, path)
     .exec()
 }
 
@@ -344,6 +392,10 @@ export default {
   getApp,
   setApp,
   delApp,
+  allFiles,
+  getFile,
+  setFile,
+  delFile,
   allServices,
   getService,
   setService,

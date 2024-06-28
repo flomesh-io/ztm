@@ -1,4 +1,4 @@
-export default function (rootDir, mountName, meshInfo, epInfo) {
+export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
   rootDir = os.path.resolve(rootDir)
 
   var st = os.stat(rootDir)
@@ -175,7 +175,10 @@ export default function (rootDir, mountName, meshInfo, epInfo) {
           log,
           onExit,
         },
-        mesh: { ...meshInfo },
+        mesh: {
+          ...meshInfo,
+          ...makeFilesystem(provider, appname),
+        },
       })
     }
 
