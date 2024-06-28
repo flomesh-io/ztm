@@ -364,6 +364,7 @@ var getAppState = pipeline($=>$
       var name = $params.app
       var runners = []
       Object.values(endpoints).forEach(ep => {
+        if (!isEndpointOnline(ep)) return
         if (!ep.apps) return
         var app = ep.apps.find(
           a => a.name === name && (!provider || a.provider === provider)
