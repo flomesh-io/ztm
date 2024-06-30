@@ -191,14 +191,14 @@ function helpLeave() {
 
 function helpGet() {
   println()
-  println(`Usage: ztm get service|port|endpoint|mesh [<name>] [--mesh <name>] [--endpoint <name>]`)
+  println(`Usage: ztm get mesh|endpoint|file|app|service|port [<name>] [--mesh <name>] [--endpoint <name>]`)
   println()
   println(`Options:`)
   println(`  -m, --mesh            <name>  Specify a mesh by name`)
   println(`                                Can be omitted when only 1 mesh is joined`)
   println(`                                Not applicable when doing 'ztm get mesh'`)
   println(`  -e, --ep, --endpoint  <name>  Specify an endpoint by name or UUID`)
-  println(`                                Only applicable when doing 'ztm get service' or 'ztm get port'`)
+  println(`                                Only applicable when doing 'ztm get app', 'ztm get service' or 'ztm get port'`)
   println()
   helpServiceName()
   println()
@@ -208,14 +208,14 @@ function helpGet() {
 
 function helpDescribe() {
   println()
-  println(`Usage: ztm describe service|port|endpoint|mesh <name> [--mesh <name>] [--endpoint <name>]`)
+  println(`Usage: ztm describe mesh|endpoint|file|app|service|port <name> [--mesh <name>] [--endpoint <name>]`)
   println()
   println(`Options:`)
   println(`  -m, --mesh           <name>  Specify a mesh by name`)
   println(`                               Can be omitted when only 1 mesh is joined`)
   println(`                               Not applicable when doing 'ztm describe mesh'`)
   println(`  -e, --ep, --endpoint <name>  Specify an endpoint by name or UUID`)
-  println(`                               Only applicable when doing 'ztm describe service' or 'ztm describe port'`)
+  println(`                               Only applicable when doing 'ztm get app', 'ztm describe service' or 'ztm describe port'`)
   println()
   helpServiceName()
   println()

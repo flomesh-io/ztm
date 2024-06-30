@@ -79,7 +79,7 @@ var optionsJoin = {
   },
 }
 
-var optionsGetEP = {
+var optionsGetGlobal = {
   defaults: {
     '--mesh': '',
   },
@@ -215,6 +215,12 @@ function readObjectType(argv, command) {
     case 'endpoints':
     case 'ep':
       return 'endpoint'
+    case 'file':
+    case 'files':
+      return 'file'
+    case 'app':
+    case 'apps':
+      return 'app'
     case 'service':
     case 'services':
     case 'svc':
@@ -230,6 +236,27 @@ function normalizeName(name) {
   if (!name) return
   if (name.indexOf('/') >= 0) throw `invalid character '/' in name '${name}'`
   return name
+}
+
+function normalizeAppName(name) {
+  if (!name) return
+  var segs = name.split('/')
+  if (segs.length > 2 ||
+    (segs.length == 2 && (!segs[1] || !segs[1]))
+  ) {
+    return errorInput(`invalid app name '${name}'`)
+  }
+  var provider = segs[segs.length - 2]
+  var app = segs[segs.length - 1]
+  var i = app.indexOf('@')
+  if (i >= 0) {
+    var tag = app.substring(i+1)
+    var app = app.substring(0,i)
+  } else {
+    tag = ''
+  }
+  if (!app) return errorInput(`invalid app name '${name}'`)
+  return { provider, name: app, tag }
 }
 
 function normalizeServiceName(name) {
@@ -649,6 +676,8 @@ function get(argv) {
   switch (type) {
     case 'mesh': return getMesh(argv)
     case 'endpoint': return getEndpoint(argv)
+    case 'file': return getFile(argv)
+    case 'app': return getApp(argv)
     case 'service': return getService(argv)
     case 'port': return getPort(argv)
     default: return errorObjectType(type, 'get')
@@ -675,17 +704,106 @@ function getMesh(argv) {
 function getEndpoint(argv) {
   var epName = normalizeName(readOptionalWord(argv))
   var c = clients.agent()
-  selectMesh(c, parseOptions(optionsGetEP, argv, 'get endpoint')).then(mesh => {
+  selectMesh(c, parseOptions(optionsGetGlobal, argv, 'get endpoint')).then(mesh => {
     return c.get(`/api/meshes/${mesh.name}/endpoints`)
   }).then(ret => {
     printTable(
-      JSON.decode(ret).filter(ep => !epName || ep.name === epName),
+      JSON.decode(ret).filter(ep => !epName || ep.name.index(epName) >= 0),
       {
         'NAME': ep => ep.isLocal ? `${ep.name} (local)` : ep.name,
         'USER': ep => ep.username,
         'IP': ep => ep.ip,
         'PORT': ep => ep.port,
         'STATUS': ep => ep.online ? 'Online' : 'Offline',
+      }
+    )
+    pipy.exit(0)
+  }).catch(error)
+}
+
+function getFile(argv) {
+  var name = normalizeName(readOptionalWord(argv))
+  var c = clients.agent()
+  selectMesh(c, parseOptions(optionsGetGlobal, argv, 'get file')).then(mesh => {
+    return c.get(`/api/meshes/${mesh.name}/files`)
+  }).then(ret => {
+    printTable(
+      Object.entries(JSON.decode(ret)).filter(
+        ([k, v]) => !name || k.indexOf(name) >= 0
+      ).sort(
+        (a, b) => {
+          if (a[0] < b[0]) return -1
+          if (a[0] > b[1]) return 1
+          return 0
+        }
+      ),
+      {
+        'PATH': ([k]) => k,
+        'SIZE': ([_, v]) => v.size,
+        'TIME': ([_, v]) => new Date(v.time).toString(),
+        'HASH': ([_, v]) => v.hash,
+      }
+    )
+    pipy.exit(0)
+  }).catch(error)
+}
+
+function getApp(argv) {
+  var appName = normalizeAppName(readOptionalWord(argv))
+  var opts = parseOptions(optionsGet, argv, 'get app')
+  var epName = opts['--endpoint']
+  var mesh = null
+  var apps = null
+  var endp = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return epName ? selectEndpoint(c, opts, m) : null
+  }).then(ep => {
+    endp = ep
+    return c.get(`/api/meshes/${mesh.name}/apps`)
+  }).then(ret => {
+    apps = JSON.decode(ret)
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${endp ? endp.id : mesh.agent.id}/apps`)
+  }).then(ret => {
+    var list = JSON.decode(ret)
+    list.forEach(app => app.isInstalled = true)
+    apps.forEach(app => {
+      if (!list.some(a => (
+        a.provider === app.provider &&
+        a.name === app.name &&
+        a.tag === app.tag
+      ))) list.push(app)
+    })
+    printTable(
+      list.filter(
+        app => {
+          if (!appName) return true
+          if (appName.name !== app.name) return false
+          if (appName.tag && appName.tag !== app.tag) return false
+          if (appName.provider && appName.provider !== app.provider) return false
+          return true
+        }
+      ).map(
+        app => ({ ...app, name: `${app.provider}/${app.name}` })
+      ).sort(
+        function (a, b) {
+          if (a.name < b.name) return -1
+          if (a.name > b.name) return 1
+          if (a.tag < b.tag) return -1
+          if (a.tag > b.tag) return 1
+          return 0
+        }
+      ),
+      {
+        'NAME': app => app.name,
+        'TAG': app => app.tag,
+        'STATE': app => {
+          var states = []
+          if (app.isRunning) states.push('running'); else if (app.isInstalled) states.push('installed')
+          if (app.isPublished) states.push('published')
+          return states.join(', ')
+        }
       }
     )
     pipy.exit(0)
@@ -761,6 +879,8 @@ function describe(argv) {
     case 'mesh': return describeMesh(argv)
     case 'endpoint': return describeEndpoint(argv)
     case 'service': return describeService(argv)
+    case 'file': return describeFile(argv)
+    case 'app': return describeApp(argv)
     case 'port': return describePort(argv)
     default: return errorObjectType(type, 'describe')
   }
@@ -792,7 +912,7 @@ function describeMesh(argv) {
 
 function describeEndpoint(argv) {
   var epName = normalizeName(readOptionalWord(argv, 'endpoint name', 'describe endpoint'))
-  var opts = parseOptions(optionsGetEP, argv, 'describe endpoint')
+  var opts = parseOptions(optionsGetGlobal, argv, 'describe endpoint')
   var mesh = null
   var c = clients.agent()
   selectMesh(c, opts).then(m => {
@@ -811,6 +931,65 @@ function describeEndpoint(argv) {
     println(`Port: ${ep.port}`)
     println(`Heartbeat: ${new Date(ep.heartbeat).toUTCString()}`)
     println(`Status:`, ep.online ? 'Online' : 'Offline')
+    pipy.exit(0)
+  }).catch(error)
+}
+
+function describeFile(argv) {
+  var path = os.path.normalize(readWord(argv, 'file name', 'describe file'))
+  var opts = parseOptions(optionsGetGlobal, argv, 'describe file')
+  var mesh = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return c.get(`/api/meshes/${mesh.name}/files${path}`)
+  }).then(ret => {
+    var file = JSON.decode(ret)
+    return Promise.all(file.sources.map(
+      id => c.get(`/api/meshes/${mesh.name}/endpoints/${id}`)
+    )).then(ret => {
+      var sources = ret.map(r => JSON.decode(r))
+      println(`Path: ${path}`)
+      println(`Size: ${file.size}`)
+      println(`Time: ${new Date(file.time).toString()}`)
+      println(`Hash: ${file.hash}`)
+      println(`Sources:`)
+      printTable(sources, {
+        'ENDPOINT': ep => ep.name,
+        'ENDPOINT ID': ep => ep.id,
+      }, 2)
+      pipy.exit(0)
+    })
+  }).catch(error)
+}
+
+function describeApp(argv) {
+  var name = normalizeAppName(readWord(argv, 'app name', 'describe app'))
+  var opts = parseOptions(optionsGet, argv, 'describe app')
+  var epName = opts['--endpoint']
+  var mesh = null
+  var endp = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return epName ? selectEndpoint(c, opts, m) : null
+  }).then(ep => {
+    endp = ep || { id: mesh.agent.id }
+    return selectApp(c, name, mesh, endp)
+  }).then(app => {
+    name = app
+    var appname = app.name
+    if (app.tag) appname += '@' + app.tag
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${endp.id}/apps/${app.provider}/${appname}`)
+  }).then(ret => {
+    var app = JSON.decode(ret)
+    println(`App: ${app.name}`)
+    println(`Tag: ${app.tag || '(untagged)'}`)
+    println(`Provider: ${app.provider}`)
+    println(`State:`)
+    println(`  Installed: ${name.isInstalled ? 'Yes' : 'No'}`)
+    println(`  Published: ${app.isPublished ? 'Yes' : 'No'}`)
+    println(`  Running  : ${app.isRunning ? 'Yes' : 'No'}`)
     pipy.exit(0)
   }).catch(error)
 }
@@ -979,7 +1158,7 @@ function deletePort(argv) {
 
 function log(argv) {
   var epName = normalizeName(readOptionalWord(argv))
-  var opts = parseOptions(optionsGetEP, argv, 'log')
+  var opts = parseOptions(optionsGetGlobal, argv, 'log')
   var mesh = null
   var c = clients.agent()
   selectMesh(c, opts).then(m => {
@@ -1032,7 +1211,28 @@ function selectEndpoint(client, opts, mesh) {
   }
 }
 
-function printTable(data, columns) {
+function selectApp(client, appName, mesh, ep) {
+  var provider = appName.provider
+  var name = appName.name
+  var tag = appName.tag || ''
+  function select(app) {
+    if (provider && app.provider !== provider) return false
+    return (app.name === name && (app.tag || '') === tag)
+  }
+  return client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps`).then(ret => {
+    var list = JSON.decode(ret).filter(select)
+    if (list.length === 1) return { name, tag, provider: list[0].provider, isInstalled: true }
+    if (list.length > 1) throw `ambiguous app name '${name}'`
+    return client.get(`/api/meshes/${mesh.name}/apps`).then(ret => {
+      var list = JSON.decode(ret).filter(select)
+      if (list.length === 1) return { name, tag, provider: list[0].provider }
+      if (list.length > 1) throw `ambiguous app name '${name}'`
+    })
+  })
+}
+
+function printTable(data, columns, indent) {
+  var head = ' '.repeat(indent || 0)
   var cols = Object.entries(columns)
   var colHeaders = cols.map(i => i[0])
   var colFormats = cols.map(i => i[1])
@@ -1044,9 +1244,11 @@ function printTable(data, columns) {
       return v
     }
   ))
+  print(head)
   colHeaders.forEach((name, i) => print(name.padEnd(colSizes[i]), ' '))
   println()
   rows.forEach(row => {
+    print(head)
     row.forEach((v, i) => print(v.padEnd(colSizes[i]), ' '))
     println()
   })
