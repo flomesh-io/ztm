@@ -9,12 +9,32 @@ export default function (argv) {
         case 'agent': return helpRunAgent()
         default: return helpRun()
       }
+    case 'start':
+      switch (argv[1]) {
+        case 'ca': return helpRunCA('start')
+        case 'hub': return helpRunHub('start')
+        case 'agent': return helpRunAgent('start')
+        case 'app': return helpCommandApp('start')
+        default: return helpStart()
+      }
+    case 'stop':
+      switch (argv[1]) {
+        case 'ca': return helpStopCA()
+        case 'hub': return helpStopHub()
+        case 'agent': return helpStopAgent()
+        case 'app': return helpCommandApp('stop')
+        default: return helpStop()
+      }
     case 'invite': return helpInvite()
     case 'evict': return helpEvict()
     case 'join': return helpJoin()
     case 'leave': return helpLeave()
     case 'get': return helpGet()
     case 'describe': return helpDescribe()
+    case 'download': return helpCommandApp('download')
+    case 'erase': return helpCommandApp('erase')
+    case 'publish': return helpCommandApp('publish')
+    case 'unpublish': return helpCommandApp('unpublish')
     case 'create':
       switch (argv[1]) {
         case 'service': return helpCreateService()
@@ -29,23 +49,28 @@ export default function (argv) {
 
 function helpAll() {
   println()
-  println(`Usage: ztm <command> [<object type>] [<object name>] [<options>]`)
+  println(`Usage: ztm <command>|<app> [<object type>] [<object name>] [<options>]`)
   println()
   println(`Commands:`)
   println()
   println(`  version`)
   println(`  config`)
-  println(`  start     ca | hub | agent`)
-  println(`  stop      ca | hub | agent`)
+  println(`  start     ca | hub | agent | app <app name>`)
+  println(`  stop      ca | hub | agent | app <app name>`)
   println(`  run       ca | hub | agent`)
+  println(`  app`)
   println(`  invite`)
   println(`  evict`)
   println(`  join`)
   println(`  leave`)
-  println(`  get       service | port | endpoint | mesh`)
-  println(`  describe  service | port | endpoint | mesh`)
+  println(`  get       service | port | app | file | endpoint | mesh`)
+  println(`  describe  service | port | app | file | endpoint | mesh`)
   println(`  create    service | port`)
   println(`  delete    service | port`)
+  println(`  download  app <app name> | file`)
+  println(`  erase     app <app name>`)
+  println(`  publish   app <app name>`)
+  println(`  unpublish app <app name>`)
   println(`  log`)
   println()
   println(`Object types:`)
@@ -58,12 +83,25 @@ function helpAll() {
   println(`  service   services   svc`)
   println(`  port      ports`)
   println()
+  helpAppName()
+  println()
   helpServiceName()
   println()
   helpPortName()
   println()
   println(`Type 'ztm help <command> [<object type>]' for more details.`)
   println()
+}
+
+function helpAppName() {
+  println(`App name:`)
+  println()
+  println(`  provider/name@tag`)
+  println(`  provider/name`)
+  println(`  name@tag`)
+  println(`  name`)
+  println()
+  println(`  e.g. 'root/my-fancy-hello-app@v2', 'ztm/ports'`)
 }
 
 function helpServiceName() {
@@ -117,9 +155,10 @@ function helpRun() {
   println()
 }
 
-function helpRunCA() {
+function helpRunCA(cmd) {
+  cmd = cmd || 'run'
   println()
-  println(`Usage: ztm run ca [--listen [<ip>:]<port>] [--database <filename>]`)
+  println(`Usage: ztm ${cmd} ca [--listen [<ip>:]<port>] [--database <filename>]`)
   println()
   println(`Options:`)
   println(`  -l, --listen    [<ip>:]<port>  Service listening address`)
@@ -129,9 +168,10 @@ function helpRunCA() {
   println()
 }
 
-function helpRunHub() {
+function helpRunHub(cmd) {
+  cmd = cmd || 'run'
   println()
-  println(`Usage: ztm run hub [--listen [<ip>:]<port>] [--ca <host>:<port>] [--name <address>]`)
+  println(`Usage: ztm ${cmd} hub [--listen [<ip>:]<port>] [--ca <host>:<port>] [--name <address>]`)
   println()
   println(`Options:`)
   println(`  -l, --listen  [<ip>:]<port>   Service listening address`)
@@ -143,15 +183,54 @@ function helpRunHub() {
   println()
 }
 
-function helpRunAgent() {
+function helpRunAgent(cmd) {
+  cmd = cmd || 'run'
   println()
-  println(`Usage: ztm run agent [--listen [<ip>:]<port>] [--database <filename>]`)
+  println(`Usage: ztm ${cmd} agent [--listen [<ip>:]<port>] [--database <filename>]`)
   println()
   println(`Options:`)
   println(`  -l, --listen    [<ip>:]<port>  Service listening address`)
   println(`                                 Defaults to '127.0.0.1:7777'`)
   println(`  -d, --database  <filename>     Location of the database file`)
   println(`                                 Defaults to '~/ztm.db'`)
+  println()
+}
+
+function helpStart() {
+  println()
+  println(`Usage: ztm start ca|hub|agent|app [<app name>] <options>`)
+  println()
+  helpAppName()
+  println()
+  println(`Type 'ztm help start ca|hub|agent|app' for more details.`)
+  println()
+}
+
+function helpStop() {
+  println()
+  println(`Usage: ztm stop ca|hub|agent|app [<app name>] <options>`)
+  println()
+  helpAppName()
+  println()
+  println(`Type 'ztm help stop ca|hub|agent|app' for more details.`)
+  println()
+}
+
+function helpStopCA() {
+  println()
+  println(`Usage: ztm stop ca`)
+  println()
+}
+
+function helpStopHub() {
+  println()
+  println(`Usage: ztm stop hub`)
+  println()
+}
+
+function helpStopAgent() {
+  println()
+  println(`Usage: ztm stop agent`)
   println()
 }
 
@@ -220,6 +299,20 @@ function helpDescribe() {
   helpServiceName()
   println()
   helpPortName()
+  println()
+}
+
+function helpCommandApp(cmd) {
+  println()
+  println(`Usage: ztm ${cmd} app <app name> [--mesh <name>] [--endpoint <name>]`)
+  println()
+  println(`Options:`)
+  println(`  -m, --mesh            <name>  Specify a mesh by name`)
+  println(`                                Can be omitted when only 1 mesh is joined`)
+  println(`  -e, --ep, --endpoint  <name>  Specify an endpoint by name or UUID`)
+  println(`                                Defaults to the local endpoint`)
+  println()
+  helpAppName()
   println()
 }
 

@@ -957,12 +957,13 @@ export default function (rootDir, config) {
 
   function findApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var isInstalled = apps.listInstalled(provider).includes(app)
+      var isDownloaded = apps.isDownloaded(provider, app)
       var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pub/${app}`))
-      if (isPublished || isInstalled) {
+      if (isPublished || isDownloaded) {
         return Promise.resolve({
           ...getAppNameTag(app),
           provider,
+          isDownloaded,
           isPublished,
           isRunning: apps.isRunning(provider, app),
         })
@@ -994,10 +995,11 @@ export default function (rootDir, config) {
     if (ep === config.agent.id) {
       var list = []
       apps.listProviders().forEach(provider => {
-        apps.listInstalled(provider).forEach(app => {
+        apps.listDownloaded(provider).forEach(app => {
           list.push({
             ...getAppNameTag(app),
             provider,
+            isDownloaded: true,
             isPublished: false,
             isRunning: apps.isRunning(provider, app),
           })
@@ -1013,8 +1015,9 @@ export default function (rootDir, config) {
             list.push({
               ...idx,
               provider,
+              isDownloaded: false,
               isPublished: true,
-              isRunning: false,
+              isRunning: apps.isRunning(provider, app),
             })
           }
         })
@@ -1147,7 +1150,7 @@ export default function (rootDir, config) {
     logInfo(`App ${provider}/${app} starting on ${ep}...`)
     if (ep === config.agent.id) {
       if (apps.isRunning(provider, app)) return Promise.resolve()
-      return (apps.isInstalled(provider, app)
+      return (apps.isDownloaded(provider, app)
         ? Promise.resolve()
         : installApp(ep, provider, app)
       ).then(() => {

@@ -32,7 +32,7 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
       .map(name => name.substring(0, name.length - 1))
   }
 
-  function listInstalled(provider) {
+  function listDownloaded(provider) {
     var dirname = os.path.join(rootDir, provider)
     return os.readDir(dirname).filter(name => {
       if (name.startsWith('.') || !name.endsWith('/')) return false
@@ -55,11 +55,14 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
     )
   }
 
-  function isInstalled(provider, appname) {
+  function isDownloaded(provider, appname) {
     var dirname = os.path.join(rootDir, provider, appname)
     var st = os.stat(dirname)
     if (!st?.isDirectory?.()) return false
-    if (!os.stat(os.path.join(dirname, 'main.js'))?.isFile?.()) return false
+    if (
+      !os.stat(os.path.join(dirname, 'main.js'))?.isFile?.() &&
+      !os.stat(os.path.join(dirname, 'main.ztm.js'))?.isFile?.()
+    ) return false
     return true
   }
 
@@ -218,9 +221,9 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
 
   return {
     listProviders,
-    listInstalled,
+    listDownloaded,
     listRunning,
-    isInstalled,
+    isDownloaded,
     isRunning,
     pack,
     unpack,
