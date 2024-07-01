@@ -957,12 +957,14 @@ export default function (rootDir, config) {
 
   function findApp(ep, provider, app) {
     if (ep === config.agent.id) {
+      var isBuiltin = apps.isBuiltin(provider, app)
       var isDownloaded = apps.isDownloaded(provider, app)
       var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pub/${app}`))
-      if (isPublished || isDownloaded) {
+      if (isPublished || isDownloaded || isBuiltin) {
         return Promise.resolve({
           ...getAppNameTag(app),
           provider,
+          isBuiltin: isBuiltin && !isDownloaded,
           isDownloaded,
           isPublished,
           isRunning: apps.isRunning(provider, app),
@@ -994,32 +996,55 @@ export default function (rootDir, config) {
   function discoverApps(ep) {
     if (ep === config.agent.id) {
       var list = []
-      apps.listProviders().forEach(provider => {
-        apps.listDownloaded(provider).forEach(app => {
+      apps.listDownloaded().forEach(app => {
+        list.push({
+          ...getAppNameTag(app.name),
+          provider: app.provider,
+          isBuiltin: false,
+          isDownloaded: true,
+          isPublished: false,
+          isRunning: apps.isRunning(app.provider, app.name),
+        })
+      })
+      var match = new http.Match('/home/{provider}/apps/pub/{name}')
+      fs.list('/home/').forEach(pathname => {
+        var app = match(pathname)
+        if (!app) return
+        var provider = app.provider
+        var appname = app.name
+        var tagname = getAppNameTag(appname)
+        var name = tagname.name
+        var tag = tagname.tag
+        var obj = list.find(a => a.name === name && a.tag === tag && a.provider === provider)
+        if (obj) {
+          obj.isPublished = true
+        } else {
           list.push({
-            ...getAppNameTag(app),
+            name,
+            tag,
             provider,
-            isDownloaded: true,
-            isPublished: false,
+            isBuiltin: false,
+            isDownloaded: false,
+            isPublished: true,
             isRunning: apps.isRunning(provider, app),
           })
-        })
-        fs.list(`/home/${provider}/apps/pub/`).forEach(pathname => {
-          var dirname = os.path.dirname(pathname)
-          var app = pathname.substring(dirname.length + 1)
-          var idx = getAppNameTag(app)
-          var obj = list.find(a => a.name === idx.name && a.tag === idx.tag)
-          if (obj) {
-            obj.isPublished = true
-          } else {
-            list.push({
-              ...idx,
-              provider,
-              isDownloaded: false,
-              isPublished: true,
-              isRunning: apps.isRunning(provider, app),
-            })
-          }
+        }
+      })
+      apps.listBuiltin().forEach(app => {
+        var provider = app.provider
+        var appname = app.name
+        var tagname = getAppNameTag(appname)
+        var name = tagname.name
+        var tag = tagname.tag
+        if (list.some(a => a.name === name && a.tag === tag && a.provider === provider)) return
+        list.push({
+          name,
+          tag,
+          provider,
+          isBuiltin: true,
+          isDownloaded: false,
+          isPublished: false,
+          isRunning: apps.isRunning(provider, app),
         })
       })
       return Promise.resolve(list)
@@ -1150,7 +1175,7 @@ export default function (rootDir, config) {
     logInfo(`App ${provider}/${app} starting on ${ep}...`)
     if (ep === config.agent.id) {
       if (apps.isRunning(provider, app)) return Promise.resolve()
-      return (apps.isDownloaded(provider, app)
+      return (apps.isBuiltin(provider, app) || apps.isDownloaded(provider, app)
         ? Promise.resolve()
         : installApp(ep, provider, app)
       ).then(() => {
