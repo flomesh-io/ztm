@@ -837,6 +837,7 @@ function getApp(argv) {
         'TAG': app => app.tag,
         'STATE': app => {
           var states = []
+          if (app.isBuiltin) states.push('builtin')
           if (app.isDownloaded) states.push('downloaded')
           if (app.isPublished) states.push('published')
           if (app.isRunning) states.push('running')
@@ -1011,6 +1012,7 @@ function describeApp(argv) {
     println(`Tag: ${app.tag || '(untagged)'}`)
     println(`Provider: ${app.provider}`)
     println(`State:`)
+    println(`  Builtin   : ${app.isBuiltin ? 'Yes' : 'No'}`)
     println(`  Downloaded: ${app.isDownloaded ? 'Yes' : 'No'}`)
     println(`  Published : ${app.isPublished ? 'Yes' : 'No'}`)
     println(`  Running   : ${app.isRunning ? 'Yes' : 'No'}`)

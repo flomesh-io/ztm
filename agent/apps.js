@@ -26,23 +26,39 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
     })
   }
 
-  function listProviders() {
-    return os.readDir(rootDir)
-      .filter(name => name.endsWith('/'))
-      .map(name => name.substring(0, name.length - 1))
+  function listBuiltin() {
+    var all = {}
+    pipy.list('/apps').forEach(pathname => {
+      var segs = pathname.split('/')
+      if (segs.length !== 3) return
+      if (segs[2] !== 'main.js' && segs[2] !== 'main.ztm.js') return
+      var provider = segs[0]
+      var name = segs[1]
+      all[`${provider}/${name}`] = { name, provider }
+    })
+    return Object.values(all)
   }
 
-  function listDownloaded(provider) {
-    var dirname = os.path.join(rootDir, provider)
-    return os.readDir(dirname).filter(name => {
-      if (name.startsWith('.') || !name.endsWith('/')) return false
-      if (os.stat(os.path.join(dirname, name, 'main.js'))?.isFile?.()) {
-        return true
-      }
-      return false
-    }).map(
-      name => name.substring(0, name.length - 1)
-    )
+  function listDownloaded() {
+    var list = []
+    os.readDir(rootDir).forEach(name => {
+      if (!name.endsWith('/')) return
+      var provider = name.substring(0, name.length - 1)
+      var dirname = os.path.join(rootDir, provider)
+      os.readDir(dirname).forEach(name => {
+        if (name.startsWith('.') || !name.endsWith('/')) return
+        if (
+          os.stat(os.path.join(dirname, name, 'main.js'))?.isFile?.() ||
+          os.stat(os.path.join(dirname, name, 'main.ztm.js'))?.isFile?.()
+        ) {
+          list.push({
+            name: name.substring(0, name.length - 1),
+            provider,
+          })
+        }
+      })
+    })
+    return list
   }
 
   function listRunning() {
@@ -52,6 +68,14 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
         provider: app.provider,
         username: app.username,
       })
+    )
+  }
+
+  function isBuiltin(provider, appname) {
+    var dirname = os.path.join('/apps', provider, appname)
+    return Boolean(
+      pipy.load(os.path.join(dirname, 'main.js')) ||
+      pipy.load(os.path.join(dirname, 'main.ztm.js'))
     )
   }
 
@@ -130,7 +154,10 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
   function start(provider, appname, username) {
     var app = findApp(provider, appname)
     if (!app) {
-      app = App(provider, appname, username)
+      app = App(
+        provider, appname, username,
+        isBuiltin(provider, appname) && !isDownloaded(provider, appname)
+      )
       apps.push(app)
     }
     app.start()
@@ -159,15 +186,22 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
     os.rmdir(dirname, { recursive: true, force: true })
   }
 
-  function App(provider, appname, username) {
-    var appRootDir = os.path.join('/', mountName, provider, appname)
+  function App(provider, appname, username, isBuiltin) {
+    var appRootDir = (isBuiltin
+      ? os.path.join('/apps', provider, appname)
+      : os.path.join('/', mountName, provider, appname)
+    )
     var appLog = []
     var entryPipeline = null
     var exitCallbacks = []
 
     function start() {
       if (entryPipeline) return
-      var mainFunc = pipy.import(os.path.join(appRootDir, 'main.js')).default
+      var mainFilename = (
+        checkExistence(os.path.join(appRootDir, 'main.ztm.js')) ||
+        checkExistence(os.path.join(appRootDir, 'main.js'))
+      )
+      var mainFunc = pipy.import(mainFilename).default
       if (typeof mainFunc !== 'function') throw `The default export from ${provider}/${appName} main script is not a function`
       entryPipeline = mainFunc({
         app: {
@@ -207,12 +241,19 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
       exitCallbacks.push(cb)
     }
 
+    function checkExistence(path) {
+      if (pipy.load(path)) {
+        return path
+      }
+    }
+
     return {
       provider,
       appname,
       username,
       start,
       stop,
+      isBuiltin: () => isBuiltin,
       isRunning: () => Boolean(entryPipeline),
       connect: () => entryPipeline,
       log: () => appLog,
@@ -220,9 +261,10 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
   }
 
   return {
-    listProviders,
+    listBuiltin,
     listDownloaded,
     listRunning,
+    isBuiltin,
     isDownloaded,
     isRunning,
     pack,
