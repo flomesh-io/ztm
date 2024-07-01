@@ -100,6 +100,17 @@ var optionsGet = {
   }
 }
 
+var optionsDownloadFile = {
+  defaults: {
+    '--mesh': '',
+    '--output': '-',
+  },
+  shorthands: {
+    '-m': '--mesh',
+    '-o': '--output',
+  }
+}
+
 var optionsDelete = {
   defaults: {
     '--mesh': '',
@@ -969,7 +980,7 @@ function describeFile(argv) {
   var c = clients.agent()
   selectMesh(c, opts).then(m => {
     mesh = m
-    return c.get(`/api/meshes/${mesh.name}/files${path}`)
+    return c.get(os.path.join(`/api/meshes/${mesh.name}/files/`, path))
   }).then(ret => {
     var file = JSON.decode(ret)
     return Promise.all(file.sources.map(
@@ -1092,6 +1103,21 @@ function downloadApp(argv) {
 }
 
 function downloadFile(argv) {
+  var path = os.path.normalize(readWord(argv, 'file name', 'describe file'))
+  var opts = parseOptions(optionsDownloadFile, argv, 'download file')
+  var mesh = null
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return c.get(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path))
+  }).then(ret => {
+    pipeline($=>$
+      .onStart([ret, new StreamEnd])
+      .tee(opts['--output'])
+    ).spawn().then(() => {
+      pipy.exit(0)
+    })
+  }).catch(error)
 }
 
 //
@@ -1266,7 +1292,20 @@ function deletePort(argv) {
   }).catch(error)
 }
 
+//
+// Command: log
+//
+
 function log(argv) {
+  var type = readObjectType(argv, 'log')
+  switch (type) {
+    case 'endpoint': return logEndpoint(argv)
+    case 'app': return logApp(argv)
+    default: return errorObjectType(type, 'log')
+  }
+}
+
+function logEndpoint(argv) {
   var epName = normalizeName(readOptionalWord(argv))
   var opts = parseOptions(optionsGetGlobal, argv, 'log')
   var mesh = null
@@ -1276,6 +1315,18 @@ function log(argv) {
     return selectEndpoint(c, { '--endpoint': epName }, m)
   }).then(ep => {
     return c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/log`)
+  }).then(ret => {
+    JSON.decode(ret).forEach(l => {
+      println(l.time, l.message)
+    })
+    pipy.exit(0)
+  }).catch(error)
+}
+
+function logApp(argv) {
+  var c = clients.agent()
+  parseApp(c, argv, 'log app').then(({ mesh, ep, provider, name }) => {
+    return c.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${name}/log`)
   }).then(ret => {
     JSON.decode(ret).forEach(l => {
       println(l.time, l.message)

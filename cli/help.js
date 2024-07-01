@@ -31,7 +31,12 @@ export default function (argv) {
     case 'leave': return helpLeave()
     case 'get': return helpGet()
     case 'describe': return helpDescribe()
-    case 'download': return helpCommandApp('download')
+    case 'download':
+      switch (argv[1]) {
+        case 'file': return helpDownloadFile()
+        case 'app': return helpCommandApp('download')
+        default: return helpDownload()
+      }
     case 'erase': return helpCommandApp('erase')
     case 'publish': return helpCommandApp('publish')
     case 'unpublish': return helpCommandApp('unpublish')
@@ -42,7 +47,12 @@ export default function (argv) {
         default: return helpCreate()
       }
     case 'delete': return helpDelete()
-    case 'log': return helpLog()
+    case 'log':
+      switch (argv[1]) {
+        case 'endpoint': return helpLogEndpoint()
+        case 'app': return helpCommandApp('log')
+        default: return helpLog()
+      }
     default: return helpAll()
   }
 }
@@ -55,8 +65,8 @@ function helpAll() {
   println()
   println(`  version`)
   println(`  config`)
-  println(`  start     ca | hub | agent | app <app name>`)
-  println(`  stop      ca | hub | agent | app <app name>`)
+  println(`  start     ca | hub | agent | app`)
+  println(`  stop      ca | hub | agent | app`)
   println(`  run       ca | hub | agent`)
   println(`  app`)
   println(`  invite`)
@@ -67,11 +77,11 @@ function helpAll() {
   println(`  describe  service | port | app | file | endpoint | mesh`)
   println(`  create    service | port`)
   println(`  delete    service | port`)
-  println(`  download  app <app name> | file`)
-  println(`  erase     app <app name>`)
-  println(`  publish   app <app name>`)
-  println(`  unpublish app <app name>`)
-  println(`  log`)
+  println(`  download  app | file`)
+  println(`  erase     app`)
+  println(`  publish   app`)
+  println(`  unpublish app`)
+  println(`  log       app | endpoint`)
   println()
   println(`Object types:`)
   println()
@@ -302,6 +312,29 @@ function helpDescribe() {
   println()
 }
 
+function helpDownload() {
+  println()
+  println(`Usage: ztm download app  <app name> <options>`)
+  println(`       ztm download file <pathname> <options>`)
+  println()
+  helpAppName()
+  println()
+  println(`Type 'ztm help download app|file' for more details.`)
+  println()
+}
+
+function helpDownloadFile(cmd) {
+  println()
+  println(`Usage: ztm download file <pathname> [--mesh <name>] [--output <pathname>]`)
+  println()
+  println(`Options:`)
+  println(`  -m, --mesh    <name>  Specify a mesh by name`)
+  println(`                        Can be omitted when only 1 mesh is joined`)
+  println(`  -o, --output  <name>  Specify an output file for the download`)
+  println(`                        Defaults to the stdout`)
+  println()
+}
+
 function helpCommandApp(cmd) {
   println()
   println(`Usage: ztm ${cmd} app <app name> [--mesh <name>] [--endpoint <name>]`)
@@ -377,6 +410,21 @@ function helpDelete() {
 
 function helpLog() {
   println()
-  println(`Usage: ztm log [<endpoint>]`)
+  println(`Usage: ztm log endpoint [<endpoint>] <options>`)
+  println(`Usage: ztm log app       <app name>  <options>`)
+  println()
+  println(`Type 'ztm help log endpoint|app' for more details.`)
+  println()
+  helpAppName()
+  println()
+}
+
+function helpLogEndpoint() {
+  println()
+  println(`Usage: ztm log endpoint [<endpoint>] [--mesh <name>]`)
+  println()
+  println(`Options:`)
+  println(`  -m, --mesh  <name>  Specify a mesh by name`)
+  println(`                      Can be omitted when only 1 mesh is joined`)
   println()
 }
