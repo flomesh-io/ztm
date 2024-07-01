@@ -1,17 +1,17 @@
-// import 'vite/modulepreload-polyfill'
 import { createApp } from 'vue';
-import App from './App.vue';
+import App from '@/App.vue';
 import { initRouter } from "./router";
-import store from "./store";
+import store from "@/store";
 import PrimeVue from 'primevue/config';
+// import 'vite/modulepreload-polyfill'
 import ToastService from 'primevue/toastservice';
 import DialogService from 'primevue/dialogservice';
 import ConfirmationService from 'primevue/confirmationservice';
-import { useComponent } from './components';
-import { useDirective } from './directives';
-import rulesReg from './rules/reg';
+import { useComponent } from '@/components';
+import { useDirective } from '@/directives';
+import rulesReg from '@/rules/reg';
 import bootstrap from "@/bootstrap";
-import MyPreset from './theme';
+import MyPreset from '@/theme';
 import '@/assets/styles.scss';
 
 const app = createApp(App);
