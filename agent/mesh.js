@@ -959,7 +959,7 @@ export default function (rootDir, config) {
     if (ep === config.agent.id) {
       var isBuiltin = apps.isBuiltin(provider, app)
       var isDownloaded = apps.isDownloaded(provider, app)
-      var isPublished = Boolean(fs.stat(`/home/${provider}/apps/pub/${app}`))
+      var isPublished = Boolean(fs.stat(`/home/${provider}/pub/apps/pkg/${app}`))
       if (isPublished || isDownloaded || isBuiltin) {
         return Promise.resolve({
           ...getAppNameTag(app),
@@ -1006,7 +1006,7 @@ export default function (rootDir, config) {
           isRunning: apps.isRunning(app.provider, app.name),
         })
       })
-      var match = new http.Match('/home/{provider}/apps/pub/{name}')
+      var match = new http.Match('/home/{provider}/pub/apps/pkg/{name}')
       fs.list('/home/').forEach(pathname => {
         var app = match(pathname)
         if (!app) return
@@ -1030,24 +1030,43 @@ export default function (rootDir, config) {
           })
         }
       })
-      apps.listBuiltin().forEach(app => {
-        var provider = app.provider
-        var appname = app.name
-        var tagname = getAppNameTag(appname)
-        var name = tagname.name
-        var tag = tagname.tag
-        if (list.some(a => a.name === name && a.tag === tag && a.provider === provider)) return
-        list.push({
-          name,
-          tag,
-          provider,
-          isBuiltin: true,
-          isDownloaded: false,
-          isPublished: false,
-          isRunning: apps.isRunning(provider, app),
+      return discoverApps().then(pubs => {
+        pubs.forEach(app => {
+          var name = app.name
+          var tag = app.tag
+          var provider = app.provider
+          var appname = name
+          if (tag) appname += '@' + tag
+          if (list.some(a => a.name === name && a.tag === tag && a.provider === provider)) return
+          list.push({
+            name,
+            tag,
+            provider,
+            isBuiltin: false,
+            isDownloaded: false,
+            isPublished: false,
+            isRunning: apps.isRunning(app.provider, appname),
+          })
         })
+        apps.listBuiltin().forEach(app => {
+          var provider = app.provider
+          var appname = app.name
+          var tagname = getAppNameTag(appname)
+          var name = tagname.name
+          var tag = tagname.tag
+          if (list.some(a => a.name === name && a.tag === tag && a.provider === provider)) return
+          list.push({
+            name,
+            tag,
+            provider,
+            isBuiltin: true,
+            isDownloaded: false,
+            isPublished: false,
+            isRunning: apps.isRunning(provider, app),
+          })
+        })
+        return list
       })
-      return Promise.resolve(list)
     } else if (ep) {
       return selectHubWithThrow(ep).then(
         (hub) => httpAgents.get(hub).request(
@@ -1070,8 +1089,8 @@ export default function (rootDir, config) {
           if (i < 0) return
           var provider = pathname.substring(0, i)
           pathname = pathname.substring(i)
-          if (!pathname.startsWith('/apps/pub/')) return
-          var app = pathname.substring(10)
+          if (!pathname.startsWith('/pub/apps/pkg/')) return
+          var app = pathname.substring(14)
           if (app.indexOf('/') >= 0) return
           if (app.indexOf('@') == 0) return
           apps.push({ ...getAppNameTag(app), provider })
@@ -1083,7 +1102,7 @@ export default function (rootDir, config) {
 
   function publishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/apps/pub/${app}`
+      var packagePathname = `/home/${provider}/pub/apps/pkg/${app}`
       if (fs.stat(packagePathname)) return Promise.resolve()
       return apps.pack(provider, app).then(data => {
         fs.write(packagePathname, data)
@@ -1101,7 +1120,7 @@ export default function (rootDir, config) {
 
   function unpublishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/apps/pub/${app}`
+      var packagePathname = `/home/${provider}/pub/apps/pkg/${app}`
       if (fs.stat(packagePathname)) {
         fs.remove(packagePathname)
         advertiseFilesystem()
@@ -1120,7 +1139,7 @@ export default function (rootDir, config) {
   function installApp(ep, provider, app) {
     logInfo(`App ${provider}/${app} installing to ${ep}...`)
     if (ep === config.agent.id) {
-      return syncFile(`/home/${provider}/apps/pub/${app}`).then(data => {
+      return syncFile(`/home/${provider}/pub/apps/pkg/${app}`).then(data => {
         if (data) {
           apps.unpack(provider, app, data).then(() => {
             logInfo(`App ${provider}/${app} installed locally`)
