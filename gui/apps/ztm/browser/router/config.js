@@ -1,6 +1,6 @@
 import _ from "lodash";
 import broswer from "./modules/broswer";
-import AppLayout from '../../layout/AppLayout.vue';
+import AppLayout from '../../../common/layout/AppLayout.vue';
 
 const options = {
   routes: [
