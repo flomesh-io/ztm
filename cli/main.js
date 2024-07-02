@@ -175,9 +175,25 @@ function main() {
     create, 'delete': deleteCmd,
   })[command]
 
-  if (!f) return errorInput(`unknown command: '${command}'`)
+  if (f) return f(argv, program)
 
-  return f(argv, program)
+  var c = clients.agent()
+  var mesh = null
+
+  var opts = options(argv, {
+    defaults: { '--mesh': '' },
+    shorthands: {},
+    ignoreUnknown: true,
+  })
+
+  return selectMesh(c, opts).then(m => {
+    mesh = m
+    var appName = normalizeAppName(command)
+    var ep = { id: m.agent.id }
+    return selectApp(c, appName, m, ep)
+  }).then(app => {
+    return callApp(c.host(), mesh, app, argv)
+  }).catch(error)
 }
 
 //
@@ -1335,6 +1351,35 @@ function logApp(argv) {
     })
     pipy.exit(0)
   }).catch(error)
+}
+
+//
+// Access app CLI
+//
+
+function callApp(host, mesh, app, argv) {
+  var appname = app.name
+  if (app.tag) appname += '@' + app.tag
+
+  var url = `/api/meshes/${mesh.name}/apps/${app.provider}/${appname}/cli`
+  url += '?argv=' + URL.encodeComponent(JSON.stringify(argv))
+
+  return pipy.read('-', $=>$
+    .onStart(new Data)
+    .connectHTTPTunnel(
+      new Message({
+        method: 'CONNECT',
+        path: url,
+      })
+    ).to($=>$
+      .muxHTTP().to($=>$
+        .connect(host)
+      )
+    )
+    .tee('-')
+  ).then(() => {
+    pipy.exit(0)
+  })
 }
 
 //

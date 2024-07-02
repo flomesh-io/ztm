@@ -1,4 +1,4 @@
-export default function (argv, { defaults, shorthands }) {
+export default function (argv, { defaults, shorthands, ignoreUnknown }) {
   var args = []
   var opts = {}
   var lastOption
@@ -27,7 +27,10 @@ export default function (argv, { defaults, shorthands }) {
 
   function processOption(name, value) {
     var k = shorthands[name] || name
-    if (!(k in defaults)) throw `invalid option ${k}`
+    if (!(k in defaults)) {
+      if (ignoreUnknown) return
+      throw `unrecognized option ${k}`
+    }
     if (typeof defaults[k] === 'boolean') {
       opts[k] = true
     } else if (value) {

@@ -1,7 +1,32 @@
 export default function () {
 
+  var $argv
+
   var serveUser = pipeline($=>$
-    .serveHTTP(new Message('hi, user'))
+    .demuxHTTP().to($=>$
+      .pipe(
+        function (evt) {
+          if (evt instanceof MessageStart) {
+            var head = evt.head
+            if (head.method === 'CONNECT' && head.path.startsWith('/cli?argv=')) {
+              $argv = JSON.parse(URL.decodeComponent(head.path.substring(10)))
+              return 'cli'
+            } else {
+              return 'gui'
+            }
+          }
+        }, {
+          'cli': ($=>$
+            .acceptHTTPTunnel(() => new Message({ status: 200 })).to($=>$
+              .onStart(() => [JSON.encode($argv), new StreamEnd])
+            )
+          ),
+          'gui': ($=>$
+            .replaceMessage(new Message('hi, user'))
+          )
+        }
+      )
+    )
   )
 
   var servePeer = pipeline($=>$
