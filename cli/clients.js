@@ -29,6 +29,7 @@ function Client(target) {
   }
 
   return {
+    host: () => target,
     get: (path) => ha.request('GET', path).then(check),
     post: (path, body) => ha.request('POST', path, null, body).then(check),
     delete: (path) => ha.request('DELETE', path).then(check),
