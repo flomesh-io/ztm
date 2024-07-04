@@ -212,8 +212,9 @@ function setFile(mesh, provider, app, path, data) {
     db.sql('UPDATE files SET data = ? WHERE mesh = ? AND provider = ? AND app = ? AND path = ?')
       .bind(1, data)
       .bind(2, mesh)
-      .bind(3, app)
-      .bind(4, path)
+      .bind(3, provider)
+      .bind(4, app)
+      .bind(5, path)
       .exec()
   } else {
     db.sql('INSERT INTO files(mesh, provider, app, path, data) VALUES(?, ?, ?, ?, ?)')

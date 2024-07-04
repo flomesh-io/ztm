@@ -23,8 +23,9 @@ export default function (rootDir, config) {
 
   var meshEnv = {
     name: meshName,
-    discover,
-    connect,
+    discover: discoverFromApp,
+    connect: connectFromApp,
+    fs: makeAppFilesystem,
   }
 
   if (config.ca) {
@@ -63,21 +64,11 @@ export default function (rootDir, config) {
     apps = initApps(
       os.path.join(rootDir, 'apps'),
       `mount-mesh-${meshName}`,
-      epEnv,
-      meshEnv,
-      makeAppFilesystem,
+      epEnv, meshEnv,
     )
   } catch (e) {
     meshError(e.toString())
   }
-
-  db.allApps(meshName).forEach(app => {
-    if (app.state === 'running' && app.username === username) {
-      var appname = app.name
-      if (app.tag) appname += '@' + app.tag
-      startApp(config.agent.id, app.provider, appname)
-    }
-  })
 
   var tlsOptions = {
     certificate: agentCert && agentKey ? {
@@ -881,6 +872,15 @@ export default function (rootDir, config) {
   advertiseFilesystem()
   advertiseAppStates()
 
+  // Start apps
+  db.allApps(meshName).forEach(app => {
+    if (app.state === 'running' && app.username === username) {
+      var appname = app.name
+      if (app.tag) appname += '@' + app.tag
+      startApp(config.agent.id, app.provider, appname)
+    }
+  })
+
   // Publish services
   db.allServices(meshName).forEach(
     function (s) {
@@ -927,9 +927,8 @@ export default function (rootDir, config) {
   }
 
   function advertiseFilesystem() {
-    var prefix = os.path.join('/home', username)
     var files = {}
-    fs.list(prefix).forEach(filename => {
+    fs.list().forEach(filename => {
       var stat = fs.stat(filename)
       if (stat) {
         files[filename] = {
@@ -1062,7 +1061,7 @@ export default function (rootDir, config) {
             isBuiltin: true,
             isDownloaded: false,
             isPublished: false,
-            isRunning: apps.isRunning(provider, app),
+            isRunning: apps.isRunning(provider, appname),
           })
         })
         return list
@@ -1335,20 +1334,18 @@ export default function (rootDir, config) {
   // Mesh API exposed to apps
   //
 
-  function discover(app, provider) {
-    if (app) {
-      return hubs[0].findApp(provider, app).then(ret => ret?.endpoints || [])
-    } else {
-      return discoverEndpoints().then(
-        ret => ret.map(
-          ({ id, name, username }) => ({ id, name, username })
-        )
-      )
+  function discoverFromApp(provider, app) {
+    return function () {
+      if (app) {
+        return hubs[0].findApp(provider, app).then(ret => ret?.endpoints || [])
+      }
     }
   }
 
-  function connect(ep, app, provider) {
-    return toRemoteApp(ep, provider, app)
+  function connectFromApp(provider, app) {
+    return function (ep) {
+      return toRemoteApp(ep, provider, app)
+    }
   }
 
   function makeAppFilesystem(provider, app) {
