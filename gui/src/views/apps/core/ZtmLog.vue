@@ -1,6 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
+import ShellService from '@/service/ShellService';
+const shellService = new ShellService();
 const store = useStore();
 const logs = computed(() => {
 	return store.getters['account/logs']
@@ -13,6 +15,22 @@ const clear = () => {
 	store.commit('account/setLogs',null);
 }
 const level = ref('All');
+onMounted(()=>{
+	timmer.value = true;
+	loaddata();
+});
+onBeforeUnmount(()=>{
+	timmer.value = false;
+	loaddata();
+});
+const timmer = ref(false)
+const loaddata = () => {
+	shellService.loadLog();
+	setTimeout(() => {
+		if(timmer.value)
+		loaddata();
+	},3000)
+}
 </script>
 
 <template>
@@ -21,8 +39,7 @@ const level = ref('All');
 	    <div class="container_terminal"></div>
 			
 			<div class="flex actions">
-				<Button  v-tooltip.left="'Clear'"  severity="help" text rounded aria-label="Filter" @click="clear" >
-					<i class="iconfont icon-clear" />
+				<Button  v-tooltip.left="'Clear'" icon="iconfont icon-clear" severity="help" text rounded aria-label="Filter" @click="clear" >
 				</Button>
 			</div>
 	   <!-- <div class="terminal_toolbar">
@@ -83,8 +100,9 @@ const level = ref('All');
 		top: 5px;
 		right: 10px;
 		:deep(.p-button){
-			padding-left: 5px;
-			padding-right: 5px;
+			padding-left: 0px;
+			padding-right: 0px;
+			width: 36px;
 		}
 	}
 	:deep(.p-radiobutton .p-radiobutton-box){

@@ -19,7 +19,7 @@ export default class ShellService {
 	}
 	async loadLog() {
 		const pm = await platform();
-		if(pm == "android"){
+		if(true){
 			const resourceDirPath = await resourceDir();
 			const lines = await readTextFileLines('ztm.log', { baseDir: BaseDirectory.Resource });
 			const logs = []
