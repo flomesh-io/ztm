@@ -49,7 +49,8 @@ export default function(storeDir) {
   }
 
   function list(dirname) {
-    var prefix = os.path.normalize(dirname) + '/'
+    var prefix = os.path.normalize(dirname || '')
+    if (!prefix.endsWith('/')) prefix += '/'
     return Object.keys(pathMap).filter(p => p.startsWith(prefix)).sort()
   }
 

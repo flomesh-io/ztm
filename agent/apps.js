@@ -1,4 +1,4 @@
-export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
+export default function (rootDir, mountName, epInfo, meshEnv) {
   rootDir = os.path.resolve(rootDir)
 
   var st = os.stat(rootDir)
@@ -202,7 +202,9 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
         checkExistence(os.path.join(appRootDir, 'main.js'))
       )
       var mainFunc = pipy.import(mainFilename).default
-      if (typeof mainFunc !== 'function') throw `The default export from ${provider}/${appName} main script is not a function`
+      if (typeof mainFunc !== 'function') {
+        throw `The default export from ${provider}/${appname} main script is not a function`
+      }
       entryPipeline = mainFunc({
         app: {
           name: appname,
@@ -213,8 +215,10 @@ export default function (rootDir, mountName, epInfo, meshInfo, makeFilesystem) {
           onExit,
         },
         mesh: {
-          ...meshInfo,
-          ...makeFilesystem(provider, appname),
+          name: meshEnv.name,
+          discover: meshEnv.discover(provider, appname),
+          connect: meshEnv.connect(provider, appname),
+          ...meshEnv.fs(provider, appname),
         },
       })
     }

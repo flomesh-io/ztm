@@ -59,7 +59,9 @@ export default function (argv) {
 
 function helpAll() {
   println()
-  println(`Usage: ztm <command>|<app> [<object type>] [<object name>] [<options>]`)
+  println(`Usage:`)
+  println(`  ztm <command> [<object type>] [<object name>] [<options>]`)
+  println(`  ztm <app> ...`)
   println()
   println(`Commands:`)
   println()
@@ -90,6 +92,7 @@ function helpAll() {
   println(`  agent`)
   println(`  mesh      meshes`)
   println(`  endpoint  endpoints  ep`)
+  println(`  app       apps`)
   println(`  service   services   svc`)
   println(`  port      ports`)
   println()
