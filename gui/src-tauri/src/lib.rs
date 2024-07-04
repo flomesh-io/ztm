@@ -1,10 +1,17 @@
+use lazy_static::lazy_static;
 use libloading::{Library, Symbol};
 use tauri::command;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
 use std::thread;
-
+use tauri_utils::config::{WebviewUrl, WindowConfig};
+use std::sync::{Arc, Mutex};
+use std::any::Any;
+use tauri::AppHandle;
+use url::Url;
+use tauri::Manager;
+use tauri_plugin_shell::ShellExt;
 
 #[command]
 fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> {
@@ -46,6 +53,127 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 			
 }
 
+#[command]
+async fn create_wry_webview(
+	app: tauri::AppHandle,
+	label: String,
+	window_label: String,
+	proxy_host: String,
+	proxy_port: String,
+	curl: String,
+) -> Result<(),()> {
+	unsafe {
+		let window = app
+		    .get_window(&window_label)
+		    .expect("Failed to find window by label");
+		// let event_loop = tao::event_loop::EventLoop::new();
+		// let window = tao::window::WindowBuilder::new().build(&event_loop).unwrap();
+		let proxy_config = wry::ProxyConfig::Socks5(wry::ProxyEndpoint {
+			host: proxy_host,
+			port: proxy_port
+		});
+		
+		let builder = wry::WebViewBuilder::new_as_child(&window);
+		let webview = builder
+		  .with_url(curl)
+			.with_proxy_config(proxy_config)
+			.with_bounds(wry::Rect {
+			    position: tauri::LogicalPosition::new(100, 100).into(),
+			    size: tauri::LogicalSize::new(960, 800).into(),
+			  })
+		  .build()
+		  .unwrap();
+	}
+	Ok(())
+}
+
+#[command]
+async fn create_proxy_webview(
+	app: tauri::AppHandle,
+	label: String,
+	window_label: String,
+	proxy_url: String,
+	curl: String,
+) -> Result<(),()> {
+	create_proxy_webview_core(app.clone(), label.to_string(), window_label.to_string(), proxy_url.to_string(), curl);
+	Ok(())
+}
+
+fn create_proxy_webview_core(
+	app: tauri::AppHandle,
+	label: String,
+	window_label: String,
+	proxy_url: String,
+	curl: String,
+) -> Result<(),()> {
+	unsafe {
+
+		let mut options = WindowConfig {
+				label: label.to_string(),
+				url: WebviewUrl::App(curl.parse().unwrap()),
+				fullscreen: true,
+				..Default::default()
+		};
+
+		if !proxy_url.is_empty() {
+			let proxy_url_ops: Option<Url> = Some(
+			        Url::parse(&proxy_url)
+			            .expect("Failed to parse URL"),
+			    );
+			options.proxy_url = proxy_url_ops
+		}
+		println!("builder!");
+
+		let builder = tauri::WebviewBuilder::from_config(&options).on_navigation(|url| {
+		    // allow the production URL or localhost on dev
+			println!("on_navigation!");
+			if url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "ipc" {
+				println!("{}",url);
+				// create_proxy_webview_core(app, url.to_string(), url.to_string(), proxy_url.to_string(), url.to_string());
+			}
+			true
+		});
+    let window = app
+        .get_window(&window_label)
+        .expect("Failed to find window by label");
+
+		let webview = window.add_child(
+			builder,
+			tauri::LogicalPosition::new(0, 0),
+			window.inner_size().unwrap(),
+		).unwrap();
+		
+	}
+	Ok(())
+}
+	
+#[command]
+fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> Result<(),()> {
+	#[cfg(target_os = "android")]
+	let handle = thread::spawn(move || -> Result<(), String> {
+				
+		unsafe {
+			
+			use j4rs::{Instance, InvocationArg, Jvm, JvmBuilder};
+			let jvm = Jvm::attach_thread_with_no_detach_on_drop().unwrap();
+			// 准备参数
+			let jurl = InvocationArg::try_from(url).unwrap();
+			let jproxy_host = InvocationArg::try_from(proxy_host).unwrap();
+			let jproxy_port = InvocationArg::try_from(proxy_port).unwrap();
+			
+			let args: [&InvocationArg; 3] = [&jurl, &jproxy_host, &jproxy_port];
+			jvm.invoke_static(
+				"com.flomesh.ztm.MainActivity",     // The Java class to invoke
+				"startWebViewActivity",    // The static method of the Java class to invoke
+				&args // The `InvocationArg`s to use for the invocation - empty for this example
+			);
+			
+		 }
+		 Ok(())
+	});
+	Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 		tauri::Builder::default()
@@ -53,9 +181,10 @@ pub fn run() {
 				.plugin(tauri_plugin_http::init())
 				.plugin(tauri_plugin_shell::init())
 				.plugin(tauri_plugin_process::init())
-				.plugin(tauri_plugin_fs::init())
+				.plugin(tauri_plugin_fs::init())				
+				.plugin(tauri_plugin_deep_link::init())
 				.invoke_handler(tauri::generate_handler![
-					pipylib
+					pipylib,create_proxy_webview,create_wry_webview
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");

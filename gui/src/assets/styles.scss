@@ -1050,3 +1050,25 @@ fieldset{
 		background-color: var(--primary-900) !important;
 	}
 }
+
+.p-terminal-prompt-label{
+	
+	color: #7eda28;
+}
+.p-terminal{
+	border: none !important;
+	border-radius: 0 !important;
+	background: rgba(50, 4, 40, 1) !important;
+}
+.p-terminal-welcome-message{
+	color: var(--primary-color);
+}
+.p-terminal-command-response{
+	color: #d5d0ce;
+}
+.p-terminal-prompt-value,.p-terminal-command-value{
+	color: #f5f5f5 !important;
+}
+.p-terminal-command-response{
+	white-space: pre;
+}

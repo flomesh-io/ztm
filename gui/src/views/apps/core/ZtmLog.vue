@@ -24,9 +24,6 @@ const level = ref('All');
 				<Button  v-tooltip.left="'Clear'"  severity="help" text rounded aria-label="Filter" @click="clear" >
 					<i class="iconfont icon-clear" />
 				</Button>
-				<Button  v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
-					<i class="pi pi-times " />
-				</Button>
 			</div>
 	   <!-- <div class="terminal_toolbar">
 	        <div class="butt">

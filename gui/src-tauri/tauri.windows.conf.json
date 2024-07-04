@@ -1,18 +1,9 @@
 {
-  "productName": "ztm",
-  "version": "0.0.4",
-  "identifier": "com.flomesh.ztm",
-  "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "",
-    "frontendDist": "../../agent/gui"
-  },
   "app": {
     "windows": [
       {
 				"dragDropEnabled": false,
-        "title": "ZTM",
+        "title": "ZTAPP",
         "width": 455,
         "height": 350,
         "resizable": false,
@@ -27,7 +18,7 @@
 			},
 			"dangerousDisableAssetCspModification": false,
 			"freezePrototype": false,
-      "capabilities": ["main-capability"]
+      "capabilities": ["windows-capability"]
     },
 		"withGlobalTauri": true
   },
