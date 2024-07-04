@@ -1,13 +1,10 @@
 {
   "$schema": "./schemas/desktop-schema.json",
-  "identifier": "main-capability",
-  "description": "Capability for the main window",
+  "identifier": "windows-capability",
+  "description": "Capability for the windows window",
   "windows": [
     "*"
   ],
-	"remote": {
-		"urls": ["http://*","https://*","ipc://*","socks5://*","*://*"]
-	},
   "permissions": [
     "path:default",
     "event:default",

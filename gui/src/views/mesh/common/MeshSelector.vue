@@ -12,7 +12,7 @@ const props = defineProps({
 	},
 	innerClass: {
 		type: String,
-		default: 'transparent'
+		default: ''
 	},
 	form: {
 		type: Boolean,

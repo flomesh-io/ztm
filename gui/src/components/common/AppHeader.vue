@@ -24,7 +24,7 @@ const platform = computed(() => {
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const home = () => {
 	if(hasTauri.value){
-		router.push('/root');
+		router.push('/mesh/list');
 	}else{
 		router.push("/mesh/list");
 	}

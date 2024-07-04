@@ -5,12 +5,13 @@ import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
 import PipyVersion from './PipyVersion.vue';
-import PipyLog from './PipyLog.vue';
 import XeyeSvg from "@/assets/img/white.png";
 import HoverXeyeSvg from "@/assets/img/loading.png";
 import PipySvg from "@/assets/img/pipy-white.png";
 import { useConfirm } from "primevue/useconfirm";
 import PipyProxyService from '@/service/PipyProxyService';
+import Apps from '@/views/apps/Apps.vue';
+import AppService from '@/service/AppService';
 import ShellService from '@/service/ShellService';
 import { checkAuthorization } from "@/service/common/request";
 import { isAdmin } from "@/service/common/authority-utils";
@@ -26,6 +27,7 @@ const version = computed(() => {
 	return store.getters['account/version']
 });
 const pipyProxyService = new PipyProxyService();
+const appService = new AppService();
 const shellService = new ShellService();
 const confirm = useConfirm();
 const props = defineProps(['embed']);
@@ -33,7 +35,6 @@ const emits = defineEmits(['collapse']);
 const router = useRouter();
 const meshes = ref([]);
 const configOpen = ref(false);
-const logOpen = ref(false);
 const logoHover = ref(false);
 const db = ref('');
 const config = ref({
@@ -169,15 +170,25 @@ const goConsole = () => {
 const openFinder = () => {
 	shellService.openFinder();
 }
-const openLog = () => {
-	logOpen.value = true;
-	shellService.loadLog();
-}
 const restart = ref(false);
+
+const appsOpen = ref(false);
+const upload = (d)=>{
+	if(!!d){
+		try{
+			const appJSON = JSON.parse(d);
+			appService.newApp(appJSON,()=>{
+				loaddata(true, 1500);
+			})
+			console.log(config.value)
+		}catch(e){
+		}
+	}
+}
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': configOpen||logOpen,'android':platform=='android'}">
+	<div class="e-card playing transparent-form" :class="{'blur': configOpen,'android':platform=='android'}">
 	  <div class="image"></div>
 	  <div class="wave"></div>
 	  <div class="wave"></div>
@@ -241,20 +252,22 @@ const restart = ref(false);
 					<i class="pi pi-power-off " />
 				</Button>
 			</div> -->
+
+			<div class="flex-item">
+				<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
+					<i class="pi pi-plus text-3xl"  />
+				</FileUploderSmall>
+		
+			</div>
 			
+			<div class="flex-item">
+				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
+					<i class="pi pi-th-large text-3xl"  />
+				</Button>
+			</div>
 			<div class="flex-item">
 				<Button :disabled="!!playing" v-tooltip="'Setting'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => configOpen = true" >
 					<i class="pi pi-cog "  />
-				</Button>
-			</div>
-			<div class="flex-item" v-if="!props.embed">
-				<Button :disabled="!playing" v-tooltip="'Mesh Console'" class="pointer" severity="help" text rounded aria-label="Filter" @click="goConsole" >
-					<i class="pi pi-desktop " />
-				</Button>
-			</div>
-			<div class="flex-item">
-				<Button v-tooltip="'Log'" class="pointer" severity="help" rounded text aria-label="Filter" @click="openLog()" >
-					<i class="iconfont icon-cmd text-3xl"  />
 				</Button>
 			</div>
 			<div class="flex-item">
@@ -300,7 +313,8 @@ const restart = ref(false);
 			</div>
 		</div>
 	</div>
-	<PipyLog v-if="logOpen" @close="() => logOpen = false"/>
+	<Apps v-if="appsOpen" @close="() => appsOpen = false" />
+	
 </template>
 
 <style lang="scss" scoped>
