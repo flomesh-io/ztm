@@ -12,13 +12,8 @@
 import { openWebview } from '@/utils/webview';
 import { onMounted, onBeforeUnmount } from 'vue';
 import icon from "@/assets/img/apps/ztmlog.png";
-import ShellService from '@/service/ShellService';
-
-const shellService = new ShellService();
 
 const open = () => {
-	
-	shellService.loadLog();
 	openWebview({
 		url:'/#/app/ztmlog',
 		name:'ZtmLog',
