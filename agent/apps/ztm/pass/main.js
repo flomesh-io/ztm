@@ -95,6 +95,10 @@ export default function ({ app, mesh }) {
     },
 
     '/api/inbound/{proto}/{name}': {
+      'GET': responder(({ proto, name }) => api.getInbound(app.endpoint.id, proto, name).then(
+        ret => ret ? response(200, ret) : response(404)
+      )),
+
       'POST': responder(({ proto, name }, req) => {
         var obj = JSON.decode(req.body)
         var listens = obj.listens
@@ -108,6 +112,10 @@ export default function ({ app, mesh }) {
     },
 
     '/api/outbound/{proto}/{name}': {
+      'GET': responder(({ proto, name }) => api.getOutbound(app.endpoint.id, proto, name).then(
+        ret => ret ? response(200, ret) : response(404)
+      )),
+
       'POST': responder(({ proto, name }, req) => {
         var obj = JSON.decode(req.body)
         var targets = obj.targets
@@ -118,6 +126,8 @@ export default function ({ app, mesh }) {
       'DELETE': responder(({ proto, name }) => {
         return api.deleteOutbound(app.endpoint.id, proto, name).then(response(204))
       }),
+
+      'CONNECT': api.servePeerInbound,
     },
   })
 
