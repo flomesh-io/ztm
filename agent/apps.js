@@ -230,6 +230,8 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
       entryPipeline = null
     }
 
+    var logHeader = `[${provider}/${appname}]`
+
     function log(msg) {
       if (appLog.length > 100) {
         appLog.splice(0, appLog.length - 100)
@@ -238,6 +240,7 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
         time: new Date().toISOString(),
         message: msg,
       })
+      console.info(logHeader, msg)
     }
 
     function onExit(cb) {

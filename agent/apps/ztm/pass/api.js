@@ -1,4 +1,6 @@
 export default function ({ app, mesh }) {
+  var currentListens = []
+  var currentTargets = {}
 
   function allEndpoints() {
     return mesh.discover()
@@ -85,7 +87,7 @@ export default function ({ app, mesh }) {
           all.push(ent)
         }
         setLocalConfig(config)
-        advertiseLocalConfig()
+        applyLocalConfig(config)
       })
     } else {
       return requestPeer(ep, new Message(
@@ -115,7 +117,7 @@ export default function ({ app, mesh }) {
           all.push(ent)
         }
         setLocalConfig(config)
-        advertiseLocalConfig()
+        applyLocalConfig(config)
       })
     } else {
       return requestPeer(ep, new Message(
@@ -136,7 +138,6 @@ export default function ({ app, mesh }) {
         if (i >= 0) {
           all.splice(i, 1)
           setLocalConfig(config)
-          advertiseLocalConfig()
         }
       })
     } else {
@@ -157,7 +158,6 @@ export default function ({ app, mesh }) {
         if (i >= 0) {
           all.splice(i, 1)
           setLocalConfig(config)
-          advertiseLocalConfig()
         }
       })
     } else {
@@ -180,10 +180,105 @@ export default function ({ app, mesh }) {
     mesh.write('/local/config.json', JSON.encode(config))
   }
 
-  function advertiseLocalConfig() {
-    mesh.read('/local/config.json').then(
-      data => mesh.write(`/endpoints/${app.endpoint.id}/config.json`, data)
-    )
+  function applyLocalConfig(config) {
+    currentListens.forEach(l => {
+      var protocol = l.protocol
+      var ip = l.ip
+      var port = l.port
+      if (!config.inbound.some(i => (
+        i.protocol === protocol &&
+        i.listens.some(l => l.ip === ip && l.port === port)
+      ))) {
+        pipy.listen(`${ip}:${port}`, protocol, null)
+        app.log(`Stopped ${protocol} listening ${ip}:${port}`)
+      }
+    })
+
+    currentListens = []
+    currentTargets = {}
+
+    config.inbound.forEach(i => {
+      var protocol = i.protocol
+      var name = i.name
+      var listens = i.listens
+
+      var $selectedEP
+      var connectPeer = pipeline($=>$
+        .connectHTTPTunnel(
+          new Message({
+            method: 'CONNECT',
+            path: `/api/outbound/${protocol}/${name}`,
+          })
+        ).to($=>$
+          .muxHTTP().to($=>$
+            .pipe(() => mesh.connect($selectedEP))
+          )
+        )
+        .onEnd(() => app.log(`Disconnected from ep ${$selectedEP} for ${protocol}/${name}`))
+      )
+
+      var pass = null
+      var deny = pipeline($=>$.replaceStreamStart(new StreamEnd))
+
+      switch (protocol) {
+        case 'tcp':
+          pass = connectPeer
+          break
+        case 'udp':
+          pass = pipeline($=>$
+            .replaceData(data => new Message(data))
+            .encodeWebSocket()
+            .pipe(connectPeer)
+            .decodeWebSocket()
+            .replaceMessage(msg => msg.body)
+          )
+          break
+      }
+
+      var p = pipeline($=>$
+        .onStart(() =>
+          ((i.exits && i.exits.length > 0)
+            ? Promise.resolve(i.exits)
+            : mesh.discover().then(list => list.map(ep => ep.id))
+          ).then(exits => Promise.all(
+            exits.map(
+              id => getOutbound(id, protocol, name).then(
+                o => o ? { ep: id, ...o } : null
+              )
+            )
+          )).then(list => {
+            list = list.filter(o => (o && (
+              !o.entrances ||
+              o.entrances.length === 0 ||
+              o.entrances.includes(app.endpoint.id)
+            )))
+            if (list.length > 0) {
+              $selectedEP = list[Math.floor(Math.random() * list.length)].ep
+              app.log(`Connect to ep ${$selectedEP} for ${protocol}/${name}`)
+            } else {
+              app.log(`No exit found for ${protocol}/${name}`)
+            }
+            return new Data
+          })
+        )
+        .pipe(() => $selectedEP ? pass : deny)
+      )
+
+      listens.forEach(l => {
+        try {
+          pipy.listen(`${l.ip}:${l.port}`, protocol, p)
+          currentListens.push({ protocol, ip: l.ip, port: l.port })
+          app.log(`Started ${protocol} listening ${l.ip}:${l.port}`)
+        } catch (err) {
+          app.log(`Cannot open port ${l.ip}:${l.port}: ${err}`)
+        }
+      })
+    })
+
+    config.outbound.forEach(o => {
+      var key = `${o.protocol}/${o.name}`
+      currentTargets[key] = new algo.LoadBalancer(o.targets)
+    })
   }
 
   function requestPeer(ep, req) {
@@ -201,6 +296,55 @@ export default function ({ app, mesh }) {
     ).spawn()
   }
 
+  var matchApiOutbound = new http.Match('/api/outbound/{proto}/{name}')
+  var response200 = new Message({ status: 200 })
+  var response404 = new Message({ status: 404 })
+
+  var $resource
+  var $target
+  var $protocol
+
+  var servePeerInbound = pipeline($=>$
+    .acceptHTTPTunnel(req => {
+      var params = matchApiOutbound(req.head.path)
+      var proto = params?.proto
+      var name = params?.name
+      var key = `${proto}/${name}`
+      var lb = currentTargets[key]
+      if (lb) {
+        $resource = lb.allocate()
+        var target = $resource.target
+        var host = target.host
+        var port = target.port
+        $target = `${host}:${port}`
+        $protocol = proto
+        app.log(`Connect to ${$target} for ${key}`)
+        return response200
+      }
+      app.log(`No target found for ${key}`)
+      return response404
+    }).to($=>$
+      .pipe(() => $protocol, {
+        'tcp': ($=>$
+          .connect(() => $target)
+        ),
+        'udp': ($=>$
+          .decodeWebSocket()
+          .replaceMessage(msg => msg.body)
+          .connect(() => $target, { protocol: 'udp' })
+          .replaceData(data => new Message(data))
+          .encodeWebSocket()
+        )
+      })
+      .onEnd(() => {
+        $resource.free()
+        app.log(`Disconnected from ${$target}`)
+      })
+    )
+  )
+
+  getLocalConfig().then(applyLocalConfig)
+
   return {
     allEndpoints,
     allInbound,
@@ -211,6 +355,7 @@ export default function ({ app, mesh }) {
     setOutbound,
     deleteInbound,
     deleteOutbound,
+    servePeerInbound,
   }
 }
 
