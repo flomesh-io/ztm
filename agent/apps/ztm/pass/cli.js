@@ -87,29 +87,29 @@ export default function ({ api, app, mesh }) {
     }
 
     function describe(argv) {
-      var type = readObjectType(argv, 'get')
+      var type = readObjectType(argv, 'describe')
       switch (type) {
         case 'inbound': return describeInbound(argv)
         case 'outbound': return describeOutbound(argv)
-        default: return errorObjectType(type, 'get')
+        default: return errorObjectType(type, 'describe')
       }
     }
 
     function open(argv) {
-      var type = readObjectType(argv, 'get')
+      var type = readObjectType(argv, 'open')
       switch (type) {
         case 'inbound': return openInbound(argv)
         case 'outbound': return openOutbound(argv)
-        default: return errorObjectType(type, 'get')
+        default: return errorObjectType(type, 'open')
       }
     }
 
     function close(argv) {
-      var type = readObjectType(argv, 'get')
+      var type = readObjectType(argv, 'close')
       switch (type) {
         case 'inbound': return closeInbound(argv)
         case 'outbound': return closeOutbound(argv)
-        default: return errorObjectType(type, 'get')
+        default: return errorObjectType(type, 'close')
       }
     }
 
