@@ -197,17 +197,37 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
 
     function start() {
       if (entryPipeline) return
+
       var mainFilename = (
         checkExistence(os.path.join(appRootDir, 'main.ztm.js')) ||
         checkExistence(os.path.join(appRootDir, 'main.js'))
       )
+
       var mainFunc = pipy.import(mainFilename).default
       if (typeof mainFunc !== 'function') {
         throw `The default export from ${provider}/${appname} main script is not a function`
       }
+
+      var connect = meshEnv.connect(provider, appname)
+      var request = function (ep, req) {
+        var $response
+        return pipeline($=>$
+          .onStart(req)
+          .muxHTTP().to($=>$
+            .pipe(connect(ep))
+          )
+          .replaceMessage(res => {
+            $response = res
+            return new StreamEnd
+          })
+          .onEnd(() => $response)
+        ).spawn()
+      }
+
       entryPipeline = mainFunc({
         app: {
           name: appname,
+          root: appRootDir,
           provider,
           username,
           endpoint: { ...epInfo },
@@ -217,7 +237,8 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
         mesh: {
           name: meshEnv.name,
           discover: meshEnv.discover(provider, appname),
-          connect: meshEnv.connect(provider, appname),
+          connect,
+          request,
           ...meshEnv.fs(provider, appname),
         },
       })

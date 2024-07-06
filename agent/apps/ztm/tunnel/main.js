@@ -9,6 +9,8 @@ export default function ({ app, mesh }) {
   var $ctx
   var $argv
 
+  var gui = new http.Directory(os.path.join(app.root, 'gui'))
+
   var serveUser = service({
     '/cli': {
       'CONNECT': pipeline($=>$
@@ -78,6 +80,12 @@ export default function ({ app, mesh }) {
       'DELETE': responder(({ ep, proto, name }) => {
         return api.deleteOutbound(ep, proto, name).then(response(204))
       }),
+    },
+
+    '*': {
+      'GET': responder((_, req) => {
+        return Promise.resolve(gui.serve(req) || response(404))
+      })
     },
   })
 

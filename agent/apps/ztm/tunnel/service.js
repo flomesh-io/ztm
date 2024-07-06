@@ -3,7 +3,7 @@ var $params
 export default function service(routes) {
   routes = Object.entries(routes).map(
     ([k, v]) => ({
-      match: new http.Match(k),
+      match: k === '*' ? () => ({}) : new http.Match(k),
       pipelines: v,
     })
   )
