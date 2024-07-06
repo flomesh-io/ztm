@@ -4,6 +4,61 @@ import confirm from "@/utils/confirm";
 import PipyProxyService from '@/service/PipyProxyService';
 const pipyProxyService = new PipyProxyService();
 export default class AppService {
+	
+	//
+	// App
+	//   name: string
+	//   tag: string
+	//   provider: string
+	//   username: string
+	//   isRunning: boolean
+	//   isPublished: boolean
+	//   log: string[]
+	//
+	getApps(mesh) {
+		return request(`/api/meshes/${mesh}/apps`);
+	}
+	getEpApps(mesh, ep) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps`);
+	}
+	getApp({
+		mesh, ep, provider, app
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`);
+	}
+	setApp({
+		mesh, ep, provider, app, body
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", body);
+	}
+	deleteApp({
+		mesh, ep, provider, app, body
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`,"DELETE");
+	}
+	getAppLog({
+		mesh, ep, provider, app
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}/log`);
+	}
+  //
+  // Files
+  //   hash: string
+  //   time: number
+  //   size: number
+  //
+	getFiles(mesh) {
+		return request(`/api/meshes/${mesh}/files`);
+	}
+	getFileInfo(mesh) {
+		return request(`/api/meshes/${mesh}/files/*`);
+	}
+	getFileData(mesh) {
+		return request(`/api/meshes/${mesh}/file-data/*`);
+	}
+	getFileDataFromEP(mesh, ep, hash) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/file-data/${hash}`);
+	}
 	newApp(appJSON, callback) {
 		const meshData = {
 			name: appJSON.name,
