@@ -1,18 +1,4 @@
-import command from './command.js'
-import options from './options.js'
-
-var baseOptions = {
-  defaults: {
-    '--mesh': '',
-    '--ep': '',
-  }
-}
-
-var configOptions = {
-  defaults: {
-    '--shell': '',
-  }
-}
+import cmdline from './cmdline.js'
 
 export default function ({ app, api }) {
   var $handler
@@ -36,7 +22,11 @@ export default function ({ app, api }) {
     }
 
     function flush() {
-      return pipeline($=>$.replaceStreamStart([buffer, new StreamEnd]))
+      return Promise.resolve(
+        pipeline($=>$
+          .replaceStreamStart([buffer, new StreamEnd])
+        )
+      )
     }
 
     var endpoints = null
@@ -62,42 +52,70 @@ export default function ({ app, api }) {
     }
 
     try {
-      return command(['ztm terminal', ...argv], {
-        commands: {
+      return cmdline(['ztm terminal', ...argv], {
+        help: text => {
+          output(text + '\n')
+          return flush()
+        },
+        commands: [
 
-          'config': (argv) => {
-            var rest = []
-            var opts = options(argv, baseOptions, rest)
-            return selectEndpoint(opts['--ep']).then(ep => {
-              if (rest.length === 0) {
-                return api.getEndpointConfig(ep.id).then(config => {
-                  output(`Shell: ${config.shell || '(default)'}\n`)
-                }).then(flush)
-              } else {
-                Object.assign(opts, options([null, ...rest], configOptions))
-                var config = {
-                  shell: opts['--shell'],
+          {
+            title: 'View or set the terminal settings on an endpoint',
+            usage: 'config',
+            options: `
+              --mesh      <name>      Specify a mesh by name
+                                      Can be omitted when only 1 mesh is joined
+              --ep        <name>      Specify an endpoint by name or UUID
+              --set-shell [command]   Set the command to start the shell program when a terminal is opened
+            `,
+            action: (args) => selectEndpoint(args['--ep']).then(
+              ep => api.getEndpointConfig(ep.id).then(config => {
+                var changed = false
+                if ('--set-shell' in args) {
+                  config.shell = args['--set-shell']
+                  changed = true
                 }
-                return api.setEndpointConfig(ep.id, config).then(flush)
-              }
-            })
+
+                if (changed) {
+                  return api.setEndpointConfig(ep.id, config).then(
+                    () => api.getEndpointConfig(ep.id).then(printConfig).then(flush)
+                  )
+                } else {
+                  printConfig()
+                  return flush()
+                }
+
+                function printConfig(config) {
+                  output(`Endpoint: ${ep.name} (${ep.id})\n`)
+                  output(`Shell: ${config.shell || '(default)'}\n`)
+                }
+              })
+            )
           },
 
-          'open': (argv) => {
-            var name = argv[1]
-            if (!name) throw 'missing endpoint name'
-            return selectEndpoint(name).then(ep => api.openTerminal(ep.id))
+          {
+            title: 'Connect to the terminal on an endpoint',
+            usage: 'open <endpoint name>',
+            options: `
+              --mesh  <name>  Specify a mesh by name
+                              Can be omitted when only 1 mesh is joined
+            `,
+            action: (args) => selectEndpoint(args['<endpoint name>']).then(
+              ep => api.openTerminal(ep.id)
+            )
           },
+        ]
 
-        }
       }).catch(err => {
+        println(err)
         error(err)
         return flush()
       })
 
     } catch (err) {
+      println(err)
       error(err)
-      return Promise.resolve(flush())
+      return flush()
     }
   }
 }
