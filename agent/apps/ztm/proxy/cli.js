@@ -19,7 +19,7 @@ export default function ({ app, api }) {
     }
 
     function flush() {
-      return pipeline($=>$.replaceStreamStart([buffer, new StreamEnd]))
+      return [buffer, new StreamEnd]
     }
 
     var endpoints = null
