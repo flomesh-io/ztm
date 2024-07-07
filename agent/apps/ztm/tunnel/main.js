@@ -1,28 +1,18 @@
 import initAPI from './api.js'
 import initCLI from './cli.js'
-import service, { responder, response } from './service.js'
+import service, { responder, response, cliResponder } from './service.js'
 
 export default function ({ app, mesh }) {
   var api = initAPI({ app, mesh })
   var cli = initCLI({ app, mesh, api })
 
   var $ctx
-  var $argv
 
   var gui = new http.Directory(os.path.join(app.root, 'gui'))
 
   var serveUser = service({
     '/cli': {
-      'CONNECT': pipeline($=>$
-        .acceptHTTPTunnel(req => {
-          var url = new URL(req.head.path)
-          $argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv')))
-          return new Message({ status: 200 })
-        }).to($=>$
-          .onStart(new Data)
-          .pipe(cli, () => [$argv])
-        )
-      ),
+      'CONNECT': cliResponder(cli),
     },
 
     '/api/endpoints': {
