@@ -1,3 +1,6 @@
+import cmdline from './cmdline.js'
+import service, { response, responder, cliResponder } from './service.js'
+
 export default function (rootDir, mountName, epInfo, meshEnv) {
   rootDir = os.path.resolve(rootDir)
 
@@ -240,6 +243,13 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
           connect,
           request,
           ...meshEnv.fs(provider, appname),
+        },
+        utils: {
+          parseArgv: cmdline,
+          createServer: service,
+          createResponse: response,
+          createResponder: responder,
+          createCLIResponder: cliResponder,
         },
       })
     }

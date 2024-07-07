@@ -1,18 +1,19 @@
 import initAPI from './api.js'
 import initCLI from './cli.js'
-import service, { responder, response, cliResponder } from './service.js'
 
-export default function ({ app, mesh }) {
+export default function ({ app, mesh, utils }) {
   var api = initAPI({ app, mesh })
-  var cli = initCLI({ app, mesh, api })
+  var cli = initCLI({ app, mesh, utils, api })
 
   var $ctx
 
   var gui = new http.Directory(os.path.join(app.root, 'gui'))
+  var response = utils.createResponse
+  var responder = utils.createResponder
 
-  var serveUser = service({
+  var serveUser = utils.createServer({
     '/cli': {
-      'CONNECT': cliResponder(cli),
+      'CONNECT': utils.createCLIResponder(cli),
     },
 
     '/api/endpoints': {
@@ -79,7 +80,7 @@ export default function ({ app, mesh }) {
     },
   })
 
-  var servePeer = service({
+  var servePeer = utils.createServer({
     '/api/inbound': {
       'GET': responder(() => api.allInbound(app.endpoint.id).then(
         ret => ret ? response(200, ret) : response(404)

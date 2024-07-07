@@ -1,4 +1,5 @@
 var $params
+var $argv
 
 export default function service(routes) {
   routes = Object.entries(routes).map(
@@ -32,6 +33,19 @@ export function responder(f) {
         return responseError(e)
       }
     })
+  )
+}
+
+export function cliResponder(p) {
+  return pipeline($=>$
+    .acceptHTTPTunnel(req => {
+      var url = new URL(req.head.path)
+      $argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv')))
+      return new Message({ status: 200 })
+    }).to($=>$
+      .onStart(new Data)
+      .pipe(p, () => [$argv])
+    )
   )
 }
 
