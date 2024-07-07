@@ -1,243 +1,47 @@
-import options from './options.js'
+import cmdline from './cmdline.js'
 
-var optionsGet = {
-  defaults: {
-    '--mesh': '',
-    '--endpoint': '',
-  },
-  shorthands: {
-    '--ep': '--endpoint',
-  }
-}
-
-var optionsInbound = {
-  defaults: {
-    ...optionsGet.defaults,
-    '--listen': [],
-    '--exit': [],
-  },
-  shorthands: {
-    ...optionsGet.shorthands,
-    '-l': '--listen',
-    '-e': '--exit',
-  }
-}
-
-var optionsOutbound = {
-  defaults: {
-    ...optionsGet.defaults,
-    '--target': [],
-    '--entrance': [],
-  },
-  shorthands: {
-    ...optionsGet.shorthands,
-    '-t': '--target',
-    '-e': '--entrance',
-  }
-}
-
-export default function ({ api, app, mesh }) {
-  var $argv
-
+export default function ({ app, api }) {
   return pipeline($=>$
-    .onStart(argv => void ($argv = argv))
-    .replaceStreamStart(
-      function () {
-        var buffer = new Data
-        var output = str => buffer.push(str)
-        return (
-          exec($argv, output).then(
-            [buffer, new StreamEnd]
-          ).catch(err => {
-            output('ztm: ')
-            output(err.message || err.toString())
-            output('\n')
-            return [buffer, new StreamEnd]
-          })
-        )
-      }
-    )
+    .onStart(argv => main(argv))
   )
 
-  function exec(argv, output) {
+  function main(argv) {
+    var buffer = new Data
+
+    function output(str) {
+      buffer.push(str)
+    }
+
+    function error(err) {
+      output('ztm: ')
+      output(err.message || err.toString())
+      output('\n')
+    }
+
+    function flush() {
+      return [buffer, new StreamEnd]
+    }
+
     var endpoints = null
-
-    try {
-      var command = readWord(argv, 'command')
-
-      var func = ({
-        get, describe, open, close,
-      })[command]
-
-      if (!func) throw `invalid command '${command}'`
-
-      return func(argv)
-
-    } catch (err) {
-      return Promise.reject(err)
-    }
-
-    function get(argv) {
-      var type = readObjectType(argv, 'get')
-      switch (type) {
-        case 'inbound': return getInbound(argv)
-        case 'outbound': return getOutbound(argv)
-        default: return errorObjectType(type, 'get')
-      }
-    }
-
-    function describe(argv) {
-      var type = readObjectType(argv, 'describe')
-      switch (type) {
-        case 'inbound': return describeInbound(argv)
-        case 'outbound': return describeOutbound(argv)
-        default: return errorObjectType(type, 'describe')
-      }
-    }
-
-    function open(argv) {
-      var type = readObjectType(argv, 'open')
-      switch (type) {
-        case 'inbound': return openInbound(argv)
-        case 'outbound': return openOutbound(argv)
-        default: return errorObjectType(type, 'open')
-      }
-    }
-
-    function close(argv) {
-      var type = readObjectType(argv, 'close')
-      switch (type) {
-        case 'inbound': return closeInbound(argv)
-        case 'outbound': return closeOutbound(argv)
-        default: return errorObjectType(type, 'close')
-      }
-    }
-
-    function getInbound(argv) {
-      var opts = parseOptions(optionsGet, argv, 'get inbound')
-      return selectEndpoint(opts).then(ep =>
-        api.allInbound(ep.id)
-      ).then(list => (
-        Promise.all(list.map(i =>
-          lookupEndpointNames(i.exits || []).then(exits => ({
-            ...i,
-            exits,
-          }))
-        )).then(list =>
-          printTable(list, {
-            'NAME': i => `${i.protocol}/${i.name}`,
-            'LISTENS': i => i.listens.map(l => `${l.ip}:${l.port}`).join(', '),
-            'EXITS': i => i.exits.join(', '),
-          })
-        )
-      ))
-    }
-
-    function getOutbound(argv) {
-      var opts = parseOptions(optionsGet, argv, 'get outbound')
-      return selectEndpoint(opts).then(ep =>
-        api.allOutbound(ep.id)
-      ).then(list => (
-        Promise.all(list.map(o =>
-          lookupEndpointNames(o.entrances || []).then(entrances => ({
-            ...o,
-            entrances,
-          }))
-        )).then(list =>
-          printTable(list, {
-            'NAME': o => `${o.protocol}/${o.name}`,
-            'TARGETS': o => o.targets.map(t => `${t.host}:${t.port}`).join(', '),
-            'ENTRANCES': o => o.entrances.join(', '),
-          })
-        )
-      ))
-    }
-
-    function describeInbound(argv) {
-      var meta = validateName(readWord(argv, 'inbound name', 'describe inbound'))
-      var opts = parseOptions(optionsGet, argv, 'describe inbound')
-      return selectEndpoint(opts).then(ep =>
-        api.getInbound(ep.id, meta.protocol, meta.name).then(obj => {
-          if (!obj) return
-          return lookupEndpointNames(obj.exits || []).then(exits => {
-            output(`Inbound ${obj.protocol}/${obj.name}\n`)
-            output(`Listens:\n`)
-            obj.listens.forEach(l => output(`  ${l.ip}:${l.port}\n`))
-            output(`Exits:\n`)
-            exits.forEach(e => output(`  ${e}\n`))
-            if (exits.length === 0) output(`  (all endpoints)\n`)
-          })
-        })
-      )
-    }
-
-    function describeOutbound(argv) {
-      var meta = validateName(readWord(argv, 'outbound name', 'describe outbound'))
-      var opts = parseOptions(optionsGet, argv, 'describe outbound')
-      return selectEndpoint(opts).then(ep =>
-        api.getOutbound(ep.id, meta.protocol, meta.name).then(obj => {
-          if (!obj) return
-          return lookupEndpointNames(obj.entrances || []).then(entrances => {
-            output(`Outbound ${obj.protocol}/${obj.name}\n`)
-            output(`Targets:\n`)
-            obj.targets.forEach(t => output(`  ${t.host}:${t.port}\n`))
-            output(`Entrances:\n`)
-            entrances.forEach(e => output(`  ${e}\n`))
-            if (entrances.length === 0) output(`  (all endpoints)\n`)
-          })
-        })
-      )
-    }
-
-    function openInbound(argv) {
-      var meta = validateName(readWord(argv, 'inbound name', 'open inbound'))
-      var opts = parseOptions(optionsInbound, argv, 'open inbound')
-      var listens = opts['--listen']
-      var exits = opts['--exit']
-      if (listens.length === 0) return errorInput(`at least one '--listen' option required`)
-      listens = listens.map(l => validateHostPort(l)).map(({ host, port }) => ({ ip: host, port }))
-      return lookupEndpointIDs(exits).then(list => {
-        exits = list
-        return selectEndpoint(opts)
-      }).then(ep =>
-        api.setInbound(ep.id, meta.protocol, meta.name, listens, exits)
-      )
-    }
-
-    function openOutbound(argv) {
-      var meta = validateName(readWord(argv, 'outbound name', 'open outbound'))
-      var opts = parseOptions(optionsOutbound, argv, 'open outbound')
-      var targets = opts['--target']
-      var entrances = opts['--entrance']
-      if (targets.length === 0) return errorInput(`at least one '--target' option required`)
-      targets = targets.map(t => validateHostPort(t))
-      return lookupEndpointIDs(entrances).then(list => {
-        entrances = list
-        return selectEndpoint(opts)
-      }).then(ep =>
-        api.setOutbound(ep.id, meta.protocol, meta.name, targets, entrances)
-      )
-    }
-
-    function closeInbound(argv) {
-      var meta = validateName(readWord(argv, 'inbound name', 'close inbound'))
-      var opts = parseOptions(optionsGet, argv, 'close inbound')
-      return selectEndpoint(opts).then(ep =>
-        api.deleteInbound(ep.id, meta.protocol, meta.name)
-      )
-    }
-
-    function closeOutbound(argv) {
-      var meta = validateName(readWord(argv, 'outbound name', 'close outbound'))
-      var opts = parseOptions(optionsGet, argv, 'close outbound')
-      return selectEndpoint(opts).then(ep =>
-        api.deleteOutbound(ep.id, meta.protocol, meta.name)
-      )
-    }
 
     function allEndpoints() {
       if (endpoints) return Promise.resolve(endpoints)
       return api.allEndpoints().then(list => (endpoints = list))
+    }
+
+    function selectEndpoint(name) {
+      if (name) {
+        return allEndpoints().then(endpoints => {
+          var ep = endpoints.find(ep => ep.id === name)
+          if (ep) return ep
+          var list = endpoints.filter(ep => ep.name === name)
+          if (list.length === 1) return list[0]
+          if (list.length === 0) throw `Endpoint '${name}' not found`
+          throw `Ambiguous endpoint name '${name}'`
+        })
+      } else {
+        return Promise.resolve(app.endpoint)
+      }
     }
 
     function lookupEndpointNames(list) {
@@ -255,48 +59,229 @@ export default function ({ api, app, mesh }) {
           if (endpoints.some(ep => ep.id === name)) return name
           var list = endpoints.filter(ep => ep.name === name)
           if (list.length === 1) return list[0].id
-          if (list.length === 0) throw `endpoint '${name}' not found`
+          if (list.length === 0) throw `Endpoint '${name}' not found`
           return list.map(ep => ep.id)
         })
       ))
     }
 
-    function selectEndpoint(opts, endpoints) {
-      var name = opts['--endpoint']
-      if (name) {
-        return allEndpoints().then(endpoints => {
-          var ep = endpoints.find(ep => ep.id === name)
-          if (ep) return ep
-          var list = endpoints.filter(ep => ep.name === name)
-          if (list.length === 1) return list[0]
-          if (list.length === 0) throw `endpoint '${name}' not found`
-          throw `ambiguous endpoint name '${name}'`
+    try {
+      return cmdline(['ztm tunnel', ...argv], {
+        help: text => Promise.resolve(output(text + '\n')),
+        commands: [
+
+          {
+            title: 'List objects of the specified type',
+            usage: 'get <object type>',
+            options: `
+              --mesh  <name>  Specify a mesh by name
+              --ep    <name>  Specify an endpoint by name or UUID
+            `,
+            action: (args) => {
+              var ep = args['--ep']
+              switch (validateObjectType(args, 'get')) {
+                case 'inbound': return getInbound(ep)
+                case 'outbound': return getOutbound(ep)
+              }
+            }
+          },
+
+          {
+            title: 'Show detailed info of the specified object',
+            usage: 'describe <object type> <object name>',
+            options: `
+              --mesh  <name>  Specify a mesh by name
+              --ep    <name>  Specify an endpoint by name or UUID
+            `,
+            action: (args) => {
+              var ep = args['--ep']
+              var name = args['<object name>']
+              switch (validateObjectType(args, 'describe')) {
+                case 'inbound': return describeInbound(ep, name)
+                case 'outbound': return describeOutbound(ep, name)
+              }
+            }
+          },
+
+          {
+            title: 'Create an object of the specified type',
+            usage: 'open <object type> <object name>',
+            options: `
+              --mesh      <name>            Specify a mesh by name
+              --ep        <name>            Specify an endpoint by name or UUID
+
+              For inbound end:
+
+              --listen    <[ip:]port ...>   Set local ports to listen on
+              --exit      <endpoint ...>    Select endpoints as the outbound end
+
+              For outbound end:
+
+              --target    <host:port ...>   Set targets to connect to
+              --entrance  <endpoint ...>    Select endpoints as the inbound end
+            `,
+            action: (args) => {
+              var ep = args['--ep']
+              var name = args['<object name>']
+              switch (validateObjectType(args, 'open')) {
+                case 'inbound': return openInbound(ep, name, args['--listen'], args['--exit'])
+                case 'outbound': return openOutbound(ep, name, args['--target'], args['--entrance'])
+              }
+            }
+          },
+
+          {
+            title: 'Delete the specified object',
+            usage: 'close <object type> <object name>',
+            options: `
+              --mesh  <name>  Specify a mesh by name
+              --ep    <name>  Specify an endpoint by name or UUID
+            `,
+            action: (args) => {
+              var ep = args['--ep']
+              var name = args['<object name>']
+              switch (validateObjectType(args, 'close')) {
+                case 'inbound': return closeInbound(ep, name)
+                case 'outbound': return closeOutbound(ep, name)
+              }
+            }
+          },
+        ]
+
+      }).then(flush).catch(err => {
+        error(err)
+        return flush()
+      })
+
+    } catch (err) {
+      error(err)
+      return Promise.resolve(flush())
+    }
+
+    function getInbound(epName) {
+      return selectEndpoint(epName).then(ep =>
+        api.allInbound(ep.id)
+      ).then(list => (
+        Promise.all(list.map(i =>
+          lookupEndpointNames(i.exits || []).then(exits => ({
+            ...i,
+            exits,
+          }))
+        )).then(list =>
+          printTable(list, {
+            'NAME': i => `${i.protocol}/${i.name}`,
+            'LISTENS': i => i.listens.map(l => `${l.ip}:${l.port}`).join(', '),
+            'EXITS': i => i.exits.join(', '),
+          })
+        )
+      ))
+    }
+
+    function getOutbound(epName) {
+      return selectEndpoint(epName).then(ep =>
+        api.allOutbound(ep.id)
+      ).then(list => (
+        Promise.all(list.map(o =>
+          lookupEndpointNames(o.entrances || []).then(entrances => ({
+            ...o,
+            entrances,
+          }))
+        )).then(list =>
+          printTable(list, {
+            'NAME': o => `${o.protocol}/${o.name}`,
+            'TARGETS': o => o.targets.map(t => `${t.host}:${t.port}`).join(', '),
+            'ENTRANCES': o => o.entrances.join(', '),
+          })
+        )
+      ))
+    }
+
+    function describeInbound(epName, tunnelName) {
+      var obj = validateObjectName(tunnelName)
+      return selectEndpoint(epName).then(ep =>
+        api.getInbound(ep.id, obj.protocol, obj.name).then(obj => {
+          if (!obj) return
+          return lookupEndpointNames(obj.exits || []).then(exits => {
+            output(`Inbound ${obj.protocol}/${obj.name}\n`)
+            output(`Endpoint: ${ep.name} (${ep.id})`)
+            output(`Listens:\n`)
+            obj.listens.forEach(l => output(`  ${l.ip}:${l.port}\n`))
+            output(`Exits:\n`)
+            exits.forEach(e => output(`  ${e}\n`))
+            if (exits.length === 0) output(`  (all endpoints)\n`)
+          })
         })
-      } else {
-        return Promise.resolve(app.endpoint)
-      }
+      )
     }
 
-    function readWord(argv, meaning, command) {
-      var word = argv.shift()
-      if (!word || word.startsWith('-')) return errorUsage(`missing ${meaning}`, command)
-      return word
+    function describeOutbound(epName, tunnelName) {
+      var obj = validateObjectName(tunnelName)
+      return selectEndpoint(epName).then(ep =>
+        api.getOutbound(ep.id, obj.protocol, obj.name).then(obj => {
+          if (!obj) return
+          return lookupEndpointNames(obj.entrances || []).then(entrances => {
+            output(`Outbound ${obj.protocol}/${obj.name}\n`)
+            output(`Endpoint: ${ep.name} (${ep.id})`)
+            output(`Targets:\n`)
+            obj.targets.forEach(t => output(`  ${t.host}:${t.port}\n`))
+            output(`Entrances:\n`)
+            entrances.forEach(e => output(`  ${e}\n`))
+            if (entrances.length === 0) output(`  (all endpoints)\n`)
+          })
+        })
+      )
     }
 
-    function readObjectType(argv, command) {
-      var type = readWord(argv, 'object type', command)
-      switch (type) {
+    function openInbound(epName, tunnelName, listens, exits) {
+      var obj = validateObjectName(tunnelName)
+      if (!listens || listens.length === 0) throw `Option '--listen' is required`
+      listens = listens.map(l => validateHostPort(l)).map(({ host, port }) => ({ ip: host, port }))
+      return lookupEndpointIDs(exits || []).then(
+        exits => selectEndpoint(epName).then(
+          ep => api.setInbound(ep.id, obj.protocol, obj.name, listens, exits)
+        )
+      )
+    }
+
+    function openOutbound(epName, tunnelName, targets, entrances) {
+      var obj = validateObjectName(tunnelName)
+      if (!targets || targets.length === 0) throw `Option '--target' is required`
+      targets = targets.map(t => validateHostPort(t))
+      return lookupEndpointIDs(entrances || []).then(
+        entrances => selectEndpoint(epName).then(
+          ep => api.setOutbound(ep.id, obj.protocol, obj.name, targets, entrances)
+        )
+      )
+    }
+
+    function closeInbound(epName, tunnelName) {
+      var obj = validateObjectName(tunnelName)
+      return selectEndpoint(epName).then(ep =>
+        api.deleteInbound(ep.id, obj.protocol, obj.name)
+      )
+    }
+
+    function closeOutbound(epName, tunnelName) {
+      var obj = validateObjectName(tunnelName)
+      return selectEndpoint(epName).then(ep =>
+        api.deleteOutbound(ep.id, obj.protocol, obj.name)
+      )
+    }
+
+    function validateObjectType(args, command) {
+      var ot = args['<object type>']
+      switch (ot) {
         case 'inbound':
         case 'in':
           return 'inbound'
         case 'outbound':
         case 'out':
           return 'outbound'
-        default: return errorUsage(`unknown object type '${type}'`, command)
+        default: throw `Invalid object type '${ot}'. Type 'ztm tunnel ${command} for help.'`
       }
     }
 
-    function validateName(name) {
+    function validateObjectName(name) {
       if (!name) return
       var segs = name.split('/')
       if (segs.length === 2) {
@@ -307,7 +292,7 @@ export default function ({ api, app, mesh }) {
           }
         }
       }
-      return errorInput(`invalid inbound/outbound name '${name}'`)
+      throw `Invalid inbound/outbound name '${name}'`
     }
 
     function validateHostPort(addr) {
@@ -320,17 +305,9 @@ export default function ({ api, app, mesh }) {
         var port = addr
       }
       port = Number.parseInt(port)
-      if (Number.isNaN(port)) return errorInput(`invalid port number in '${addr}'`)
+      if (Number.isNaN(port)) throw `Invalid port number in '${addr}'`
       if (!host) host = '127.0.0.1'
       return { host, port }
-    }
-
-    function parseOptions(meta, argv, command) {
-      try {
-        return options([null, ...argv], meta)
-      } catch (err) {
-        throw `${err.toString()}. Type 'ztm pass help ${command}' for help.`
-      }
     }
 
     function printTable(data, columns, indent) {
@@ -354,18 +331,6 @@ export default function ({ api, app, mesh }) {
         row.forEach((v, i) => output(v.padEnd(colSizes[i]) + '  '))
         output('\n')
       })
-    }
-
-    function errorInput(msg) {
-      throw msg
-    }
-
-    function errorUsage(msg, command) {
-      throw `${msg}. Type 'ztm pass ${command ? 'help ' + command : 'help'}' for help.`
-    }
-
-    function errorObjectType(type, command) {
-      errorUsage(`invalid object type '${type}' for command '${command}'`, command)
     }
   }
 }
