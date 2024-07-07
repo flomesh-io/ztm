@@ -1,6 +1,4 @@
-import cmdline from './cmdline.js'
-
-export default function ({ app, api }) {
+export default function ({ app, api, utils }) {
   return pipeline($=>$
     .onStart(argv => main(argv))
   )
@@ -66,8 +64,9 @@ export default function ({ app, api }) {
     }
 
     try {
-      return cmdline(['ztm tunnel', ...argv], {
+      return utils.parseArgv(['ztm tunnel', ...argv], {
         help: text => Promise.resolve(output(text + '\n')),
+        notes: objectTypeNotes + objectNameNotes,
         commands: [
 
           {
@@ -77,6 +76,7 @@ export default function ({ app, api }) {
               --mesh  <name>  Specify a mesh by name
               --ep    <name>  Specify an endpoint by name or UUID
             `,
+            notes: objectTypeNotes,
             action: (args) => {
               var ep = args['--ep']
               switch (validateObjectType(args, 'get')) {
@@ -93,6 +93,7 @@ export default function ({ app, api }) {
               --mesh  <name>  Specify a mesh by name
               --ep    <name>  Specify an endpoint by name or UUID
             `,
+            notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
               var ep = args['--ep']
               var name = args['<object name>']
@@ -120,6 +121,7 @@ export default function ({ app, api }) {
               --target    <host:port ...>   Set targets to connect to
               --entrance  <endpoint ...>    Select endpoints as the inbound end
             `,
+            notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
               var ep = args['--ep']
               var name = args['<object name>']
@@ -137,6 +139,7 @@ export default function ({ app, api }) {
               --mesh  <name>  Specify a mesh by name
               --ep    <name>  Specify an endpoint by name or UUID
             `,
+            notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
               var ep = args['--ep']
               var name = args['<object name>']
@@ -203,7 +206,7 @@ export default function ({ app, api }) {
           if (!obj) return
           return lookupEndpointNames(obj.exits || []).then(exits => {
             output(`Inbound ${obj.protocol}/${obj.name}\n`)
-            output(`Endpoint: ${ep.name} (${ep.id})`)
+            output(`Endpoint: ${ep.name} (${ep.id})\n`)
             output(`Listens:\n`)
             obj.listens.forEach(l => output(`  ${l.ip}:${l.port}\n`))
             output(`Exits:\n`)
@@ -221,7 +224,7 @@ export default function ({ app, api }) {
           if (!obj) return
           return lookupEndpointNames(obj.entrances || []).then(entrances => {
             output(`Outbound ${obj.protocol}/${obj.name}\n`)
-            output(`Endpoint: ${ep.name} (${ep.id})`)
+            output(`Endpoint: ${ep.name} (${ep.id})\n`)
             output(`Targets:\n`)
             obj.targets.forEach(t => output(`  ${t.host}:${t.port}\n`))
             output(`Entrances:\n`)
@@ -334,3 +337,17 @@ export default function ({ app, api }) {
     }
   }
 }
+
+var objectTypeNotes = `
+  Object Types:
+
+    inbound  in    Inbound end of a tunnel
+    outbound out   Outbound end of a tunnel
+`
+
+var objectNameNotes = `
+  Object Names:
+
+    tcp/<name>     Name for a TCP tunnel
+    udp/<name>     Name for a UDP tunnel
+`

@@ -1,4 +1,4 @@
-export default function (argv, { commands, help }) {
+export default function (argv, { commands, notes, help }) {
   var program = argv[0]
   argv = argv.slice(1)
 
@@ -33,6 +33,9 @@ export default function (argv, { commands, help }) {
       } else {
         lines.push(`Usage: ${program} ${cmd.usage}`)
       }
+      if (cmd.notes) {
+        lines.push('', stripIndentation(cmd.notes))
+      }
     } else {
       var maxCommandWidth = 0
       commands.forEach(cmd => {
@@ -44,6 +47,9 @@ export default function (argv, { commands, help }) {
       commands.forEach(cmd => {
         lines.push(`  ${program} ${cmd.usage.padEnd(maxCommandWidth)}   ${cmd.title}`)
       })
+      if (notes) {
+        lines.push('', stripIndentation(notes))
+      }
       lines.push('', `Type '${program} help <command>' for detailed info.`, '')
     }
     return help(lines.join('\n'), pattern.slice(0, best))

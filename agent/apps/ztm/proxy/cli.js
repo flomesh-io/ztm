@@ -1,6 +1,4 @@
-import cmdline from './cmdline.js'
-
-export default function ({ app, api }) {
+export default function ({ app, api, utils }) {
   return pipeline($=>$
     .onStart(argv => main(argv))
   )
@@ -45,7 +43,7 @@ export default function ({ app, api }) {
     }
 
     try {
-      return cmdline(['ztm proxy', ...argv], {
+      return utils.parseArgv(['ztm proxy', ...argv], {
         help: text => Promise.resolve(output(text + '\n')),
         commands: [
           {
@@ -53,7 +51,6 @@ export default function ({ app, api }) {
             usage: 'config',
             options: `
               --mesh          <name>            Specify a mesh by name
-                                                Can be omitted when only 1 mesh is joined
               --ep            <name>            Specify an endpoint by name or UUID
               --set-listen    [[ip:]port]       Open/close the proxy port
               --add-target    <domain|ip ...>   Add targets where traffic leaving from the endpoint can go

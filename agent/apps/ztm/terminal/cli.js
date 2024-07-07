@@ -1,6 +1,4 @@
-import cmdline from './cmdline.js'
-
-export default function ({ app, api }) {
+export default function ({ app, api, utils }) {
   var $handler
 
   return pipeline($=>$
@@ -52,7 +50,7 @@ export default function ({ app, api }) {
     }
 
     try {
-      return cmdline(['ztm terminal', ...argv], {
+      return utils.parseArgv(['ztm terminal', ...argv], {
         help: text => {
           output(text + '\n')
           return flush()
@@ -64,7 +62,6 @@ export default function ({ app, api }) {
             usage: 'config',
             options: `
               --mesh      <name>      Specify a mesh by name
-                                      Can be omitted when only 1 mesh is joined
               --ep        <name>      Specify an endpoint by name or UUID
               --set-shell [command]   Set the command to start the shell program when a terminal is opened
             `,
@@ -81,7 +78,7 @@ export default function ({ app, api }) {
                     () => api.getEndpointConfig(ep.id).then(printConfig).then(flush)
                   )
                 } else {
-                  printConfig()
+                  printConfig(config)
                   return flush()
                 }
 
