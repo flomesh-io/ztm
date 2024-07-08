@@ -3,16 +3,12 @@ import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
-import PipyProxyService from '@/service/PipyProxyService';
-import MeshSelector from '@/views/mesh/common/MeshSelector.vue'
 import { openWebview } from '@/utils/webview';
-import icon from "@/assets/img/apps/broswer.png";
 
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
 const emits = defineEmits(['open','close'])
-const pipyProxyService = new PipyProxyService();
 const broswer = ref({
 	mesh:null,
 	show:false,
@@ -23,11 +19,6 @@ const broswer = ref({
 const openBroswer = () => {
 	broswer.value.show = true;
 	emits('open')
-	pipyProxyService.getMeshes()
-		.then(res => {
-			store.commit('account/setMeshes', res);
-		})
-		.catch(err => console.log('Request Failed', err)); 
 }
 const closeBroswer = () => {
 	broswer.value.show = false;
@@ -39,47 +30,10 @@ const open = () => {
 		proxy: !!broswer.value.port?`socks5://${broswer.value.port?.listen?.ip||'127.0.0.1'}:${broswer.value.port?.listen?.port}`:''
 	})
 }
-const getPorts = (mesh) => {
-	broswer.value.mesh = mesh;
-	if(!broswer.value?.mesh?.name){
-		return
-	}
-	pipyProxyService.getPorts({
-		mesh:broswer.value?.mesh?.name,
-		ep:broswer.value?.mesh?.agent?.id,
-	})
-		.then(res => {
-			console.log(res)
-			broswer.value.ports = res || [];
-			broswer.value.ports.forEach((p)=>{
-				p.id = p.listen.port;
-				p.name = p.listen.port;
-			})
-		})
-		.catch(err => {
-		}); 
-}
 </script>
 
 <template>
-	<div v-if="!broswer.show" @click="openBroswer" class="col-3 py-4 relative text-center">
-		<img :src="icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-		<div class="mt-1">
-			<b class="text-white opacity-90">Broswer</b>
-		</div>
-	</div>
-	<div class="col-12" v-else>
-		<div class="text-center">
-			<InputGroup class="search-bar" style="border-radius: 8px;" >
-			<MeshSelector 
-				v-if="broswer.show"
-				:form="false" 
-				:full="true" 
-				@select="getPorts"
-				innerClass="flex "/>
-				<Select v-if="broswer.mesh" size="small" class="w-full flex small"  v-model="broswer.port" :options="broswer.ports" optionLabel="name" :filter="broswer.ports.length>8" placeholder="Proxy"/>
-			</InputGroup>					
-		</div>
+	<div class="col-12">
 		<div class="mt-3 text-center">
 			<InputGroup class="search-bar" style="border-radius: 8px;" >
 				

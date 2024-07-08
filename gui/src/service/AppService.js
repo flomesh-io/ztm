@@ -1,4 +1,4 @@
-import { request,requestNM } from './common/request';
+import { request,requestNM,getUrl } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import PipyProxyService from '@/service/PipyProxyService';
@@ -21,10 +21,38 @@ export default class AppService {
 	getEpApps(mesh, ep) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps`);
 	}
-	getApp({
-		mesh, ep, provider, app
+	getAppUrl({
+		mesh, provider, app
 	}) {
-		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`);
+		return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
+	}
+	startApp({
+		mesh, ep, provider, app, body
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
+			isRunning: true
+		});
+	}
+	stopApp({
+		mesh, ep, provider, app, body
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
+			isRunning: false
+		});
+	}
+	pubApp({
+		mesh, ep, provider, app, body
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
+			isPublished: true
+		});
+	}
+	unpubApp({
+		mesh, ep, provider, app, body
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
+			isPublished: false
+		});
 	}
 	setApp({
 		mesh, ep, provider, app, body

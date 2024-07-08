@@ -1,11 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
-import { apps } from '@/utils/app-store'
+import { apps, appMapping } from '@/utils/app-store'
 import { openWebview } from '@/utils/webview';
-import Broswer from './shortcut/Broswer.vue';
 import Term from './shortcut/Term.vue';
 import Console from './shortcut/Console.vue';
 import Store from './shortcut/Store.vue';
@@ -21,6 +20,9 @@ const hide = () => {
 const clear = () => {
 }
 
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
 
 const allApps = ref([]);
 const upload = (d)=>{
@@ -35,8 +37,15 @@ const upload = (d)=>{
 		}
 	}
 }
-const loaddata = async (open, timer) => {
-	allApps.value = await appService.loadApps();
+const loaddata = () => {
+	console.log("load apps",[selectedMesh.value?.name,selectedMesh.value?.agent?.id])
+	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
+		console.log("start getApps")
+		allApps.value = res;
+		console.log(res)
+	}).catch((e)=>{
+		console.log(e)
+	});
 }
 const innerApps = computed(()=>{
 	const rtn = [];
@@ -63,8 +72,36 @@ const sysApp = 2;
 const appPage = computed(()=>(page)=>{
 	return (allApps.value||[]).filter((n,i) => i>=page*appPageSize && i< (page+sysApp)*appPageSize);
 })
+const selectApp = ref();
 const openAppContent = (app) => {
-	openWebview(app)
+	if(!mapping.value[`${app?.provider}/${app?.name}`]?.custom){
+		selectApp.value = null;
+		const options = {
+			mesh:selectedMesh.value?.name,
+			ep:selectedMesh.value?.agent?.id,
+			provider:app.provider||'ztm',
+			app:app.name,
+			body: {}
+		}
+		const url = appService.getAppUrl(options);
+		console.log(url)
+		const webviewOptions = {
+			url,
+			name:mapping.value[`${app?.provider}/${app.name}`]?.name || app.name,
+			width:app.width,
+			height:app.height,
+			proxy:''
+		}
+		if(!app.isRunning){
+			appService.startApp(options).then(()=>{
+				openWebview(webviewOptions);
+			})
+		} else {
+			openWebview(webviewOptions);
+		}
+	} else {
+		selectApp.value = app;
+	}
 }
 const installAPP = (app) => {
 	try{
@@ -80,6 +117,10 @@ const installAPP = (app) => {
 	}
 }
 const current = ref(false);
+onMounted(()=>{
+	loaddata();
+})
+const mapping = ref(appMapping)
 </script>
 
 <template>
@@ -88,8 +129,8 @@ const current = ref(false);
 	    <div class="container_terminal"></div>
 			<div class="flex actions">
 				<div class="flex-item">
-				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-lock-open" 
-				            offIcon="pi pi-lock"  :onLabel="'Manage'" :offLabel="'.'"/>
+				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
+				            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
 				</div>
 				<div class="flex-item text-right">
 					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
@@ -97,27 +138,31 @@ const current = ref(false);
 					</Button>
 				</div>
 			</div>
-	    <div class="terminal_body py-2 px-4">
+	    <div class="terminal_body py-2 px-4" v-if="!!mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom">
+				<component :is="mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom" @close="()=>selectApp=null"/>
+			</div>
+	    <div class="terminal_body py-2 px-4" v-else-if="!manage">
 				<Carousel :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
 						<template #item="slotProps">
 							<div class="pt-1" style="min-height: 220px;">
 								<div class="grid text-center" >
-										<Console v-if="!current" />
-										<Broswer @open="() => current='Broswer'" @close="() => current=false"/>
-										<Term v-if="!current"/>
-										<ZtmLog v-if="!current" />
-										<EpLog v-if="!current" />
-										<div v-if="!current" :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)">
-											<i @click.stop="removeApp(app)" v-show="manage" class="pi pi-times  bg-primary-500 absolute pointer text-white-alpha-60 " style="width:16px;height: 16px;line-height: 16px;;border-radius: 50%; right: 16px;top: 12px;"  />
-											<img :src="app.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+										<Console />
+										<!-- <Broswer @open="() => current='Broswer'" @close="() => current=false"/> -->
+										<Term/>
+										<ZtmLog />
+										<EpLog />
+										<div :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)">
+											
+											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
 											<div class="mt-1">
-												<b class="text-white opacity-90">{{app.name}}</b>
+												<!-- <Badge value="3" severity="danger"></Badge> -->
+												<b class="text-white opacity-90">{{ mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b>
 											</div>
 										</div>
-										<Store v-if="!current" />
-										
+										<Store />
+										<!-- 
 										<div v-if="!current" :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name]}" @click="installAPP(app)" class="col-3 py-4 relative text-center " v-for="(app) in innerApps">
 											<img :src="app.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
@@ -125,11 +170,30 @@ const current = ref(false);
 											<div class="mt-1">
 												<b class="text-white opacity-90 white-space-nowrap"><i class="pi pi-cloud-download mr-1" />{{app.name}}</b>
 											</div>
-										</div>
+										</div> -->
 								</div>
 							</div>
 						</template>
 				</Carousel>
+	    </div>
+	    <div class="terminal_body py-2 px-4" v-else>
+				<div class="grid text-center" >
+						<div class="col-12 py-4 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(innerApps)">
+							<div class="flex">
+								<img :src="app.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{app.name}}</b> | Provider</div>
+								<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
+										animationDuration="2s" aria-label="Custom ProgressSpinner" />
+								<Button  v-tooltip.left="'Clear'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								</Button>
+								<Button  v-tooltip.left="'Clear'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								</Button>
+								<Button  v-tooltip.left="'Clear'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								</Button>
+							</div>
+						</div>
+
+				</div>
 	    </div>
 	</div>
 	</ScrollPanel>

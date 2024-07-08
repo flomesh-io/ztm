@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-		"dev:browser": "vite apps/ztm/browser",
+    "dev:browser": "vite apps/ztm/browser",
     "tauri": "tauri",
     "build": "vite build --emptyOutDir --outDir ../agent/gui",
     "build:base": "vite build --emptyOutDir --outDir ../agent/gui && tauri build",

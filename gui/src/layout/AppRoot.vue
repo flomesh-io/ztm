@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed,watch, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
@@ -19,6 +19,7 @@ import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { resourceDir } from '@tauri-apps/api/path';
+import { openWebview } from '@/utils/webview';
 
 const store = useStore();
 const playing = ref(false);
@@ -185,6 +186,65 @@ const upload = (d)=>{
 		}
 	}
 }
+const selectedMesh = ref(null);
+const changeMesh = (d) => {
+	store.commit('account/setSelectedMesh', d?.value||d);
+}
+
+const storeMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
+watch(()=>storeMesh,()=>{
+	selectedMesh.value = storeMesh.value
+},{
+	deep:true
+})
+
+const actions = ref([
+    {
+        label: 'Actions',
+        items: [
+            {
+                label: 'Join Mesh',
+                icon: 'pi pi-plus',
+								command: ()=>{
+									openWebview({
+										url:'/#/mesh',
+										name:'Console',
+										width:1280,
+										height:860,
+										proxy:''
+									})
+								}
+            },
+            {
+                label: 'Find Apps',
+                icon: 'pi pi-search',
+								command: ()=>{
+									openWebview({
+										url:'/#/store/apps',
+										name:'Console',
+										width:1280,
+										height:860,
+										proxy:''
+									})
+								}
+            },
+            {
+                label: 'Import App',
+                icon: 'pi pi-upload',
+								command: ()=>{
+									
+								}
+            }
+        ]
+    }
+]);
+
+const addmenu = ref();
+const toggle = (event) => {
+    addmenu.value.toggle(event);
+};
 </script>
 
 <template>
@@ -210,8 +270,10 @@ const upload = (d)=>{
 				<Select 
 				v-else
 				:options="meshes" 
-				optionLabel="label" 
+				optionLabel="name" 
 				:filter="meshes.length>10"
+				v-model="selectedMesh"
+				@change="changeMesh"
 				:loading="loading"
 				:placeholder="placeholder" 
 				class="transparent">
@@ -254,9 +316,13 @@ const upload = (d)=>{
 			</div> -->
 
 			<div class="flex-item">
-				<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
+				<Button @click="toggle" aria-haspopup="true" aria-controls="addmenu" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
-				</FileUploderSmall>
+				</Button>
+				<Menu ref="addmenu" id="addmenu" :model="actions" :popup="true" />
+			<!-- 	<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
+					<i class="pi pi-plus text-3xl"  />
+				</FileUploderSmall> -->
 		
 			</div>
 			
