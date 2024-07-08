@@ -60,7 +60,6 @@ export default function ({ app, mesh }) {
           onExit: () => new StreamEnd
         }
       )
-      .handleStreamEnd(() => println('end'))
     )
   )
 

@@ -104,13 +104,11 @@ export default function ({ app, api, utils }) {
         ]
 
       }).catch(err => {
-        println(err)
         error(err)
         return flush()
       })
 
     } catch (err) {
-      println(err)
       error(err)
       return flush()
     }
