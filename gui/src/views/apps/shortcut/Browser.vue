@@ -30,6 +30,9 @@ const open = () => {
 		proxy: !!broswer.value.port?`socks5://${broswer.value.port?.listen?.ip||'127.0.0.1'}:${broswer.value.port?.listen?.port}`:''
 	})
 }
+const shortcut = () => {
+	
+}
 </script>
 
 <template>
@@ -45,7 +48,10 @@ const open = () => {
 			<div class="flex-item pr-2">
 				<Button severity="secondary" class="w-full" style="height: 30px;" @click="closeBroswer" label="Back"/>
 			</div>
-			<div class="flex-item pl-2" style="flex: 2;">
+			<div class="flex-item pr-2">
+				<Button :disabled="!broswer.url" class="w-full" style="height: 30px;" @click="shortcut" label="Shortcut"/>
+			</div>
+			<div class="flex-item pl-2" >
 				<Button class="w-full" style="height: 30px;" :disabled="!broswer.url" label="Open" @click="open"/>
 		</div>
 		</div>

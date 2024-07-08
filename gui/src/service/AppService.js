@@ -27,14 +27,14 @@ export default class AppService {
 		return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
 	}
 	startApp({
-		mesh, ep, provider, app, body
+		mesh, ep, provider, app
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
 			isRunning: true
 		});
 	}
 	stopApp({
-		mesh, ep, provider, app, body
+		mesh, ep, provider, app
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
 			isRunning: false
