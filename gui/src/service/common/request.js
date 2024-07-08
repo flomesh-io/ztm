@@ -269,6 +269,7 @@ function parseUrlParams(url) {
 export {
   METHOD,
   AUTH_TYPE,
+	getUrl,
   request,
 	requestNM,
   merge,

@@ -80,21 +80,21 @@ const loginGuard = (to, from, next, options) => {
 		if(to.path.indexOf("/app") == -1){
 			resize(1280,860,true);
 		}
-		if(to.path != "/"){
-			const _meshes = store.getters['account/meshes']
-			if(!!_meshes && _meshes.length>0){
-				next();
-			} else {
-				pipyProxyService.getMeshes()
-					.then(res => {
-						next();
-						store.commit('account/setMeshes', res);
-					})
-					.catch(err => console.log('Request Failed', err)); 
-			}
-		} else {
-			next();
-		}
+		// if(to.path != "/"){
+		// 	const _meshes = store.getters['account/meshes']
+		// 	if(!!_meshes && _meshes.length>0){
+		// 		next();
+		// 	} else {
+		// 		pipyProxyService.getMeshes()
+		// 			.then(res => {
+		// 				next();
+		// 				store.commit('account/setMeshes', res);
+		// 			})
+		// 			.catch(err => console.log('Request Failed', err)); 
+		// 	}
+		// } else {
+		next();
+		// }
 	}
 };
 
