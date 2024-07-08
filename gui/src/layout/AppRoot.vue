@@ -279,7 +279,7 @@ const toggle = (event) => {
 				class="transparent">
 				    <template #dropdownicon>
 							<i v-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
-							<i v-else class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
+							<i v-else v-tooltip="placeholder" class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
 				    </template>
 				    <template #option="slotProps">
 				        <div class="flex align-items-center">
@@ -291,7 +291,7 @@ const toggle = (event) => {
 							No mesh.
 				    </template>
 						<template #value="slotProps">
-								<div v-if="slotProps.value" class="flex align-items-center">
+								<div  v-if="slotProps.value" class="flex align-items-center">
 										<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
 										<div>{{ decodeURI(slotProps.value.name) }}</div>
 								</div>

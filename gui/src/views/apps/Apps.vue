@@ -81,7 +81,6 @@ const openAppContent = (app) => {
 			ep:selectedMesh.value?.agent?.id,
 			provider:app.provider||'ztm',
 			app:app.name,
-			body: {}
 		}
 		const url = appService.getAppUrl(options);
 		console.log(url)
@@ -95,6 +94,7 @@ const openAppContent = (app) => {
 		if(!app.isRunning){
 			appService.startApp(options).then(()=>{
 				openWebview(webviewOptions);
+				loaddata();
 			})
 		} else {
 			openWebview(webviewOptions);
@@ -102,6 +102,26 @@ const openAppContent = (app) => {
 	} else {
 		selectApp.value = app;
 	}
+}
+const startApp = (app) => {
+	appService.startApp({
+		mesh:selectedMesh.value?.name,
+		ep:selectedMesh.value?.agent?.id,
+		provider:app.provider||'ztm',
+		app:app.name,
+	}).then(()=>{
+		loaddata();
+	})
+}
+const stopApp = (app) => {
+	appService.stopApp({
+		mesh:selectedMesh.value?.name,
+		ep:selectedMesh.value?.agent?.id,
+		provider:app.provider||'ztm',
+		app:app.name,
+	}).then(()=>{
+		loaddata();
+	})
 }
 const installAPP = (app) => {
 	try{
@@ -132,6 +152,9 @@ const mapping = ref(appMapping)
 				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
 				            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
 				</div>
+				<div class="flex-item text-center text-white" style="line-height: 30px;">
+					{{selectedMesh?.name}}
+				</div>
 				<div class="flex-item text-right">
 					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
 						<i class="pi pi-times " />
@@ -151,12 +174,12 @@ const mapping = ref(appMapping)
 										<Term/>
 										<ZtmLog />
 										<EpLog />
-										<div :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)">
+										<div :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" v-show="app.name!='terminal'">
 											
-											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+											<img  :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
-											<div class="mt-1">
+											<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
 												<!-- <Badge value="3" severity="danger"></Badge> -->
 												<b class="text-white opacity-90">{{ mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b>
 											</div>
@@ -178,17 +201,15 @@ const mapping = ref(appMapping)
 	    </div>
 	    <div class="terminal_body py-2 px-4" v-else>
 				<div class="grid text-center" >
-						<div class="col-12 py-4 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(innerApps)">
+						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(innerApps)">
 							<div class="flex">
-								<img :src="app.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{app.name}}</b> | Provider</div>
-								<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
-										animationDuration="2s" aria-label="Custom ProgressSpinner" />
-								<Button  v-tooltip.left="'Clear'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<Button v-if="app.isRunning === false" v-tooltip.left="'Start'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
 								</Button>
-								<Button  v-tooltip.left="'Clear'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								<Button v-else-if="!!app.isRunning" v-tooltip.left="'Stop'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >
 								</Button>
-								<Button  v-tooltip.left="'Clear'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								<Button v-if="app.provider != 'ztm'" v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 								</Button>
 							</div>
 						</div>
