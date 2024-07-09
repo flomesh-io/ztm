@@ -33,7 +33,7 @@ const shortcutApps = computed(() => {
 	// }
 	let shortcuts = store.getters["account/shortcuts"];
 	shortcuts.forEach((shortcut)=>{
-		shortcut.icon = shortcutIcon;
+		shortcut.icon = shortcut.icon || shortcutIcon;
 		shortcut.shortcut = true;
 	})
 	console.log("shortcutApps")
@@ -77,7 +77,7 @@ const innerApps = computed(()=>{
 const sysApp = 5;
 const pages = computed(()=>{
 	const _apps = ((allApps.value||[]).concat(shortcutApps.value));
-	const _pages = Math.ceil((_apps.length + sysApp + innerApps.value.length)/8);
+	const _pages = Math.ceil((_apps.length + sysApp + innerApps.value.length - 1)/8);
 	return _pages>0?new Array(_pages):[];
 });
 const removeApp = (app) => {
@@ -103,10 +103,15 @@ const appPage = computed(()=>(page)=>{
 })
 const openAppContent = (app) => {
 		const options = {
-			mesh:selectedMesh.value?.name,
-			ep:selectedMesh.value?.agent?.id,
 			provider:app.provider||'ztm',
 			app:app.name,
+		}
+		if(!!app.mesh){
+			options.mesh = app.mesh?.name;
+			options.ep = app.mesh?.agent?.id;
+		} else {
+			options.mesh = selectedMesh.value?.name;
+			options.ep = selectedMesh.value?.agent?.id;
 		}
 		const base = appService.getAppUrl(options);
 		console.log(base)
@@ -142,8 +147,6 @@ const openAppUI = (app, base) => {
 				name:app.name,
 				label:mappingApp?.name || app.name,
 				provider: app.provider,
-				width:mappingApp?.width || 1280,
-				height:mappingApp?.height || 860,
 				mesh:selectedMesh.value
 			}
 		};

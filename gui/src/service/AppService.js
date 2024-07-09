@@ -2,6 +2,7 @@ import { request,requestNM,getUrl } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { openWebview } from '@/utils/webview';
+import store from "@/store";
 import PipyProxyService from '@/service/PipyProxyService';
 const pipyProxyService = new PipyProxyService();
 export default class AppService {
@@ -105,8 +106,8 @@ export default class AppService {
 		const webviewOptions = {
 			url,
 			name:url.replace(/.*\/\//,"").replaceAll("/","_").replaceAll(".","_").replaceAll("-","_"),
-			width:width,
-			height:height,
+			width:width||1280,
+			height:height||860,
 			proxy: !!listen?`socks5://${listen}`:''
 		}
 		openWebview(webviewOptions)
@@ -196,10 +197,17 @@ export default class AppService {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/file-data/${hash}`);
 	}
 	newApp(appJSON, callback) {
+		
+		const min = 30000;
+		const max = 40000;
+		const agentNo = Math.floor(Math.random() * (max - min + 1)) + min;
 		const meshData = {
 			name: appJSON.name,
 			ca: appJSON.ca,
-			agent: appJSON.agent,
+			agent: {
+				...appJSON.agent,
+				name:`agent$-${agentNo}`
+			},
 			bootstraps: appJSON.bootstraps
 		}
 		pipyProxyService.joinMesh(appJSON.name, meshData)
@@ -207,43 +215,24 @@ export default class AppService {
 				console.log(res)
 				console.log("create mesh [done]")
 				if(!!res){
-					const ep = res?.agent?.id;
-					const proto = 'tcp';
-					localStorage.setItem(`${appJSON.name}-icon`,appJSON.icon);
-					localStorage.setItem(`${appJSON.name}-url`,appJSON.url);
-					localStorage.setItem(`${appJSON.name}-svc`,appJSON.service);
-					const min = 30000;
-					const max = 40000;
-					const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
-					const portData = {
-						mesh: appJSON.name,
-						ep,
-						proto,
-						ip: '127.0.0.1',
-						port: randomNumber,
-						body: { 
-							target: {
-								service: appJSON.service
-							}
-						}
-					};
-					if(!!appJSON.endpoint){
-						portData.body.target.endpoint = appJSON.endpoint;
+					let shortcuts = []
+					try{
+						shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+					}catch(e){
+						shortcuts = []
 					}
-					pipyProxyService.createPort(portData)
-						.then(res => {
-							console.log("create port [done]")
-							if(!!res){
-								if(callback)
-								callback()
-							}
-						})
-						.catch(err => {
-							console.log(err);
-							toast.add({ severity: 'error', summary:'Tips', detail: 'local port format errors.', life: 3000 });
-							if(callback)
-							callback()
-						}); 
+					shortcuts.push({
+						mesh: res,
+						name:'proxy',
+						icon:appJSON.icon,
+						provider:'ztm',
+						label:appJSON.name,
+						url:appJSON.url,
+						endpoint:appJSON.endpoint,
+					});
+					store.commit('account/setShortcuts', shortcuts);
+					if(callback)
+					callback()
 				}
 			})
 			.catch(err => {

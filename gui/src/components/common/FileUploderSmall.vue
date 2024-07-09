@@ -127,7 +127,6 @@ const uploading = ref(false);
 <template>
 	
 	<FileUpload 
-		v-if="!props.modelValue"
 		:class="props.class" 
 		severity="contrast"
 		v-tooltip="uploading?'Importing':props.placeholder"

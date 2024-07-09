@@ -175,11 +175,14 @@ const restart = ref(false);
 
 const appsOpen = ref(false);
 const upload = (d)=>{
+	console.log("upload start")
 	if(!!d){
 		try{
 			const appJSON = JSON.parse(d);
 			appService.newApp(appJSON,()=>{
-				loaddata(true, 1500);
+				setTimeout(() => {
+					loaddata();
+				},platform.value=='android'?2000:1500)
 			})
 			console.log(config.value)
 		}catch(e){
@@ -200,6 +203,13 @@ watch(()=>storeMesh,()=>{
 	deep:true
 })
 
+const choose_button_click = ()=>{
+	setTimeout(()=>{
+		const choose_button = document.querySelector(".p-fileupload-choose-button");
+		console.log(choose_button)
+		choose_button.click()
+	},100)
+} 
 const actions = ref([
     {
         label: 'Actions',
@@ -230,17 +240,9 @@ const actions = ref([
 									})
 								}
             },
-            {
-                label: 'Import App',
-                icon: 'pi pi-upload',
-								command: ()=>{
-									
-								}
-            }
         ]
     }
 ]);
-
 const addmenu = ref();
 const toggle = (event) => {
     addmenu.value.toggle(event);
@@ -319,13 +321,12 @@ const toggle = (event) => {
 				<Button @click="toggle" aria-haspopup="true" aria-controls="addmenu" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
 				</Button>
-				<Menu ref="addmenu" id="addmenu" :model="actions" :popup="true" />
-			<!-- 	<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
-					<i class="pi pi-plus text-3xl"  />
-				</FileUploderSmall> -->
-		
 			</div>
-			
+			<div class="flex-item">
+				<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
+					<i class="pi pi-upload text-3xl"  />
+				</FileUploderSmall>
+			</div>
 			<div class="flex-item">
 				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-th-large text-3xl"  />
@@ -381,6 +382,7 @@ const toggle = (event) => {
 	</div>
 	<Apps v-if="appsOpen" @close="() => appsOpen = false" />
 	
+	<Menu ref="addmenu" id="addmenu" :model="actions" :popup="true" />
 </template>
 
 <style lang="scss" scoped>
