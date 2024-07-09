@@ -20,7 +20,7 @@ const METHOD = {
 };
 
 function getUrl(url){
-	if(!window.__TAURI_INTERNALS__){
+	if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
 		return `${url}`
 	} else {
 		
@@ -33,10 +33,13 @@ const getPort = () => {
 	return VITE_APP_API_PORT || DEFAULT_VITE_APP_API_PORT;
 }
 const toastMessage = (e) => {
+	debugger
 	if(!!e.status && !!e.message){
 		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
 	} else if(!!e.message){
 		toast.add({ severity: 'error', summary: 'Tips', detail: `${e.message}`, life: 3000 });
+	} else if(!!e.statusText && !!e.status && !!e.url){
+		toast.add({ severity: 'error', summary: 'Tips', detail: `${e.status} ${e.statusText}: ${e.url}`, life: 3000 });
 	} else {
 		toast.add({ severity: 'error', summary: 'Tips', detail: `${e}`, life: 3000 });
 	}
@@ -87,28 +90,39 @@ async function request(url, method, params, config) {
 				body: !!params?JSON.stringify(params):null,
 				...config
 			}).then((res) => {
+				console.log('response:')
+				console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
-				} else if(typeof(res) == 'object'){
+				} else if(typeof(res) == 'object' && !!res.body){
 					return res.json();
+				} else {
+					return res
 				}
 			}).catch((e)=>{
+				console.log(e)
 				toastMessage(e);
 			});
 		} else {
+			console.log(getUrl(url))
 			return fetch(getUrl(url), {
 				method,
 				header:{
 					"Content-Type": "application/json"
 				},
-				body: !!params?JSON.stringify(params):null,
+				// body: !!params?JSON.stringify(params):null,
 				...config
 			}).then((res) => {
+				console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
-				} else if(typeof(res) == 'object'){
+				} else if(typeof(res) == 'object' && !!res.body){
 					return res.json();
+				} else {
+					return res
 				}
+			}).catch((e)=>{
+				console.log(e)
 			});
 		}
 	}
