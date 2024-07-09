@@ -552,12 +552,6 @@ pre.app-code code{
 	-webkit-animation: fa-spin 2s infinite linear;
 	animation: fa-spin 2s infinite linear
 }
-.p-toast-message-content{
-	border-width: 10px !important;
-}
-.p-toast .p-toast-message{
-	border-width: 10px !important;
-}
 .transparent-form .p-select{
 	border-width: 4px;
 	background-color: rgba(255, 255, 255, 0.2);
@@ -1071,4 +1065,27 @@ fieldset{
 }
 .p-terminal-command-response{
 	white-space: pre;
+}
+.p-menu-item-content .p-fileupload-basic{
+	// align-items: left !important;
+	justify-content:left;
+}
+.p-menu-item-content .p-fileupload-choose-button{
+	background-color: transparent;
+	text-align: left;
+	width: 100%;
+	justify-content:left;
+	border: none;
+	color: var(--text-color);
+}
+.footer .p-fileupload-choose-button{
+	background-color: transparent;
+	border-radius: 50%;
+}
+.p-toast-close-button{
+	border-width: 0 !important;
+	outline: 0 !important;
+}
+.none{
+	display: none;
 }
