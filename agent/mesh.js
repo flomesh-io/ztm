@@ -145,6 +145,7 @@ export default function (rootDir, config) {
                 advertiseAppStates(appStateLatest)
                 if (serviceList) updateServiceList(serviceList)
               } else if (conn.state === 'closed') {
+                logInfo(`Connection to hub ${address} closed`)
                 connections.delete(conn)
               }
             }
