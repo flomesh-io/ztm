@@ -164,7 +164,7 @@ function isEndpointOnline(ep) {
 }
 
 function isEndpointOutdated(ep) {
-  return (ep.heartbeat + 60*1000 < Date.now())
+  return (ep.heartbeat + 120*1000 < Date.now())
 }
 
 var $ctx = null
@@ -216,7 +216,12 @@ function start() {
 
   function clearOutdatedEndpoints() {
     Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
-      (ep) => delete endpoints[ep.id]
+      (ep) => {
+        console.info(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
+        if (sessions[ep.id]?.size === 0) {
+          delete endpoints[ep.id]
+        }
+      }
     )
     new Timeout(60).wait().then(clearOutdatedEndpoints)
   }

@@ -1466,7 +1466,7 @@ function printTable(data, columns, indent) {
   var colSizes = colHeaders.map(name => name.length)
   var rows = data.map(row => colFormats.map(
     (format, i) => {
-      var v = format(row).toString()
+      var v = (format(row) || '').toString()
       colSizes[i] = Math.max(colSizes[i], v.length)
       return v
     }
