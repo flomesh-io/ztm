@@ -10,6 +10,7 @@ import Console from './shortcut/Console.vue';
 import Store from './shortcut/Store.vue';
 import ZtmLog from './shortcut/ZtmLog.vue';
 import EpLog from './shortcut/EpLog.vue';
+import shortcutIcon from "@/assets/img/apps/shortcut.png";
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
@@ -23,7 +24,24 @@ const clear = () => {
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+const shortcutApps = computed(() => {
+	// let shortcuts = []
+	// try{
+	// 	shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+	// }catch(e){
+	// 	shortcuts = []
+	// }
+	let shortcuts = store.getters["account/shortcuts"];
+	shortcuts.forEach((shortcut)=>{
+		shortcut.icon = shortcutIcon;
+		shortcut.shortcut = true;
+	})
+	console.log("shortcutApps")
+	console.log(JSON.parse(localStorage.getItem("SHORTCUT")||"[]"))
+	return shortcuts;
+});
 
+	
 const allApps = ref([]);
 const upload = (d)=>{
 	if(!!d){
@@ -41,7 +59,7 @@ const loaddata = () => {
 	console.log("load apps",[selectedMesh.value?.name,selectedMesh.value?.agent?.id])
 	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
 		console.log("start getApps")
-		allApps.value = res;
+		allApps.value = res.filter((app) => app.name !='terminal');
 		console.log(res)
 	}).catch((e)=>{
 		console.log(e)
@@ -56,51 +74,79 @@ const innerApps = computed(()=>{
 	});
 	return rtn;
 })
+const sysApp = 5;
 const pages = computed(()=>{
-	const _pages = Math.ceil(((allApps.value||[]).length + 1 + innerApps.value.length)/8);
+	const _apps = ((allApps.value||[]).concat(shortcutApps.value));
+	const _pages = Math.ceil((_apps.length + sysApp + innerApps.value.length)/8);
 	return _pages>0?new Array(_pages):[];
 });
 const removeApp = (app) => {
-	appService.removeApp(app, () => {
-		emits('reload','')
-	})
+	if(app.shortcut){
+		let shortcuts = []
+		try{
+			shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+		}catch(e){
+			shortcuts = []
+		}
+		store.commit('account/setShortcuts', shortcuts.filter((shortcut) => shortcut.label !=app.label));
+	}else{
+		appService.removeApp(app, () => {
+			emits('reload','')
+		})
+	}
 }
 const appLoading = ref({})
 const appPageSize = 8;
 const manage = ref(false);
-const sysApp = 2;
 const appPage = computed(()=>(page)=>{
-	return (allApps.value||[]).filter((n,i) => i>=page*appPageSize && i< (page+sysApp)*appPageSize);
+	return ((allApps.value||[]).concat(shortcutApps.value)).filter((n,i) => i>=(page*appPageSize - sysApp) && i< ((page+1)*appPageSize - sysApp));
 })
-const selectApp = ref();
 const openAppContent = (app) => {
-	if(!mapping.value[`${app?.provider}/${app?.name}`]?.custom){
-		selectApp.value = null;
 		const options = {
 			mesh:selectedMesh.value?.name,
 			ep:selectedMesh.value?.agent?.id,
 			provider:app.provider||'ztm',
 			app:app.name,
 		}
-		const url = appService.getAppUrl(options);
-		console.log(url)
-		const webviewOptions = {
-			url,
-			name:mapping.value[`${app?.provider}/${app.name}`]?.name || app.name,
-			width:app.width,
-			height:app.height,
-			proxy:''
-		}
+		const base = appService.getAppUrl(options);
+		console.log(base)
 		if(!app.isRunning){
 			appService.startApp(options).then(()=>{
-				openWebview(webviewOptions);
+				openAppUI(app, base);
 				loaddata();
 			})
 		} else {
-			openWebview(webviewOptions);
+			openAppUI(app, base);
 		}
+}
+const selectApp = ref();
+const openAppUI = (app, base) => {
+	selectApp.value = null;
+	const mappingApp = mapping.value[`${app?.provider}/${app.name}`];
+	if(app.shortcut){
+		appService.openBroswer(app)
+	}else if(!mappingApp?.custom){
+		const webviewOptions = {
+			url: base,
+			name: mappingApp?.name || app.name,
+			width:mappingApp?.width || 1280,
+			height:mappingApp?.height || 860,
+			proxy:''
+		}
+		openWebview(webviewOptions);
 	} else {
-		selectApp.value = app;
+		selectApp.value = {
+			...app,
+			options:{
+				base,
+				name:app.name,
+				label:mappingApp?.name || app.name,
+				provider: app.provider,
+				width:mappingApp?.width || 1280,
+				height:mappingApp?.height || 860,
+				mesh:selectedMesh.value
+			}
+		};
 	}
 }
 const startApp = (app) => {
@@ -140,7 +186,7 @@ const current = ref(false);
 onMounted(()=>{
 	loaddata();
 })
-const mapping = ref(appMapping)
+const mapping = ref(appMapping);
 </script>
 
 <template>
@@ -162,29 +208,29 @@ const mapping = ref(appMapping)
 				</div>
 			</div>
 	    <div class="terminal_body py-2 px-4" v-if="!!mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom">
-				<component :is="mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom" @close="()=>selectApp=null"/>
+				<component :is="mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
 	    <div class="terminal_body py-2 px-4" v-else-if="!manage">
 				<Carousel :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
 						<template #item="slotProps">
 							<div class="pt-1" style="min-height: 220px;">
 								<div class="grid text-center" >
-										<Console />
+										<Console v-if="slotProps.index==0"/>
+										<Store v-if="slotProps.index==0"/>
 										<!-- <Broswer @open="() => current='Broswer'" @close="() => current=false"/> -->
-										<Term/>
-										<ZtmLog />
-										<EpLog />
-										<div :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" v-show="app.name!='terminal'">
+										<Term v-if="slotProps.index==0"/>
+										<ZtmLog v-if="slotProps.index==0"/>
+										<EpLog  v-if="slotProps.index==0"/>
+										<div :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
 											
-											<img  :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
 											<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
 												<!-- <Badge value="3" severity="danger"></Badge> -->
-												<b class="text-white opacity-90">{{ mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b>
+												<b class="text-white opacity-90">{{ app.label || mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b>
 											</div>
 										</div>
-										<Store />
 										<!-- 
 										<div v-if="!current" :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name]}" @click="installAPP(app)" class="col-3 py-4 relative text-center " v-for="(app) in innerApps">
 											<img :src="app.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
@@ -204,12 +250,20 @@ const mapping = ref(appMapping)
 						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(innerApps)">
 							<div class="flex">
 								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
 								<Button v-if="app.isRunning === false" v-tooltip.left="'Start'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
 								</Button>
 								<Button v-else-if="!!app.isRunning" v-tooltip.left="'Stop'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >
 								</Button>
-								<Button v-if="app.provider != 'ztm'" v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								<Button v-if="app.provider != 'ztm' || app.shortcut" v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+								</Button>
+							</div>
+						</div>
+						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in shortcutApps">
+							<div class="flex">
+								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<Button  v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 								</Button>
 							</div>
 						</div>

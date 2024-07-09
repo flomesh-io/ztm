@@ -10,6 +10,7 @@ export default {
 		redirect: null,
 		appkey: null,
 		version: '',
+		shortcuts: null,
 		client: null,
 		pid: null,
 		child: null,
@@ -39,6 +40,15 @@ export default {
     },
     pid: (state) => {
       return localStorage.getItem('PID') || state.pid;
+    },
+    shortcuts: (state) => {
+			let _shortcuts = []
+			try{
+				_shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+			}catch(e){
+				_shortcuts = []
+			}
+      return state.shortcuts || _shortcuts;
     },
     logs: (state) => {
       return state.logs;
@@ -119,6 +129,10 @@ export default {
     setPid(state, pid) {
       state.pid = pid;
 			localStorage.setItem('PID',pid);
+    },
+    setShortcuts(state, shortcuts) {
+      state.shortcuts = shortcuts;
+			localStorage.setItem("SHORTCUT",JSON.stringify(shortcuts));
     },
     setClient(state, client) {
       state.client = client;

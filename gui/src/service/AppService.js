@@ -1,6 +1,7 @@
 import { request,requestNM,getUrl } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
+import { openWebview } from '@/utils/webview';
 import PipyProxyService from '@/service/PipyProxyService';
 const pipyProxyService = new PipyProxyService();
 export default class AppService {
@@ -15,6 +16,113 @@ export default class AppService {
 	//   isPublished: boolean
 	//   log: string[]
 	//
+		
+	openBroswer({endpoint, url,width,height, mesh, provider, name}) {
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:provider||'ztm',
+			app:name,
+		}
+		const base = this.getAppUrl(options);
+		const min = 30000;
+		const max = 40000;
+		const randomPort = Math.floor(Math.random() * (max - min + 1)) + min;
+		const listen = `127.0.0.1:${randomPort}`;
+		if(!endpoint){
+			this.openWV(url,width,height)
+			return
+		}
+		// set local listen
+		this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${mesh?.agent?.id}/config`,
+			method: 'GET',
+		})
+			.then(config1 => {
+				this.invokeAppApi({
+					base,
+					url:`/api/endpoints/${mesh?.agent?.id}/config`,
+					method: 'POST',
+					body:{ 
+						...config1,
+						listen
+					}
+				})
+					.then(res => {
+						console.log(res)
+						// get remote config
+						this.invokeAppApi({
+							base,
+							url:`/api/endpoints/${endpoint}/config`,
+							method: 'GET',
+						})
+							.then(config => {
+								console.log(config)
+								const body = config;
+								if(!body.targets){
+									body.targets = []
+								}
+								if(!body.targets.find((t)=> t == "*")){
+									body.targets.push("*")
+								}
+								if(!body.targets.find((t)=> t == "0.0.0.0/0")){
+									body.targets.push("0.0.0.0/0")
+								}
+								// set remote targets
+								this.invokeAppApi({
+									base,
+									url:`/api/endpoints/${endpoint}/config`,
+									method: 'POST',
+									body
+								})
+									.then(res => {
+										this.openWV(url,width,height, listen)
+									})
+									.catch(err1 => {
+										console.log("set remote targets errors")
+										console.log(err1)
+									}); 
+							})
+							.catch(err2 => {
+								console.log("set remote targets errors")
+								console.log(err2)
+							}); 
+					})
+					.catch(err3 => {
+						console.log("set remote targets errors")
+						console.log(err3)
+					}); 
+			
+			})
+			.catch(err3 => {
+				console.log("set remote targets errors")
+				console.log(err3)
+			}); 
+			
+	}
+	openWV(url, width, height , listen) {
+		const webviewOptions = {
+			url,
+			name:url.replace(/.*\/\//,"").replaceAll("/","_").replaceAll(".","_").replaceAll("-","_"),
+			width:width,
+			height:height,
+			proxy: !!listen?`socks5://${listen}`:''
+		}
+		openWebview(webviewOptions)
+	}
+	invokeAppApi({
+		base,
+		url,
+		method,
+		body
+	}){
+		if(!!body){
+			return request(`${base}${url}`, method, body);
+		}else{
+			return request(`${base}${url}`, method);
+		}
+	}
 	getApps(mesh) {
 		return request(`/api/meshes/${mesh}/apps`);
 	}

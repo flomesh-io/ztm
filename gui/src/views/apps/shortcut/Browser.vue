@@ -1,42 +1,81 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
-import { openWebview } from '@/utils/webview';
+import toast from "@/utils/toast";
 
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
-const emits = defineEmits(['open','close'])
+const props = defineProps(['app']);
+const emits = defineEmits(['close'])
 const broswer = ref({
 	mesh:null,
-	show:false,
-	url:'',
-	port:null,
-	ports:[]
+	name:'',
+	url:'http://',
+	endpoint:null,
+	endpoints:[]
 });
-const openBroswer = () => {
-	broswer.value.show = true;
-	emits('open')
+const openBroswer = (endpoint, url) => {
+	appService.openBroswer({...props.app, endpoint, url})
 }
 const closeBroswer = () => {
-	broswer.value.show = false;
 	emits('close');
 }
-const open = () => {
-	openWebview({
-		...broswer.value,
-		proxy: !!broswer.value.port?`socks5://${broswer.value.port?.listen?.ip||'127.0.0.1'}:${broswer.value.port?.listen?.port}`:''
-	})
+const addShortcut = () => {
+	let shortcuts = []
+	try{
+		shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+	}catch(e){
+		shortcuts = []
+	}
+	shortcuts.push({
+		...props.app,
+		label:broswer.value.name,
+		url:broswer.value.url,
+		endpoint:broswer.value.endpoint,
+	});
+	store.commit('account/setShortcuts', shortcuts);
+	op.value.hide();
+	broswer.value.name = "";
+	toast.add({ severity: 'contrast', summary:'Tips', detail: `${broswer.value.name} shortcut added`, life: 3000 });
 }
-const shortcut = () => {
-	
+
+const getEndpoints = () => {
+	console.log("broswer endpoints start");
+	appService.invokeAppApi({
+		base: props.app?.base,
+		url:'/api/endpoints',
+		method: 'GET',
+		body: {}
+	})
+		.then(res => {
+			console.log("broswer endpoints");
+			console.log(res);
+			broswer.value.endpoints = res || [];
+		})
+		.catch(err => {
+		}); 
+}
+onMounted(()=>{
+	getEndpoints();
+})
+
+const op = ref();
+const toggle = (event) => {
+	broswer.value.name = "";
+	op.value.toggle(event);
 }
 </script>
 
 <template>
 	<div class="col-12">
+		<div class="text-center">
+			<InputGroup class="search-bar" style="border-radius: 8px;" >
+				<Select size="small" class="w-full flex small"  v-model="broswer.endpoint" :options="broswer.endpoints" optionLabel="name" optionValue="id" :filter="broswer.endpoints.length>8" placeholder="Endpoint"/>
+			</InputGroup>					
+		</div>
 		<div class="mt-3 text-center">
 			<InputGroup class="search-bar" style="border-radius: 8px;" >
 				
@@ -49,12 +88,16 @@ const shortcut = () => {
 				<Button severity="secondary" class="w-full" style="height: 30px;" @click="closeBroswer" label="Back"/>
 			</div>
 			<div class="flex-item pr-2">
-				<Button :disabled="!broswer.url" class="w-full" style="height: 30px;" @click="shortcut" label="Shortcut"/>
+				<Button aria-haspopup="true" aria-controls="op" @click="toggle" :disabled="broswer.url.length<8" class="w-full" style="height: 30px;" label="Shortcut"/>
 			</div>
 			<div class="flex-item pl-2" >
-				<Button class="w-full" style="height: 30px;" :disabled="!broswer.url" label="Open" @click="open"/>
+				<Button class="w-full" style="height: 30px;" :disabled="broswer.url.length<8" label="Open" @click="openBroswer(broswer.endpoint,broswer.url)"/>
 		</div>
 		</div>
+		<Popover class="ml-6 mt-3" ref="op" appendTo="self">
+				<InputText placeholder="As Name" v-model="broswer.name"  class="w-20rem"></InputText>
+				<Button size="small" icon="pi pi-save" class="ml-2"  @click="addShortcut"></Button>
+		</Popover>
 	</div>									
 </template>
 

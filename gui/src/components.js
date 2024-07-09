@@ -26,6 +26,7 @@ import DataView from 'primevue/dataview';
 import Select from 'primevue/select';
 import DataViewLayoutOptions from '@/components/common/DataViewLayoutOptions.vue';
 import DeferredContent from 'primevue/deferredcontent';
+import Popover from 'primevue/popover';
 import Dialog from 'primevue/dialog';
 import Divider from 'primevue/divider';
 import Dock from 'primevue/dock';
@@ -143,6 +144,7 @@ export function useComponent(app){
 	app.component('Dock', Dock);
 	app.component('MeterGroup', MeterGroup);
 	app.component('DynamicDialog', DynamicDialog);
+	app.component('Popover', Popover);
 	app.component('Fieldset', Fieldset);
 	app.component('FileUpload', FileUpload);
 	app.component('Galleria', Galleria);
