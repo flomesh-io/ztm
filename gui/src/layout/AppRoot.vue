@@ -179,6 +179,9 @@ const upload = (d)=>{
 	if(!!d){
 		try{
 			const appJSON = JSON.parse(d);
+			if(!appJSON.agent.name && !!user.value?.id && user.value?.id != 'Client'){
+				appJSON.agent.name = user.value?.id
+			}
 			appService.newApp(appJSON,()=>{
 				setTimeout(() => {
 					loaddata();
@@ -323,7 +326,7 @@ const toggle = (event) => {
 				</Button>
 			</div>
 			<div class="flex-item">
-				<FileUploderSmall class="pointer" placeholder="Import App" @upload="upload">
+				<FileUploderSmall class="pointer" placeholder="Import Mesh | App" @upload="upload">
 					<i class="pi pi-upload text-3xl"  />
 				</FileUploderSmall>
 			</div>
