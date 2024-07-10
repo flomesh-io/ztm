@@ -198,23 +198,23 @@ export default class AppService {
 	}
 	newApp(appJSON, callback) {
 		
-		const min = 30000;
-		const max = 40000;
-		const agentNo = Math.floor(Math.random() * (max - min + 1)) + min;
 		const meshData = {
 			name: appJSON.name,
 			ca: appJSON.ca,
-			agent: {
-				...appJSON.agent,
-				name:`agent$-${agentNo}`
-			},
+			agent: appJSON.agent,
 			bootstraps: appJSON.bootstraps
+		}
+		if(!!meshData.agent.name){
+			const min = 30000;
+			const max = 40000;
+			const agentNo = Math.floor(Math.random() * (max - min + 1)) + min;
+			meshData.agent.name = `agent$-${agentNo}`
 		}
 		pipyProxyService.joinMesh(appJSON.name, meshData)
 			.then(res => {
 				console.log(res)
 				console.log("create mesh [done]")
-				if(!!res){
+				if(!!res && !!appJSON.url){
 					let shortcuts = []
 					try{
 						shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
@@ -232,6 +232,8 @@ export default class AppService {
 					});
 					store.commit('account/setShortcuts', shortcuts);
 					if(callback)
+					callback()
+				} else if(callback){
 					callback()
 				}
 			})

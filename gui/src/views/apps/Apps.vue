@@ -201,8 +201,12 @@ const mapping = ref(appMapping);
 				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
 				            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
 				</div>
-				<div class="flex-item text-center text-white" style="line-height: 30px;">
+				<div v-if="!!selectedMesh" class="flex-item text-center text-white" style="line-height: 30px;">
+					<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
 					{{selectedMesh?.name}}
+				</div>
+				<div v-else class="flex-item text-center text-white-alpha-70" style="line-height: 30px;">
+					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
 				</div>
 				<div class="flex-item text-right">
 					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
