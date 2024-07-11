@@ -20,11 +20,17 @@ const METHOD = {
 };
 
 function getUrl(url){
+	let path = "";
+	if(location.pathname){
+		const params = location.pathname.split('/');
+		if(params.length == 7){
+			path = location.pathname
+		}
+	}
 	if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
-		return `${url}`
+		return `${path}${url}`
 	} else {
-		
-		return `http://127.0.0.1:${getPort()}${url}`
+		return `http://127.0.0.1:${getPort()}${path}${url}`
 	}
 }
 const getPort = () => {
@@ -194,9 +200,10 @@ async function mock(d) {
 }
 
 async function merge(ary) {
+  return axios.all(ary);
 }
-
 function spread(callback) {
+  return axios.spread(callback);
 }
 
 function setAuthorization(auth, authType = AUTH_TYPE.BASIC) {
