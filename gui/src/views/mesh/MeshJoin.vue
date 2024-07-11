@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed,watch } from 'vue';
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
@@ -11,7 +11,7 @@ const props = defineProps(['pid','title']);
 const emits = defineEmits(['save','back']);
 const route = useRoute();
 const toast = useToast();
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const user = computed(() => {
 	return store.getters['account/user'];
 });
@@ -51,7 +51,7 @@ const commit = () => {
 	const saveData = _.cloneDeep(config.value);
 	delete saveData.name;
 	loading.value = true;
-	pipyProxyService.joinMesh(joinName, saveData)
+	ztmService.joinMesh(joinName, saveData)
 		.then(res => {
 			loading.value = false;
 			if(!!res){
@@ -82,7 +82,7 @@ const home = ref({
 
 const loaddata = () => {
 	loading.value = true;
-	pipyProxyService.getMesh(props.pid)
+	ztmService.getMesh(props.pid)
 		.then(res => {
 			console.log(res);
 			loading.value = false;

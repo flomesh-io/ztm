@@ -4,8 +4,8 @@ import { ref, computed, onMounted } from "vue";
 import { useStore } from 'vuex';
 const store = useStore();
 import { useToast } from "primevue/usetoast";
-import PipyProxyService from '@/service/PipyProxyService';
-const pipyProxyService = new PipyProxyService();
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 const toast = useToast();
 const data = ref({
     key: '0',
@@ -69,7 +69,7 @@ const loadClients = () => {
 		label: 'Gateway',
 		children: []
 	}
-	pipyProxyService.clients()
+	ztmService.clients()
 		.then(res => {
 			(res?.data||[]).forEach((item,index)=>{
 				data.value.children.push({
@@ -84,7 +84,7 @@ const loadClients = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 const loadBackend = () => {
-	pipyProxyService.getBackend()
+	ztmService.getBackend()
 		.then(res => {
 			Object.keys(res?.data).forEach((_key)=>{
 				const _services = res.data[_key]?.services;
@@ -114,7 +114,7 @@ const saveBackend = () => {
 			})
 		}
 	})
-	pipyProxyService.saveBackend(conf)
+	ztmService.saveBackend(conf)
 		.then(res => {
 			if(res.data?.status == 'OK' || res.statusText == 'OK'){
 				toast.add({ severity: 'success', summary:'Tips', detail: 'Modified successfully.', life: 3000 });

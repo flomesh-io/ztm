@@ -103,6 +103,8 @@ import HiddenField from '@/components/common/HiddenField.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 import CertificateUploder from '@/components/common/CertificateUploder.vue';
 import FileUploderSmall from '@/components/common/FileUploderSmall.vue';
+import MeshSelector from '@/components/common/mesh/MeshSelector.vue';
+
 import { Field, Form, ErrorMessage } from 'vee-validate';
 
 export function useComponent(app){
@@ -212,5 +214,6 @@ export function useComponent(app){
 	app.component('HiddenField', HiddenField);
 	app.component('CertificateUploder', CertificateUploder);
 	app.component('FileUploderSmall', FileUploderSmall);
+	app.component('MeshSelector', MeshSelector);
 	app.component('Empty', Empty);
 }

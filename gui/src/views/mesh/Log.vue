@@ -1,8 +1,7 @@
 <script setup>
 import { ref, onMounted,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
-import PipyProxyService from '@/service/PipyProxyService';
-import MeshSelector from './common/MeshSelector.vue'
+import ZtmService from '@/service/ZtmService';
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import dayjs from 'dayjs';
@@ -13,7 +12,7 @@ dayjs.extend(relativeTime)
 
 const store = useStore();
 const router = useRouter();
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const confirm = useConfirm();
 const loading = ref(false);
 const loader = ref(false);
@@ -47,7 +46,7 @@ const endpoints = ref([]);
 const getEndpoints = (callback) => {
 	loading.value = true;
 	loader.value = true;
-	pipyProxyService.getEndpoints(selectedMesh.value?.name)
+	ztmService.getEndpoints(selectedMesh.value?.name)
 		.then(res => {
 			endpoints.value = res || [];
 			if(!!selectedMesh.value?.agent?.id){
@@ -58,7 +57,7 @@ const getEndpoints = (callback) => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 const getLogs = (ep) => {
-	pipyProxyService.getLogs(selectedMesh.value?.name, ep)
+	ztmService.getLogs(selectedMesh.value?.name, ep)
 		.then(res => {
 			loading.value = false;
 			setTimeout(() => {

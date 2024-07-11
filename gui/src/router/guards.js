@@ -1,7 +1,7 @@
 import { hasAuthority } from "@/service/common/authority-utils";
 import { loginIgnore } from "@/router/index";
 import { checkAuthorization, spread, merge } from "@/service/common/request";
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useToast } from "primevue/usetoast";
@@ -11,7 +11,7 @@ import { platform } from '@tauri-apps/plugin-os';
 import { useStore } from 'vuex';
 NProgress.configure({ showSpinner: true });
 
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 
 
 /**
@@ -85,7 +85,7 @@ const loginGuard = (to, from, next, options) => {
 			if(!!_meshes && _meshes.length>0){
 				next();
 			} else {
-				pipyProxyService.getMeshes()
+				ztmService.getMeshes()
 					.then(res => {
 						next();
 						store.commit('account/setMeshes', res);

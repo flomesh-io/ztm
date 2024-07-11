@@ -9,7 +9,7 @@ import XeyeSvg from "@/assets/img/white.png";
 import HoverXeyeSvg from "@/assets/img/loading.png";
 import PipySvg from "@/assets/img/pipy-white.png";
 import { useConfirm } from "primevue/useconfirm";
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import Apps from '@/views/apps/Apps.vue';
 import AppService from '@/service/AppService';
 import ShellService from '@/service/ShellService';
@@ -27,7 +27,7 @@ const loading = ref(false);
 const version = computed(() => {
 	return store.getters['account/version']
 });
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const appService = new AppService();
 const shellService = new ShellService();
 const confirm = useConfirm();
@@ -79,7 +79,7 @@ onMounted(() => {
 
 const loaddata = () => {
 	loading.value = true;
-	pipyProxyService.getMeshes()
+	ztmService.getMeshes()
 		.then(res => {
 			loading.value = false;
 			if(!!res){
