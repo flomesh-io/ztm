@@ -1,8 +1,7 @@
 <script setup>
 import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
-import PipyProxyService from '@/service/PipyProxyService';
-import MeshSelector from './common/MeshSelector.vue';
+import ZtmService from '@/service/ZtmService';
 import EndpointInfo from './EndpointInfo.vue';
 import Services from './Services.vue';
 import Ports from './Ports.vue';
@@ -17,7 +16,7 @@ const props = defineProps(['ep']);
 const emits = defineEmits(['back']);
 const store = useStore();
 const router = useRouter();
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const confirm = useConfirm();
 const loading = ref(false);
 const loader = ref(false);

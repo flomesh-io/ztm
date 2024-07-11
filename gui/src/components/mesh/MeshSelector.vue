@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted,onActivated, computed,watch } from "vue";
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import { useStore } from 'vuex';
 const store = useStore();
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const selected = ref(null);
 const props = defineProps({
 	full: {

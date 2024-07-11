@@ -3,11 +3,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { resourceDir, appLogDir, appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/plugin-os';
 import { readTextFileLines, BaseDirectory } from '@tauri-apps/plugin-fs';
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import { relaunch } from "@tauri-apps/plugin-process";
 import store from "@/store";
 
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 export default class ShellService {
 	async getDB () {
 		const appDataDirPath = await resourceDir();
@@ -46,7 +46,7 @@ export default class ShellService {
 				store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
 			});
 		} else if(!!apiGet){
-			pipyProxyService.getVersion()
+			ztmService.getVersion()
 				.then(res => {
 					if(!!res){
 						console.log(res)

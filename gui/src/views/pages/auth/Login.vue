@@ -1,7 +1,7 @@
 <script setup>
 import { useLayout } from '@/layout/composables/layout';
 import { ref, computed } from 'vue';
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useToast } from "primevue/usetoast";
 import { useRouter } from 'vue-router'
@@ -13,7 +13,7 @@ const store = useStore();
 
 
 const router = useRouter()
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const user = ref('');
 const password = ref('');
 const toast = useToast();
@@ -22,7 +22,7 @@ const login = () => {
 	if(!user.value || !password.value){
 		return
 	}
-	pipyProxyService.login(user.value,password.value)
+	ztmService.login(user.value,password.value)
 		.then(res => {
 			if(res?.data?.token){
 				store.commit('account/setUser', {id:user.value});

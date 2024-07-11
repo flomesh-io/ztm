@@ -1,6 +1,6 @@
 import _ from "lodash";
 import broswer from "./modules/broswer";
-import AppLayout from '../../../common/layout/AppLayout.vue';
+import EmptyLayout from '../../../common/layout/EmptyLayout.vue';
 
 const options = {
   routes: [
@@ -21,7 +21,7 @@ const options = {
 		},
     {
         path: '/',
-        component: AppLayout,
+        component: EmptyLayout,
 				redirect: "/home",
         children: [
 					broswer

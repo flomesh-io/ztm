@@ -1,14 +1,14 @@
 <script setup>
 import { ref, onMounted,computed } from "vue";
 import { useRouter } from 'vue-router'
-import PipyProxyService from '@/service/PipyProxyService';
+import ZtmService from '@/service/ZtmService';
 import MeshJoin from './MeshJoin.vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 const store = useStore();
 const router = useRouter();
 const confirm = useConfirm();
-const pipyProxyService = new PipyProxyService();
+const ztmService = new ZtmService();
 const meshes = ref([]);
 const status = ref({});
 const scopeType = ref('All');
@@ -34,7 +34,7 @@ const loaddata = () => {
 	visibleEditor.value = false;
 	loading.value = true;
 	loader.value = true;
-	pipyProxyService.getMeshes()
+	ztmService.getMeshes()
 		.then(res => {
 			console.log(res);
 			loading.value = false;
@@ -55,7 +55,7 @@ const deleteMesh = () => {
 	if(!name){
 		return
 	}
-	pipyProxyService.deleteMesh(name,() => {
+	ztmService.deleteMesh(name,() => {
 		setTimeout(()=>{
 			loaddata();
 			store.dispatch('account/meshes');

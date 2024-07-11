@@ -1,5 +1,5 @@
-import PipyProxyService from '@/service/PipyProxyService';
-const pipyProxyService = new PipyProxyService();
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default {
   namespaced: true,
   state: {
@@ -24,7 +24,7 @@ export default {
   },
 	actions: {
 		async meshes({ commit }) {
-			const res = await pipyProxyService.getMeshes;
+			const res = await ztmService.getMeshes;
 			commit('setMeshes',res || []);
 		},
 	},

@@ -5,7 +5,6 @@ import { useLayout } from '@/layout/composables/layout';
 import { useRouter, useRoute } from 'vue-router';
 import { getMenu } from './menu';
 import XeyeSvg from "@/assets/img/loading.png";
-import MeshSelector from '@/views/mesh/common/MeshSelector.vue'
 import HoverXeyeSvg from "@/assets/img/white.png";
 import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";

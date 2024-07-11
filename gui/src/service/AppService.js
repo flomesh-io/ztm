@@ -3,8 +3,8 @@ import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { openWebview } from '@/utils/webview';
 import store from "@/store";
-import PipyProxyService from '@/service/PipyProxyService';
-const pipyProxyService = new PipyProxyService();
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default class AppService {
 	
 	//
@@ -210,7 +210,7 @@ export default class AppService {
 			const agentNo = Math.floor(Math.random() * (max - min + 1)) + min;
 			meshData.agent.name = `agent$-${agentNo}`
 		}
-		pipyProxyService.joinMesh(appJSON.name, meshData)
+		ztmService.joinMesh(appJSON.name, meshData)
 			.then(res => {
 				console.log(res)
 				console.log("create mesh [done]")
@@ -246,14 +246,14 @@ export default class AppService {
 	}
 	async loadApps() {
 		const apps = [];
-		const res = await pipyProxyService.getMeshes();
+		const res = await ztmService.getMeshes();
 		console.log('[meshes]');
 		console.log(res)
 		for (let mesh of (res || [])) {
 			const app = {...mesh};
 			app.icon = localStorage.getItem(`${app.name}-icon`);
 			app.url = localStorage.getItem(`${app.name}-url`);
-			const res2 = await pipyProxyService.getPorts({
+			const res2 = await ztmService.getPorts({
 				mesh:mesh.name,
 				ep:mesh.agent?.id
 			});
@@ -271,7 +271,7 @@ export default class AppService {
 		confirm.remove(() => {
 			const ip = app?.port?.listen?.ip;
 			const port = app?.port?.listen?.port;
-			pipyProxyService.getMesh(app.name)
+			ztmService.getMesh(app.name)
 				.then(mesh => {
 					localStorage.removeItem(`${app.name}-icon`);
 					localStorage.removeItem(`${app.name}-url`);

@@ -5,8 +5,8 @@ const broswer = {
   children: [
 		{
 				path: '/home',
-				name: 'endpoints',
-				component: () => import('@/views/mesh/Endpoints.vue')
+				name: 'tunnels',
+				component: () => import('../../views/Main.vue')
 		},
   ],
 };
