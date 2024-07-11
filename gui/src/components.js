@@ -103,7 +103,7 @@ import HiddenField from '@/components/common/HiddenField.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 import CertificateUploder from '@/components/common/CertificateUploder.vue';
 import FileUploderSmall from '@/components/common/FileUploderSmall.vue';
-import MeshSelector from '@/components/common/mesh/MeshSelector.vue';
+import MeshSelector from '@/components/mesh/MeshSelector.vue';
 
 import { Field, Form, ErrorMessage } from 'vee-validate';
 
