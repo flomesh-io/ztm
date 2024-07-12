@@ -441,7 +441,7 @@ pre.app-code code{
 	line-height: 22px;
 	border: none;
 }
-.p-chip .p-select-label{
+.p-chip .p-select-label,.p-chip .p-multiselect-label{
 	padding-bottom: 0;
 	padding-top: 0;
 }
@@ -709,16 +709,16 @@ pre.app-code code{
 .surface-border.flex-wrap>div{
 	line-height: 24px;
 }
-.p-chip .p-select{
+.p-chip .p-select,.p-chip .p-multiselect{
 	background-color: transparent;
 	border: none;
 	box-shadow: none;
 	line-height: 20px;
 }
-.p-chip .p-select.p-disabled{
+.p-chip .p-select.p-disabled,.p-chip .p-multiselect.p-disabled{
 	background-color: transparent;
 }
-.p-chip .p-select-label.p-inputtext{
+.p-chip .p-select-label.p-inputtext,.p-chip .p-multiselect-label.p-inputtext{
 	padding-top: 0 !important;
 	padding-bottom: 0 !important;
 }

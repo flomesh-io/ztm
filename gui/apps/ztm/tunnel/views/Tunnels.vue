@@ -240,7 +240,7 @@ const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 
 const emptyMsg = computed(()=>{
-	return 'No outbounds.'
+	return 'No tunnels.'
 });
 const create = () => {
 	emits('create')
@@ -257,10 +257,10 @@ const edit = (d) => {
 		<div  class="relative h-full" :class="{'w-24rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
 			<AppHeader :main="!isChat" v-if="!props.embed">
 					<template #start>
-						<Button icon="pi pi-sign-out" text />
+						<Button icon="pi pi-arrow-right-arrow-left" text />
 					</template>
 					<template #center>
-						<b>Outbounds</b>
+						<b>Tunnels</b>
 					</template>
 			
 					<template #end> 
@@ -273,7 +273,7 @@ const edit = (d) => {
 				<template #content>
 					<InputGroup class="search-bar" >
 						<Button :disabled="!typing" icon="pi pi-search"  :label="props.embed?null:selectedMesh?.name"/>
-						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type outbound name" rows="1" cols="30" />
+						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type tunnel name" rows="1" cols="30" />
 						
 					</InputGroup>
 				</template>
