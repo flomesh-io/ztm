@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, useSlots } from 'vue';
 
+const slots = useSlots();
 const props = defineProps({
 	list: {
 			type: Array,
@@ -54,7 +55,7 @@ const typing = (e,idx) => {
 				{{tag}}
 				<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 			</Chip>
-			<Chip v-else class="pl-0 pr-3">
+			<Chip v-else-if="!slots.input" class="pl-0 pr-3">
 					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 						<i class="pi" :class="icon"/>
 					</span>
@@ -63,6 +64,7 @@ const typing = (e,idx) => {
 						<i class="pi pi-arrow-down-left" />
 					</span>
 			</Chip>
+			<slot v-else name="input"/>
 		</span>
 		<div v-else v-for="(tag,tagidx) in props.list">
 			<Chip v-if="tagidx<props.list.length - 1" class="pl-0 custom-chip">
@@ -74,7 +76,7 @@ const typing = (e,idx) => {
 					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 				</span>
 			</Chip>
-			<Chip v-else class="pl-0 pr-3">
+			<Chip v-else-if="!slots.input" class="pl-0 pr-3">
 					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 						<i class="pi" :class="icon"/>
 					</span>
@@ -83,6 +85,7 @@ const typing = (e,idx) => {
 						<i class="pi pi-arrow-down-left" />
 					</span>
 			</Chip>
+			<slot v-else name="input"/>
 		</div>
 </template>
 
