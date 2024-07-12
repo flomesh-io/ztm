@@ -1,12 +1,13 @@
 <script setup>
-import { ref, computed,onActivated,onMounted } from 'vue';
+import { ref, computed,onActivated,onMounted,useSlots } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
+const slots = useSlots();
 const props = defineProps(['main','back'])
 const store = useStore();
 const router = useRouter();
 const isChat = computed(() => store.getters['account/isChat']);
-
+const hasStartSlot = computed(() => !!slots.start);
 const back = () => {
 	if(!!props.back){
 		props.back();
@@ -47,9 +48,10 @@ onMounted(()=>{
 <template>
 	<Toolbar class="nopd-header">
 			<template #start>
-					<Button v-if="props.main && (isMobile || platform =='android')" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
-					<Button v-else-if="props.main" @click="home" icon="iconfont icon-home" text />
-					<Button v-else @click="back" icon="pi pi-angle-left" severity="secondary" text />
+				<slot v-if="hasStartSlot" name="start"/>
+				<Button v-else-if="props.main && (isMobile || platform =='android')" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
+				<Button v-else-if="props.main" @click="home" icon="iconfont icon-home" text />
+				<Button v-else @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>
 	
 			<template #center>
