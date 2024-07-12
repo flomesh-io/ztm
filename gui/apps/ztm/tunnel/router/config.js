@@ -1,5 +1,5 @@
 import _ from "lodash";
-import broswer from "./modules/broswer";
+import tunnel from "./modules/tunnel";
 import EmptyLayout from '../../../common/layout/EmptyLayout.vue';
 
 const options = {
@@ -22,9 +22,9 @@ const options = {
     {
         path: '/',
         component: EmptyLayout,
-				redirect: "/home",
+				redirect: "/main",
         children: [
-					broswer
+					tunnel
 				]
     },
   ],

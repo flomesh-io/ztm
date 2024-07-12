@@ -1,20 +1,24 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import ZtmService from '@/service/ZtmService';
+import TunnelService from '../service/TunnelService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
 import _ from "lodash"
-
-const props = defineProps(['embed','pid','mesh','ep','proto','title']);
+const props = defineProps(['d','title']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
 const selected = ref(props.mesh);
 const endpoints = ref([]);
 const route = useRoute();
 const toast = useToast();
+const tunnelService = new TunnelService();
 const ztmService = new ZtmService();
+const info = computed(() => {
+	return store.getters['app/info']
+});
 const loading = ref(false);
 const scope = ref('public');
 const newTunnel = {
@@ -22,29 +26,36 @@ const newTunnel = {
 	protocol: "tcp",
 }
 const tunnel = ref(_.cloneDeep(newTunnel));
-const agentId = computed(()=>{
-	const find = [].filter((mesh) => mesh.name == selected.value);
-	return find?.agent?.id;
-})
+
+const newOutbound = {
+	name: null,
+	proto: null,
+	ep: info.endpoint,
+	targets: [],
+	entrances: [],
+}
+const outbound = ref(_.cloneDeep(newOutbound))
+const outbounds = ref([{
+	ep:{name:"xxx",id:"aaa-bbb-ccc"}, proto:"TCP", name:"AAA", targets:["127.0.0.1:8080"], entrances: ["aaa-bbb-ccc"]
+}])
+
+const newInbound = {
+	name: null,
+	proto: null,
+	ep: info.endpoint,
+	listens: [],
+	exits: [],
+}
+const inbound = ref(_.cloneDeep(newInbound))
+const inbounds = ref([{
+	ep:{name:"xxx",id:"aaa-bbb-ccc"}, proto:"TCP", name:"AAA", listens:["127.0.0.1:8080"], exits: ["aaa-bbb-ccc"]
+}])
 const getEndpoints = () => {
-	if(!selected.value){
-		return;
-	}
-	ztmService.getEndpoints(selected.value)
+	tunnelService.getEndpoints()
 		.then(res => {
 			console.log("Endpoints:")
 			console.log(res)
 			endpoints.value = res || [];
-			endpoints.value.forEach((ep)=>{
-				ep.label = ep.name || ep.username || 'Unknow EP'
-			})
-			if(!props.pid){
-				if(!!res.find((ep)=> ep.id == agentId)){
-					tunnel.value.ep = agentId;
-				} else {
-					tunnel.value.ep = res[0].id;
-				}
-			}
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
@@ -55,6 +66,11 @@ const enabled = computed(() => {
 		|| (inbound.value.listens.length>0&& inbound.value.endpoint)  
 	);
 });
+const addEnabled = computed(() => {
+	return
+		(active.value == 2 && outbound.value.targets.length>0 && outbound.value.endpoint) 
+		|| (active.value == 1 && inbound.value.listens.length>0&& inbound.value.endpoint);
+});
 watch(()=> selected,()=>{
 	getEndpoints();
 },{
@@ -63,99 +79,65 @@ watch(()=> selected,()=>{
 })
 const commit = () => {
 	loading.value = true;
-	ztmService.createService({
-		mesh: selected.value,
-		ep: tunnel.value.ep,
-		name: tunnel.value.name,
-		proto: tunnel.value.protocol,
-	})
-		.then(res => {
-			loading.value = false;
-			if(res){
-				toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
-				emits("save", tunnel.value);
-				tunnel.value = _.cloneDeep(newTunnel);
-			}
+	let notice = false;
+	if(outbound.value.targets.length>0 && outbound.value.endpoint){
+		tunnelService.createOutbound({
+			...outbound.value,
+			proto: tunnel.value.protocol, 
+			name: tunnel.value.name
 		})
-		.catch(err => {
-			loading.value = false;
-			console.log('Request Failed', err)
-		}); 
-}
-const home = ref({
-    icon: 'pi pi-desktop'
-});
-onMounted(() => {
-	if(!!props.pid){
-		loaddata()
-	} else {
-		tunnel.value = _.cloneDeep(newTunnel);
+			.then(res => {
+				loading.value = false;
+				if(res && !notice){
+					notice = true;
+					toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
+					setTimeout(()=>{
+						emits("save");
+					},500);
+				}
+			})
+			.catch(err => {
+				loading.value = false;
+				console.log('Request Failed', err)
+			}); 
 	}
-});
-const error = ref();
-const loaddata = () => {
-	loading.value = true;
-			console.log({
-		name:props.pid,
-		ep:props.ep,
-		mesh:props.mesh,
-		proto:props.proto,
-	});
-	ztmService.getService({
-		name:props.pid,
-		ep:props.ep,
-		mesh:props.mesh,
-		proto:props.proto,
-	})
-		.then(res => {
-			console.log("getService loaddata");
-			console.log(res);
-			loading.value = false;
-			tunnel.value = res;
-			tunnel.value.ep = props.ep;
-			error.value = null;
+	
+	if(inbound.value.listens.length>0&& inbound.value.endpoint){
+		tunnelService.createInbound({
+			...inbound.value,
+			proto: tunnel.value.protocol, 
+			name: tunnel.value.name
 		})
-		.catch(err => {
-			error.value = err;
-			console.log("getService catch");
-			console.log(err);
-			loading.value = false;
-		}); 
+			.then(res => {
+				loading.value = false;
+				if(res && !notice){
+					notice = true;
+					toast.add({ severity: 'success', summary:'Tips', detail: 'Create successfully.', life: 3000 });
+					setTimeout(()=>{
+						emits("save");
+					},500);
+				}
+			})
+			.catch(err => {
+				loading.value = false;
+				console.log('Request Failed', err)
+			}); 
+	}
 }
+const error = ref();
 const active = ref(0);
-
 const back = () => {
 	emits('back')
 }
-const windowWidth = computed(() =>  window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
-const newOutbound = {
-	name: null,
-	proto: null,
-	ep: null,
-	targets: [],
-	entrances: [],
-}
-const outbound = ref(newOutbound)
-const outbounds = ref([{
-	ep:{name:"xxx",id:"aaa-bbb-ccc"}, proto:"TCP", name:"AAA", targets:["127.0.0.1:8080"], entrances: ["aaa-bbb-ccc"]
-}])
-
-const newInbound = {
-	name: null,
-	proto: null,
-	ep: null,
-	listens: [],
-	exits: [],
-}
-const inbound = ref(newInbound)
-const inbounds = ref([{
-	ep:{name:"xxx",id:"aaa-bbb-ccc"}, proto:"TCP", name:"AAA", listens:["127.0.0.1:8080"], exits: ["aaa-bbb-ccc"]
-}])
 const editor = ref();
-const openEdit = (index) => {
-	editor.value = index;
-}
+
+onMounted(() => {
+	if(!props.title){
+		tunnel.value = _.cloneDeep(newTunnel);
+		inbound.value = _.cloneDeep(newInbound);
+		outbound.value = _.cloneDeep(newOutbound);
+	}
+});
 </script>
 
 <template>
@@ -175,10 +157,10 @@ const openEdit = (index) => {
 		<Empty v-if="error" :error="error"/>
 		<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
 			
-			<Button v-if="!!props.title && !loading && active>0 && !editor" @click="openEdit(active)" v-tooltip="active==1?'Add Inbound':'Add Outbound'" size="small" icon="pi pi-plus" class="absolute" style="right: 30px;top:10px;z-index: 10;"></Button>
+			<Button v-if="!!props.title && !loading && active>0 && !editor" @click="() => editor = active" v-tooltip="active==1?'Add Inbound':'Add Outbound'" size="small" icon="pi pi-plus" class="absolute" style="right: 30px;top:10px;z-index: 10;"></Button>
 			<div v-else-if="!!props.title && !loading && active>0" class="absolute" style="right: 30px;top:10px;z-index: 10;">
 				<Button class="mr-2" @click="() => editor = null" size="small" icon="pi pi-angle-left" outlined ></Button>
-				<Button @click="save(active)" v-tooltip="active==1?'Save Inbound':'Save Outbound'"  size="small" icon="pi pi-check" ></Button>
+				<Button :disabled="addEnabled" @click="commit" v-tooltip="active==1?'Save Inbound':'Save Outbound'"  size="small" icon="pi pi-check" ></Button>
 			</div>
 			
 			<Loading v-if="loading" />

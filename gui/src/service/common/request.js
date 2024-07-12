@@ -27,7 +27,10 @@ function getUrl(url){
 			path = location.pathname
 		}
 	}
-	if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
+	const devPath = localStorage.getItem("DEV_BASE")
+	if(!!devPath){
+		return `${devPath}${url}`
+	}else if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
 		return `${path}${url}`
 	} else {
 		return `http://127.0.0.1:${getPort()}${path}${url}`

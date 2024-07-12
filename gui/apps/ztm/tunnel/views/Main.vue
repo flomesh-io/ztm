@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import Tunnels from './Tunnels.vue'
-import TunnelCreate from './TunnelCreate.vue'
+import TunnelEditor from './TunnelEditor.vue'
 
 const visibleDialog = ref(false);
 const visibleEditor = ref(false);
@@ -14,11 +14,9 @@ const visibleEditor = ref(false);
 		</div>
 		<div class="flex-item h-full" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
-				<TunnelCreate
-					:mesh="''" 
-					:pid="selectedTunnel??.name" 
-					:ep="selectedTunnel?.ep?.id" 
-					:proto="selectedTunnel??.protocol"
+				<TunnelEditor
+					:title="selectedTunnel?selectedTunnel?.name:null"
+					:d="selectedTunnel" 
 					@save="save" 
 					@back="() => {selectedTunnel=null;visibleEditor=false;}"/>
 			</div>
