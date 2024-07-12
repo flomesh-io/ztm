@@ -148,7 +148,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
 		<AppHeader :back="back">
 				<template #center>
-					<b>{{props.title||'Create Service'}}</b>
+					<b>{{props.title||'New Outbound'}}</b>
 				</template>
 		
 				<template #end> 
@@ -165,13 +165,13 @@ const isMobile = computed(() => windowWidth.value<=768);
 					<template #header><i class="pi pi-cog mr-2"/>Config</template>
 					<div>
 						<ul class="list-none p-0 m-0">
-							<FormItem label="Service">
+							<FormItem label="Outbound">
 								<Chip class="pl-0 pr-3 mr-2">
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<i class="pi pi-bookmark"/>
 										</span>
 										<span class="ml-2 font-medium">
-											<InputText :disabled="!!props.pid" placeholder="Name your service" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
+											<InputText :disabled="!!props.pid" placeholder="Name your outbound" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
 										</span>
 								</Chip>
 							</FormItem>
