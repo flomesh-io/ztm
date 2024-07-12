@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
-import InboundMaping from './InboundMaping.vue'
+import TunnelService from '../service/TunnelService';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 const store = useStore();
@@ -10,191 +10,65 @@ const store = useStore();
 const confirm = useConfirm();
 const router = useRouter();
 const ztmService = new ZtmService();
-const outbounds = ref([]);
-const endpointMap = ref({});
-const endpoints = ref([]);
+const tunnelService = new TunnelService();
+const tunnels = ref([]);
 const status = ref({});
 const scopeType = ref('All');
 const portMap = ref({});
 const loading = ref(false);
 const loader = ref(false);
 const visibleEditor = ref(false);
-const meshes = computed(() => {
-	return store.getters['account/meshes']
-});
-const selectedMesh = computed(() => {
-	return store.getters["account/selectedMesh"]
-});
 
-const isChat = computed(() => store.getters['account/isChat']);
 onActivated(()=>{
-	if(selectedMesh.value){
-		getOutbounds();
-		getEndpoints();
-		getPorts();
-	}
+	getTunnels();
 })
-const props = defineProps(['ep','embed']);
 const emits = defineEmits(['create', 'edit'])
-const deleteOutbound = () => {
-	const outbound = selectedOutbound.value?.outbound;
-	if(!outbound){
-		return;
-	}
-	const ep = endpointMap.value[outbound.ep?.id]?.name|| 'Unnamed EP';
-	ztmService.deleteService({
-		name: outbound.name,
-		proto: outbound.protocol,
-		mesh:selectedMesh.value?.name,
-		ep: outbound.ep?.id
-	},() => {
-		setTimeout(()=>{
-			getOutbounds();
-		},1000)
-		
-		selectedOutbound.value = null;
-		visibleEditor.value = false;
-	});
-}
-
-const getEndpoints = () => {
-	ztmService.getEndpoints(selectedMesh.value?.name)
-		.then(res => {
-			endpoints.value = res;
-			res.forEach((ep) => {
-				endpointMap.value[ep.id] = ep;
-			})
-		})
-		.catch(err => console.log('Request Failed', err)); 
-}
 const error = ref();
-const getOutbounds = () => {
+const getTunnels = () => {
 	visibleEditor.value = false;
 	loading.value = true;
 	loader.value = true;
-	if(!!selectedMesh.value){
-		ztmService.getServices({
-			mesh:selectedMesh.value?.name,
-			ep:props.embed?props.ep:null
-		})
-			.then(res => {
-				console.log("outbounds:")
-				console.log(res)
-				loading.value = false;
-				setTimeout(() => {
-					loader.value = false;
-				},2000)
-				error.value = null;
-				outbounds.value = res || [];
-			})
-			.catch(err => {
-				loading.value = false;
+	tunnelService.getTunnels()
+		.then(res => {
+			console.log("tunnels:")
+			console.log(res)
+			loading.value = false;
+			setTimeout(() => {
 				loader.value = false;
-				error.value = err;
-				console.log('Request Failed', err)
-			}); 
-	}
+			},2000)
+			error.value = null;
+			tunnels.value = res || [];
+		})
+		.catch(err => {
+			loading.value = false;
+			loader.value = false;
+			error.value = err;
+			console.log('Request Failed', err)
+		}); 
 }
 
-const getPorts = () => {
-	portMap.value = {}
-	ztmService.getPorts({
-		mesh:selectedMesh.value?.name,
-		ep:props.embed?props.ep:selectedMesh.value?.agent?.id
-	})
-		.then(res => {
-			(res||[]).forEach((port)=>{
-				portMap.value[`${port.target?.outbound}-${port.target?.endpoint||''}`] = `${port.listen.ip}:${port.listen.port}:${port.protocol}`;
-			})
-		})
-		.catch(err => console.log('Request Failed', err)); 
-}
 
 watch(()=>selectedMesh,()=>{
-	if(selectedMesh.value){
-		getOutbounds();
-		getEndpoints();
-		getPorts();
-	}
+	getTunnels();
 },{
 	deep:true,
 	immediate:true
-})
-const portInfo = computed(() => {
-	return (svc,ep) => {
-		const postAry = [];
-		if(portMap.value[`${svc}-${ep}`]){
-			postAry.push(portMap.value[`${svc}-${ep}`])
-		}  
-		if(portMap.value[`${svc}-`]){
-			postAry.push(portMap.value[`${svc}-`])
-		}  
-		return postAry.join("\n");
-	}
 });
-
-
-const portInfobyLb = computed(() => {
-	return (svc) => {
-		return portMap.value[`${svc}-`];
-	}
-});
-
-const outboundsFilter = computed(() => {
-	return outbounds.value.filter((svc)=>{
-		return (typing.value == '' || svc.name.indexOf(typing.value)>=0 || typing.value == svc.host) 
-		&& (scopeType.value == 'All' || (scopeType.value == 'Remote' && !svc.isLocal) || (scopeType.value == 'Local' && !!svc.isLocal))
+const tunnelsFilter = computed(() => {
+	return tunnels.value.filter((tunnel)=>{
+		return (typing.value == '' || tunnel.name.indexOf(typing.value)>=0 ) 
 	})
 });
 
-
-const outboundsLb = computed(() => {
-	const lbMap = {};
-	outboundsFilter.value.forEach((svc)=>{
-		if(!lbMap[svc.name]){
-			lbMap[svc.name] = [];
-		}
-		if(props.embed){
-			svc.endpoints = [];
-			svc.endpoints.push({
-				id: props.ep
-			})
-		}
-		svc.endpoints.forEach((_ep) => {
-			lbMap[svc.name].push({
-				ep: _ep,
-				...svc
-			});
-		})
-	});
-	return Object.values(lbMap);
-});
 
 const typing = ref('');
 const save = () => {
 	visibleEditor.value = false;
-	getOutbounds();
-	selectedOutbound.value = null;
+	getTunnels();
+	selectedTunnel.value = null;
 	visibleEditor.value = false;
 }
-const visiblePort = ref(false)
-const selectedOutbound = ref(null);
-const targetEndpoints = ref(null);
-const mappingPort = ({outbound, ep, lb}) => {
-	targetEndpoints.value = [];
-	if(!!lb){
-		lb.forEach(svc=>{
-			targetEndpoints.value.push(svc.ep);
-		})
-	}
-	visiblePort.value = true;
-	selectedOutbound.value = {outbound, ep};
-}
-const savePort = () => {
-	visiblePort.value = false;
-	getPorts();
-}
-
+const selectedTunnel = ref(null);
 const actionMenu = ref();
 const actions = ref([
     {
@@ -207,18 +81,11 @@ const actions = ref([
 									openEditor()
 								}
             },
-            {
-                label: 'Delete',
-                icon: 'pi pi-trash',
-								command: () => {
-									deleteOutbound()
-								}
-            }
         ]
     }
 ]);
-const showAtionMenu = (event, svc) => {
-	selectedOutbound.value = svc;
+const showAtionMenu = (event, tunnel) => {
+	selectedTunnel.value = tunnel;
 	actionMenu.value.toggle(event);
 };
 const openEditor = () => {
@@ -233,9 +100,6 @@ const back = () => {
 	router.go(-1)
 }
 
-const toggleLeft = () => {
-	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
-}
 const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 
@@ -253,9 +117,9 @@ const edit = (d) => {
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':props.embed}">
+	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':false}">
 		<div  class="relative h-full" :class="{'w-24rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
-			<AppHeader :main="!isChat" v-if="!props.embed">
+			<AppHeader :main="true" >
 					<template #start>
 						<Button icon="pi pi-arrow-right-arrow-left" text />
 					</template>
@@ -264,7 +128,7 @@ const edit = (d) => {
 					</template>
 			
 					<template #end> 
-						<Button icon="pi pi-refresh" text @click="getOutbounds"  :loading="loader"/>
+						<Button icon="pi pi-refresh" text @click="getTunnels"  :loading="loader"/>
 						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
 						<Button icon="pi pi-plus"   @click="create"/>
 					</template>
@@ -272,145 +136,55 @@ const edit = (d) => {
 			<Card class="nopd" v-if="!error">
 				<template #content>
 					<InputGroup class="search-bar" >
-						<Button :disabled="!typing" icon="pi pi-search"  :label="props.embed?null:selectedMesh?.name"/>
+						<Button :disabled="!typing" icon="pi pi-search"  :label="null"/>
 						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type tunnel name" rows="1" cols="30" />
 						
 					</InputGroup>
 				</template>
 			</Card>
 			<Loading v-if="loading"/>
-			<ScrollPanel class="w-full absolute" style="bottom: 0;"  :style="{'top':props.embed?'35px':'75px'}" v-else-if="outboundsLb && outboundsLb.length >0">
+			<ScrollPanel class="w-full absolute" style="bottom: 0;"  :style="{'top':'75px'}" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
 			<div class="text-center">
-				<DataTable v-if="layout == 'list'" class="nopd-header w-full" v-model:expandedRows="expandedRows" :value="outboundsLb" dataKey="id" tableStyle="min-width: 50rem">
+				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="tunnelsFilter" dataKey="id" tableStyle="min-width: 50rem">
 						<Column expander style="width: 5rem" />
-						<Column header="Outbound">
+						<Column header="Tunnel">
 							<template #body="slotProps">
-								<span class="block text-tip font-medium"><i class="pi pi-server text-tip"></i> {{slotProps.data[0].name}}</span>
+								<span class="block text-tip font-medium"><i class="pi pi-server text-tip"></i> {{slotProps.name}}</span>
 							</template>
 						</Column>
-						<Column header="Endpoints">
+						<Column header="Inbound">
 							<template #body="slotProps">
-								<Badge :value="slotProps.data.length"/>
+								<Badge :value="slotProps.inbounds.length"/>
+							</template>
+						</Column>
+						<Column header="Outbound">
+							<template #body="slotProps">
+								<Badge :value="slotProps.outbounds.length"/>
 							</template>
 						</Column>
 						<Column header="Action"  style="width: 110px;">
 							<template #body="slotProps">
-			
-							 <div 
-								 @click="mappingPort({outbound: slotProps.data[0],lb:slotProps.data})"
-								 v-if="!!portInfobyLb(slotProps.data[0].name)" 
-								 v-tooltip="'Port:'+portInfobyLb(slotProps.data[0].name)" 
-								 class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
-								 style="width: 2rem; height: 2rem">
-									 <i class="pi pi-circle text-xl"></i>
-							 </div>
-							 <div v-else v-tooltip="'Connect'"  @click="mappingPort({outbound: slotProps.data[0],lb:slotProps.data[0]})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2.5rem; height: 2.5rem">
-									 <i class="pi pi-circle text-xl"></i>
-							 </div>
+								
 							</template>
 						</Column>
-						<template #expansion="parentSlotProps">
-								<div class="pl-7" v-if="!!parentSlotProps.data.length > 0">
-										<DataTable :value="parentSlotProps.data || []" >
-											<Column header="Endpoint">
-												<template #body="slotProps">
-													{{endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP'}}
-												</template>
-											</Column>
-											<Column header="Info">
-												<template #body="slotProps">
-													<div v-if="!!slotProps.data.port || !!slotProps.data.host">
-														<Tag class="mr-2" severity="contrast" value="Contrast" v-if="slotProps.data.ep?.isLocal">Local</Tag> 
-														<Tag class="mr-2" severity="secondary" value="Secondary">{{slotProps.data.protocol}}</Tag> 
-														<span class="relative" style="top: 2px;">{{slotProps.data.host}}{{!!slotProps.data.port?(`:${slotProps.data.port}`):''}}</span> 
-													</div>
-												</template>
-											</Column>
-											
-											<Column header="Action" style="width: 100px;">
-												<template #body="slotProps">
-													<div class="flex">
-														<div 
-															@click="mappingPort({outbound: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})"
-															v-if="!!portInfo(slotProps.data.name,selectedMesh?.agent?.id)" 
-															v-tooltip="'Port:'+portInfo(slotProps.data.name,selectedMesh?.agent?.id)" 
-															class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
-															style="width: 2rem; height: 2rem">
-																<i class="pi pi-circle text-xl"></i>
-														</div>
-														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({outbound: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2rem; height: 2rem">
-															<i class="pi pi-circle text-xl"></i>
-														</div>
-														<div @click="showAtionMenu($event, {outbound: slotProps.data,ep:{id:slotProps.data.ep?.id, name: (endpointMap[slotProps.data.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
-															<i class="pi pi-ellipsis-v text-tip text-xl"></i>
-														</div>
-													</div>
-												</template>
-											</Column>
-										</DataTable>
-								</div>
-						</template>
 				</DataTable>
-				<div v-else class="grid text-left mt-1 px-3" v-if="outboundsLb && outboundsLb.length >0">
-						<div  :class="(!visibleEditor)?'col-12 md:col-6 lg:col-4':'col-12'" v-for="(lb,hid) in outboundsLb" :key="hid">
+				<div v-else class="grid text-left mt-1 px-3" v-if="tunnelsFilter && tunnelsFilter.length >0">
+						<div  :class="(!visibleEditor)?'col-12 md:col-6 lg:col-4':'col-12'" v-for="(tunnel,hid) in tunnelsFilter" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between">
 											 <div>
-													<span class="block text-tip font-medium mb-3"><i class="pi pi-server text-tip relative" style="top: 2px;"></i> {{lb[0].name}}</span>
-													<div class="text-left w-full" v-if="!!lb[0].port || !!lb[0].host"><Tag  severity="contrast" value="Contrast" v-if="lb[0].ep?.isLocal">Local</Tag> <Tag severity="secondary" value="Secondary">{{lb[0].protocol}}</Tag> <span class="relative" style="top: 2px;">{{lb[0].host}}{{!!lb[0].port?(`:${lb[0].port}`):''}}</span> </div>
+													<span class="block text-tip font-medium mb-3"><i class="pi pi-server text-tip relative" style="top: 2px;"></i> {{tunnel.name}}</span>
+													<div class="text-left w-full" ><Tag  severity="contrast" value="Contrast" >Local</Tag> <Tag severity="secondary" value="Secondary">{{tunnel.protocol}}</Tag> </div>
 											 </div>
 											 <div class="flex">
-												 <div 
-													 @click="mappingPort({outbound: lb[0],lb})"
-													 v-if="!!portInfobyLb(lb[0].name)" 
-													 v-tooltip="'Port:'+portInfobyLb(lb[0].name)" 
-													 class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
-													 :style="props.embed?'width: 2rem; height: 2rem':'width: 2.5rem; height: 2.5rem'">
+												 <div v-tooltip="'Connect'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2.5rem; height: 2.5rem'">
 														 <i class="pi pi-circle text-xl"></i>
 												 </div>
-												 <div v-else v-tooltip="'Connect'"  @click="mappingPort({outbound: lb[0],lb})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="props.embed?'width: 2rem; height: 2rem':'width: 2.5rem; height: 2.5rem'">
-														 <i class="pi pi-circle text-xl"></i>
-												 </div>
-												 
-												 <div v-if="props.embed" @click="showAtionMenu($event, {outbound: lb[0],ep:{id:props.ep, name: (endpointMap[lb[0].ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
+												 <div  @click="showAtionMenu($event, tunnel)" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
 													<i class="pi pi-ellipsis-v text-tip text-xl"></i>
 												 </div>
 											 </div>
 									 </div>
-										<Fieldset v-if="!props.embed" :legend="lb.length+ (lb.length>1?' Endpoints':' Endpoint')" :toggleable="true">
-											<div >
-												<div v-for="(outbound, sid) in lb" :key="sid" class="flex mb-3 w-full">
-													<div class="flex-item">
-														<div class="text-tip flex w-full">
-															<span class="status-point run mr-4 relative vm" style="top: 12px;" ></span>
-															<div class="flex flex-item align-items-center" :class="{'flex-column': !!outbound.port || !!outbound.host}">
-																<div class="text-left w-full " v-tooltip="endpointMap[outbound.ep?.id]?.name" ><b class="text-ellipsis" style="width: 90%;">{{endpointMap[outbound.ep?.id]?.name|| 'Unnamed EP'}}</b></div>
-																<div class="text-left w-full" v-if="!!outbound.port || !!outbound.host"><Tag  severity="contrast" value="Contrast" v-if="outbound.ep?.isLocal">Local</Tag> <Tag severity="secondary" value="Secondary">{{outbound.protocol}}</Tag> <span class="relative" style="top: 2px;">{{outbound.host}}{{!!outbound.port?(`:${outbound.port}`):''}}</span> </div>
-															</div>
-														</div>
-													</div>
-													<div class="flex text-right" style="width: 5rem;">
-														<div 
-															@click="mappingPort({outbound: outbound,ep:{id:outbound.ep?.id, name: (endpointMap[outbound.ep?.id]?.name|| 'Unnamed EP')}})"
-															v-if="!!portInfo(outbound.name,selectedMesh?.agent?.id)" 
-															v-tooltip="'Port:'+portInfo(outbound.name,selectedMesh?.agent?.id)" 
-															class="pointer flex align-items-center justify-content-center bg-green-sec border-round mr-2" 
-															style="width: 2rem; height: 2rem">
-																<i class="pi pi-circle text-xl"></i>
-														</div>
-														<div v-else v-tooltip="'Connect by EP'" @click="mappingPort({outbound: outbound,ep:{id:outbound.ep?.id, name: (endpointMap[outbound.ep?.id]?.name|| 'Unnamed EP')}})" class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" style="width: 2rem; height: 2rem">
-															<i class="pi pi-circle text-xl"></i>
-														</div>
-														<div @click="showAtionMenu($event, {outbound: outbound,ep:{id:outbound.ep?.id, name: (endpointMap[outbound.ep?.id]?.name|| 'Unnamed EP')}})" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
-															<i class="pi pi-ellipsis-v text-tip text-xl"></i>
-														</div>
-													<!-- 	
-														<Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
-														 -->
-													</div>
-												</div>
-											</div>
-										</Fieldset>
 							 </div>
 					 </div>
 				</div>

@@ -2,6 +2,9 @@ import { request, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 export default class TunnelService {
+	getInfo() {
+		return request(`/api/appinfo`);
+	}
 	getEndpoints() {
 		return request(`/api/endpoints`);
 	}
@@ -10,15 +13,6 @@ export default class TunnelService {
 	}
 	getOutbound({ep, proto, name}) {
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`);
-	}
-	getAllOutbound(callback) {
-		this.getEndpoints().then((eps)=>{
-			let reqs = [];
-			eps.forEach((ep)=>{
-				reqs.push(this.getOutbound(ep?.id))
-			})
-			return merge(_reqs).then((allRes) => callback(allRes))
-		})
 	}
 	createOutbound({ep, proto, name, targets, entrances}) {
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"POST", {
@@ -45,6 +39,43 @@ export default class TunnelService {
 		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`,"POST", {
 			listens, exits
 		});
+	}
+	getTunnels(callback) {
+		this.getEndpoints().then((eps)=>{
+			let reqs = [];
+			eps.forEach((ep)=>{
+				const outboundReq = this.getOutbounds(ep?.id).then((res)=> {
+					return { data:res, ep, type:'outbound' }
+				})
+				reqs.push(outboundReq);
+				const inboundReq = this.getInbounds(ep?.id).then((res)=> {
+					return { data:res, ep, type:'inbound' }
+				})
+				reqs.push(inboundReq)
+			})
+			return merge(_reqs).then((allRes) => {
+				const tunnels = {};
+				allRes.forEach((res)=>{
+					if(!!res.data && !!res.data.proto && !!res.data.name){
+						const _key = `${res.data.proto}/${res.data.name}`
+						if(&& !tunnels[_key]){
+							tunnels[_key] = {
+								name: res.data.name,
+								proto: res.data.proto,
+								outbounds: [],
+								inbounds: [],
+							}
+						}
+						if(res.type == "inbound"){
+							tunnels[_key].inbounds.push(res)
+						}else{
+							tunnels[_key].outbounds.push(res)
+						}
+					}
+				})
+				callback(Object.values(tunnels))
+			})
+		})
 	}
 	deleteInbound({ep, proto, name}) {
 		confirm.remove(() => {
