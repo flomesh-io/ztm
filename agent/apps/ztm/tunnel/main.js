@@ -16,6 +16,15 @@ export default function ({ app, mesh, utils }) {
       'CONNECT': utils.createCLIResponder(cli),
     },
 
+    '/api/appinfo': {
+      'GET': responder(() => response(200, {
+        name: app.name,
+        provider: app.provider,
+        username: app.username,
+        endpoint: app.endpoint,
+      }))
+    },
+
     '/api/endpoints': {
       'GET': responder(() => api.allEndpoints().then(
         ret => ret ? response(200, ret) : response(404)
