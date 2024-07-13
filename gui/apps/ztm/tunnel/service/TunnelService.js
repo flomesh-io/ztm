@@ -15,17 +15,32 @@ export default class TunnelService {
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`);
 	}
 	createOutbound({ep, proto, name, targets, entrances}) {
+		const _targets = [];
+		targets.forEach((target) => {
+			const _target = {}
+			if(!!target){
+				if(!!target.split(":")[0]){
+					_target.host = target.split(":")[0]
+				}
+				if(!!target.split(":")[1]){
+					_target.port = target.split(":")[1]*1
+				}
+				_targets.push(_target);
+			}
+		})
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"POST", {
-			targets, entrances
+			targets: _targets, entrances
 		});
 	}
 	deleteOutbound({ep, proto, name}, callback) {
 		confirm.remove(() => {
 			request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"DELETE").then((res) => {
 				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
-				!!callback && callback(res);
+				if(!!callback)
+				callback(res);
 			}).catch(err => {
-				!!callback && callback(res);
+				if(!!callback)
+				callback(err);
 			});
 		})
 	}
@@ -36,13 +51,27 @@ export default class TunnelService {
 		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`);
 	}
 	createInbound({ep, proto, name, listens, exits}) {
+		const _listens = [];
+		listens.forEach((listen) => {
+			if(!!listen){
+				const _listen = { ip:listen.split(":")[0] }
+				if(!!listen.split(":")[0]){
+					_listen.host = listen.split(":")[0]
+				}
+				if(!!listen.split(":")[1]){
+					_listen.port = listen.split(":")[1]*1
+				}
+				_listens.push(_listen);
+			}
+		})
 		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`,"POST", {
-			listens, exits
+			listens: _listens, exits
 		});
 	}
 	getTunnels(callback) {
 		this.getEndpoints().then((eps)=>{
 			let reqs = [];
+			// merge request
 			eps.forEach((ep)=>{
 				const outboundReq = this.getOutbounds(ep?.id).then((res)=> {
 					return { data:res, ep, type:'outbound' }
@@ -53,37 +82,65 @@ export default class TunnelService {
 				})
 				reqs.push(inboundReq)
 			})
-			return merge(_reqs).then((allRes) => {
+			return merge(reqs).then((allRes) => {
 				const tunnels = {};
-				allRes.forEach((res)=>{
-					if(!!res.data && !!res.data.proto && !!res.data.name){
-						const _key = `${res.data.proto}/${res.data.name}`
-						if(&& !tunnels[_key]){
-							tunnels[_key] = {
-								name: res.data.name,
-								proto: res.data.proto,
-								outbounds: [],
-								inbounds: [],
+				// set tunnels
+				allRes.forEach((childres)=>{
+					if(!!childres.data ){
+						childres.data.forEach((res)=>{
+							if(!!res.protocol && !!res.name){
+								const _key = `${res.protocol}/${res.name}`
+								if(!tunnels[_key]){
+									tunnels[_key] = {
+										name: res.name,
+										proto: res.protocol,
+										outbounds: [],
+										inbounds: [],
+									}
+								}
+								if(childres.type == "inbound"){
+									const listens = [] 
+									if(!!res.listens){
+										res.listens.forEach((listen)=>{
+											listens.push(`${listen.ip}${!!listen.port?(':'+listen.port):''}`)
+										})
+									}
+									tunnels[_key].inbounds.push({
+										...res,
+										listens,
+										ep:childres.ep
+									})
+								}else{
+									const targets = [] 
+									if(!!res.targets){
+										res.targets.forEach((target)=>{
+											targets.push(`${target.host}${!!target.port?(':'+target.port):''}`)
+										})
+									}
+									tunnels[_key].outbounds.push({
+										...res,
+										targets,
+										ep:childres.ep
+									})
+								}
 							}
-						}
-						if(res.type == "inbound"){
-							tunnels[_key].inbounds.push(res)
-						}else{
-							tunnels[_key].outbounds.push(res)
-						}
+						})
 					}
 				})
+				if(!!callback)
 				callback(Object.values(tunnels))
 			})
 		})
 	}
-	deleteInbound({ep, proto, name}) {
+	deleteInbound({ep, proto, name}, callback) {
 		confirm.remove(() => {
 			request(`/api/endpoints/${ep}/inbound/${proto}/${name}`,"DELETE").then((res) => {
 				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
-				!!callback && callback(res);
+				if(!!callback)
+				callback(res);
 			}).catch(err => {
-				!!callback && callback(res);
+				if(!!callback)
+				callback(err);
 			});
 		})
 	}

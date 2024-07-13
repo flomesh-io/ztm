@@ -276,7 +276,8 @@ const toggle = (event) => {
 				v-else
 				:options="meshes" 
 				optionLabel="name" 
-				:filter="meshes.length>10"
+				:filter="meshes.length>8"
+				scrollHeight="7rem"
 				v-model="selectedMesh"
 				@change="changeMesh"
 				:loading="loading"
