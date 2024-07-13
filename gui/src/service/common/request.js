@@ -22,9 +22,10 @@ const METHOD = {
 function getUrl(url){
 	let path = "";
 	if(location.pathname){
-		const params = location.pathname.split('/');
-		if(params.length == 7){
-			path = location.pathname
+		let params = location.pathname.split('/');
+		if(params.length >= 8){
+			params.splice(params.length-1,1)
+			path = params.join("/")
 		}
 	}
 	const devPath = localStorage.getItem("DEV_BASE")

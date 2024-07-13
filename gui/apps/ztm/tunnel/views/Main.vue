@@ -2,21 +2,80 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import Tunnels from './Tunnels.vue'
 import TunnelEditor from './TunnelEditor.vue'
+import TunnelService from '../service/TunnelService';
 
-const visibleDialog = ref(false);
 const visibleEditor = ref(false);
+const tunnelService = new TunnelService();
+const save = (tunnel) => {
+	loaddata(tunnel);
+}
+const endpointMap = ref({});
+onMounted(()=>{
+	loaddata()
+})
+const loaddata = (tunnel) => {
+	getEndpoints();
+	getTunnels(tunnel);
+}
+const selectedTunnel = ref();
+const loading = ref(false);
+const loader = ref(false);
+const error = ref();
+const tunnels = ref([]);
+const getTunnels = (tunnel) => {
+	loading.value = true;
+	loader.value = true;
+	tunnelService.getTunnels((res)=>{
+		console.log("tunnels:")
+		console.log(res)
+		loading.value = false;
+		setTimeout(() => {
+			loader.value = false;
+		},2000)
+		error.value = null;
+		tunnels.value = res || [];
+		if(!!tunnel){
+			const _find = tunnels.value.find((_t) => _t.name == tunnel.name && _t.proto == tunnel.proto)
+			if(!!_find){
+				selectedTunnel.value = _find;
+				visibleEditor.value = true;
+			} else {
+				selectedTunnel.value = null;
+				visibleEditor.value = false;
+			}
+		}
+	})
+}
+const getEndpoints = () => {
+	endpointMap.value = {};
+	tunnelService.getEndpoints().then((res)=>{
+		res.forEach((ep) => {
+			endpointMap.value[ep.id] = ep;
+		})
+	})
+}
+
 </script>
 
 <template>
 	<div class="flex flex-row min-h-screen" >
-		<div class="flex-item h-full shadow" >
-			<Tunnels @create="() => visibleEditor = true" @edit="(tunnel) => {visibleDialog = true;selectedTunnel = tunnel}"/>
+		<div class="h-full" :class="{'w-24rem':(!!visibleEditor),'flex-item':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+			<Tunnels 
+				:tunnels="tunnels" 
+				:error="error" 
+				:loading="loading"
+				:loader="loader"
+				:small="visibleEditor" 
+				@create="() => visibleEditor = true" 
+				@load="loaddata"
+				@edit="(tunnel) => {visibleEditor = true;selectedTunnel = tunnel}"/>
 		</div>
-		<div class="flex-item h-full" v-if="!!visibleEditor">
+		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
 				<TunnelEditor
-					:title="selectedTunnel?selectedTunnel?.name:null"
+					:title="selectedTunnel?`${selectedTunnel?.proto}/${selectedTunnel?.name}`:null"
 					:d="selectedTunnel" 
+					:endpointMap="endpointMap"
 					@save="save" 
 					@back="() => {selectedTunnel=null;visibleEditor=false;}"/>
 			</div>
