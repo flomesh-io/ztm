@@ -17,12 +17,12 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/appinfo': {
-      'GET': responder(() => response(200, {
+      'GET': responder(() => Promise.resolve(response(200, {
         name: app.name,
         provider: app.provider,
         username: app.username,
         endpoint: app.endpoint,
-      }))
+      })))
     },
 
     '/api/endpoints': {
