@@ -4,14 +4,12 @@ export default function (argv) {
     case 'config': return helpConfig()
     case 'run':
       switch (argv[1]) {
-        case 'ca': return helpRunCA()
         case 'hub': return helpRunHub()
         case 'agent': return helpRunAgent()
         default: return helpRun()
       }
     case 'start':
       switch (argv[1]) {
-        case 'ca': return helpRunCA('start')
         case 'hub': return helpRunHub('start')
         case 'agent': return helpRunAgent('start')
         case 'app': return helpCommandApp('start')
@@ -19,7 +17,6 @@ export default function (argv) {
       }
     case 'stop':
       switch (argv[1]) {
-        case 'ca': return helpStopCA()
         case 'hub': return helpStopHub()
         case 'agent': return helpStopAgent()
         case 'app': return helpCommandApp('stop')
@@ -67,9 +64,9 @@ function helpAll() {
   println()
   println(`  version`)
   println(`  config`)
-  println(`  start     ca | hub | agent | app`)
-  println(`  stop      ca | hub | agent | app`)
-  println(`  run       ca | hub | agent`)
+  println(`  start     hub | agent | app`)
+  println(`  stop      hub | agent | app`)
+  println(`  run       hub | agent`)
   println(`  app`)
   println(`  invite`)
   println(`  evict`)
@@ -87,7 +84,6 @@ function helpAll() {
   println()
   println(`Object types:`)
   println()
-  println(`  ca`)
   println(`  hub`)
   println(`  agent`)
   println(`  mesh      meshes`)
@@ -150,11 +146,9 @@ function helpVersion() {
 
 function helpConfig() {
   println()
-  println(`Usage: ztm config [--ca <host>:<port>] [--agent <host>:<port>]`)
+  println(`Usage: ztm config [--agent <host>:<port>]`)
   println()
   println(`Options:`)
-  println(`  --ca     <host>:<port>  Where to access the CA service`)
-  println(`                          Defaults to 'localhost:9999'`)
   println(`  --agent  <host>:<port>  Where to access the agent service`)
   println(`                          Defaults to 'localhost:7777'`)
   println()
@@ -162,37 +156,23 @@ function helpConfig() {
 
 function helpRun() {
   println()
-  println(`Usage: ztm run ca|hub|agent <options>`)
+  println(`Usage: ztm run hub|agent <options>`)
   println()
-  println(`Type 'ztm help run ca|hub|agent' for more details.`)
-  println()
-}
-
-function helpRunCA(cmd) {
-  cmd = cmd || 'run'
-  println()
-  println(`Usage: ztm ${cmd} ca [--listen [<ip>:]<port>] [--database <filename>]`)
-  println()
-  println(`Options:`)
-  println(`  -l, --listen    [<ip>:]<port>  Service listening address`)
-  println(`                                 Defaults to '127.0.0.1:9999'`)
-  println(`  -d, --database  <filename>     Location of the database file`)
-  println(`                                 Defaults to '~/ztm-ca.db'`)
+  println(`Type 'ztm help run hub|agent' for more details.`)
   println()
 }
 
 function helpRunHub(cmd) {
   cmd = cmd || 'run'
   println()
-  println(`Usage: ztm ${cmd} hub [--listen [<ip>:]<port>] [--ca <host>:<port>] [--name <address>]`)
+  println(`Usage: ztm ${cmd} hub [--database <dir>] [--listen [<ip>:]<port>] [--name <address>]`)
   println()
   println(`Options:`)
-  println(`  -l, --listen  [<ip>:]<port>   Service listening address`)
-  println(`                                Defaults to '127.0.0.1:8888'`)
-  println(`      --ca      <host>:<port>   Address of the CA service to connect to`)
-  println(`                                Defaults to 'localhost:9999'`)
-  println(`  -n, --name    <address>       Address of the hub that is visible to agents`)
-  println(`                                More than one addresses can be provided if any`)
+  println(`  -d, --database  <dir>          Pathname of the database directory (default: ~/.ztm)`)
+  println(`  -l, --listen   [<ip>:]<port>   Service listening address`)
+  println(`                                 Defaults to '127.0.0.1:8888'`)
+  println(`  -n, --name     <address>       Address of the hub that is visible to agents`)
+  println(`                                 More than one addresses can be provided if any`)
   println()
 }
 
@@ -202,36 +182,29 @@ function helpRunAgent(cmd) {
   println(`Usage: ztm ${cmd} agent [--listen [<ip>:]<port>] [--database <filename>]`)
   println()
   println(`Options:`)
+  println(`  -d, --database  <dir>          Pathname of the database directory (default: ~/.ztm)`)
   println(`  -l, --listen    [<ip>:]<port>  Service listening address`)
   println(`                                 Defaults to '127.0.0.1:7777'`)
-  println(`  -d, --database  <filename>     Location of the database file`)
-  println(`                                 Defaults to '~/ztm.db'`)
   println()
 }
 
 function helpStart() {
   println()
-  println(`Usage: ztm start ca|hub|agent|app [<app name>] <options>`)
+  println(`Usage: ztm start hub|agent|app [<app name>] <options>`)
   println()
   helpAppName()
   println()
-  println(`Type 'ztm help start ca|hub|agent|app' for more details.`)
+  println(`Type 'ztm help start hub|agent|app' for more details.`)
   println()
 }
 
 function helpStop() {
   println()
-  println(`Usage: ztm stop ca|hub|agent|app [<app name>] <options>`)
+  println(`Usage: ztm stop hub|agent|app [<app name>] <options>`)
   println()
   helpAppName()
   println()
-  println(`Type 'ztm help stop ca|hub|agent|app' for more details.`)
-  println()
-}
-
-function helpStopCA() {
-  println()
-  println(`Usage: ztm stop ca`)
+  println(`Type 'ztm help stop hub|agent|app' for more details.`)
   println()
 }
 
@@ -249,11 +222,11 @@ function helpStopAgent() {
 
 function helpInvite() {
   println()
-  println(`Usage: ztm invite <username> --bootstrap <host>:<port> [--output <filename>]`)
+  println(`Usage: ztm invite <username> --bootstrap <host>:<port> [--permit <filename>]`)
   println()
   println(`Options:`)
   println(`  -b, --bootstrap  <host>:<port>  Target address of a hub for endpoint agents to connect to`)
-  println(`  -o, --output     <filename>     Filename of the generated permit for an endpoint to join the mesh`)
+  println(`  -p, --permit     <filename>     Filename of the generated permit for an endpoint to join the mesh`)
   println(`                                  Output to stdout if not present`)
   println()
 }

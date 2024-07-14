@@ -20,7 +20,6 @@ var opt = options(pipy.argv, {
 if (opt['--help']) {
   println('Options:')
   println('  -h, --help      Show available options')
-  println('  -r, --reset     Delete the local database and start with a new one')
   println('  -d, --database  Pathname of the database directory (default: ~/.ztm)')
   println('  -l, --listen    Port number of the administration API (default: 127.0.0.1:7777)')
   return
@@ -162,13 +161,20 @@ var routes = Object.entries({
   },
 
   '/api/meshes/{mesh}/agent/key': {
-
     'POST': function ({ mesh }, req) {
       var obj = api.getMesh(mesh)
       if (!obj) return response(404)
       var data = req.body.toString()
       api.setMesh(mesh, { agent: { privateKey: data }})
       return response(201, data)
+    },
+  },
+
+  '/api/meshes/{mesh}/certificates/{username}': {
+    'POST': function ({ mesh, username }, req) {
+      return api.signCertificate(mesh, username, new crypto.PublicKey(req.body)).then(
+        ret => ret ? response(200, ret.toPEM()) : response(403)
+      )
     },
   },
 

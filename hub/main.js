@@ -1,34 +1,17 @@
 #!/usr/bin/env -S pipy --args
 
-import options from './options.js'
-
-var opt = options(pipy.argv, {
-  defaults: {
-    '--help': false,
-    '--listen': '0.0.0.0:8888',
-    '--name': [],
-    '--ca': 'localhost:9999',
-  },
-  shorthands: {
-    '-h': '--help',
-    '-l': '--listen',
-    '-n': '--name',
-  },
-})
-
-if (opt['--help']) {
-  println('Options:')
-  println('  -h, --help    Show available options')
-  println('  -l, --listen  Port number to listen (default: 0.0.0.0:8888)')
-  println('  -n, --name    Hub address seen by agents (can be more than one)')
-  println('      --ca      Address of the certificate authority service')
-  return
-}
+import db from './db.js'
+import ca from './ca.js'
+import cmdline from './cmdline.js'
 
 var routes = Object.entries({
 
   '/api/status': {
     'POST': () => findCurrentEndpointSession() ? postStatus : noSession,
+  },
+
+  '/api/sign/{name}': {
+    'POST': () => signCertificate,
   },
 
   '/api/endpoints': {
@@ -110,47 +93,67 @@ var routes = Object.entries({
 
 var endpoints = {}
 var sessions = {}
-var caAgent = new http.Agent(opt['--ca'])
+
 var caCert = null
 var myCert = null
 var myKey = null
-var myNames = [...opt['--name']]
+var myNames = []
 
-main()
+cmdline(pipy.argv, {
+  help: text => println(text),
+  commands: [{
+    title: 'ZTM Hub Service',
+    usage: '',
+    options: `
+      -d, --database  <dir>         Pathname of the database directory (default: ~/.ztm)
+      -l, --listen    <ip:port>     Port to listen on (default: 0.0.0.0:8888)
+      -n, --name      <host:port>   Address of the hub that is visible to agents
+    `,
+    action: (args) => {
+      var dbPath = args['--database'] || '~/.ztm'
+      if (dbPath.startsWith('~/')) {
+        dbPath = os.home() + dbPath.substring(1)
+      }
 
-function main() {
-  caAgent.request('GET', '/api/certificates/ca').then(
-    function (res) {
-      if (res.head.status !== 200) {
-        println('cannot retreive the CA certificate')
-        pipy.exit(-1)
+      try {
+        dbPath = os.path.resolve(dbPath)
+        var st = os.stat(dbPath)
+        if (st) {
+          if (!st.isDirectory()) {
+            throw `directory path already exists as a regular file: ${dbPath}`
+          }
+        } else {
+          os.mkdir(dbPath, { recursive: true })
+        }
+
+        db.open(os.path.join(dbPath, 'ztm-hub.db'))
+
+      } catch (e) {
+        if (e.stack) println(e.stack)
+        println('ztm:', e.toString())
         return
       }
-      caCert = new crypto.Certificate(res.body)
-      println('==============')
-      println('CA certificate')
-      println('==============')
-      println(res.body.toString())
-      myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
-      var pkey = new crypto.PublicKey(myKey)
-      return caAgent.request('POST', '/api/sign/hub/0', null, pkey.toPEM())
+
+      var name = args['--name']
+      if (name) myNames.push(name)
+
+      return ca.init().then(() => {
+        myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+        var pkey = new crypto.PublicKey(myKey)
+        return Promise.all([
+          ca.getCertificate('ca').then(crt => caCert = crt),
+          ca.signCertificate('hub', pkey).then(crt => myCert = crt),
+        ])
+      }).then(() => {
+        start(args['--listen'] || '0.0.0.0:8888')
+      })
     }
-  ).then(
-    function (res) {
-      if (res.head.status !== 200) {
-        println('error signing a hub certificate')
-        pipy.exit(-1)
-        return
-      }
-      println('===============')
-      println('Hub certificate')
-      println('===============')
-      println(res.body.toString())
-      myCert = new crypto.Certificate(res.body)
-      start()
-    }
-  )
-}
+  }]
+}).catch(err => {
+  if (err.stack) println(err.stack)
+  println(`ztm: ${err.toString()}`)
+  pipy.exit(-1)
+})
 
 function endpointName(id) {
   var ep = endpoints[id]
@@ -174,8 +177,8 @@ var $hub = null
 var $hubSelected = null
 var $pingID
 
-function start() {
-  pipy.listen(opt['--listen'], $=>$
+function start(listen) {
+  pipy.listen(listen, $=>$
     .onStart(
       function (conn) {
         $ctx = {
@@ -212,7 +215,7 @@ function start() {
     )
   )
 
-  console.info('Hub started at', opt['--listen'])
+  console.info('Hub started at', listen)
 
   function clearOutdatedEndpoints() {
     Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
@@ -240,6 +243,20 @@ var postStatus = pipeline($=>$
         }
       )
       return new Message({ status: 201 })
+    }
+  )
+)
+
+var signCertificate = pipeline($=>$
+  .replaceMessage(
+    function (req) {
+      var user = $ctx.username
+      var name = $params.name
+      if (name !== user && user !== 'root') return response(403)
+      var pkey = new crypto.PublicKey(req.body)
+      return ca.signCertificate(name, pkey).then(
+        cert => response(201, cert.toPEM().toString())
+      )
     }
   )
 )

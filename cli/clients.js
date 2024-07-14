@@ -6,7 +6,6 @@ if (!config || typeof config !== 'object') config = {}
 
 function getConfig() {
   return {
-    ca: config.ca || 'localhost:9999',
     agent: config.agent || 'localhost:7777',
   }
 }
@@ -39,7 +38,6 @@ function Client(target) {
 export default {
   config: (c) => {
     if (c) {
-      if (c.ca) config.ca = c.ca
       if (c.agent) config.agent = c.agent
       os.write(CONFIG_PATHNAME, JSON.encode(config, null, 2))
     } else {
@@ -47,6 +45,5 @@ export default {
     }
   },
 
-  ca: () => Client(getConfig().ca),
   agent: () => Client(getConfig().agent),
 }
