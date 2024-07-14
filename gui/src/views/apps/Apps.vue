@@ -11,12 +11,16 @@ import Store from './shortcut/Store.vue';
 import ZtmLog from './shortcut/ZtmLog.vue';
 import EpLog from './shortcut/EpLog.vue';
 import shortcutIcon from "@/assets/img/apps/shortcut.png";
+import defaultIcon from "@/assets/img/apps/default.png";
+import { resize } from "@/utils/window";
+
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
 const emits = defineEmits(['close','reload']);
 const hide = () => {
 	emits('close','')
+	resize(455,350,false);
 }
 const clear = () => {
 }
@@ -43,6 +47,7 @@ const shortcutApps = computed(() => {
 
 	
 const allApps = ref([]);
+const uninstallApps = ref([]);
 const upload = (d)=>{
 	if(!!d){
 		try{
@@ -59,25 +64,35 @@ const loaddata = () => {
 	console.log("load apps",[selectedMesh.value?.name,selectedMesh.value?.agent?.id])
 	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
 		console.log("start getApps")
-		allApps.value = res.filter((app) => app.name !='terminal');
-		console.log(res)
+		allApps.value = res.filter((app) => app.name !='terminal') || [];
+		console.log(res);
+		appService.getApps(selectedMesh.value?.name).then((res2)=>{
+			console.log("uninstallApps:")
+			console.log(res2)
+			const _uninstallApps = [];
+			res2.forEach((_uninstallApp)=>{
+				const installed = allApps.value.find((_app)=>app.name == _uninstallApp.name && app.provider == _uninstallApp.provider )
+				if(!installed){
+					_uninstallApps.push({
+						..._uninstallApp,
+						uninstall: true
+					})
+				}
+			})
+			uninstallApps.value = _uninstallApps;
+		}).catch((e)=>{
+			console.log(e)
+		});
 	}).catch((e)=>{
 		console.log(e)
 	});
+	
 }
-const innerApps = computed(()=>{
-	const rtn = [];
-	apps.forEach((app)=>{
-		if(!(allApps.value||[]).find((papp)=>papp.name == app.name)){
-			rtn.push({...app,loading:false})
-		}
-	});
-	return rtn;
-})
 const sysApp = 5;
+const appPageSize = 16;
 const pages = computed(()=>{
-	const _apps = ((allApps.value||[]).concat(shortcutApps.value));
-	const _pages = Math.ceil((_apps.length + sysApp + innerApps.value.length - 1)/8);
+	const _apps = (allApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
+	const _pages = Math.ceil((_apps.length + sysApp - 1)/appPageSize);
 	return _pages>0?new Array(_pages):[];
 });
 const removeApp = (app) => {
@@ -96,10 +111,9 @@ const removeApp = (app) => {
 	}
 }
 const appLoading = ref({})
-const appPageSize = 8;
 const manage = ref(false);
 const appPage = computed(()=>(page)=>{
-	return ((allApps.value||[]).concat(shortcutApps.value)).filter((n,i) => i>=(page*appPageSize - sysApp) && i< ((page+1)*appPageSize - sysApp));
+	return ((allApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value)).filter((n,i) => i>=(page*appPageSize - sysApp) && i< ((page+1)*appPageSize - sysApp));
 })
 const openAppContent = (app) => {
 		const options = {
@@ -114,8 +128,9 @@ const openAppContent = (app) => {
 			options.ep = selectedMesh.value?.agent?.id;
 		}
 		const base = appService.getAppUrl(options);
-		console.log(base)
-		if(!app.isRunning){
+		if(app.uninstall){
+			installAPP(app, options)
+		}else if(!app.isRunning){
 			appService.startApp(options).then(()=>{
 				openAppUI(app, base);
 				loaddata();
@@ -172,15 +187,16 @@ const stopApp = (app) => {
 		loaddata();
 	})
 }
-const installAPP = (app) => {
+const installAPP = (app, options) => {
 	try{
 		appLoading.value[app.name] = true;
-			appService.newApp(app,()=>{
+		appService.downloadApp(options, ()=>{
+			setTimeout(() => {
+				app.uninstall = false;
+				appLoading.value[app.name] = false;
 				loaddata();
-				setTimeout(() => {
-					appLoading.value[app.name] = false;
-				},500)
-			})
+			},500)
+		})
 		console.log(config.value)
 	}catch(e){
 	}
@@ -188,6 +204,7 @@ const installAPP = (app) => {
 const current = ref(false);
 onMounted(()=>{
 	loaddata();
+	resize(455,600,false);
 })
 const mapping = ref(appMapping);
 </script>
@@ -220,7 +237,7 @@ const mapping = ref(appMapping);
 	    <div class="terminal_body py-2 px-4" v-else-if="!manage">
 				<Carousel :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
 						<template #item="slotProps">
-							<div class="pt-1" style="min-height: 220px;">
+							<div class="pt-1" style="min-height: 440px;">
 								<div class="grid text-center" >
 										<Console v-if="slotProps.index==0"/>
 										<Store v-if="slotProps.index==0"/>
@@ -228,18 +245,20 @@ const mapping = ref(appMapping);
 										<Term v-if="slotProps.index==0"/>
 										<ZtmLog v-if="slotProps.index==0"/>
 										<EpLog  v-if="slotProps.index==0"/>
-										<div :class="{'opacity-80':appLoading[app.name]}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
-											
-											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+										<div :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
+											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
 											<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
 												<!-- <Badge value="3" severity="danger"></Badge> -->
-												<b class="text-white opacity-90">{{ app.label || mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b>
+												<b class="text-white opacity-90 white-space-nowrap">
+													<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
+													{{ app.label || mapping[`${app?.provider}/${app.name}`]?.name || app.name}}
+												</b>
 											</div>
 										</div>
 										<!-- 
-										<div v-if="!current" :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name]}" @click="installAPP(app)" class="col-3 py-4 relative text-center " v-for="(app) in innerApps">
+										<div v-if="!current" :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name]}" @click="installAPP(app)" class="col-3 py-4 relative text-center " v-for="(app) in uninstallApps">
 											<img :src="app.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
@@ -254,9 +273,9 @@ const mapping = ref(appMapping);
 	    </div>
 	    <div class="terminal_body py-2 px-4" v-else>
 				<div class="grid text-center" >
-						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(innerApps)">
+						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(uninstallApps)">
 							<div class="flex">
-								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon || defaultIcon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
 								<Button v-if="app.isRunning === false" v-tooltip.left="'Start'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
 								</Button>

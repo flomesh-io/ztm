@@ -5,10 +5,9 @@ import ZtmService from '@/service/ZtmService';
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useToast } from "primevue/usetoast";
-import { getCurrent, LogicalSize } from '@tauri-apps/api/window';
-import { invoke } from '@tauri-apps/api/core';
 import { platform } from '@tauri-apps/plugin-os';
 import { useStore } from 'vuex';
+import { resize } from "@/utils/window";
 NProgress.configure({ showSpinner: true });
 
 const ztmService = new ZtmService();
@@ -28,21 +27,6 @@ const progressStart = (to, from, next) => {
   next();
 };
 
-const resize = (width,height,resizable) => {
-	if(!!window.__TAURI_INTERNALS__ && getCurrent().setSize){
-		const label = window.__TAURI_INTERNALS__.metadata.currentWindow.label;
-		// getCurrent().setSize(new LogicalSize(width, height));
-		invoke('plugin:window|set_size', {
-		    label,
-		    value: {
-					'Logical': {width,height}
-				}
-		});
-	}
-	if(!!window.__TAURI_INTERNALS__ && getCurrent().setResizable){
-		getCurrent().setResizable(resizable);
-	}
-}
 /**
  * Login Guard
  * @param to

@@ -17,7 +17,6 @@ const user = computed(() => {
 });
 const loading = ref(false);
 
-const isChat = computed(() => store.getters['account/isChat']);
 const placeholder = ref({
 	c:`-----BEGIN CERTIFICATE-----`,
 	ca:`-----BEGIN CERTIFICATE-----`,
@@ -136,7 +135,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 					<div class="surface-section">
 						<h6><Tag severity="contrast" value="Contrast">Names</Tag></h6>
 						<ul class="list-none p-0 m-0">
-							<FormItem :label="isChat?'Channel':'Mesh'">
+							<FormItem label="Mesh">
 								<Chip class="pl-0 pr-3 mr-2">
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<i class="pi pi-bookmark"/>

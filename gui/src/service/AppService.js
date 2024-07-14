@@ -135,6 +135,11 @@ export default class AppService {
 	}) {
 		return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
 	}
+	downloadApp({
+		mesh, ep, provider, app
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {});
+	}
 	startApp({
 		mesh, ep, provider, app
 	}) {

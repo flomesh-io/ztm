@@ -6,7 +6,6 @@ const slots = useSlots();
 const props = defineProps(['main','back'])
 const store = useStore();
 const router = useRouter();
-const isChat = computed(() => store.getters['account/isChat']);
 const hasStartSlot = computed(() => !!slots.start);
 const back = () => {
 	if(!!props.back){
