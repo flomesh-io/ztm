@@ -19,7 +19,7 @@ export default {
 		platform: null,
 		selectedMesh:null,
 		mobileLeftbar: false,
-		isChat: import.meta.env.VITE_APP_MODE=='chat',
+		mode: import.meta.env.VITE_APP_MODE,
 		logs:[],
   },
 	actions: {
@@ -32,8 +32,8 @@ export default {
     mobileLeftbar: (state) => {
       return state.mobileLeftbar;
     },
-    isChat: (state) => {
-      return state.isChat;
+    mode: (state) => {
+      return state.mode;
     },
     platform: (state) => {
       return state.platform;

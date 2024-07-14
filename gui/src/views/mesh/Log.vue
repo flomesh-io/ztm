@@ -22,7 +22,6 @@ const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
 
-const isChat = computed(() => store.getters['account/isChat']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -131,7 +130,7 @@ const back = () => {
 </script>
 
 <template>
-	<AppHeader :main="!isChat" >
+	<AppHeader :main="true" >
 			<template #center>
 				<b>Logs</b>
 			</template>

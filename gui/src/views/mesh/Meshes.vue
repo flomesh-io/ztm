@@ -27,7 +27,6 @@ onMounted(() => {
 		loaddata();
 	}
 });
-const isChat = computed(() => store.getters['account/isChat']);
 const loading = ref(false);
 const loader = ref(false);
 const loaddata = () => {
@@ -110,7 +109,7 @@ const openEditor = () => {
 }
 
 const emptyMsg = computed(()=>{
-	return `First, join a ${isChat.value?'Channel':'Mesh'}.`
+	return `First, join a Mesh.`
 });
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -126,7 +125,7 @@ const select = (mesh) => {
 			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
-						<b>My {{isChat?'Channels':'Meshes'}} ({{meshes.length}})</b>
+						<b>My Meshes ({{meshes.length}})</b>
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
@@ -162,7 +161,7 @@ const select = (mesh) => {
 		<div class="flex-item h-full" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
 				<MeshJoin
-					:title="!!selectedMenu?(isChat?'Edit Channel':'Edit Mesh'):null" 
+					:title="!!selectedMenu?('Edit Mesh'):null" 
 					:pid="selectedMenu?.name" 
 					@save="join" 
 					@back="() => {selectedMenu=null;visibleEditor=false;}"/>

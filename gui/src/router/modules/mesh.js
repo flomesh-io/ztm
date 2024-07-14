@@ -1,4 +1,4 @@
-const agent = {
+const mesh = {
   path: "mesh",
   name: "Mesh",
 	redirect: "/mesh/list",
@@ -9,31 +9,16 @@ const agent = {
 				component: () => import('@/views/mesh/Meshes.vue')
 		},
 		{
-				path: '/mesh/services',
-				name: 'services',
-				component: () => import('@/views/mesh/Services.vue')
-		},
-		{
 				path: '/mesh/endpoints',
 				name: 'endpoints',
 				component: () => import('@/views/mesh/Endpoints.vue')
-		},
-		{
-				path: '/mesh/ports',
-				name: 'ports',
-				component: () => import('@/views/mesh/Ports.vue')
 		},
 		{
 				path: '/mesh/log',
 				name: 'log',
 				component: () => import('@/views/mesh/Log.vue')
 		},
-		// {
-		// 		path: '/agent/hub/create',
-		// 		name: 'hub detail',
-		// 		component: () => import('@/views/agent/HubDetail.vue')
-		// },
   ],
 };
 
-export default agent;
+export default mesh;

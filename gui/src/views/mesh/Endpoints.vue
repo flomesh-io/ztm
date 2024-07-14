@@ -18,7 +18,6 @@ const loader = ref(false);
 const status = ref({});
 const endpoints = ref([]);
 
-const isChat = computed(() => store.getters['account/isChat']);
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
@@ -83,7 +82,7 @@ const emptyMsg = computed(()=>{
 	if(!!selectedMesh.value?.name){
 		return 'No endpoint.'
 	} else {
-		return `First, join a ${isChat.value?'Channel':'Mesh'}.`
+		return `First, join a Mesh.`
 	}
 });
 </script>
@@ -94,7 +93,7 @@ const emptyMsg = computed(()=>{
 		<div class="relative h-full" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
 					<template #center>
-						<b>{{isChat?'Contacts':'Endpoints'}} ({{endpoints.length}})</b>
+						<b>Endpoints ({{endpoints.length}})</b>
 					</template>
 			
 					<template #end> 

@@ -3,8 +3,6 @@ import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
 import EndpointInfo from './EndpointInfo.vue';
-import Services from './Services.vue';
-import Ports from './Ports.vue';
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import freeSvg from "@/assets/img/free.svg";
@@ -23,7 +21,6 @@ const loader = ref(false);
 const status = ref({});
 const endpoints = ref([]);
 
-const isChat = computed(() => store.getters['account/isChat']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -60,7 +57,6 @@ const go = (path) => {
 	
 			<template #end> 
 				<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >{{props.ep.isLocal?'Local':'Remote'}}</Tag></span>
-				<Button v-if="isChat" icon="pi pi-comment" label="Chat" @click="go('/message/list')"/>
 			</template>
 	</AppHeader>
 	<div class="text-center">
@@ -77,18 +73,9 @@ const go = (path) => {
 			<TabPanel>
 				<template #header>
 					<div>
-						<i class="pi pi-server mr-2" />Services
+						<i class="pi pi-server mr-2" />Apps
 					</div>
 				</template>
-				<Services :embed="true" :ep="props.ep.id"/>
-			</TabPanel>
-			<TabPanel>
-				<template #header>
-					<div>
-						<i class="pi pi-bullseye mr-2" />Ports
-					</div>
-				</template>
-				<Ports :embed="true" :ep="props.ep.id"/>
 			</TabPanel>
 		</TabView>
 	</div>

@@ -42,7 +42,6 @@ const config = ref({
 	port: getPort(),
 });
 
-const isChat = computed(() => store.getters['account/isChat']);
 const platform = computed(() => {
 	return store.getters['account/platform']
 });
@@ -57,8 +56,8 @@ const ztmVersion = computed(() => {
 });
 const placeholder = computed(() => {
 	const _vs = "ZTM : ";
-	const unit = isChat.value?'Channel':'Mesh';
-	const units = isChat.value?'Channels':'Meshes';
+	const unit = 'Mesh';
+	const units = 'Meshes';
 	if(!!loading.value){
 		return `Starting...`;
 	} else if(!playing.value && errors.value > 0){
