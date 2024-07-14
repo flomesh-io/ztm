@@ -74,6 +74,12 @@ function delMesh(name) {
   }
 }
 
+function signCertificate(mesh, username, pkey) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.signCertificate(username, pkey)
+}
+
 function allEndpoints(mesh) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve([])
@@ -311,6 +317,7 @@ export default {
   getMeshLog,
   setMesh,
   delMesh,
+  signCertificate,
   allEndpoints,
   getEndpoint,
   getEndpointLog,

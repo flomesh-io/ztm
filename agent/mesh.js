@@ -385,6 +385,20 @@ export default function (rootDir, config) {
       )
     }
 
+    function signCertificate(username, pkey) {
+      return requestHub.spawn(
+        new Message({ method: 'POST', path: `/api/sign/${username}`}, pkey.toPEM())
+      ).then(
+        function (res) {
+          if (res && res.head.status === 201) {
+            return new crypto.Certificate(res.body)
+          } else {
+            return null
+          }
+        }
+      )
+    }
+
     function findEndpoint(ep) {
       return requestHub.spawn(
         new Message({ method: 'GET', path: `/api/endpoints/${ep}`})
@@ -467,6 +481,7 @@ export default function (rootDir, config) {
       discoverEndpoints,
       discoverFiles,
       discoverServices,
+      signCertificate,
       findEndpoint,
       findFile,
       findApp,
@@ -945,6 +960,10 @@ export default function (rootDir, config) {
   function advertiseAppStates() {
     var list = apps.listRunning()
     hubs[0].advertiseAppStates(list)
+  }
+
+  function signCertificate(username, pkey) {
+    return hubs[0].signCertificate(username, pkey)
   }
 
   function findEndpoint(ep) {
@@ -1637,6 +1656,7 @@ export default function (rootDir, config) {
     getStatus,
     getLog,
     getErrors,
+    signCertificate,
     findEndpoint,
     findFile,
     findApp,

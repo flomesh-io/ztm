@@ -1,5 +1,7 @@
 #!/usr/bin/env -S pipy --args
 
+import db from './db.js'
+import ca from './ca.js'
 import options from './options.js'
 import clients from './clients.js'
 import help from './help.js'
@@ -17,39 +19,30 @@ var optionsVersion = {
 
 var optionsConfig = {
   defaults: {
-    '--ca': '',
     '--agent': '',
   },
   shorthands: {},
 }
 
-var optionsCA = {
+var optionsHub = {
   defaults: {
-    '--listen': '127.0.0.1:9999',
-    '--database': '~/ztm-ca.db',
+    '--listen': '0.0.0.0:8888',
+    '--database': '~/.ztm',
+    '--name': [],
+    '--permit': '',
   },
   shorthands: {
     '-l': '--listen',
     '-d': '--database',
-  },
-}
-
-var optionsHub = {
-  defaults: {
-    '--listen': '0.0.0.0:8888',
-    '--ca': 'localhost:9999',
-    '--name': [],
-  },
-  shorthands: {
-    '-l': '--listen',
     '-n': '--name',
+    '-p': '--permit',
   },
 }
 
 var optionsAgent = {
   defaults: {
     '--listen': '127.0.0.1:7777',
-    '--database': '~/ztm.db',
+    '--database': '~/.ztm',
   },
   shorthands: {
     '-l': '--listen',
@@ -59,12 +52,12 @@ var optionsAgent = {
 
 var optionsInvite = {
   defaults: {
-    '--bootstrap': [],
-    '--output': '',
+    '--mesh': '',
+    '--permit': '',
   },
   shorthands: {
-    '-b': '--bootstrap',
-    '-o': '--output',
+    '-m': '--mesh',
+    '-p': '--permit',
   },
 }
 
@@ -375,13 +368,11 @@ function version(argv) {
 function config(argv) {
   var opts = parseOptions(optionsConfig, argv, 'config')
   var conf = {
-    ca: opts['--ca'],
     agent: opts['--agent'],
   }
   if (Object.values(conf).filter(i=>i).length === 0) {
     var c = clients.config()
-    println('Current CA    :', c.ca)
-    println('Current agent :', c.agent)
+    println('Current agent:', c.agent)
   } else {
     clients.config(conf)
   }
@@ -394,7 +385,6 @@ function config(argv) {
 function start(argv) {
   var type = readObjectType(argv, 'start')
   switch (type) {
-    case 'ca': return startCA(argv)
     case 'hub': return startHub(argv)
     case 'agent': return startAgent(argv)
     case 'app': return startApp(argv)
@@ -402,16 +392,20 @@ function start(argv) {
   }
 }
 
-function startCA(argv) {
-  var opts = parseOptions(optionsCA, argv, 'start ca')
-  var optsChanged = (argv.length > 0)
-  startService('ca', opts, optsChanged)
-}
-
 function startHub(argv) {
   var opts = parseOptions(optionsHub, argv, 'start hub')
   var optsChanged = (argv.length > 0)
-  startService('hub', opts, optsChanged)
+  if (optsChanged || !hasService('hub')) {
+    initHub(opts).then(
+      () => {
+        delete opts['--permit']
+        startService('hub', opts, optsChanged)
+      }
+    )
+  } else {
+    delete opts['--permit']
+    startService('hub', opts, optsChanged)
+  }
 }
 
 function startAgent(argv) {
@@ -430,6 +424,93 @@ function startApp(argv) {
   }).then(() => {
     pipy.exit(0)
   }).catch(error)
+}
+
+function initHub(opts) {
+  var dbPath = opts['--database'] || '~/.ztm'
+  if (dbPath.startsWith('~/')) {
+    dbPath = os.home() + dbPath.substring(1)
+  }
+
+  var names = opts['--name']
+  if (names.length === 0) throw 'at least one --name option is required'
+
+  try {
+    dbPath = os.path.resolve(dbPath)
+    var st = os.stat(dbPath)
+    if (st) {
+      if (!st.isDirectory()) {
+        throw `directory path already exists as a regular file: ${dbPath}`
+      }
+    } else {
+      os.mkdir(dbPath, { recursive: true })
+    }
+
+    db.open(os.path.join(dbPath, 'ztm-hub.db'))
+
+  } catch (e) {
+    if (e.stack) println(e.stack)
+    println('ztm:', e.toString())
+    pipy.exit(0)
+  }
+
+  var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+  var pkey = new crypto.PublicKey(key)
+
+  return ca.init().then(
+    () => Promise.all([
+      ca.getCertificate('ca'),
+      ca.signCertificate('root', pkey),
+    ])
+  ).then(([ca, root]) => {
+    var permit = JSON.stringify({
+      ca: ca.toPEM().toString(),
+      agent: {
+        certificate: root.toPEM().toString(),
+        privateKey: key.toPEM().toString(),
+      },
+      bootstraps: names,
+    })
+    db.close()
+    if (opts['--permit']) {
+      var filename = os.path.resolve(opts['--permit'])
+      try {
+        os.write(filename, permit)
+      } catch {
+        return error(`cannot write to file: ${filename}`)
+      }
+      var dir = os.path.dirname(filename)
+      var name = filename.substring(dir.length + 1)
+      println()
+      println(`A permit file is saved to ${filename}`)
+      println()
+      println(`To join the mesh on an endpoint:`)
+      println()
+      println(`  1. Send the file '${name}' to the endpoint`)
+      println(`  2. Execute the following command on the endpoint:`)
+      println()
+      println(`       ztm join my-mesh --as my-first-ep --permit ${name}`)
+      println()
+    } else {
+      println()
+      println(`*****************************************************************`)
+      println(`*                                                               *`)
+      println(`* How to Join the Mesh                                          *`)
+      println(`*                                                               *`)
+      println(`* 1. Send the following to an endpoint in a file                *`)
+      println(`* 2. Execute command 'ztm join' on the endpoint, e.g.:          *`)
+      println(`*                                                               *`)
+      println(`*      ztm join my-mesh --as my-first-ep --permit root.json     *`)
+      println(`*                                                               *`)
+      println(`*    Where 'root.json' is a file containing                     *`)
+      println(`*    the following content                                      *`)
+      println(`*                                                               *`)
+      println(`*****************************************************************`)
+      println()
+      println(JSON.stringify(permit))
+      println()
+    }
+  })
 }
 
 function startService(name, opts, optsChanged) {
@@ -470,13 +551,26 @@ function stripIndentation(s) {
   return lines.map(l => l.substring(depth)).join('\n')
 }
 
+function getServiceFilename(name) {
+  switch (os.platform) {
+    case 'linux': return `/etc/systemd/system/ztm-${name}.service`
+    case 'darwin': return `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
+    default: return ''
+  }
+}
+
+function hasService(name) {
+  var s = os.stat(getServiceFilename(name))
+  return s && s.isFile()
+}
+
 function startServiceLinux(name, args, optsChanged) {
   var program = os.abspath(pipy.exec(['sh', '-c', `command -v ${pipy.argv[0]}`]).toString().trim())
   var user = pipy.exec('whoami').toString().trim()
   var opts = args.map(
     arg => arg.startsWith('-') ? arg : `'${arg}'`
   ).join(' ')
-  var filename = `/etc/systemd/system/ztm-${name}.service`
+  var filename = getServiceFilename(name)
   var logdir = `/var/log/ztm`
   if (optsChanged || !os.stat(filename)) {
     os.write(filename, stripIndentation(`
@@ -503,7 +597,7 @@ function startServiceLinux(name, args, optsChanged) {
 
 function startServiceDarwin(name, args, optsChanged) {
   var program = os.abspath(pipy.exec(['sh', '-c', `command -v ${pipy.argv[0]}`]).toString().trim())
-  var filename = `${os.home()}/Library/LaunchAgents/io.flomesh.ztm.${name}.plist`
+  var filename = getServiceFilename(name)
   if (optsChanged || !os.stat(filename)) {
     os.write(filename, stripIndentation(`
       <?xml version="1.0" encoding="UTF-8"?>
@@ -539,16 +633,11 @@ function startServiceDarwin(name, args, optsChanged) {
 function stop(argv) {
   var type = readObjectType(argv, 'stop')
   switch (type) {
-    case 'ca': return stopCA()
     case 'hub': return stopHub()
     case 'agent': return stopAgent()
     case 'app': return stopApp(argv)
     default: return errorObjectType(type, 'stop')
   }
-}
-
-function stopCA() {
-  stopService('ca')
 }
 
 function stopHub() {
@@ -586,25 +675,30 @@ function stopService(name) {
 function run(argv, program) {
   var type = readObjectType(argv, 'run')
   switch (type) {
-    case 'ca': return runCA(argv, program)
     case 'hub': return runHub(argv, program)
     case 'agent': return runAgent(argv, program)
     default: return errorObjectType(type, 'run')
   }
 }
 
-function runCA(argv, program) {
-  parseOptions(optionsCA, argv, 'run ca')
-  exec([program, '--pipy', 'repo://ztm/ca', '--args', ...argv])
-}
-
 function runHub(argv, program) {
-  parseOptions(optionsHub, argv, 'run ca')
-  exec([program, '--pipy', 'repo://ztm/hub', '--args', ...argv])
+  var opts = parseOptions(optionsHub, argv, 'run hub')
+  initHub(opts).then(
+    () => {
+      delete opts.args
+      delete opts['--permit']
+      exec([program,
+        '--pipy', 'repo://ztm/hub',
+        '--args',
+        '--database', opts['--database'],
+        '--listen', opts['--listen'],
+      ])
+    }
+  )
 }
 
 function runAgent(argv, program) {
-  parseOptions(optionsAgent, argv, 'run ca')
+  parseOptions(optionsAgent, argv, 'run agent')
   exec([program, '--pipy', 'repo://ztm/agent', '--args', ...argv])
 }
 
@@ -612,7 +706,7 @@ function exec(argv) {
   var exitCode
   pipeline($=>$
     .onStart(new Data)
-    .exec(argv, { stderr: true, onExit: code => exitCode = code })
+    .exec(argv, { stderr: true, onExit: code => void (exitCode = code) })
     .tee('-')
   ).spawn().then(() => pipy.exit(exitCode))
 }
@@ -624,36 +718,40 @@ function exec(argv) {
 function invite(argv) {
   var username = normalizeName(readWord(argv, 'username', 'invite'))
   var opts = parseOptions(optionsInvite, argv, 'invite')
-  var bootstraps = requiredOption(opts, '--bootstrap', 'invite')
-  var crtCA
-  var crtUser
-  var keyUser
-  var c = clients.ca()
-  c.get(`/api/certificates/ca`).then(ret => {
-    crtCA = ret.toString()
-    return c.post(`/api/certificates/${username}`, '')
+  var mesh = null
+  var ca = null
+  var bootstraps = null
+  var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+  var pkey = new crypto.PublicKey(key)
+  var c = clients.agent()
+  selectMesh(c, opts).then(m => {
+    mesh = m
+    return c.get(`/api/meshes/${mesh.name}`)
   }).then(ret => {
-    keyUser = ret.toString()
-    return c.get(`/api/certificates/${username}`)
+    var info = JSON.decode(ret)
+    var user = info.agent.username
+    if (user !== username && user !== 'root') return Promise.reject(`no privilege to invite ${username}`)
+    ca = info.ca
+    bootstraps = info.bootstraps
+    return c.post(`/api/meshes/${mesh.name}/certificates/${username}`, pkey.toPEM())
   }).then(ret => {
-    crtUser = ret.toString()
-    var json = JSON.stringify({
-      ca: crtCA,
+    var permit = JSON.encode({
+      ca,
       agent: {
-        certificate: crtUser,
-        privateKey: keyUser,
+        certificate: ret.toString(),
+        privateKey: key.toPEM().toString(),
       },
       bootstraps,
     })
-    var pathname = opts['--output']
-    if (pathname) {
+    var filename = opts['--permit']
+    if (filename) {
       try {
-        os.write(pathname, json)
-      } catch (err) {
-        return GenericError(err)
+        os.write(filename, permit)
+      } catch {
+        return Promise.reject(`cannot write to file: ${os.path.resolve(filename)}`)
       }
     } else {
-      println(json)
+      println(permit.toString())
     }
     pipy.exit(0)
   }).catch(error)
@@ -664,11 +762,7 @@ function invite(argv) {
 //
 
 function evict(argv) {
-  var username = normalizeName(readWord(argv, 'username', 'evict'))
-  var c = clients.ca()
-  c.delete(`/api/certificates/${username}`).then(() => {
-    pipy.exit(0)
-  }).catch(error)
+  error('not implemented yet')
 }
 
 //
