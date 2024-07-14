@@ -1,8 +1,10 @@
 import initAPI from './api.js'
 import initCLI from './cli.js'
+import initHole from './punch.js'
 
 export default function ({ app, mesh, utils }) {
-  var api = initAPI({ app, mesh })
+  var punch = initHole({ app })
+  var api = initAPI({ app, mesh, punch })
   var cli = initCLI({ app, mesh, utils, api })
 
   var $ctx
@@ -80,6 +82,12 @@ export default function ({ app, mesh, utils }) {
       'DELETE': responder(({ ep, proto, name }) => {
         return api.deleteOutbound(ep, proto, name).then(response(204))
       }),
+    },
+
+    '/api/punch/{otbEp}/{inbEp}': {
+      'GET': responder(({otbEp, inbEp}) => {
+
+      })
     },
 
     '*': {

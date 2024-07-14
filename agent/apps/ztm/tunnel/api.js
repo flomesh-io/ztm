@@ -1,4 +1,4 @@
-export default function ({ app, mesh }) {
+export default function ({ app, mesh, punch }) {
   var currentListens = []
   var currentTargets = {}
 
@@ -39,9 +39,12 @@ export default function ({ app, mesh }) {
   function getInbound(ep, protocol, name) {
     if (ep === app.endpoint.id) {
       return getLocalConfig().then(
-        config => config.inbound.find(
-          i => i.protocol === protocol && i.name === name
-        ) || null
+        config => {
+          var inbound = config.inbound.find(
+            i => i.protocol === protocol && i.name === name
+          ) || null
+          var hole = punch.findHole(ep)
+        }
       )
     } else {
       return requestPeer(ep, new Message(
@@ -201,19 +204,36 @@ export default function ({ app, mesh }) {
       var protocol = i.protocol
       var name = i.name
       var listens = i.listens
-
       var $selectedEP
+
+      var getHole = () => {
+        var h = punch.findHole($selectedEP)
+        if(!h) {
+          h = punch.createInboundHole(ep)
+        }
+        if(h.ready) {
+          return h
+        }
+        return null
+      }
+
       var connectPeer = pipeline($=>$
         .connectHTTPTunnel(
           new Message({
             method: 'CONNECT',
             path: `/api/outbound/${protocol}/${name}`,
           })
-        ).to($=>$
-          .muxHTTP().to($=>$
-            .pipe(() => mesh.connect($selectedEP))
+        ).to(() => {
+          var hole = getHole()
+          if(hole) {
+            return h.directSession()
+          }
+          return pipeline($=>$
+            .muxHTTP().to($=>$
+              .pipe(() => mesh.connect($selectedEP))
+            )
           )
-        )
+        })
         .onEnd(() => app.log(`Disconnected from ep ${$selectedEP} for ${protocol}/${name}`))
       )
 
