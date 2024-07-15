@@ -23,6 +23,7 @@ export default function (rootDir, config) {
 
   var meshEnv = {
     name: meshName,
+    url: `http://${config.agent.listen}/api/meshes/${meshName}`,
     discover: discoverFromApp,
     connect: connectFromApp,
     fs: makeAppFilesystem,

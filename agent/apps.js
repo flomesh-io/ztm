@@ -229,8 +229,10 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
 
       entryPipeline = mainFunc({
         app: {
+          executable: pipy.argv[0],
           name: appname,
           root: appRootDir,
+          url: `${meshEnv.url}/apps/${provider}/${appname}`,
           provider,
           username,
           endpoint: { ...epInfo },

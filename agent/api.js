@@ -13,6 +13,7 @@ import Mesh from './mesh.js'
 //
 
 var rootDir = ''
+var agentListen = ''
 var meshes = {}
 
 function findMesh(name) {
@@ -21,10 +22,13 @@ function findMesh(name) {
   throw `Mesh not found: ${name}`
 }
 
-function init(dirname) {
+function init(dirname, listen) {
   rootDir = os.path.resolve(dirname)
+  agentListen = listen
   db.allMeshes().forEach(
     function (mesh) {
+      mesh.agent ??= {}
+      mesh.agent.listen = agentListen
       meshes[mesh.name] = Mesh(
         os.path.join(rootDir, 'meshes', mesh.name),
         mesh
@@ -58,6 +62,8 @@ function setMesh(name, mesh) {
     delete meshes[name]
   }
   mesh = db.getMesh(name)
+  mesh.agent ??= {}
+  mesh.agent.listen = agentListen
   meshes[name] = Mesh(
     os.path.join(rootDir, 'meshes', mesh.name),
     mesh
