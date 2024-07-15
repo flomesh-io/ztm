@@ -18,7 +18,8 @@ export default function service(routes) {
             if (!route) return response404
             return route.pipelines[evt.head.method] || response405
           }
-        }
+        },
+        () => $params
       )
     )
   )

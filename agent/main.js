@@ -25,6 +25,12 @@ if (opt['--help']) {
   return
 }
 
+var listen = opt['--listen']
+if (listen.indexOf(':') <= 0) {
+  if (!listen.startsWith(':')) listen = ':' + listen
+  listen = '127.0.0.1' + listen
+}
+
 var dbPath = opt['--database']
 if (dbPath.startsWith('~/')) {
   dbPath = os.home() + dbPath.substring(1)
@@ -42,7 +48,7 @@ try {
   }
 
   db.open(os.path.join(dbPath, 'ztm.db'))
-  api.init(dbPath)
+  api.init(dbPath, listen)
 
 } catch (e) {
   if (e.stack) println(e.stack)
@@ -419,7 +425,7 @@ var appNotFound = pipeline($=>$.serveHTTP(new Message({ status: 404 })))
 var $params
 var $appPipeline
 
-pipy.listen(opt['--listen'], $=>$
+pipy.listen(listen, $=>$
   .demuxHTTP().to($=>$
     .pipe(
       function (evt) {
