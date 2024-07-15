@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, useSlots } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
@@ -14,9 +14,11 @@ import shortcutIcon from "@/assets/img/apps/shortcut.png";
 import defaultIcon from "@/assets/img/apps/default.png";
 import { resize } from "@/utils/window";
 
+const slots = useSlots();
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
+const props = defineProps(['layout'])
 const emits = defineEmits(['close','reload']);
 const hide = () => {
 	emits('close','')
@@ -88,7 +90,7 @@ const loaddata = () => {
 	});
 	
 }
-const sysApp = 5;
+const sysApp = props.layout!='absolute_container'?5:0;
 const appPageSize = 16;
 const pages = computed(()=>{
 	const _apps = (allApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
@@ -207,16 +209,30 @@ const installAPP = (app, options) => {
 const current = ref(false);
 onMounted(()=>{
 	loaddata();
-	resize(455,600,false);
+	resize(455,570,false);
 })
 const mapping = ref(appMapping);
 </script>
 
 <template>
-	<ScrollPanel class="container">
+	<ScrollPanel :class="props.layout">
 	<div class="container_pannel">
-	    <div class="container_terminal"></div>
-			<div class="flex actions">
+			<AppHeader v-if="props.layout=='absolute_container'" :main="true">
+					<template #center>
+						<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
+							<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
+							{{selectedMesh?.name}}
+						</div>
+						<b v-else>Apps</b>
+					</template>
+			
+					<template #end> 
+					
+						<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
+												offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="' '"/>
+					</template>
+			</AppHeader>
+			<div v-else class="flex actions transparent-header">
 				<div class="flex-item">
 				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
 				            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
@@ -237,17 +253,20 @@ const mapping = ref(appMapping);
 	    <div class="terminal_body py-2 px-4" v-if="!!mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom">
 				<component :is="mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
-	    <div class="terminal_body py-2 px-4" v-else-if="!manage">
-				<Carousel :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
+	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else-if="!manage">
+				<div v-if="props.layout=='absolute_container' && !selectedMesh" class="flex-item text-center text-white-alpha-60 text-3xl" style="line-height: 30px;margin-top: 20%;">
+					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
+				</div>
+				<Carousel v-else :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
 						<template #item="slotProps">
 							<div class="pt-1" style="min-height: 440px;">
 								<div class="grid text-center" >
-										<Console v-if="slotProps.index==0"/>
-										<Store v-if="slotProps.index==0"/>
+										<Console v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
+										<Store v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
 										<!-- <Broswer @open="() => current='Broswer'" @close="() => current=false"/> -->
-										<Term v-if="slotProps.index==0"/>
-										<ZtmLog v-if="slotProps.index==0"/>
-										<EpLog  v-if="slotProps.index==0"/>
+										<Term v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
+										<ZtmLog v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
+										<EpLog  v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
 										<div :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
 											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
@@ -260,15 +279,6 @@ const mapping = ref(appMapping);
 												</b>
 											</div>
 										</div>
-										<!-- 
-										<div v-if="!current" :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name]}" @click="installAPP(app)" class="col-3 py-4 relative text-center " v-for="(app) in uninstallApps">
-											<img :src="app.icon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
-											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
-											<div class="mt-1">
-												<b class="text-white opacity-90 white-space-nowrap"><i class="pi pi-cloud-download mr-1" />{{app.name}}</b>
-											</div>
-										</div> -->
 								</div>
 							</div>
 						</template>
@@ -304,13 +314,6 @@ const mapping = ref(appMapping);
 </template>
 
 <style lang="scss" scoped>
-	.container {
-		position: fixed;
-		top: 0;
-		bottom: 0;
-		left: 0;
-		right: 0;
-	}
 	:deep(.p-scrollpanel-bar.p-scrollpanel-bar-y){
 		opacity: 0.5;
 	}
@@ -327,12 +330,14 @@ const mapping = ref(appMapping);
 	:deep(.p-radiobutton .p-radiobutton-box){
 		background-color: #41403A;
 	}
-	:deep(.p-togglebutton){
-		border: none;
-		color: transparent;
-	}
-	:deep(.p-togglebutton .pi){
-		color: #fff !important;
+	.transparent-header{
+		:deep(.p-togglebutton){
+			border: none;
+			color: transparent;
+		}
+		:deep(.p-togglebutton .pi){
+			color: #fff !important;
+		}
 	}
 	.terminal_toolbar {
 	  display: flex;

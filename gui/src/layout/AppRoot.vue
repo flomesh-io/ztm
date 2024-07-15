@@ -383,7 +383,7 @@ const toggle = (event) => {
 			</div>
 		</div>
 	</div>
-	<Apps v-if="appsOpen" @close="() => appsOpen = false" />
+	<Apps v-if="appsOpen" @close="() => appsOpen = false" layout="fixed_container"/>
 	
 	<Menu ref="addmenu" id="addmenu" :model="actions" :popup="true" />
 </template>

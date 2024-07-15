@@ -1,17 +1,25 @@
 
-const prodMenu = {
-	base: [
+const menus = {
+	tauri: [
 		{
 				label: 'Meshes',short:'Mesh', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
-		},
-		{
-				label: 'Services',short:'SVC', icon: 'pi pi-fw pi-server', route: '/mesh/services'
 		},
 		{
 				label: 'Endpoints',short:'EP', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Local Port',short:'Port', icon: 'pi pi-fw pi-bullseye', route: '/mesh/ports'
+				label: 'Logs',short:'Log', icon: 'pi pi-fw pi-book', route: '/mesh/log'
+		},
+	],
+	web: [
+		{
+				label: 'Meshes',short:'Mesh', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+		},
+		{
+				label: 'Endpoints',short:'EP', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
+		},
+		{
+				label: 'Apps',short:'Apps', icon: 'pi pi-fw pi-objects-column', route: '/mesh/apps'
 		},
 		{
 				label: 'Logs',short:'Log', icon: 'pi pi-fw pi-book', route: '/mesh/log'
@@ -20,18 +28,5 @@ const prodMenu = {
 };
 
 export function getMenu(){
-	return [
-		{
-				label: 'Meshes',short:'Mesh', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
-		},
-		{
-				label: 'Endpoints',short:'EP', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
-		},
-		{
-				label: 'App Store',short:'App Store', icon: 'pi pi-fw pi-objects-column', route: '/store/apps'
-		},
-		{
-				label: 'Logs',short:'Log', icon: 'pi pi-fw pi-book', route: '/mesh/log'
-		},
-	];
+	return menus[!!window.__TAURI_INTERNALS__?'tauri':'web'];
 }

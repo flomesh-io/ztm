@@ -14,6 +14,11 @@ const mesh = {
 				component: () => import('@/views/mesh/Endpoints.vue')
 		},
 		{
+				path: '/mesh/apps',
+				name: 'apps',
+				component: () => import('@/views/apps/AppStore.vue')
+		},
+		{
 				path: '/mesh/log',
 				name: 'log',
 				component: () => import('@/views/mesh/Log.vue')

@@ -4,8 +4,7 @@ import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter, useRoute } from 'vue-router';
 import { getMenu } from './menu';
-import XeyeSvg from "@/assets/img/loading.png";
-import HoverXeyeSvg from "@/assets/img/white.png";
+import XeyeSvg from "@/assets/img/white.png";
 import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
@@ -141,7 +140,7 @@ const select = (selected) => {
 <template>
 	<Menubar class="app-top-bar mobile-hidden" :model="model" breakpoint="0px">
 			<template #start>
-				<img class="logo mt-3 mb-1 spiner" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="logoHover?HoverXeyeSvg:XeyeSvg" height="50"/>
+				<img class="logo mt-3 mb-1" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="XeyeSvg" height="50"/>
 			</template>
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>

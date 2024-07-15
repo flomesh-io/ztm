@@ -4,12 +4,12 @@ const app = {
   children: [
 		{
 				path: '/app/term',
-				name: 'term',
+				name: 'Rerm',
 				component: () => import('@/views/apps/core/TermContent.vue')
 		},
 		{
 				path: '/app/ztmlog',
-				name: 'ztm log',
+				name: 'ZTM Log',
 				component: () => import('@/views/apps/core/ZtmLog.vue')
 		},
   ],
