@@ -1,6 +1,7 @@
 export default function ({ app, mesh, punch }) {
   var currentListens = []
   var currentTargets = {}
+  var bound = '0.0.0.0:' + punch.randomPort()
 
   function allEndpoints() {
     return mesh.discover()
@@ -89,6 +90,7 @@ export default function ({ app, mesh, punch }) {
         } else {
           all.push(ent)
         }
+        punch.createInboundHole(ep, ent, bound, requestPeer)
         setLocalConfig(config)
         applyLocalConfig(config)
       })
@@ -119,6 +121,7 @@ export default function ({ app, mesh, punch }) {
         } else {
           all.push(ent)
         }
+        punch.createOutboundHole(ep, ent, bound, requestPeer)
         setLocalConfig(config)
         applyLocalConfig(config)
       })
@@ -173,6 +176,17 @@ export default function ({ app, mesh, punch }) {
     }
   }
 
+  function createHole(ep, ip, port) {
+    var h = punch.findHole(ep)
+    if(h) return h
+
+    return punch.createInboundHole(ep, )
+  }
+
+  function deleteHole(ep) {
+    punch.deleteHole(ep)
+  }
+
   function getLocalConfig() {
     return mesh.read('/local/config.json').then(
       data => data ? JSON.decode(data) : { inbound: [], outbound: [] }
@@ -206,17 +220,6 @@ export default function ({ app, mesh, punch }) {
       var listens = i.listens
       var $selectedEP
 
-      var getHole = () => {
-        var h = punch.findHole($selectedEP)
-        if(!h) {
-          h = punch.createInboundHole(ep)
-        }
-        if(h.ready) {
-          return h
-        }
-        return null
-      }
-
       var connectPeer = pipeline($=>$
         .connectHTTPTunnel(
           new Message({
@@ -224,8 +227,8 @@ export default function ({ app, mesh, punch }) {
             path: `/api/outbound/${protocol}/${name}`,
           })
         ).to(() => {
-          var hole = getHole()
-          if(hole) {
+          var hole = punch.findHole($selectedEP)
+          if(hole && hole.ready) {
             return h.directSession()
           }
           return pipeline($=>$
@@ -306,7 +309,13 @@ export default function ({ app, mesh, punch }) {
     return pipeline($=>$
       .onStart(req)
       .muxHTTP().to($=>$
-        .pipe(mesh.connect(ep))
+        .pipe(mesh.connect(ep, {
+          bind: bound,
+          onState: conn => {
+            if(conn.state === 'open')
+              conn.socket.setRawOption(1, 15, new Data([1,0, 0, 0]))
+          }
+        }))
       )
       .replaceMessage(res => {
         $response = res
@@ -363,6 +372,10 @@ export default function ({ app, mesh, punch }) {
     )
   )
 
+  var makeRespTunnel = pipeline($=>$
+    .pipe(punch.makeRespTunnel())
+  )
+
   getLocalConfig().then(applyLocalConfig)
 
   return {
@@ -376,6 +389,7 @@ export default function ({ app, mesh, punch }) {
     deleteInbound,
     deleteOutbound,
     servePeerInbound,
+    makeRespTunnel,
   }
 }
 

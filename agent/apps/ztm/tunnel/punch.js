@@ -1,156 +1,31 @@
 export default function({ app }) {
-  var holes = {}
-
-
   // Only available for symmetric NAT
-  function Hole(ep) {
+  function Hole(ep, bound, ent, request) {
     // FIXME: throw on init fail?
     // TODO: Add detailed comment.
 
-    // create hole when find ep.
-    // hub save ep pair that fail or success
-    var bound = '0.0.0.0:' + randomPort()   // local port that the hole using
-    var destIP                              // dest ip out of NAT
-    var destPort                            // dest port out of NAT
-    var role = null                         // server or client
-    // var managedSvc = {}
+    var destIP = ent.ip
+    var destPort = ent.port
+    var role = null
 
     // closed forwarding connecting(ready punching) connected fail
     var state = 'closed'  // inner state
     var ready = false     // exposed state
-    var $hubConnection = null
     var $connection = null
-    var $hub = null
     var $pHub = new pipeline.Hub
     var $session
     var $response
-
-    console.info("Bound: ", bound)
 
     // Check if ep is self.
     if(ep === app.endpoint.id) {
       throw 'Must not create a hole to self'
     }
 
-    // A temp tunnel to help hub gather NAT info.
-    var hubSession = pipeline($ => $
-      .onStart(() => {
-        return selectHub(ep).then(res => {
-          if(res) {
-            $hub = res
-          } else {
-            state = 'fail'
-          }
-          return new Data
-        })
-      })
-      .muxHTTP(() => ep + "hub", { version: 2 }).to($ => $
-        .connectTLS({
-          ...tlsOptions,
-          onState: (session) => {
-            var err = session.error
-            if (err) state = 'fail'
-          }
-        }).to($ => $
-          .connect(() => $hub, {
-            onState: function (conn) {
-              console.info('Tmp connection state ', conn, state)
-              $hubConnection = conn
-              if (conn.state === 'open') {
-                // SOL_SOCKET & SO_REUSEPORT
-                conn.socket.setRawOption(1, 15, new Data([1]))
-              } else if (conn.state === 'connected' && state === 'closed') {
-                console.info("Tmp Hub Connection created")
-                state = 'forwarding'
-                reverseServer.spawn()
-              } else if (conn.state === 'closed' && state === 'forwarding') {
-                // this means closed unexpectedly
-                state = 'fail'
-                leave()
-              }
-            },
-            bind: bound,
-          })
-        )
-      )
-    )
-
-    var reverseServer = pipeline($ => $
-      .onStart(new Data)
-      .repeat(() => new Timeout(5).wait().then(() => {
-        if (state != 'forwarding') {
-          $hubConnection.close()
-          return false
-        }
-        return true
-      })).to($ => $
-        .loop($ => $
-          .connectHTTPTunnel(
-            new Message({
-              method: 'CONNECT',
-              path: `/api/punch/${config.agent.id}/${ep}`,
-            })
-          )
-          .to(hubSession)
-          .pipe(servePunch)
-        )
-      )
-    )
-
-    var servePunch = pipeline($ => $
-      .demuxHTTP().to($ => $.pipe(() => {
-        var routes = Object.entries({
-          '/api/punch/{srcEp}/{destEp}/sync': {
-            // Hub sent synchronize message. Once receive, start punch.
-            // Agent <- Hub -> Remote Agent.
-            'POST': function (params, req) {
-              // TODO use params to check
-              var body = JSON.decode(req.body)
-              destIP = body.destIP
-              destPort = body.port
-              state = 'ready'
-
-              punch(destIP, destPort)
-            }
-          },
-        }).map(function ([path, methods]) {
-          var match = new http.Match(path)
-          var handler = function (params, req) {
-            var f = methods[req.head.method]
-            if (f) return f(params, req)
-            return response(405)
-          }
-          return { match, handler }
-        })
-
-        return pipeline($ => $
-          .replaceMessage(
-            function (req) {
-              var params
-              var path = req.head.path
-              var route = routes.find(r => Boolean(params = r.match(path)))
-              if (route) {
-                try {
-                  var res = route.handler(params, req)
-                  return res instanceof Promise ? res.catch(responseError) : res
-                } catch (e) {
-                  return responseError(e)
-                }
-              }
-              meshError('Invalid api call from hub')
-              return response(404)
-            }
-          )
-        )
-      }
-      ))
-    )
-
     function directSession() {
       // TODO !!! state error would happen when network is slow
       // must handle this
 
-      if (!role) meshError('Hole not init correctly')
+      if (!role) throw 'Hole not init correctly'
       if ($session) return $session
 
       // TODO: support TLS connection
@@ -161,13 +36,13 @@ export default function({ app }) {
             .connect(() => `${destIP}:${destPort}`, {
               onState: function (conn) {
                 if (conn.state === 'open') {
-                  conn.socket.setRawOption(1, 15, new Data([1]))
+                  conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
                 } else if (conn.state === 'connected') {
-                  logInfo(`Connected to remote ${destIP}:${destPort}`)
+                  app.log(`Connected to remote ${destIP}:${destPort}`)
                   $connection = conn
                   state = 'connected'
                 } else if (conn.state === 'closed') {
-                  logInfo(`Disconnected from remote ${destIP}:${destPort}`)
+                  app.log(`Disconnected from remote ${destIP}:${destPort}`)
                   $connection = null
                   state = 'closed'
                 }
@@ -215,26 +90,6 @@ export default function({ app }) {
       return $session
     }
 
-    // Send a request.
-    var request = pipeline($ => $
-      .onStart(msg => {
-        console.info(`Reqesting Remote: ${JSON.encode(msg.head)}`)
-        return msg
-      })
-      .pipe(() => {
-        if (state === 'connected') {
-          return directSession()
-        } else if(state != 'fail') {
-          return hubSession
-        }
-
-        console.log(`State incorrect: ${state}, reject`)
-        return pipeline($=>$.dummy())
-      })
-      .handleMessage(msg => $response = msg)
-      .replaceMessage(new StreamEnd)
-      .onEnd(() => $response)
-    )
 
     // use THE port sending request to hub.
     function requestPunch() {
@@ -244,7 +99,7 @@ export default function({ app }) {
 
       request.spawn(new Message({
         method: 'GET',
-        path: `/api/punch/${config.agent.id}/${ep}/request`,
+        path: `/api/punch/server`,
       }))
     }
 
@@ -254,8 +109,8 @@ export default function({ app }) {
       role = 'server'
 
       request.spawn(new Message({
-        method: 'POST',
-        path: `/api/punch/${config.agent.id}/${ep}/reqeust`,
+        method: 'GET',
+        path: `/api/punch/client`,
       }))
     }
 
@@ -310,24 +165,14 @@ export default function({ app }) {
     }
 
     function leave() {
-      $hubConnection?.close()
       $connection?.close()
-      $hubConnection = null
       $connection = null
       if (state != 'fail') state = 'closed'
-
-      // try to find the hub holding this hole
-      if($hub) {
-        var parent = hubs.find(h => $hub === h.address)
-        parent.updateHoles()
-      }
     }
 
     return {
       role,
       ready,
-      destIP,
-      destPort,
       requestPunch,
       acceptPunch,
       punch,
@@ -338,38 +183,58 @@ export default function({ app }) {
     }
   } // End of Hole
 
-  function createInboundHole(ep) {
-    try {
-      var hole = Hole(ep)
-    } catch {
-      app.log(`Failed to create Inbound Hole, peer ${ep}`)
-    }
+  var holes = new Map
 
-    hole.requestPunch()
+  function updateHoles() {
+    holes.forEach((key, hole) => {
+      if (hole.state === 'fail' || hole.state === 'closed') {
+        hole.leave()
+        holes.delete(key)
+      }
+    })
   }
 
-  function createOutboundHole(proto, name) {
+  function createInboundHole(ep, ent, bound, request) {
+    updateHoles()
     try {
-      var hole = Hole(ep)
+      var hole = Hole(ep, ent, bound, request)
+      hole.requestPunch()
+      holes.set(ep, hole)
     } catch {
       app.log(`Failed to create Inbound Hole, peer ${ep}`)
     }
 
-    hole.acceptPunch()
+    return hole
+  }
+
+  function createOutboundHole(ep, ent, bound, request) {
+    updateHoles()
+    try {
+      var hole = Hole(ep)
+      hole.acceptPunch()
+      holes.set(ep, hole)
+    } catch {
+      app.log(`Failed to create Inbound Hole, peer ${ep}`)
+    }
+
+    return hole
   }
 
   function deleteHole(ep) {
-    
+    var sel = findHole(ep)
+    if(!sel) return
+    sel.leave()
+    holes.delete(ep)
   }
 
   function findHole(ep) {
-
+    updateHoles()
+    return holes.get(ep)
   }
 
-  function isHoleReady(hole) {
-
+  function randomPort() {
+    return Number.parseInt(Math.random() * (65535 - 1024)) + 1024
   }
-
 
   return {
     holes,
@@ -377,6 +242,6 @@ export default function({ app }) {
     createOutboundHole,
     deleteHole,
     findHole,
-    isHoleReady,
+    randomPort,
   }
 }

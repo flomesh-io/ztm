@@ -84,9 +84,14 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
-    '/api/punch/{otbEp}/{inbEp}': {
-      'GET': responder(({otbEp, inbEp}) => {
+    '/api/punch/{destEp}': {
+      'GET': responder(({destEp}) => {
+        return api.createHole(destEp)
+      }),
 
+      'DELETE': responder(({destEp}) => {
+        api.deleteHole(destEp)
+        return response(204)
       })
     },
 
@@ -144,6 +149,18 @@ export default function ({ app, mesh, utils }) {
       }),
 
       'CONNECT': api.servePeerInbound,
+    },
+
+    '/api/punch/{role}': {
+      'GET': responder(({role}) => {
+        var ep = $ctx.id
+        var ip = $ctx.ip
+        var port = $ctx.port
+
+        return api.createHole(ep, ip, port, role)
+      }),
+
+      'CONNECT': api.makeRespTunnel
     },
   })
 
