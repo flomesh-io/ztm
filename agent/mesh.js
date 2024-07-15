@@ -499,6 +499,7 @@ export default function (rootDir, config) {
 
   var $requestedApp
   var $requestedAppPipeline
+  var $requestedAppPeer
   var $requestedService
   var $selectedEp
   var $selectedHub
@@ -719,8 +720,16 @@ export default function (rootDir, config) {
         var path = req.head.path
         var params = matchApp(path) || matchProviderApp(path)
         if (params) {
+          var q = new URL(path).searchParams.toObject()
+          var username = URL.decodeComponent(q.username)
           $requestedApp = params.app
           $requestedAppPipeline = apps.connect(params.provider, $requestedApp)
+          $requestedAppPeer = {
+            id: q.src,
+            ip: q.ip,
+            port: q.port,
+            username,
+          }
           if ($requestedAppPipeline) {
             logInfo(`Proxy to local app ${$requestedApp}`)
             return response200
@@ -730,7 +739,7 @@ export default function (rootDir, config) {
         return response404
       }
     ).to($=>$
-      .pipe(() => $requestedAppPipeline, () => ({ source: 'peer' }))
+      .pipe(() => $requestedAppPipeline, () => ({ source: 'peer', peer: $requestedAppPeer }))
       .onEnd(() => logInfo(`Proxy to local app ${$requestedApp} ended`))
     )
   )
@@ -743,7 +752,7 @@ export default function (rootDir, config) {
   //   Local App ----/                  \----> Hub ----> Remote Agent ----> Remote App
   //
 
-  var toRemoteApp = (ep, provider, app) => pipeline($=>$
+  var toRemoteApp = (ep, provider, app, connectOptions) => pipeline($=>$
     .onStart(() => {
       $selectedEp = ep
       return selectHub(ep).then(hub => {
@@ -754,15 +763,16 @@ export default function (rootDir, config) {
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
         .onStart(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub}`))
-        .connectHTTPTunnel(() => (
-          new Message({
+        .connectHTTPTunnel(() => {
+          var q = `?src=${config.agent.id}`
+          return new Message({
             method: 'CONNECT',
-            path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}` : `/api/endpoints/${ep}/apps/${app}`,
+            path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}${q}` : `/api/endpoints/${ep}/apps/${app}${q}`,
           })
-        )).to($=>$
+        }).to($=>$
           .muxHTTP(() => $selectedHub, { version: 2 }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              .connect(() => $selectedHub)
+              .connect(() => $selectedHub, connectOptions)
             )
           )
         )
@@ -1363,8 +1373,10 @@ export default function (rootDir, config) {
   }
 
   function connectFromApp(provider, app) {
-    return function (ep) {
-      return toRemoteApp(ep, provider, app)
+    return function (ep, options) {
+      var bind = options?.bind
+      var connectOptions = bind ? { bind } : undefined
+      return toRemoteApp(ep, provider, app, connectOptions)
     }
   }
 

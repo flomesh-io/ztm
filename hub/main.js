@@ -511,23 +511,29 @@ var connectEndpoint = pipeline($=>$
 
 var connectApp = pipeline($=>$
   .acceptHTTPTunnel(
-    function () {
+    function (req) {
       var app = $params.app
       var id = $params.ep
       var ep = endpoints[id]
       if (!ep) return response(404, 'Endpoint not found')
       sessions[id]?.forEach?.(h => $hubSelected = h)
       if (!$hubSelected) return response(404, 'Agent not found')
+      $params.query = new URL(req.head.path).searchParams.toObject()
       console.info(`Forward to app ${app} at ${endpointName(id)}`)
       return response(200)
     }
   ).to($=>$
-    .connectHTTPTunnel(
-      () => new Message({
+    .connectHTTPTunnel(() => {
+      var src = $params.query.src
+      var ip = $ctx.ip
+      var port = $ctx.port
+      var username = URL.encodeComponent($ctx.username)
+      var q = `?src=${src}&ip=${ip}&port=${port}&username=${username}`
+      return new Message({
         method: 'CONNECT',
-        path: $params.provider ? `/api/apps/${$params.provider}/${$params.app}` : `/api/apps/${$params.app}`,
+        path: $params.provider ? `/api/apps/${$params.provider}/${$params.app}${q}` : `/api/apps/${$params.app}${q}`,
       })
-    ).to(muxToAgent)
+    }).to(muxToAgent)
   )
 )
 
