@@ -95,18 +95,21 @@ const pages = computed(()=>{
 	const _pages = Math.ceil((_apps.length + sysApp - 1)/appPageSize);
 	return _pages>0?new Array(_pages):[];
 });
+
 const removeApp = (app) => {
 	if(app.shortcut){
-		let shortcuts = []
-		try{
-			shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
-		}catch(e){
-			shortcuts = []
-		}
-		store.commit('account/setShortcuts', shortcuts.filter((shortcut) => shortcut.label !=app.label));
+	
+		appService.removeShortcut(app, () => {
+			loaddata();
+		})
 	}else{
-		appService.removeApp(app, () => {
-			emits('reload','')
+		appService.removeApp({
+			mesh:selectedMesh.value?.name,
+			ep:selectedMesh.value?.agent?.id,
+			provider:app.provider,
+			app:app.name,
+		}, () => {
+			loaddata();
 		})
 	}
 }

@@ -35,9 +35,11 @@ export default class ZtmService {
 		confirm.remove(() => {
 			request(`/api/meshes/${name}`,"DELETE").then((res) => {
 				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
-				!!callback && callback(res);
+				if(!!callback)
+				callback(res);
 			}).catch(err => {
-				!!callback && callback(res);
+				if(!!callback)
+				callback(res);
 			});
 		});
 	}
