@@ -173,10 +173,19 @@ export default class AppService {
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", body);
 	}
-	deleteApp({
+	removeApp({
 		mesh, ep, provider, app, body
-	}) {
-		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`,"DELETE");
+	},callback) {
+		confirm.remove(() => {
+			request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`,"DELETE").then((res) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
+				if(!!callback)
+				callback(res);
+			}).catch(err => {
+				if(!!callback)
+				callback(res);
+			});
+		});
 	}
 	getAppLog({
 		mesh, ep, provider, app
@@ -272,26 +281,16 @@ export default class AppService {
 		}
 		return apps;
 	}
-	removeApp(app, callback) {
+	removeShortcut(app, callback) {
 		confirm.remove(() => {
-			const ip = app?.port?.listen?.ip;
-			const port = app?.port?.listen?.port;
-			ztmService.getMesh(app.name)
-				.then(mesh => {
-					localStorage.removeItem(`${app.name}-icon`);
-					localStorage.removeItem(`${app.name}-url`);
-					localStorage.removeItem(`${app.name}-svc`);
-					requestNM(`/api/meshes/${app.name}/endpoints/${mesh?.agent?.id}/ports/${ip}/tcp/${port}`,"DELETE").then((res) => {
-						requestNM(`/api/meshes/${app.name}`,"DELETE").then((res) => {
-							!!callback && callback(res);
-						}).catch(err => {
-							!!callback && callback(err);
-						});
-					}).catch(err => {
-					});
-				})
-				.catch(err => {
-				}); 
+			let shortcuts = []
+			try{
+				shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+			}catch(e){
+				shortcuts = []
+			}
+			shortcuts = shortcuts.filter((shortcut)=> !(shortcut.label == app.label && shortcut.url == app.url))
+			store.commit('account/setShortcuts', shortcuts);
 		});
 	}
 }
