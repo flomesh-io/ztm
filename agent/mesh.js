@@ -1375,7 +1375,8 @@ export default function (rootDir, config) {
   function connectFromApp(provider, app) {
     return function (ep, options) {
       var bind = options?.bind
-      var connectOptions = bind ? { bind } : undefined
+      var onState = options?.onState
+      var connectOptions = { bind, onState }
       return toRemoteApp(ep, provider, app, connectOptions)
     }
   }
