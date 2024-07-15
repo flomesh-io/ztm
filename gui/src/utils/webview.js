@@ -7,6 +7,10 @@ import { invoke } from '@tauri-apps/api/core';
 
 const openWebview = (app)=>{
 	
+	if(!window.__TAURI_INTERNALS__ ){
+		window.open(app.url);
+		return
+	}
 	try{
 		const platform = store.getters['account/platform']
 		// const appWindow = new Window(`${app.name}-window`);
