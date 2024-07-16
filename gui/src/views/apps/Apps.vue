@@ -5,11 +5,6 @@ import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
 import { apps, appMapping } from '@/utils/app-store'
 import { openWebview } from '@/utils/webview';
-import Term from './shortcut/Term.vue';
-import Console from './shortcut/Console.vue';
-import Store from './shortcut/Store.vue';
-import ZtmLog from './shortcut/ZtmLog.vue';
-import EpLog from './shortcut/EpLog.vue';
 import shortcutIcon from "@/assets/img/apps/shortcut.png";
 import defaultIcon from "@/assets/img/apps/default.png";
 import { resize } from "@/utils/window";
@@ -47,8 +42,8 @@ const shortcutApps = computed(() => {
 	return shortcuts;
 });
 
-	
-const allApps = ref([]);
+const innerApps = ref(apps);
+const meshApps = ref([]);
 const uninstallApps = ref([]);
 const upload = (d)=>{
 	if(!!d){
@@ -66,14 +61,14 @@ const loaddata = () => {
 	console.log("load apps",[selectedMesh.value?.name,selectedMesh.value?.agent?.id])
 	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
 		console.log("start getApps")
-		allApps.value = res.filter((app) => app.name !='terminal') || [];
+		meshApps.value = res.filter((app) => app.name !='terminal') || [];
 		console.log(res);
 		appService.getApps(selectedMesh.value?.name).then((res2)=>{
 			console.log("uninstallApps:")
 			console.log(res2)
 			const _uninstallApps = [];
 			res2.forEach((_uninstallApp)=>{
-				const installed = allApps.value.find((_app)=>app.name == _uninstallApp.name && app.provider == _uninstallApp.provider )
+				const installed = meshApps.value.find((_app)=>app.name == _uninstallApp.name && app.provider == _uninstallApp.provider )
 				if(!installed){
 					_uninstallApps.push({
 						..._uninstallApp,
@@ -90,11 +85,10 @@ const loaddata = () => {
 	});
 	
 }
-const sysApp = props.layout!='absolute_container'?5:0;
 const appPageSize = 16;
 const pages = computed(()=>{
-	const _apps = (allApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
-	const _pages = Math.ceil((_apps.length + sysApp - 1)/appPageSize);
+	const _apps = (props.layout!='absolute_container'?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
+	const _pages = Math.ceil((_apps.length - 1)/appPageSize);
 	return _pages>0?new Array(_pages):[];
 });
 
@@ -118,7 +112,7 @@ const removeApp = (app) => {
 const appLoading = ref({})
 const manage = ref(false);
 const appPage = computed(()=>(page)=>{
-	return ((allApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value)).filter((n,i) => i>=(page*appPageSize - sysApp) && i< ((page+1)*appPageSize - sysApp));
+	return (props.layout!='absolute_container'?innerApps.value:[]).concat((meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value)).filter((n,i) => i>=(page*appPageSize) && i< ((page+1)*appPageSize));
 })
 const openAppContent = (app) => {
 		const options = {
@@ -135,7 +129,9 @@ const openAppContent = (app) => {
 		const base = appService.getAppUrl(options);
 		if(app.uninstall){
 			installAPP(app, options)
-		}else if(!app.isRunning){
+		}else if((app.name == 'proxy' || app.name == 'browser') && !app.shortcut){
+			openAppUI(app, base);
+		}else if(!app.isRunning && !!app.provider){
 			appService.startApp(options).then(()=>{
 				openAppUI(app, base);
 				loaddata();
@@ -147,10 +143,10 @@ const openAppContent = (app) => {
 const selectApp = ref();
 const openAppUI = (app, base) => {
 	selectApp.value = null;
-	const mappingApp = mapping.value[`${app?.provider}/${app.name}`];
+	const mappingApp = mapping.value[`${app?.provider||''}/${app.name}`];
 	if(app.shortcut){
-		appService.openBroswer(app)
-	}else if(!mappingApp?.custom){
+		appService.openbrowser(app)
+	}else if(!mappingApp?.component && !app?.component){
 		const webviewOptions = {
 			url: base,
 			name: mappingApp?.name || app.name,
@@ -225,9 +221,7 @@ const mapping = ref(appMapping);
 						</div>
 						<b v-else>Apps</b>
 					</template>
-			
 					<template #end> 
-					
 						<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
 												offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="' '"/>
 					</template>
@@ -250,8 +244,11 @@ const mapping = ref(appMapping);
 					</Button>
 				</div>
 			</div>
-	    <div class="terminal_body py-2 px-4" v-if="!!mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom">
-				<component :is="mapping[`${selectApp?.provider}/${selectApp?.name}`]?.custom" :app="selectApp.options" @close="()=>selectApp=null"/>
+	    <div class="terminal_body" v-if="!!app?.component">
+				<component :is="app.component" :app="selectApp.options" @close="()=>selectApp=null"/>
+			</div>
+	    <div class="terminal_body" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
+				<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
 	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else-if="!manage">
 				<div v-if="props.layout=='absolute_container' && !selectedMesh" class="flex-item text-center text-white-alpha-60 text-3xl" style="line-height: 30px;margin-top: 20%;">
@@ -261,21 +258,15 @@ const mapping = ref(appMapping);
 						<template #item="slotProps">
 							<div class="pt-1" style="min-height: 440px;">
 								<div class="grid text-center" >
-										<Console v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
-										<Store v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
-										<!-- <Broswer @open="() => current='Broswer'" @close="() => current=false"/> -->
-										<Term v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
-										<ZtmLog v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
-										<EpLog  v-if="slotProps.index==0 && props.layout!='absolute_container'"/>
 										<div :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
-											<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+											<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
-											    animationDuration="2s" aria-label="Custom ProgressSpinner" />
+											    animationDuration="2s" aria-label="Progress" />
 											<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
 												<!-- <Badge value="3" severity="danger"></Badge> -->
 												<b class="text-white opacity-90 white-space-nowrap">
 													<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
-													{{ app.label || mapping[`${app?.provider}/${app.name}`]?.name || app.name}}
+													{{ app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}
 												</b>
 											</div>
 										</div>
@@ -286,10 +277,10 @@ const mapping = ref(appMapping);
 	    </div>
 	    <div class="terminal_body py-2 px-4" v-else>
 				<div class="grid text-center" >
-						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in allApps.concat(uninstallApps)">
+						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in meshApps.concat(uninstallApps)">
 							<div class="flex">
-								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon || defaultIcon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
 								<Button v-if="app.isRunning === false" v-tooltip.left="'Start'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
 								</Button>
 								<Button v-else-if="!!app.isRunning" v-tooltip.left="'Stop'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >
@@ -300,8 +291,8 @@ const mapping = ref(appMapping);
 						</div>
 						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in shortcutApps">
 							<div class="flex">
-								<img :src="app.icon || mapping[`${app?.provider}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
 								<Button  v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 								</Button>
 							</div>

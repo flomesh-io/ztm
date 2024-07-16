@@ -1,4 +1,4 @@
-import { request,requestNM,getUrl } from './common/request';
+import { request,requestNM,getUrl,merge } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { openWebview } from '@/utils/webview';
@@ -17,90 +17,125 @@ export default class AppService {
 	//   isPublished: boolean
 	//   log: string[]
 	//
-		
-	openBroswer({endpoint, url,width,height, mesh, provider, name}) {
+	getProxyListen(mesh) {
 		const options = {
 			mesh:mesh?.name,
 			ep:mesh?.agent?.id,
-			provider:provider||'ztm',
-			app:name,
+			provider:'ztm',
+			app:'proxy',
 		}
 		const base = this.getAppUrl(options);
-		const min = 30000;
-		const max = 40000;
-		const randomPort = Math.floor(Math.random() * (max - min + 1)) + min;
-		const listen = `127.0.0.1:${randomPort}`;
-		if(!endpoint){
-			this.openWV(url,width,height)
-			return
-		}
-		// set local listen
-		this.invokeAppApi({
+		return this.invokeAppApi({
 			base,
 			url:`/api/endpoints/${mesh?.agent?.id}/config`,
 			method: 'GET',
 		})
-			.then(config1 => {
-				this.invokeAppApi({
-					base,
-					url:`/api/endpoints/${mesh?.agent?.id}/config`,
-					method: 'POST',
-					body:{ 
-						...config1,
-						listen
+	}
+	getProxyOutbounds(mesh) {
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'proxy',
+		}
+		const base = this.getAppUrl(options);
+		let eps = localStorage.getItem("PROXY-EPS");
+		eps = !!eps?eps.split(","):[];
+		
+		const reqs = []
+		eps.forEach((ep)=>{
+			const req = this.invokeAppApi({
+				base,
+				url:`/api/endpoints/${mesh?.agent?.id}/config`,
+				method: 'GET',
+			}).then((res)=> {
+				return { targets:res.targets, ep,  }
+			})
+			reqs.push(req);
+		})
+		return merge(reqs);
+	}
+	setProxy({outbounds, listen, mesh},callback) {
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'proxy',
+		}
+		const base = this.getAppUrl(options);
+		// set local listen
+		this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${mesh?.agent?.id}/config`,
+			method: 'POST',
+			body:{ 
+				listen
+			}
+		})
+			.then(res => {
+				console.log(res)
+				const proxyEps = [];
+				
+				const reqs = []
+				outbounds.forEach((outbound)=>{
+					proxyEps.push(outbound.ep)
+					if(!outbound.targets){
+						outbound.targets = []
 					}
+					if(!outbound.targets || outbound.targets.length == 0){
+						outbound.targets.push("*")
+						outbound.targets.push("0.0.0.0/0")
+					}
+					const body = {
+						targets: outbound.targets
+					};
+					if(outbound.ep == mesh?.agent?.id){
+						body.listen = listen;
+					}
+					// set remote targets
+					const req = this.invokeAppApi({
+						base,
+						url:`/api/endpoints/${outbound.ep}/config`,
+						method: 'POST',
+						body
+					});
+					reqs.push(req);
 				})
-					.then(res => {
-						console.log(res)
-						// get remote config
-						this.invokeAppApi({
-							base,
-							url:`/api/endpoints/${endpoint}/config`,
-							method: 'GET',
-						})
-							.then(config => {
-								console.log(config)
-								const body = config;
-								if(!body.targets){
-									body.targets = []
-								}
-								if(!body.targets.find((t)=> t == "*")){
-									body.targets.push("*")
-								}
-								if(!body.targets.find((t)=> t == "0.0.0.0/0")){
-									body.targets.push("0.0.0.0/0")
-								}
-								// set remote targets
-								this.invokeAppApi({
-									base,
-									url:`/api/endpoints/${endpoint}/config`,
-									method: 'POST',
-									body
-								})
-									.then(res => {
-										this.openWV(url,width,height, listen)
-									})
-									.catch(err1 => {
-										console.log("set remote targets errors")
-										console.log(err1)
-									}); 
-							})
-							.catch(err2 => {
-								console.log("set remote targets errors")
-								console.log(err2)
-							}); 
-					})
-					.catch(err3 => {
-						console.log("set remote targets errors")
-						console.log(err3)
-					}); 
-			
+				merge(reqs).then(res => {
+					if(!!callback){
+						callback(res)
+					}
+					localStorage.setItem("PROXY-EPS",proxyEps.join(","))
+				})
+				.catch(err1 => {
+					console.log("set remote targets errors")
+					console.log(err1)
+				}); 
 			})
 			.catch(err3 => {
 				console.log("set remote targets errors")
 				console.log(err3)
 			}); 
 			
+	}
+	openbrowser({mesh, url, width, height, proxy, ep}) {
+		if(proxy){
+			this.getProxyListen(mesh).then((res)=>{
+				if(!!res.listen){
+					this.openWV(url, width, height, res.listen)
+				} else {
+					this.openWV(url, width, height);
+				}
+			});
+		} else {
+			this.openWV(url, width, height)
+		}
+		if(!!ep){
+			this.setProxyOutbound({
+				mesh,
+				endpoint:ep
+			})
+		}
 	}
 	openWV(url, width, height , listen) {
 		const webviewOptions = {
@@ -134,6 +169,11 @@ export default class AppService {
 		mesh, provider, app
 	}) {
 		return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
+	}
+	getApp({
+		mesh, ep, provider, app
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`);
 	}
 	downloadApp({
 		mesh, ep, provider, app
@@ -213,7 +253,6 @@ export default class AppService {
 	newApp(appJSON, callback) {
 		
 		const meshData = {
-			name: appJSON.name,
 			ca: appJSON.ca,
 			agent: appJSON.agent,
 			bootstraps: appJSON.bootstraps
@@ -224,39 +263,97 @@ export default class AppService {
 			const agentNo = Math.floor(Math.random() * (max - min + 1)) + min;
 			meshData.agent.name = `agent$-${agentNo}`
 		}
-		ztmService.joinMesh(appJSON.name, meshData)
-			.then(res => {
-				console.log(res)
-				console.log("create mesh [done]")
-				if(!!res && !!appJSON.url){
-					let shortcuts = []
-					try{
-						shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
-					}catch(e){
-						shortcuts = []
-					}
-					shortcuts.push({
-						mesh: res,
-						name:'proxy',
-						icon:appJSON.icon,
-						provider:'ztm',
-						label:appJSON.name,
-						url:appJSON.url,
-						endpoint:appJSON.endpoint,
-					});
-					store.commit('account/setShortcuts', shortcuts);
-					if(callback)
-					callback()
-				} else if(callback){
+		ztmService.getMesh(appJSON.name).then((res)=>{
+			if(!!res?.name){
+				this.addShortcut(res, appJSON)
+				if(callback){
 					callback()
 				}
-			})
-			.catch(err => {
-				console.log(err);
-				toast.add({ severity: 'error', summary:'Tips', detail: 'app.json format errors.', life: 3000 });
-				if(callback)
-				callback()
-			}); 
+			} else {
+				ztmService.joinMesh(appJSON.name||`mesh${agentNo}`, meshData)
+					.then(mesh => {
+						console.log(res)
+						console.log("create mesh [done]")
+						if(!!mesh?.name && !!appJSON.url){
+							this.addShortcut(mesh, appJSON)
+						}
+						if(callback){
+							callback()
+						}
+					})
+					.catch(err => {
+						console.log(err);
+						toast.add({ severity: 'error', summary:'Tips', detail: 'json format errors.', life: 3000 });
+						if(callback)
+						callback()
+					}); 
+			}
+		})
+	}
+	
+	addShortcut(mesh, appJSON) {
+		let shortcuts = []
+		try{
+			shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
+		}catch(e){
+			shortcuts = []
+		}
+		shortcuts.push({
+			mesh,
+			provider:'ztm',
+			name:'proxy',
+			icon:appJSON.icon,
+			label:appJSON.app||appJSON.name,
+			url:appJSON.url,
+			proxy:!!appJSON.endpoint,
+			ep:appJSON.endpoint
+		});
+		store.commit('account/setShortcuts', shortcuts);
+	}
+	setProxyOutbound({mesh, endpoint}){
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'proxy',
+		}
+		const base = this.getAppUrl(options);
+		// set remote targets
+		this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${endpoint}/config`,
+		}).then(res => {
+			if(!!res && !!res.targets && res.targets.length >0){
+			} else {
+				const outbound = { targets: ['*','0.0.0.0/0']}
+				// set remote targets
+				let eps = localStorage.getItem("PROXY-EPS");
+				eps = !!eps?eps.split(","):[];
+				this.invokeAppApi({
+					base,
+					url:`/api/endpoints/${endpoint}/config`,
+					method: 'POST',
+					body: outbound
+				}).then(res => {
+					if(!eps.find((_ep) => _ep == endpoint)){
+						eps.push(endpoint);
+						localStorage.setItem("PROXY-EPS",eps.join(","))
+					}
+				})
+				.catch(err2 => {
+					console.log("set remote targets error")
+					console.log(err2)
+					if(callback)
+					callback()
+				}); 
+			}
+		})
+		.catch(err1 => {
+			console.log("get remote targets error")
+			console.log(err1)
+			if(callback)
+			callback()
+		}); 
 	}
 	async loadApps() {
 		const apps = [];
