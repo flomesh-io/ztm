@@ -107,7 +107,6 @@ var routes = Object.entries({
   },
 
   '/api/meshes/{mesh}': {
-
     'GET': function ({ mesh }) {
       var obj = api.getMesh(mesh)
       if (!obj) return response(404)
@@ -134,7 +133,6 @@ var routes = Object.entries({
   },
 
   '/api/meshes/{mesh}/ca': {
-
     'GET': function ({ mesh }) {
       var obj = api.getMesh(mesh)
       return obj ? response(200, obj.ca || '') : response(404)
@@ -151,7 +149,6 @@ var routes = Object.entries({
   },
 
   '/api/meshes/{mesh}/agent/certificate': {
-
     'GET': function ({ mesh }) {
       var obj = api.getMesh(mesh)
       return obj ? response(200, obj.agent.certificate || '') : response(404)
@@ -176,10 +173,16 @@ var routes = Object.entries({
     },
   },
 
-  '/api/meshes/{mesh}/certificates/{username}': {
-    'POST': function ({ mesh, username }, req) {
-      return api.signCertificate(mesh, username, new crypto.PublicKey(req.body)).then(
-        ret => ret ? response(200, ret.toPEM()) : response(403)
+  '/api/meshes/{mesh}/permits/{username}': {
+    'GET': function ({ mesh, username }) {
+      return api.getPermit(mesh, username).then(
+        ret => ret ? response(200, ret) : response(403)
+      )
+    },
+
+    'DELETE': function ({ mesh, username }) {
+      return api.delPermit(mesh, username).then(
+        ret => ret ? response(204) : response(404)
       )
     },
   },
