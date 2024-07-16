@@ -99,61 +99,69 @@ var myCert = null
 var myKey = null
 var myNames = []
 
-cmdline(pipy.argv, {
-  help: text => println(text),
-  commands: [{
-    title: 'ZTM Hub Service',
-    usage: '',
-    options: `
-      -d, --database  <dir>         Pathname of the database directory (default: ~/.ztm)
-      -l, --listen    <ip:port>     Port to listen on (default: 0.0.0.0:8888)
-      -n, --name      <host:port>   Address of the hub that is visible to agents
-    `,
-    action: (args) => {
-      var dbPath = args['--database'] || '~/.ztm'
-      if (dbPath.startsWith('~/')) {
-        dbPath = os.home() + dbPath.substring(1)
-      }
-
-      try {
-        dbPath = os.path.resolve(dbPath)
-        var st = os.stat(dbPath)
-        if (st) {
-          if (!st.isDirectory()) {
-            throw `directory path already exists as a regular file: ${dbPath}`
-          }
-        } else {
-          os.mkdir(dbPath, { recursive: true })
+function main() {
+  return cmdline(pipy.argv, {
+    commands: [{
+      title: 'ZTM Hub Service',
+      options: `
+        -d, --database  <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+        -l, --listen    <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
+        -n, --names     <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
+      `,
+      action: (args) => {
+        var dbPath = args['--database'] || '~/.ztm'
+        if (dbPath.startsWith('~/')) {
+          dbPath = os.home() + dbPath.substring(1)
         }
 
-        db.open(os.path.join(dbPath, 'ztm-hub.db'))
+        try {
+          dbPath = os.path.resolve(dbPath)
+          var st = os.stat(dbPath)
+          if (st) {
+            if (!st.isDirectory()) {
+              throw `directory path already exists as a regular file: ${dbPath}`
+            }
+          } else {
+            os.mkdir(dbPath, { recursive: true })
+          }
 
-      } catch (e) {
-        if (e.stack) println(e.stack)
-        println('ztm:', e.toString())
-        return
+          db.open(os.path.join(dbPath, 'ztm-hub.db'))
+
+        } catch (e) {
+          if (e.stack) println(e.stack)
+          println('ztm:', e.toString())
+          return Promise.reject()
+        }
+
+        myNames = args['--names'] || []
+
+        return ca.init().then(() => {
+          myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+          var pkey = new crypto.PublicKey(myKey)
+          return Promise.all([
+            ca.getCertificate('ca').then(crt => caCert = crt),
+            ca.signCertificate('hub', pkey).then(crt => myCert = crt),
+          ])
+        }).then(() => {
+          start(args['--listen'] || '0.0.0.0:8888')
+        })
       }
+    }],
+    help: text => Promise.reject(println(text))
+  })
+}
 
-      var name = args['--name']
-      if (name) myNames.push(name)
+try {
+  main().catch(error)
+} catch (err) { error(err) }
 
-      return ca.init().then(() => {
-        myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
-        var pkey = new crypto.PublicKey(myKey)
-        return Promise.all([
-          ca.getCertificate('ca').then(crt => caCert = crt),
-          ca.signCertificate('hub', pkey).then(crt => myCert = crt),
-        ])
-      }).then(() => {
-        start(args['--listen'] || '0.0.0.0:8888')
-      })
-    }
-  }]
-}).catch(err => {
-  if (err.stack) println(err.stack)
-  println(`ztm: ${err.toString()}`)
+function error(err) {
+  if (err) {
+    if (err.stack) println(err.stack)
+    println(`ztm: ${err.toString()}`)
+  }
   pipy.exit(-1)
-})
+}
 
 function endpointName(id) {
   var ep = endpoints[id]

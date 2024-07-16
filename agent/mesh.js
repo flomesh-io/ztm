@@ -386,18 +386,31 @@ export default function (rootDir, config) {
       )
     }
 
-    function signCertificate(username, pkey) {
+    function issuePermit(username) {
+      var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+      var pkey = new crypto.PublicKey(key)
       return requestHub.spawn(
         new Message({ method: 'POST', path: `/api/sign/${username}`}, pkey.toPEM())
       ).then(
         function (res) {
           if (res && res.head.status === 201) {
-            return new crypto.Certificate(res.body)
+            return {
+              ca: config.ca,
+              agent: {
+                certificate: res.body.toString(),
+                privateKey: pkey.toPEM().toString(),
+              },
+              bootstraps: [...config.bootstraps],
+            }
           } else {
             return null
           }
         }
       )
+    }
+
+    function revokePermit(username) {
+      return Promise.resolve(true)
     }
 
     function findEndpoint(ep) {
@@ -482,7 +495,8 @@ export default function (rootDir, config) {
       discoverEndpoints,
       discoverFiles,
       discoverServices,
-      signCertificate,
+      issuePermit,
+      revokePermit,
       findEndpoint,
       findFile,
       findApp,
@@ -973,8 +987,12 @@ export default function (rootDir, config) {
     hubs[0].advertiseAppStates(list)
   }
 
-  function signCertificate(username, pkey) {
-    return hubs[0].signCertificate(username, pkey)
+  function issuePermit(username) {
+    return hubs[0].issuePermit(username)
+  }
+
+  function revokePermit(username) {
+    return hubs[0].revokePermit(username)
   }
 
   function findEndpoint(ep) {
@@ -1670,7 +1688,8 @@ export default function (rootDir, config) {
     getStatus,
     getLog,
     getErrors,
-    signCertificate,
+    issuePermit,
+    revokePermit,
     findEndpoint,
     findFile,
     findApp,

@@ -1,4 +1,4 @@
-export default function (argv, { commands, notes, help }) {
+export default function (argv, { commands, notes, help, fallback }) {
   var program = argv[0]
   argv = argv.slice(1)
 
@@ -10,11 +10,12 @@ export default function (argv, { commands, notes, help }) {
 
   var patterns = commands.map(cmd => cmd.usage ? tokenize(cmd.usage) : [])
   var best = 0
-  var bestIndex = 0
+  var bestIndex = -1
 
   patterns.forEach((pattern, i) => {
+    var empty = !pattern.some(t => !t.startsWith('<') && !t.startsWith('['))
     var len = matchCommand(pattern, argv)
-    if (len > best) {
+    if (len > best || empty) {
       best = len
       bestIndex = i
     }
@@ -25,47 +26,68 @@ export default function (argv, { commands, notes, help }) {
 
   if (isHelpCommand) {
     var lines = ['']
-    if (best > 0) {
+    if (cmd) {
+      var usage = program
+      if (cmd.usage) usage += ' ' + cmd.usage
+      if (cmd.options) usage += ' [options...]'
       if (cmd.title) lines.push(cmd.title, '')
-      if (cmd.options) {
-        lines.push(`Usage: ${program} ${cmd.usage} [options...]`, '')
-        lines.push(`Options:`, '', stripIndentation(cmd.options, 2))
-      } else {
-        lines.push(`Usage: ${program} ${cmd.usage}`)
-      }
-      if (cmd.notes) {
-        lines.push('', stripIndentation(cmd.notes))
-      }
+      lines.push(`Usage: ${usage}`, '')
+      if (cmd.options) lines.push(`Options:`, '', stripIndentation(cmd.options, 2), '')
+      if (cmd.notes) lines.push(stripIndentation(cmd.notes), '')
     } else {
-      var maxCommandWidth = 0
+      var commandList = []
       commands.forEach(cmd => {
-        if (cmd.usage.length > maxCommandWidth) {
-          maxCommandWidth = cmd.usage.length
+        if (!cmd.usage) return
+        var tokens = tokenize(cmd.usage)
+        var firstArg = tokens.findIndex(t => t.startsWith('<') || t.startsWith('['))
+        if (firstArg >= 0) {
+          commandList.push([
+            tokens.slice(0, firstArg).join(' '),
+            tokens.slice(firstArg).join(' '),
+            cmd.title || ''
+          ])
+        } else {
+          commandList.push([tokens.join(' '), '', cmd.title || ''])
         }
       })
       lines.push(`Commands:`, '')
-      commands.forEach(cmd => {
-        lines.push(`  ${program} ${cmd.usage.padEnd(maxCommandWidth)}   ${cmd.title}`)
+      var cmdWidth = commandList.reduce((max, cmd) => Math.max(max, cmd[0].length), 0)
+      var argWidth = commandList.reduce((max, cmd) => Math.max(max, cmd[1].length), 0)
+      commandList.forEach(cmd => {
+        lines.push(`  ${program} ${cmd[0].padEnd(cmdWidth)}  ${cmd[1].padEnd(argWidth)}   ${cmd[2]}`)
       })
+      lines.push('')
       if (notes) {
-        lines.push('', stripIndentation(notes))
+        lines.push(stripIndentation(notes), '')
       }
-      lines.push('', `Type '${program} help <command>' for detailed info.`, '')
+      lines.push(`Type '${program} help <command>' for detailed info.`, '')
     }
-    return help(lines.join('\n'), pattern.slice(0, best))
+    if (typeof help === 'function') {
+      return help(lines.join('\n'), cmd)
+    } else {
+      return lines.forEach(l => println(l))
+    }
+  }
+
+  if (!cmd) {
+    if (typeof fallback === 'function') {
+      return fallback(argv)
+    } else {
+      throw `Unknown command. Type '${program} help' for help info.`
+    }
   }
 
   try {
     var rest = []
     var args = parseCommand(pattern, argv, rest)
     var opts = parseOptions(cmd.options, rest)
-    return cmd.action({ ...args, ...opts })
 
   } catch (err) {
-    println(err)
     var command = pattern.slice(0, best).join(' ')
-    return Promise.reject(`${err}. Type '${program} help ${command}' for help info.`)
+    throw `${err}. Type '${program} help ${command}' for help info.`
   }
+
+  return cmd.action({ ...args, ...opts })
 }
 
 function matchCommand(pattern, argv) {
@@ -96,28 +118,30 @@ function parseCommand(pattern, argv, rest) {
 function parseOptions(format, argv) {
   var options = {}
 
-  format.split('\n').map(
-    line => line.trim()
-  ).filter(
-    line => line.startsWith('-')
-  ).forEach(line => {
-    var aliases = []
-    var type
-    tokenize(line).find(t => {
-      if (t.startsWith('-')) {
-        if (t.endsWith(',')) t = t.substring(0, t.length - 1)
-        aliases.push(t)
-      } else {
-        if (t.endsWith('...]') || t.endsWith('...>')) type = 'array'
-        else if (t.startsWith('[')) type = 'optional string'
-        else if (t.startsWith('<')) type = 'string'
-        else type = 'boolean'
-        return true
-      }
+  if (format) {
+    format.split('\n').map(
+      line => line.trim()
+    ).filter(
+      line => line.startsWith('-')
+    ).forEach(line => {
+      var aliases = []
+      var type
+      tokenize(line).find(t => {
+        if (t.startsWith('-')) {
+          if (t.endsWith(',')) t = t.substring(0, t.length - 1)
+          aliases.push(t)
+        } else {
+          if (t.endsWith('...]') || t.endsWith('...>')) type = 'array'
+          else if (t.startsWith('[')) type = 'optional string'
+          else if (t.startsWith('<')) type = 'string'
+          else type = 'boolean'
+          return true
+        }
+      })
+      var option = { type }
+      aliases.forEach(name => options[name] = option)
     })
-    var option = { type }
-    aliases.forEach(name => options[name] = option)
-  })
+  }
 
   var currentOption
 
@@ -133,11 +157,11 @@ function parseOptions(format, argv) {
     }
     if (arg.startsWith('--')) {
       currentOption = arg
-    } else if (term.startsWith('-')) {
-      if (term.length === 2) {
+    } else if (arg.startsWith('-')) {
+      if (arg.length === 2) {
         currentOption = arg
       } else {
-        addOption(term.substring(0, 2), term.substring(2))
+        addOption(arg.substring(0, 2), arg.substring(2))
       }
     } else {
       throw `Excessive positional argument: ${arg}`
