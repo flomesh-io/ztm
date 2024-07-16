@@ -10,17 +10,23 @@ const store = useStore();
 const appService = new AppService();
 const props = defineProps(['app']);
 const emits = defineEmits(['close'])
-const broswer = ref({
-	mesh:null,
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
+const proxy = ref(true);
+const browser = ref({
 	name:'',
 	url:'http://',
-	endpoint:null,
-	endpoints:[]
+	listen:'',
 });
-const openBroswer = (endpoint, url) => {
-	appService.openBroswer({...props.app, endpoint, url})
+const openbrowser = () => {
+	appService.openbrowser({
+		...props.app, 
+		url: browser.value.url, 
+		proxy:proxy.value
+	})
 }
-const closeBroswer = () => {
+const closebrowser = () => {
 	emits('close');
 }
 const addShortcut = () => {
@@ -32,18 +38,21 @@ const addShortcut = () => {
 	}
 	shortcuts.push({
 		...props.app,
-		label:broswer.value.name,
-		url:broswer.value.url,
-		endpoint:broswer.value.endpoint,
+		provider:'ztm',
+		name:'proxy',
+		mesh:selectedMesh.value,
+		label:browser.value.name,
+		url:browser.value.url,
+		proxy: proxy.value
 	});
 	store.commit('account/setShortcuts', shortcuts);
 	op.value.hide();
-	broswer.value.name = "";
-	toast.add({ severity: 'contrast', summary:'Tips', detail: `${broswer.value.name} shortcut added`, life: 3000 });
+	toast.add({ severity: 'contrast', summary:'Tips', detail: `${browser.value.name} shortcut added`, life: 3000 });
+	browser.value.name = "";
 }
 
 const getEndpoints = () => {
-	console.log("broswer endpoints start");
+	console.log("browser endpoints start");
 	appService.invokeAppApi({
 		base: props.app?.base,
 		url:'/api/endpoints',
@@ -51,20 +60,53 @@ const getEndpoints = () => {
 		body: {}
 	})
 		.then(res => {
-			console.log("broswer endpoints");
+			console.log("browser endpoints");
 			console.log(res);
-			broswer.value.endpoints = res || [];
+			browser.value.endpoints = res || [];
 		})
 		.catch(err => {
 		}); 
 }
-onMounted(()=>{
-	getEndpoints();
-})
+const listens = ref([]);
 
+const appOption = computed(() => ({
+	mesh:selectedMesh.value?.name,
+	ep:selectedMesh.value?.agent?.id,
+	provider:'ztm',
+	app:'proxy',
+}));
+const isRunning = ref(false);
+const getApp = ()=>{
+	appService.getApp(appOption.value).then((res)=>{
+		if(!!res.isRunning){
+			setTimeout(()=>{
+				isRunning.value = true;
+			},300)
+		}
+	})
+}
+const getListen = () => {
+	appService.getProxyListen(selectedMesh.value).then((res)=>{
+		listens.value = res?[res.listen]:[];
+		browser.value.listen = res.listen;
+	});
+}
+const saving = ref(false);
+const start = (app) => {
+	saving.value = true;
+	appService.startApp(appOption.value).then(()=>{
+		isRunning.value = true;
+		saving.value = false;
+		getListen();
+	})
+}
+onMounted(()=>{
+	getApp();
+	getListen();
+})
 const op = ref();
 const toggle = (event) => {
-	broswer.value.name = "";
+	browser.value.name = "";
 	op.value.toggle(event);
 }
 </script>
@@ -73,29 +115,36 @@ const toggle = (event) => {
 	<div class="col-12">
 		<div class="text-center">
 			<InputGroup class="search-bar" style="border-radius: 8px;" >
-				<Select size="small" class="w-full flex small"  v-model="broswer.endpoint" :options="broswer.endpoints" optionLabel="name" optionValue="id" :filter="broswer.endpoints.length>8" placeholder="Endpoint"/>
+				<Button size="small" label="Proxy:" style="width: auto;"/>
+				<Select size="small" class="w-full flex small"  v-model="browser.listen" :options="listens" :placeholder="isRunning?'Unset.':'Paused.'">
+					<template #dropdownicon>
+						<div v-if="!isRunning" class="flex-item pl-2" >
+							<Button size="small" :loading="saving" icon="pi pi-play" @click="start"/>
+						</div>
+						<InputSwitch v-else class="relative green" v-model="proxy" style="left: -5px;" />
+					</template>
+				</Select>
 			</InputGroup>					
 		</div>
 		<div class="mt-3 text-center">
 			<InputGroup class="search-bar" style="border-radius: 8px;" >
-				
-				<Textarea v-model="broswer.url" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="http://" rows="1" cols="30" />
-				<!-- <Button :disabled="!broswer.url" icon="pi pi-search"/> -->
+				<Textarea v-model="browser.url" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="http://" rows="1" cols="30" />
+				<!-- <Button :disabled="!browser.url" icon="pi pi-search"/> -->
 			</InputGroup>
 		</div>
 		<div class="mt-3 text-center flex">
 			<div class="flex-item pr-2">
-				<Button severity="secondary" class="w-full" style="height: 30px;" @click="closeBroswer" label="Back"/>
+				<Button severity="secondary" class="w-full" style="height: 30px;" @click="closebrowser" label="Back"/>
 			</div>
 			<div class="flex-item pr-2">
-				<Button aria-haspopup="true" aria-controls="op" @click="toggle" :disabled="broswer.url.length<8" class="w-full" style="height: 30px;" label="Shortcut"/>
+				<Button aria-haspopup="true" aria-controls="op" @click="toggle" :disabled="browser.url.length<8" class="w-full" style="height: 30px;" label="Shortcut"/>
 			</div>
 			<div class="flex-item pl-2" >
-				<Button class="w-full" style="height: 30px;" :disabled="broswer.url.length<8" label="Open" @click="openBroswer(broswer.endpoint,broswer.url)"/>
+				<Button class="w-full" style="height: 30px;" :disabled="browser.url.length<8" label="Open" @click="openbrowser()"/>
 		</div>
 		</div>
 		<Popover class="ml-6 mt-3" ref="op" appendTo="self">
-				<InputText placeholder="As Name" v-model="broswer.name"  class="w-20rem"></InputText>
+				<InputText placeholder="As Name" v-model="browser.name"  class="w-20rem"></InputText>
 				<Button size="small" icon="pi pi-save" class="ml-2"  @click="addShortcut"></Button>
 		</Popover>
 	</div>									

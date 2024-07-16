@@ -429,16 +429,26 @@ pre.app-code code{
 	border: none;
 }
 .search-bar .p-button{
-	height: 36px !important;
+	min-height: 32px;
+	max-height: 36px !important;
 	border-radius: 0 !important;
 }
-.search-bar .p-select .p-select-label,.search-bar .p-multiselect .p-multiselect-label{
-	color:#fff;
+.search-bar .p-button .p-button-label{
 	font-weight: bold;
+}
+.search-bar .p-select .p-select-label,.search-bar .p-multiselect .p-multiselect-label{
+	color:rgba(255,255,255,0.8);
+	font-weight: bold;
+}
+.search-bar .p-disabled .p-select-label,.search-bar .p-disabled .p-multiselect-label{
+	color:rgba(255,255,255,0.7) !important;
 }
 .search-bar .p-inputtextarea{
 	min-height: 36px !important;
 	line-height: 22px;
+	border: none;
+}
+.search-bar .p-inputtext{
 	border: none;
 }
 .p-chip .p-select-label,.p-chip .p-multiselect-label{
@@ -706,9 +716,9 @@ pre.app-code code{
 	}
 }
 
-.surface-border.flex-wrap>div{
-	line-height: 24px;
-}
+// .surface-border.flex-wrap>div{
+// 	line-height: 24px;
+// }
 .p-chip .p-select,.p-chip .p-multiselect{
 	background-color: transparent;
 	border: none;
@@ -1104,4 +1114,23 @@ fieldset{
 	bottom: 0;
 	left: 0;
 	right: 0;
+}
+.container_pannel{
+	.p-chip{
+		background-color: var(--gray-900) !important;
+		color: #ffffff !important;
+		border-radius: 8px;
+	}
+	.border-circle{
+		border-radius: 8px !important;
+	}
+	.input_pannel{
+		border-radius: 4px;
+		background-color: rgba(76, 40, 60, 1);
+		padding: 1rem;
+	}
+}
+.green.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider{
+	background-color: var(--green-600) !important;
+	width: 35px;
 }
