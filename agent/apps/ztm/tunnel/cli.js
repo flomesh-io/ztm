@@ -1,9 +1,9 @@
-export default function ({ app, api, utils }) {
+export default function ({ api, utils }) {
   return pipeline($=>$
-    .onStart(argv => main(argv))
+    .onStart(ctx => main(ctx))
   )
 
-  function main(argv) {
+  function main({ argv, endpoint }) {
     var buffer = new Data
 
     function output(str) {
@@ -25,21 +25,6 @@ export default function ({ app, api, utils }) {
     function allEndpoints() {
       if (endpoints) return Promise.resolve(endpoints)
       return api.allEndpoints().then(list => (endpoints = list))
-    }
-
-    function selectEndpoint(name) {
-      if (name) {
-        return allEndpoints().then(endpoints => {
-          var ep = endpoints.find(ep => ep.id === name)
-          if (ep) return ep
-          var list = endpoints.filter(ep => ep.name === name)
-          if (list.length === 1) return list[0]
-          if (list.length === 0) throw `Endpoint '${name}' not found`
-          throw `Ambiguous endpoint name '${name}'`
-        })
-      } else {
-        return Promise.resolve(app.endpoint)
-      }
     }
 
     function lookupEndpointNames(list) {
@@ -72,16 +57,11 @@ export default function ({ app, api, utils }) {
           {
             title: 'List objects of the specified type',
             usage: 'get <object type>',
-            options: `
-              --mesh  <name>  Specify a mesh by name
-              --ep    <name>  Specify an endpoint by name or UUID
-            `,
             notes: objectTypeNotes,
             action: (args) => {
-              var ep = args['--ep']
               switch (validateObjectType(args, 'get')) {
-                case 'inbound': return getInbound(ep)
-                case 'outbound': return getOutbound(ep)
+                case 'inbound': return getInbound()
+                case 'outbound': return getOutbound()
               }
             }
           },
@@ -89,17 +69,12 @@ export default function ({ app, api, utils }) {
           {
             title: 'Show detailed info of the specified object',
             usage: 'describe <object type> <object name>',
-            options: `
-              --mesh  <name>  Specify a mesh by name
-              --ep    <name>  Specify an endpoint by name or UUID
-            `,
             notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
-              var ep = args['--ep']
               var name = args['<object name>']
               switch (validateObjectType(args, 'describe')) {
-                case 'inbound': return describeInbound(ep, name)
-                case 'outbound': return describeOutbound(ep, name)
+                case 'inbound': return describeInbound(name)
+                case 'outbound': return describeOutbound(name)
               }
             }
           },
@@ -108,9 +83,6 @@ export default function ({ app, api, utils }) {
             title: 'Create an object of the specified type',
             usage: 'open <object type> <object name>',
             options: `
-              --mesh      <name>            Specify a mesh by name
-              --ep        <name>            Specify an endpoint by name or UUID
-
               For inbound end:
 
               --listen    <[ip:]port ...>   Set local ports to listen on
@@ -123,11 +95,10 @@ export default function ({ app, api, utils }) {
             `,
             notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
-              var ep = args['--ep']
               var name = args['<object name>']
               switch (validateObjectType(args, 'open')) {
-                case 'inbound': return openInbound(ep, name, args['--listen'], args['--exit'])
-                case 'outbound': return openOutbound(ep, name, args['--target'], args['--entrance'])
+                case 'inbound': return openInbound(name, args['--listen'], args['--exit'])
+                case 'outbound': return openOutbound(name, args['--target'], args['--entrance'])
               }
             }
           },
@@ -135,17 +106,12 @@ export default function ({ app, api, utils }) {
           {
             title: 'Delete the specified object',
             usage: 'close <object type> <object name>',
-            options: `
-              --mesh  <name>  Specify a mesh by name
-              --ep    <name>  Specify an endpoint by name or UUID
-            `,
             notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
-              var ep = args['--ep']
               var name = args['<object name>']
               switch (validateObjectType(args, 'close')) {
-                case 'inbound': return closeInbound(ep, name)
-                case 'outbound': return closeOutbound(ep, name)
+                case 'inbound': return closeInbound(name)
+                case 'outbound': return closeOutbound(name)
               }
             }
           },
@@ -161,10 +127,8 @@ export default function ({ app, api, utils }) {
       return Promise.resolve(flush())
     }
 
-    function getInbound(epName) {
-      return selectEndpoint(epName).then(ep =>
-        api.allInbound(ep.id)
-      ).then(list => (
+    function getInbound() {
+      return api.allInbound(endpoint.id).then(list => (
         Promise.all(list.map(i =>
           lookupEndpointNames(i.exits || []).then(exits => ({
             ...i,
@@ -180,10 +144,8 @@ export default function ({ app, api, utils }) {
       ))
     }
 
-    function getOutbound(epName) {
-      return selectEndpoint(epName).then(ep =>
-        api.allOutbound(ep.id)
-      ).then(list => (
+    function getOutbound() {
+      return api.allOutbound(endpoint.id).then(list => (
         Promise.all(list.map(o =>
           lookupEndpointNames(o.entrances || []).then(entrances => ({
             ...o,
@@ -199,76 +161,64 @@ export default function ({ app, api, utils }) {
       ))
     }
 
-    function describeInbound(epName, tunnelName) {
+    function describeInbound(tunnelName) {
       var obj = validateObjectName(tunnelName)
-      return selectEndpoint(epName).then(ep =>
-        api.getInbound(ep.id, obj.protocol, obj.name).then(obj => {
-          if (!obj) return
-          return lookupEndpointNames(obj.exits || []).then(exits => {
-            output(`Inbound ${obj.protocol}/${obj.name}\n`)
-            output(`Endpoint: ${ep.name} (${ep.id})\n`)
-            output(`Listens:\n`)
-            obj.listens.forEach(l => output(`  ${l.ip}:${l.port}\n`))
-            output(`Exits:\n`)
-            exits.forEach(e => output(`  ${e}\n`))
-            if (exits.length === 0) output(`  (all endpoints)\n`)
-          })
+      return api.getInbound(endpoint.id, obj.protocol, obj.name).then(obj => {
+        if (!obj) return
+        return lookupEndpointNames(obj.exits || []).then(exits => {
+          output(`Inbound ${obj.protocol}/${obj.name}\n`)
+          output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
+          output(`Listens:\n`)
+          obj.listens.forEach(l => output(`  ${l.ip}:${l.port}\n`))
+          output(`Exits:\n`)
+          exits.forEach(e => output(`  ${e}\n`))
+          if (exits.length === 0) output(`  (all endpoints)\n`)
         })
-      )
+      })
     }
 
-    function describeOutbound(epName, tunnelName) {
+    function describeOutbound(tunnelName) {
       var obj = validateObjectName(tunnelName)
-      return selectEndpoint(epName).then(ep =>
-        api.getOutbound(ep.id, obj.protocol, obj.name).then(obj => {
-          if (!obj) return
-          return lookupEndpointNames(obj.entrances || []).then(entrances => {
-            output(`Outbound ${obj.protocol}/${obj.name}\n`)
-            output(`Endpoint: ${ep.name} (${ep.id})\n`)
-            output(`Targets:\n`)
-            obj.targets.forEach(t => output(`  ${t.host}:${t.port}\n`))
-            output(`Entrances:\n`)
-            entrances.forEach(e => output(`  ${e}\n`))
-            if (entrances.length === 0) output(`  (all endpoints)\n`)
-          })
+      return api.getOutbound(endpoint.id, obj.protocol, obj.name).then(obj => {
+        if (!obj) return
+        return lookupEndpointNames(obj.entrances || []).then(entrances => {
+          output(`Outbound ${obj.protocol}/${obj.name}\n`)
+          output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
+          output(`Targets:\n`)
+          obj.targets.forEach(t => output(`  ${t.host}:${t.port}\n`))
+          output(`Entrances:\n`)
+          entrances.forEach(e => output(`  ${e}\n`))
+          if (entrances.length === 0) output(`  (all endpoints)\n`)
         })
-      )
+      })
     }
 
-    function openInbound(epName, tunnelName, listens, exits) {
+    function openInbound(tunnelName, listens, exits) {
       var obj = validateObjectName(tunnelName)
       if (!listens || listens.length === 0) throw `Option '--listen' is required`
       listens = listens.map(l => validateHostPort(l)).map(({ host, port }) => ({ ip: host, port }))
       return lookupEndpointIDs(exits || []).then(
-        exits => selectEndpoint(epName).then(
-          ep => api.setInbound(ep.id, obj.protocol, obj.name, listens, exits)
-        )
+        exits => api.setInbound(endpoint.id, obj.protocol, obj.name, listens, exits)
       )
     }
 
-    function openOutbound(epName, tunnelName, targets, entrances) {
+    function openOutbound(tunnelName, targets, entrances) {
       var obj = validateObjectName(tunnelName)
       if (!targets || targets.length === 0) throw `Option '--target' is required`
       targets = targets.map(t => validateHostPort(t))
       return lookupEndpointIDs(entrances || []).then(
-        entrances => selectEndpoint(epName).then(
-          ep => api.setOutbound(ep.id, obj.protocol, obj.name, targets, entrances)
-        )
+        entrances => api.setOutbound(endpoint.id, obj.protocol, obj.name, targets, entrances)
       )
     }
 
-    function closeInbound(epName, tunnelName) {
+    function closeInbound(tunnelName) {
       var obj = validateObjectName(tunnelName)
-      return selectEndpoint(epName).then(ep =>
-        api.deleteInbound(ep.id, obj.protocol, obj.name)
-      )
+      return api.deleteInbound(endpoint.id, obj.protocol, obj.name)
     }
 
-    function closeOutbound(epName, tunnelName) {
+    function closeOutbound(tunnelName) {
       var obj = validateObjectName(tunnelName)
-      return selectEndpoint(epName).then(ep =>
-        api.deleteOutbound(ep.id, obj.protocol, obj.name)
-      )
+      return api.deleteOutbound(endpoint.id, obj.protocol, obj.name)
     }
 
     function validateObjectType(args, command) {

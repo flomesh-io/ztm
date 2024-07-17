@@ -62,11 +62,11 @@ function doCommand(meshName, epName, argv, program) {
         println(`  ztm <cmd> ...`)
         println(`  ztm <app> ...`)
         println()
-        println(`  ztm mesh <mesh name> <cmd> ...`)
-        println(`  ztm mesh <mesh name> <app> ...`)
-        println()
         println(`  ztm ep [<mesh name>/]<endpoint name> <cmd> ...`)
         println(`  ztm ep [<mesh name>/]<endpoint name> <app> ...`)
+        println()
+        println(`  ztm mesh <mesh name> <cmd> ...`)
+        println(`  ztm mesh <mesh name> <app> ...`)
       }
       println(text)
     },
@@ -95,14 +95,14 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
-          -d, --database  <dir>           Specify the location of ZTM storage (default: ~/.ztm)
-                                          Only applicable to hubs and agents
-          -l, --listen    <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                          Only applicable to hubs and agents
-          -n, --names     <host:port...>  Specify one or more hub names (host:port) that are accessible to agents
-                                          Only applicable to hubs
-          -p, --permit    <pathname>      Specify an optional output filename for the root user's permit
-                                          Only applicable to hubs
+          -d, --data    <dir>           Specify the location of ZTM storage (default: ~/.ztm)
+                                        Only applicable to hubs and agents
+          -l, --listen  <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+                                        Only applicable to hubs and agents
+          -n, --names   <host:port...>  Specify one or more hub names (host:port) that are accessible to agents
+                                        Only applicable to hubs
+          -p, --permit  <pathname>      Specify an optional output filename for the root user's permit
+                                        Only applicable to hubs
         `,
         action: (args) => {
           var type = args['<object type>']
@@ -135,14 +135,14 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub or agent in foreground mode`,
         usage: 'run <object type>',
         options: `
-          -d, --database  <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-                                            Only applicable to hubs and agents
-          -l, --listen    <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                            Only applicable to hubs and agents
-          -n, --names     <host:port ...>   Specify 1 or more hub names (addresses + ports) that are accessible to agents
-                                            Only applicable to hubs
-          -p, --permit    <pathname>        Specify an optional output filename for the root user's permit
-                                            Only applicable to hubs
+          -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+                                          Only applicable to hubs and agents
+          -l, --listen  <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+                                          Only applicable to hubs and agents
+          -n, --names   <host:port ...>   Specify 1 or more hub names (addresses + ports) that are accessible to agents
+                                          Only applicable to hubs
+          -p, --permit  <pathname>        Specify an optional output filename for the root user's permit
+                                          Only applicable to hubs
         `,
         action: (args) => {
           var type = args['<object type>']
@@ -325,12 +325,12 @@ function config(args) {
 
 function startHub(args) {
   var opts = {
-    '--database': args['--database'] || '~/.ztm',
+    '--data': args['--data'] || '~/.ztm',
     '--listen': args['--listen'] || '0.0.0.0:8888',
     '--names': args['--names'],
   }
   var optsChanged = (
-    ('--database' in args) ||
+    ('--data' in args) ||
     ('--listen' in args) ||
     ('--names' in args)
   )
@@ -347,11 +347,11 @@ function startHub(args) {
 
 function startAgent(args) {
   var opts = {
-    '--database': args['--database'] || '~/.ztm',
+    '--data': args['--data'] || '~/.ztm',
     '--listen': args['--listen'] || '127.0.0.1:7777',
   }
   var optsChanged = (
-    ('--database' in args) ||
+    ('--data' in args) ||
     ('--listen' in args)
   )
   startService('agent', opts, optsChanged)
@@ -372,7 +372,7 @@ function startApp(name, mesh, ep) {
 }
 
 function initHub(args) {
-  var dbPath = args['--database'] || '~/.ztm'
+  var dbPath = args['--data'] || '~/.ztm'
   if (dbPath.startsWith('~/')) {
     dbPath = os.home() + dbPath.substring(1)
   }
@@ -452,7 +452,7 @@ function initHub(args) {
       println(`*                                                               *`)
       println(`*****************************************************************`)
       println()
-      println(JSON.stringify(permit))
+      println(permit)
       println()
     }
   })
@@ -618,7 +618,7 @@ function runHub(args, program) {
       exec([program,
         '--pipy', 'repo://ztm/hub',
         '--args',
-        '--database', args['--database'] || '~/.ztm',
+        '--data', args['--data'] || '~/.ztm',
         '--listen', args['--listen'] || '0.0.0.0:8888',
       ])
     }
@@ -629,7 +629,7 @@ function runAgent(args, program) {
   return exec([program,
     '--pipy', 'repo://ztm/agent',
     '--args',
-    '--database', args['--database'] || '~/.ztm',
+    '--data', args['--data'] || '~/.ztm',
     '--listen', args['--listen'] || '127.0.0.1:7777',
   ])
 }
@@ -1050,8 +1050,8 @@ function callApp(argv, mesh, ep) {
 
     var url = `/api/meshes/${mesh.name}/apps/${app.provider}/${tagname}/cli`
     url += '?argv=' + URL.encodeComponent(JSON.stringify(argv))
-    url += '&mesh=' + URL.encodeComponent(mesh.name)
-    url += '&ep=' + ep.id
+    url += '&ep_id=' + ep.id
+    url += '&ep_name=' + URL.encodeComponent(ep.name)
 
     return pipy.read('-', $=>$
       .onStart(new Data)

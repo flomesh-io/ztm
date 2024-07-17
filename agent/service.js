@@ -1,5 +1,5 @@
 var $params
-var $argv
+var $cliCtx
 
 export default function service(routes) {
   routes = Object.entries(routes).map(
@@ -41,11 +41,17 @@ export function cliResponder(p) {
   return pipeline($=>$
     .acceptHTTPTunnel(req => {
       var url = new URL(req.head.path)
-      $argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv')))
+      $cliCtx = {
+        argv: JSON.parse(URL.decodeComponent(url.searchParams.get('argv'))),
+        endpoint: {
+          id: url.searchParams.get('ep_id'),
+          name: URL.decodeComponent(url.searchParams.get('ep_name')),
+        }
+      }
       return new Message({ status: 200 })
     }).to($=>$
       .onStart(new Data)
-      .pipe(p, () => [$argv])
+      .pipe(p, () => [$cliCtx])
     )
   )
 }

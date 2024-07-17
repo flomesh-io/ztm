@@ -7,21 +7,21 @@ import options from './options.js'
 var opt = options(pipy.argv, {
   defaults: {
     '--help': false,
-    '--database': '~/.ztm',
+    '--data': '~/.ztm',
     '--listen': '127.0.0.1:7777',
   },
   shorthands: {
     '-h': '--help',
-    '-d': '--database',
+    '-d': '--data',
     '-l': '--listen',
   },
 })
 
 if (opt['--help']) {
   println('Options:')
-  println('  -h, --help      Show available options')
-  println('  -d, --database  Pathname of the database directory (default: ~/.ztm)')
-  println('  -l, --listen    Port number of the administration API (default: 127.0.0.1:7777)')
+  println('  -h, --help     Show available options')
+  println('  -d, --data     Pathname of the data directory (default: ~/.ztm)')
+  println('  -l, --listen   Port number of the administration API (default: 127.0.0.1:7777)')
   return
 }
 
@@ -31,7 +31,7 @@ if (listen.indexOf(':') <= 0) {
   listen = '127.0.0.1' + listen
 }
 
-var dbPath = opt['--database']
+var dbPath = opt['--data']
 if (dbPath.startsWith('~/')) {
   dbPath = os.home() + dbPath.substring(1)
 }
