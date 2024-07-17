@@ -228,8 +228,9 @@ const mapping = ref(appMapping);
 			</AppHeader>
 			<div v-else class="flex actions transparent-header">
 				<div class="flex-item">
-				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
-				            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
+					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
+						<i class="pi pi-chevron-left " />
+					</Button>
 				</div>
 				<div v-if="!!selectedMesh" class="flex-item text-center text-white" style="line-height: 30px;">
 					<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
@@ -239,9 +240,8 @@ const mapping = ref(appMapping);
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
 				</div>
 				<div class="flex-item text-right">
-					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
-						<i class="pi pi-times " />
-					</Button>
+					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-times" 
+					            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
 				</div>
 			</div>
 	    <div class="terminal_body" v-if="!!app?.component">
