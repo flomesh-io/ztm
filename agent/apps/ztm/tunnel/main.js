@@ -3,7 +3,7 @@ import initCLI from './cli.js'
 import initHole from './punch.js'
 
 export default function ({ app, mesh, utils }) {
-  var punch = initHole({ app })
+  var punch = initHole({ app, mesh })
   var api = initAPI({ app, mesh, punch })
   var cli = initCLI({ app, mesh, utils, api })
 
@@ -84,16 +84,16 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
-    '/api/punch/{destEp}': {
-      'GET': responder(({destEp}) => {
-        return api.createHole(destEp)
-      }),
+    // '/api/punch/{destEp}': {
+    //   'GET': responder(({destEp}) => {
+    //     return api.createHole(destEp)
+    //   }),
 
-      'DELETE': responder(({destEp}) => {
-        api.deleteHole(destEp)
-        return response(204)
-      })
-    },
+    //   'DELETE': responder(({destEp}) => {
+    //     api.deleteHole(destEp)
+    //     return response(204)
+    //   })
+    // },
 
     '*': {
       'GET': responder((_, req) => {
@@ -151,13 +151,24 @@ export default function ({ app, mesh, utils }) {
       'CONNECT': api.servePeerInbound,
     },
 
-    '/api/punch/{role}': {
-      'GET': responder(({role}) => {
-        var ep = $ctx.id
-        var ip = $ctx.ip
-        var port = $ctx.port
+    '/api/punch/{action}': {
+      'GET': responder(({action}) => {
+        var ep = $ctx.peer.id
+        var ip = $ctx.peer.ip
+        var port = $ctx.peer.port
 
-        return api.createHole(ep, ip, port, role)
+        console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
+        switch(action) {
+          case 'request':
+            api.createHole(ep, ip, port, 'server')
+            break
+          case 'accept':
+            api.updateHoleInfo(ep, ip, port)
+            break
+          case 'sync':
+            api.syncPunch(ep)
+        }
+        return Promise.resolve(response(200))
       }),
 
       'CONNECT': api.makeRespTunnel

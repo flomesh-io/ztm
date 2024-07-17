@@ -1,7 +1,6 @@
 export default function ({ app, mesh, punch }) {
   var currentListens = []
   var currentTargets = {}
-  var bound = '0.0.0.0:' + punch.randomPort()
 
   function allEndpoints() {
     return mesh.discover()
@@ -90,7 +89,6 @@ export default function ({ app, mesh, punch }) {
         } else {
           all.push(ent)
         }
-        punch.createInboundHole(ep, ent, bound, requestPeer)
         setLocalConfig(config)
         applyLocalConfig(config)
       })
@@ -121,7 +119,6 @@ export default function ({ app, mesh, punch }) {
         } else {
           all.push(ent)
         }
-        punch.createOutboundHole(ep, ent, bound, requestPeer)
         setLocalConfig(config)
         applyLocalConfig(config)
       })
@@ -176,11 +173,35 @@ export default function ({ app, mesh, punch }) {
     }
   }
 
-  function createHole(ep, ip, port) {
+  function createHole(ep, ip, port, role) {
     var h = punch.findHole(ep)
     if(h) return h
 
-    return punch.createInboundHole(ep, )
+    if(role === 'server') {
+      checkIP(ip)
+      checkPort(Number.parseInt(port))
+      punch.createOutboundHole(ep, ip, port)
+    } else if(role === 'client') {
+      punch.createInboundHole(ep)
+    }
+  }
+
+  function updateHoleInfo(ep, ip, port) {
+    checkIP(ip)
+    checkPort(Number.parseInt(port))
+    console.info(`Updating nat info: peer ${ep}, ip ${ip}, port ${port}`)
+    punch.updateHoleInfo(ep, ip, port)
+  }
+
+  function punchHole(ep) {
+    console.log(`Hole punching......`)
+    var hole = punch.findHole(ep)
+    // if(!hole) return null
+    hole.punch()
+  }
+
+  function makeRespTunnel(ep) {
+
   }
 
   function deleteHole(ep) {
@@ -214,6 +235,8 @@ export default function ({ app, mesh, punch }) {
     currentListens = []
     currentTargets = {}
 
+    console.info(`Applying config: ${JSON.encode(config)}`)
+
     config.inbound.forEach(i => {
       var protocol = i.protocol
       var name = i.name
@@ -226,17 +249,20 @@ export default function ({ app, mesh, punch }) {
             method: 'CONNECT',
             path: `/api/outbound/${protocol}/${name}`,
           })
-        ).to(() => {
+        ).to($=>$.pipe(() => {
+          punch.createInboundHole($selectedEP)
           var hole = punch.findHole($selectedEP)
           if(hole && hole.ready) {
+            console.info("Using direct session")
             return h.directSession()
           }
+          console.info("Using hub forwarded session")
           return pipeline($=>$
             .muxHTTP().to($=>$
               .pipe(() => mesh.connect($selectedEP))
             )
           )
-        })
+        }))
         .onEnd(() => app.log(`Disconnected from ep ${$selectedEP} for ${protocol}/${name}`))
       )
 
@@ -309,19 +335,16 @@ export default function ({ app, mesh, punch }) {
     return pipeline($=>$
       .onStart(req)
       .muxHTTP().to($=>$
-        .pipe(mesh.connect(ep, {
-          bind: bound,
-          onState: conn => {
-            if(conn.state === 'open')
-              conn.socket.setRawOption(1, 15, new Data([1,0, 0, 0]))
-          }
-        }))
+        .pipe(mesh.connect(ep))
       )
       .replaceMessage(res => {
         $response = res
         return new StreamEnd
       })
-      .onEnd(() => $response)
+      .onEnd(() => {
+        console.info('Hub answers in api: ', $response)
+        return $response
+      })
     ).spawn()
   }
 
@@ -372,9 +395,9 @@ export default function ({ app, mesh, punch }) {
     )
   )
 
-  var makeRespTunnel = pipeline($=>$
-    .pipe(punch.makeRespTunnel())
-  )
+  // var makeRespTunnel = pipeline($=>$
+  //   .pipe(punch.makeRespTunnel())
+  // )
 
   getLocalConfig().then(applyLocalConfig)
 
@@ -388,8 +411,12 @@ export default function ({ app, mesh, punch }) {
     setOutbound,
     deleteInbound,
     deleteOutbound,
-    servePeerInbound,
+    createHole,
+    updateHoleInfo,
     makeRespTunnel,
+    punchHole,
+    deleteHole,
+    servePeerInbound,
   }
 }
 

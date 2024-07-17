@@ -1,11 +1,12 @@
-export default function({ app }) {
+export default function({ app, mesh }) {
   // Only available for symmetric NAT
-  function Hole(ep, bound, ent, request) {
+  function Hole(ep) {
     // FIXME: throw on init fail?
     // TODO: Add detailed comment.
 
-    var destIP = ent.ip
-    var destPort = ent.port
+    var bound = '0.0.0.0:' + randomPort()
+    var destIP = null
+    var destPort = null
     var role = null
 
     // closed forwarding connecting(ready punching) connected fail
@@ -16,6 +17,8 @@ export default function({ app }) {
     var $session
     var $response
 
+    console.info(`Creating hole to peer ${ep}, bound ${bound}`)
+
     // Check if ep is self.
     if(ep === app.endpoint.id) {
       throw 'Must not create a hole to self'
@@ -25,7 +28,7 @@ export default function({ app }) {
       // TODO !!! state error would happen when network is slow
       // must handle this
 
-      if (!role) throw 'Hole not init correctly'
+      if (!role || !destIP || !destPort) throw 'Hole not init correctly'
       if ($session) return $session
 
       // TODO: support TLS connection
@@ -90,6 +93,29 @@ export default function({ app }) {
       return $session
     }
 
+    function fwdRequest(req) {
+      return pipeline($=>$
+        .onStart(req)
+        .muxHTTP().to($=>$
+          .pipe(mesh.connect(ep, {
+            bind: bound,
+            onState: conn => {
+              if(conn.state === 'open')
+                conn.socket.setRawOption(1,15,new Data([1,0,0,0]))
+            }
+          }))
+        )
+        .print()
+        .replaceMessage(res => {
+          $response = res
+          return new StreamEnd
+        })
+        .onEnd(() => {
+          console.info('Hub Answers in hole: ', $response)
+          return $response
+        })
+      ).spawn()
+    }
 
     // use THE port sending request to hub.
     function requestPunch() {
@@ -97,10 +123,12 @@ export default function({ app }) {
       // state = 'connecting'
       role = 'client'
 
-      request.spawn(new Message({
+      console.info("Requesting punch")
+      fwdRequest(new Message({
         method: 'GET',
-        path: `/api/punch/server`,
+        path: '/api/punch/request',
       }))
+      new Timeout(15).wait().then(connectOrFail)
     }
 
     // TODO add cert info into response
@@ -108,19 +136,28 @@ export default function({ app }) {
       // state = 'connecting'
       role = 'server'
 
-      request.spawn(new Message({
+      console.info("Accepting punch")
+      fwdRequest(new Message({
         method: 'GET',
-        path: `/api/punch/client`,
+        path: '/api/punch/accept',
       }))
+      new Timeout(15).wait().then(connectOrFail)
     }
 
-    function punch(destIP, destPort) {
+    function updateNatInfo(ip, port) {
+      destIP = ip
+      destPort = port
+    }
+
+    function punch() {
       // receive TLS options
       // connectTLS
       // connectLocal or connectRemote
 
       // TODO add retry logic here
       state = 'punching'
+
+      console.info("Punching...")
       makeFakeCall(destIP, destPort)
       $session = directSession()
       heartbeat() // activate the session pipeline
@@ -139,9 +176,16 @@ export default function({ app }) {
       )
     }
 
+    function connectOrFail() {
+      console.info(`Failed unpunchable hole: ${ep}`)
+      if(state != 'connected') state = fail
+      updateHoles()
+    }
+
     // send a SYN to dest, expect no return.
     // this will cheat the firewall to allow inbound connection from dest.
     function makeFakeCall(destIP, destPort) {
+      console.info("Making fake call")
       pipy().task().onStart(new Data).connect(`${destIP}:${destPort}`, {
         bind: bound,
         onState: function (conn) {
@@ -156,7 +200,7 @@ export default function({ app }) {
 
 
     function heartbeat() {
-      request.spawn(
+      fwdRequest.spawn(
         new Message(
           { method: 'POST', path: '/api/status' },
           JSON.encode({ name: config.agent.name })
@@ -175,6 +219,7 @@ export default function({ app }) {
       ready,
       requestPunch,
       acceptPunch,
+      updateNatInfo,
       punch,
       makeRespTunnel,
       directSession,
@@ -192,32 +237,50 @@ export default function({ app }) {
         holes.delete(key)
       }
     })
+    console.info(`Holes after updating: `, holes)
   }
 
-  function createInboundHole(ep, ent, bound, request) {
+  function createInboundHole(ep, bound, request) {
     updateHoles()
+    if(findHole(ep)) return
+    console.info(`Creating Inbound Hole to ${ep}`)
     try {
-      var hole = Hole(ep, ent, bound, request)
+      var hole = Hole(ep, bound, request)
       hole.requestPunch()
       holes.set(ep, hole)
-    } catch {
-      app.log(`Failed to create Inbound Hole, peer ${ep}`)
+    } catch(err) {
+      hole = null
+      app.log(`Failed to create Inbound Hole, peer ${ep}, err ${err}`)
     }
 
+    updateHoles()
     return hole
   }
 
-  function createOutboundHole(ep, ent, bound, request) {
+  function createOutboundHole(ep, natIp, natPort) {
     updateHoles()
+    if(findHole(ep)) return
+
+    console.info(`Creating Outbound Hole to ${ep}`)
     try {
       var hole = Hole(ep)
+      hole.updateNatInfo(natIp, natPort)
       hole.acceptPunch()
       holes.set(ep, hole)
-    } catch {
-      app.log(`Failed to create Inbound Hole, peer ${ep}`)
+    } catch(err) {
+      hole = null
+      app.log(`Failed to create Outbound Hole, peer ${ep}, err ${err}`)
     }
 
+    updateHoles()
     return hole
+  }
+
+  function updateHoleInfo(ep, natIp, natPort) {
+    var hole = findHole(ep)
+    if(!hole) throw 'No hole to update'
+
+    hole.updateNatInfo(natIp, natPort)
   }
 
   function deleteHole(ep) {
@@ -240,6 +303,7 @@ export default function({ app }) {
     holes,
     createInboundHole,
     createOutboundHole,
+    updateHoleInfo,
     deleteHole,
     findHole,
     randomPort,
