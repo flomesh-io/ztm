@@ -69,7 +69,7 @@ export default class ShellService {
 				"run",
 				"agent",
 				`--listen=${port}`,
-				`--database=${resourceDirPath}/ztm.db`,
+				`--data=${resourceDirPath}/ztm.db`,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
@@ -106,7 +106,7 @@ export default class ShellService {
 				"repo://ztm/agent",
 				"--args",
 				`--listen=${port}`,
-				`--database=${resourceDirPath}/ztm.db`,
+				`--data=${resourceDirPath}/ztm.db`,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];

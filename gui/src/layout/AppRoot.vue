@@ -4,7 +4,7 @@ import { useStore } from 'vuex';
 import { removeAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
-import PipyVersion from './PipyVersion.vue';
+import PipyVersion from '@/components/mesh/PipyVersion.vue';
 import XeyeSvg from "@/assets/img/white.png";
 import HoverXeyeSvg from "@/assets/img/loading.png";
 import PipySvg from "@/assets/img/pipy-white.png";
@@ -35,12 +35,7 @@ const props = defineProps(['embed']);
 const emits = defineEmits(['collapse']);
 const router = useRouter();
 const meshes = ref([]);
-const configOpen = ref(false);
 const logoHover = ref(false);
-const db = ref('');
-const config = ref({
-	port: getPort(),
-});
 
 const platform = computed(() => {
 	return store.getters['account/platform']
@@ -97,7 +92,6 @@ const play = () => {
 }
 
 const pipyInit = async (pause) => {
-	db.value = await shellService.getDB();
 	const hostname = await invoke("plugin:os|hostname");
 	store.commit('account/setUser', {
 		id: hostname
@@ -130,13 +124,13 @@ const errorMsg = computed(() => {
 })
 
 const startPipy = async () => {
-	await shellService.startPipy(config.value.port, false, error => {
+	await shellService.startPipy(getPort(), false, error => {
 		errors.value.push(error);
 		console.error(`command error: "${error}"`)
 	});
 }
 const pause = async () => {
-	await shellService.pausePipy(config.value.port);
+	await shellService.pausePipy(getPort());
 	playing.value = false;
 }
 const clickPause = () => {
@@ -166,9 +160,6 @@ const goLogin = () => {
 }
 const goConsole = () => {
 	router.push('/mesh');
-}
-const openFinder = () => {
-	shellService.openFinder();
 }
 const restart = ref(false);
 
@@ -252,7 +243,7 @@ const toggle = (event) => {
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': configOpen,'android':platform=='android'}">
+	<div class="e-card playing transparent-form" :class="{'blur': false,'android':platform=='android'}">
 	  <div class="image"></div>
 	  <div class="wave"></div>
 	  <div class="wave"></div>
@@ -336,50 +327,12 @@ const toggle = (event) => {
 				</Button>
 			</div>
 			<div class="flex-item">
-				<Button :disabled="!!playing" v-tooltip="'Setting'" class="pointer" severity="help" rounded text aria-label="Filter" @click="() => configOpen = true" >
-					<i class="pi pi-cog "  />
-				</Button>
-			</div>
-			<div class="flex-item">
 				<Button v-tooltip.left="'Start'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
 					<i class="pi pi-play " />
 				</Button>
 				<Button v-tooltip="'Pause'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="clickPause" >
 					<i class="pi pi-stop-circle" />
 				</Button>
-			</div>
-		</div>
-	</div>
-	<div class="config-pannel transparent-form" v-if="configOpen">
-		<div class="config-body" >
-			<Button icon="pi pi-times" v-tooltip.left="'Close'" class="pointer close" severity="help" text rounded aria-label="Filter" @click="() => configOpen = false" ></Button>
-			<div>
-				<ul class="list-none p-0 m-0">
-					
-					<li class="flex align-items-center py-3 px-2  border-bottom-1 surface-border flex-wrap">
-						<div class="font-medium font-bold w-3">Version</div>
-						<PipyVersion />
-					</li>
-					<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-							<div class="font-medium font-bold w-3">Port</div>
-							<div >
-									<InputNumber :useGrouping="false" style="width: 80px;" :min="0" :max="65535" placeholder="0-65535" v-model="config.port" />
-							
-							</div>
-					</li>
-					<li class="flex align-items-center py-3 px-2 border-bottom-1 surface-border flex-wrap">
-							<div class="font-medium font-bold w-3">DB</div>
-							<div v-tooltip="db" style="white-space: nowrap;text-overflow: ellipsis;overflow: hidden;width: 200px;">
-								{{db}}
-							</div>
-					</li>
-					<li v-if="!!isLogined" class="flex align-items-center py-3 px-2 surface-border flex-wrap">
-							<div class="font-medium font-bold w-3"></div>
-							<div >
-								<Button  class="w-12rem" @click="openFinder">Show in finder <i class="pi pi-box ml-2"></i></Button>
-							</div>
-					</li>
-				</ul>
 			</div>
 		</div>
 	</div>

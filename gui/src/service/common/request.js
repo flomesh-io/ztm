@@ -42,6 +42,9 @@ const getPort = () => {
 	const DEFAULT_VITE_APP_API_PORT = import.meta.env.VITE_APP_API_PORT;
 	return VITE_APP_API_PORT || DEFAULT_VITE_APP_API_PORT;
 }
+const setPort = (port) => {
+	localStorage.setItem("VITE_APP_API_PORT",port);
+}
 const toastMessage = (e) => {
 	debugger
 	if(!!e.status && !!e.message){
@@ -307,4 +310,5 @@ export {
   parseUrlParams,
   getHeaders,
 	getPort,
+	setPort,
 };
