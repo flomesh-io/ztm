@@ -2,11 +2,11 @@ export default function ({ app, api, utils }) {
   var $handler
 
   return pipeline($=>$
-    .onStart(argv => main(argv).then(h => void ($handler = h)))
+    .onStart(ctx => main(ctx).then(h => void ($handler = h)))
     .pipe(() => $handler)
   )
 
-  function main(argv) {
+  function main({ argv, endpoint }) {
     var buffer = new Data
 
     function output(str) {
@@ -61,42 +61,34 @@ export default function ({ app, api, utils }) {
             title: 'View or set the terminal settings on an endpoint',
             usage: 'config',
             options: `
-              --mesh      <name>      Specify a mesh by name
-              --ep        <name>      Specify an endpoint by name or UUID
               --set-shell [command]   Set the command to start the shell program when a terminal is opened
             `,
-            action: (args) => selectEndpoint(args['--ep']).then(
-              ep => api.getEndpointConfig(ep.id).then(config => {
-                var changed = false
-                if ('--set-shell' in args) {
-                  config.shell = args['--set-shell']
-                  changed = true
-                }
+            action: (args) => api.getEndpointConfig(endpoint.id).then(config => {
+              var changed = false
+              if ('--set-shell' in args) {
+                config.shell = args['--set-shell']
+                changed = true
+              }
 
-                if (changed) {
-                  return api.setEndpointConfig(ep.id, config).then(
-                    () => api.getEndpointConfig(ep.id).then(printConfig).then(flush)
-                  )
-                } else {
-                  printConfig(config)
-                  return flush()
-                }
+              if (changed) {
+                return api.setEndpointConfig(endpoint.id, config).then(
+                  () => api.getEndpointConfig(endpoint.id).then(printConfig).then(flush)
+                )
+              } else {
+                printConfig(config)
+                return flush()
+              }
 
-                function printConfig(config) {
-                  output(`Endpoint: ${ep.name} (${ep.id})\n`)
-                  output(`Shell: ${config.shell || '(default)'}\n`)
-                }
-              })
-            )
+              function printConfig(config) {
+                output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
+                output(`Shell: ${config.shell || '(default)'}\n`)
+              }
+            })
           },
 
           {
             title: 'Connect to the terminal on an endpoint',
             usage: 'open <endpoint name>',
-            options: `
-              --mesh  <name>  Specify a mesh by name
-                              Can be omitted when only 1 mesh is joined
-            `,
             action: (args) => selectEndpoint(args['<endpoint name>']).then(
               ep => api.openTerminal(ep.id)
             )

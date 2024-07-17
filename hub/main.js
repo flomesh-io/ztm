@@ -104,12 +104,12 @@ function main() {
     commands: [{
       title: 'ZTM Hub Service',
       options: `
-        -d, --database  <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-        -l, --listen    <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
-        -n, --names     <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
+        -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+        -l, --listen  <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
+        -n, --names   <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
       `,
       action: (args) => {
-        var dbPath = args['--database'] || '~/.ztm'
+        var dbPath = args['--data'] || '~/.ztm'
         if (dbPath.startsWith('~/')) {
           dbPath = os.home() + dbPath.substring(1)
         }

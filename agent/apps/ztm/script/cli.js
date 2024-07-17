@@ -2,11 +2,11 @@ export default function ({ app, api, utils }) {
   var $handler
 
   return pipeline($=>$
-    .onStart(argv => main(argv).then(h => void ($handler = h)))
+    .onStart(ctx => main(ctx).then(h => void ($handler = h)))
     .pipe(() => $handler)
   )
 
-  function main(argv) {
+  function main({ argv, endpoint }) {
     var buffer = new Data
 
     function output(str) {
