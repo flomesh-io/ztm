@@ -74,11 +74,11 @@ export default class AppService {
 		})
 			.then(res => {
 				console.log(res)
-				const proxyEps = [];
+				const afterEps = [];
 				
 				const reqs = []
 				outbounds.forEach((outbound)=>{
-					proxyEps.push(outbound.ep)
+					afterEps.push(outbound.ep)
 					if(!outbound.targets){
 						outbound.targets = []
 					}
@@ -101,16 +101,39 @@ export default class AppService {
 					});
 					reqs.push(req);
 				})
+				
+				let beforeEps = localStorage.getItem("PROXY-EPS");
+				beforeEps = !!beforeEps?beforeEps.split(","):[];
+				const deleteEps = beforeEps.filter(ep => !afterEps.includes(ep));
+				deleteEps.forEach((ep)=>{
+					const body = {};
+					if(outbound.ep == mesh?.agent?.id){
+						body.listen = listen;
+					}
+					if(ep == mesh?.agent?.id){
+						body.listen = listen;
+					}
+					const req = this.invokeAppApi({
+						base,
+						url:`/api/endpoints/${ep}/config`,
+						method: 'POST',
+						body
+					});
+					reqs.push(req);
+				})
 				merge(reqs).then(res => {
 					if(!!callback){
 						callback(res)
 					}
-					localStorage.setItem("PROXY-EPS",proxyEps.join(","))
+					localStorage.setItem("PROXY-EPS",afterEps.join(","))
 				})
 				.catch(err1 => {
 					console.log("set remote targets errors")
 					console.log(err1)
 				}); 
+				
+				
+				
 			})
 			.catch(err3 => {
 				console.log("set remote targets errors")
