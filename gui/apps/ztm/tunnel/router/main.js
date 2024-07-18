@@ -1,4 +1,4 @@
-const tunnel = {
+const main = {
   path: "main",
   name: "Main",
 	redirect: "/main",
@@ -6,9 +6,9 @@ const tunnel = {
 		{
 				path: '/main',
 				name: 'tunnels',
-				component: () => import('../../views/Main.vue')
+				component: () => import('../views/Main.vue')
 		},
   ],
 };
 
-export default tunnel;
+export default main;

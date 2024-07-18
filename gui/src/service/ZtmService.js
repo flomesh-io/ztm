@@ -20,6 +20,8 @@ export default class ZtmService {
 		if(config.bootstraps){
 			config.bootstraps = config.bootstraps.filter(n=>!!n)
 		}
+		delete config.connected;
+		delete config.errors;
 		return request(`/api/meshes/${name}`,"POST",config);
 	}
 	getLogs(mesh, ep) {

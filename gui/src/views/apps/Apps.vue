@@ -61,7 +61,7 @@ const loaddata = () => {
 	console.log("load apps",[selectedMesh.value?.name,selectedMesh.value?.agent?.id])
 	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
 		console.log("start getApps")
-		meshApps.value = res.filter((app) => app.name !='terminal') || [];
+		meshApps.value = res?.filter((app) => app.name !='terminal') || [];
 		console.log(res);
 		appService.getApps(selectedMesh.value?.name).then((res2)=>{
 			console.log("uninstallApps:")
@@ -148,7 +148,7 @@ const openAppUI = (app, base) => {
 		appService.openbrowser(app)
 	}else if(!mappingApp?.component && !app?.component){
 		const webviewOptions = {
-			url: base,
+			url: mappingApp?.url || base,
 			name: mappingApp?.name || app.name,
 			width:mappingApp?.width || 1280,
 			height:mappingApp?.height || 860,
@@ -275,7 +275,7 @@ const mapping = ref(appMapping);
 						</template>
 				</Carousel>
 	    </div>
-	    <div class="terminal_body py-2 px-4" v-else>
+	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else>
 				<div class="grid text-center" >
 						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in meshApps.concat(uninstallApps)">
 							<div class="flex">

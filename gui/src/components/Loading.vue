@@ -1,6 +1,3 @@
-<script setup>
-</script>
-
 <template>
 	<div class="p-4">
 			<div class="flex mb-3">
