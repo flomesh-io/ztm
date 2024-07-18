@@ -19,7 +19,7 @@ const info = computed(() => {
 	return store.getters['app/info']
 });
 
-const selectEp = ref(info.value.endpoint?.id);
+const selectEp = ref(info.value?.endpoint?.id);
 const run = () => {
 	emits('response',{});
 	emits('update:loading',true);
