@@ -14,7 +14,6 @@ onMounted(()=>{
 	loaddata()
 })
 const loaddata = (tunnel) => {
-	getEndpoints();
 	getTunnels(tunnel);
 }
 const selectedTunnel = ref();
@@ -25,15 +24,19 @@ const tunnels = ref([]);
 const getTunnels = (tunnel) => {
 	loading.value = true;
 	loader.value = true;
-	tunnelService.getTunnels((res)=>{
+	endpointMap.value = {};
+	tunnelService.getTunnels((_tunnels,_eps)=>{
 		console.log("tunnels:")
-		console.log(res)
+		console.log(_tunnels)
 		loading.value = false;
 		setTimeout(() => {
 			loader.value = false;
 		},2000)
 		error.value = null;
-		tunnels.value = res || [];
+		tunnels.value = _tunnels || [];
+		_eps.forEach((ep) => {
+			endpointMap.value[ep.id] = ep;
+		})
 		if(!!tunnel){
 			const _find = tunnels.value.find((_t) => _t.name == tunnel.name && _t.proto == tunnel.proto)
 			if(!!_find){
@@ -46,15 +49,6 @@ const getTunnels = (tunnel) => {
 		}
 	})
 }
-const getEndpoints = () => {
-	endpointMap.value = {};
-	tunnelService.getEndpoints().then((res)=>{
-		res.forEach((ep) => {
-			endpointMap.value[ep.id] = ep;
-		})
-	})
-}
-
 </script>
 
 <template>

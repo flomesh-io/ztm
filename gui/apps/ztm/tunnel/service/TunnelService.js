@@ -72,7 +72,7 @@ export default class TunnelService {
 		this.getEndpoints().then((eps)=>{
 			let reqs = [];
 			// merge request
-			eps.forEach((ep)=>{
+			(eps||[]).forEach((ep)=>{
 				const outboundReq = this.getOutbounds(ep?.id).then((res)=> {
 					return { data:res, ep, type:'outbound' }
 				})
@@ -85,7 +85,7 @@ export default class TunnelService {
 			return merge(reqs).then((allRes) => {
 				const tunnels = {};
 				// set tunnels
-				allRes.forEach((childres)=>{
+				(allRes||[]).forEach((childres)=>{
 					if(!!childres.data ){
 						childres.data.forEach((res)=>{
 							if(!!res.protocol && !!res.name){
@@ -128,7 +128,7 @@ export default class TunnelService {
 					}
 				})
 				if(!!callback)
-				callback(Object.values(tunnels))
+				callback(Object.values(tunnels),eps||[])
 			})
 		})
 	}
