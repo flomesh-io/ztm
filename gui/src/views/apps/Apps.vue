@@ -147,7 +147,7 @@ const openAppUI = (app, base) => {
 		appService.openbrowser(app)
 	}else if(!mappingApp?.component && !app?.component){
 		const webviewOptions = {
-			url: mappingApp?.url || app?.url || base,
+			url: mappingApp?.url || app?.url || `${base}/`,
 			name: mappingApp?.name || app.name,
 			width:mappingApp?.width || app?.width || 1280,
 			height:mappingApp?.height || app?.height || 860,

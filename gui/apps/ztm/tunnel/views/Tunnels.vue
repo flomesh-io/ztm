@@ -73,7 +73,7 @@ const edit = (d) => {
 		<div  class="relative h-full min-h-screen w-full" >
 			<AppHeader :main="true" >
 					<template #start>
-						<Button icon="pi pi-arrow-right-arrow-left" text />
+						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
 					</template>
 					<template #center>
 						<b>Tunnels</b>
@@ -81,7 +81,6 @@ const edit = (d) => {
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
-						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
 						<Button icon="pi pi-plus"   @click="create"/>
 					</template>
 			</AppHeader>
