@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "build": "vite build --emptyOutDir --outDir ../agent/gui",
     "build:base": "vite build --emptyOutDir --outDir ../agent/gui && tauri build",
+		"build:debug": "vite build --emptyOutDir --outDir ../agent/gui && tauri build --debug",
     "build:tunnel": "vite build apps/ztm/tunnel --emptyOutDir --outDir ../../../../agent/apps/ztm/tunnel/gui",
     "build:script": "vite build apps/ztm/script --emptyOutDir --outDir ../../../../agent/apps/ztm/script/gui",
     "android-init": "tauri android init && cp -rf ./src-android/app ./src-tauri/gen/android",

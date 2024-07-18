@@ -20,6 +20,7 @@
     "window:allow-set-size",
     "window:allow-set-resizable",
     "window:allow-create",
+		"window:deny-start-dragging",
     "webview:allow-set-webview-size",
     "webview:allow-internal-toggle-devtools",
     "webview:allow-create-webview",
