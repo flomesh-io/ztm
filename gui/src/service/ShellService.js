@@ -68,8 +68,10 @@ export default class ShellService {
 			const args = [
 				"run",
 				"agent",
-				`--listen=${port}`,
-				`--data=${resourceDirPath}/ztm.db`,
+				`--listen`,
+				`${port}`,
+				`--data`,
+				`${resourceDirPath}/ztm.db`,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
@@ -84,10 +86,12 @@ export default class ShellService {
 			});
 			command.stdout.on('data', line => {
 				console.log("[data]");
+				console.log(line);
 				store.commit('account/pushLog', {level:'Info',msg:line});
 			});
 			command.stderr.on('data', line => {
 				console.log("[data]");
+				console.log(line);
 				store.commit('account/pushLog', {level:'Error',msg:line});
 				callError(line);
 			});
@@ -105,8 +109,10 @@ export default class ShellService {
 				"--pipy",
 				"repo://ztm/agent",
 				"--args",
-				`--listen=${port}`,
-				`--data=${resourceDirPath}/ztm.db`,
+				`--listen`,
+				`${port}`,
+				`--data`,
+				`${resourceDirPath}/ztm.db`,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];

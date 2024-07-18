@@ -1129,8 +1129,14 @@ fieldset{
 		background-color: rgba(76, 40, 60, 1);
 		padding: 1rem;
 	}
+	.add-tag-input{
+		color: #fff;
+	}
 }
 .green.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider{
 	background-color: var(--green-600) !important;
 	width: 35px;
+}
+.transparent.p-togglebutton.p-togglebutton-checked .p-togglebutton-icon{
+	color: #fff !important;
 }

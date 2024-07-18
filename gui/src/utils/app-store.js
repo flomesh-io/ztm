@@ -1,14 +1,15 @@
 import browser from "@/assets/img/apps/browser.png";
 import proxy from "@/assets/img/apps/proxy.png";
 import terminal from "@/assets/img/apps/terminal.png";
+import scriptIcon from "@/assets/img/apps/script.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
 import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
+import ztmlog from "@/assets/img/apps/ztmlog.png";
+import eplog from "@/assets/img/apps/eplog.png";
 import ProxyComponent from '@/views/apps/core/Proxy.vue';
 import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
-import ztmlog from "@/assets/img/apps/ztmlog.png";
-import eplog from "@/assets/img/apps/eplog.png";
 
 const apps = [{
 	name: "WebConsole",
@@ -53,6 +54,12 @@ const appMapping = {
 		icon: browser,
 		name: "Browser",
 		component: BrowserComponent
+	},
+	"ztm/script": {
+		icon: scriptIcon,
+		name: "Scripts",
+		width:1280,
+		height:860,
 	},
 	"ztm/proxy": {
 		icon: proxy,

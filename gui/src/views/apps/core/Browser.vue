@@ -144,7 +144,7 @@ const toggle = (event) => {
 		</div>
 		</div>
 		<Popover class="ml-6 mt-3" ref="op" appendTo="self">
-				<InputText placeholder="As Name" v-model="browser.name"  class="w-20rem"></InputText>
+				<InputText size="small" placeholder="As Name" v-model="browser.name"  class="w-20rem"></InputText>
 				<Button size="small" icon="pi pi-save" class="ml-2"  @click="addShortcut"></Button>
 		</Popover>
 	</div>									

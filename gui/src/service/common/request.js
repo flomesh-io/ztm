@@ -46,7 +46,6 @@ const setPort = (port) => {
 	localStorage.setItem("VITE_APP_API_PORT",port);
 }
 const toastMessage = (e) => {
-	debugger
 	if(!!e.status && !!e.message){
 		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
 	} else if(!!e.message){
@@ -55,6 +54,35 @@ const toastMessage = (e) => {
 		toast.add({ severity: 'error', summary: 'Tips', detail: `${e.status} ${e.statusText}: ${e.url}`, life: 3000 });
 	} else {
 		toast.add({ severity: 'error', summary: 'Tips', detail: `${e}`, life: 3000 });
+	}
+}
+const getConfig  = (config, params, method) => {
+	if(!window.__TAURI_INTERNALS__){
+		return config
+	} else if(!method || method == METHOD.GET){
+		return {
+			method,
+			header:{
+				"Content-Type": "application/json"
+			},
+			// body: !!params?JSON.stringify(params):null,
+			...config
+		}
+	} else {
+		const rtn = {
+			method,
+			header:{
+				"Content-Type": "application/json"
+			},
+			...config
+		}
+		const _header = config?.header || config?.headers || {};
+		if(!_header["Content-Type"] || _header["Content-Type"] == "application/json"){
+			rtn.body = !!params?JSON.stringify(params):null;
+		} else {
+			rtn.body = !!params?params:null;
+		}
+		return rtn;
 	}
 }
 async function request(url, method, params, config) {
@@ -95,14 +123,7 @@ async function request(url, method, params, config) {
 		}
 	} else {
 		if(!!method && method != METHOD.GET){
-			return fetch(getUrl(url), {
-				method,
-				header:{
-					"Content-Type": "application/json"
-				},
-				body: !!params?JSON.stringify(params):null,
-				...config
-			}).then((res) => {
+			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
 				console.log('response:')
 				console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
@@ -118,14 +139,7 @@ async function request(url, method, params, config) {
 			});
 		} else {
 			console.log(getUrl(url))
-			return fetch(getUrl(url), {
-				method,
-				header:{
-					"Content-Type": "application/json"
-				},
-				// body: !!params?JSON.stringify(params):null,
-				...config
-			}).then((res) => {
+			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
 				console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
@@ -178,21 +192,16 @@ async function requestNM(url, method, params, config) {
 				});
 		}
 	} else {
-		return fetch(getUrl(url), {
-			method,
-			header:{
-				"Content-Type": "application/json"
-			},
-			body: !!params?JSON.stringify(params):null,
-			...config
-		}).then((res) => res.json()).then((res) => {
-				if (res.status >= 400) {
-					const error = new Error(res.message);
-					error.status = res.status;
-					return Promise.reject(error);
-				} else {
-					return res;
-				}
+		return fetch(getUrl(url), getConfig(config,params, method)).then((res) => res.json()).then((res) => {
+			console.log('response:')
+			console.log(res)
+			if(typeof(res) == 'object' && res.status >= 400){
+				return Promise.reject(res);
+			} else if(typeof(res) == 'object' && !!res.body){
+				return res.json();
+			} else {
+				return res
+			}
 		}).catch((e)=>{
 			if(!!method && method != METHOD.GET){
 				//toastMessage(e);
