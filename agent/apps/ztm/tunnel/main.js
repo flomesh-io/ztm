@@ -151,6 +151,10 @@ export default function ({ app, mesh, utils }) {
       'CONNECT': api.servePeerInbound,
     },
 
+    '/api/ping': {
+      'GET': responder(() => Promise.resolve(response(200)))
+    },
+
     '/api/punch/{action}': {
       'GET': responder(({action}) => {
         var ep = $ctx.peer.id
@@ -164,15 +168,25 @@ export default function ({ app, mesh, utils }) {
             break
           case 'accept':
             api.updateHoleInfo(ep, ip, port)
-            break
-          case 'sync':
             api.syncPunch(ep)
+            break
+          default:
+            return Promise.resolve(response(500, "Unknown punch action"))
         }
         return Promise.resolve(response(200))
       }),
 
-      'CONNECT': api.makeRespTunnel
+      'CONNECT': pipeline($=>$.onStart(() => $ctx).pipe(() => api.makeRespTunnel))
     },
+  })
+
+  punch.setService((ctx) => {
+    // Tricky callback to set ctx,
+    // expecting everything in hole works
+    // just like it's coming from hub.
+    console.info("Setting ctx manually: ", ctx)
+    $ctx = ctx
+    return servePeer
   })
 
   return pipeline($=>$

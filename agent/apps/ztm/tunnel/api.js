@@ -189,19 +189,13 @@ export default function ({ app, mesh, punch }) {
   function updateHoleInfo(ep, ip, port) {
     checkIP(ip)
     checkPort(Number.parseInt(port))
-    console.info(`Updating nat info: peer ${ep}, ip ${ip}, port ${port}`)
     punch.updateHoleInfo(ep, ip, port)
   }
 
-  function punchHole(ep) {
-    console.log(`Hole punching......`)
+  function syncPunch(ep) {
     var hole = punch.findHole(ep)
-    // if(!hole) return null
+    if(!hole) throw `Invalid Hole State for ${ep}`
     hole.punch()
-  }
-
-  function makeRespTunnel(ep) {
-
   }
 
   function deleteHole(ep) {
@@ -395,6 +389,17 @@ export default function ({ app, mesh, punch }) {
     )
   )
 
+  var makeRespTunnel = pipeline($=>$
+    .onStart(ctx => {
+      console.info("Making resp tunnel: ", ctx)
+      var ep = ctx.peer.id
+      var hole = punch.findHole(ep)
+      if(!hole) throw `Invalid Hole State for ${ep}`
+      return hole
+    })
+    .pipe(hole => hole.makeRespTunnel())
+  )
+
   // var makeRespTunnel = pipeline($=>$
   //   .pipe(punch.makeRespTunnel())
   // )
@@ -414,7 +419,7 @@ export default function ({ app, mesh, punch }) {
     createHole,
     updateHoleInfo,
     makeRespTunnel,
-    punchHole,
+    syncPunch,
     deleteHole,
     servePeerInbound,
   }
