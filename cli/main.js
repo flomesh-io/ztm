@@ -99,8 +99,9 @@ function doCommand(meshName, epName, argv, program) {
                                         Only applicable to hubs and agents
           -l, --listen  <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
                                         Only applicable to hubs and agents
-          -n, --names   <host:port...>  Specify one or more hub names (host:port) that are accessible to agents
+          -n, --names   <host:port...>  Specify one or more hub addresses (host:port) that are accessible to agents
                                         Only applicable to hubs
+              --ca      <url>           Specify the location of an external CA service if any
           -p, --permit  <pathname>      Specify an optional output filename for the root user's permit
                                         Only applicable to hubs
         `,
@@ -139,8 +140,9 @@ function doCommand(meshName, epName, argv, program) {
                                           Only applicable to hubs and agents
           -l, --listen  <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
                                           Only applicable to hubs and agents
-          -n, --names   <host:port ...>   Specify 1 or more hub names (addresses + ports) that are accessible to agents
+          -n, --names   <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
                                           Only applicable to hubs
+              --ca      <url>             Specify the location of an external CA service if any
           -p, --permit  <pathname>        Specify an optional output filename for the root user's permit
                                           Only applicable to hubs
         `,
@@ -329,10 +331,12 @@ function startHub(args) {
     '--listen': args['--listen'] || '0.0.0.0:8888',
     '--names': args['--names'],
   }
+  if ('--ca' in args) opts['--ca'] = args['--ca']
   var optsChanged = (
     ('--data' in args) ||
     ('--listen' in args) ||
-    ('--names' in args)
+    ('--names' in args) ||
+    ('--ca' in args)
   )
   if (optsChanged || !hasService('hub')) {
     initHub(args).then(
@@ -378,7 +382,7 @@ function initHub(args) {
   }
 
   var names = args['--names'] || []
-  if (names.length === 0) throw 'at least one hub name (host:port) is required (with option --names)'
+  if (names.length === 0) throw 'at least one hub address (host:port) is required (with option --names)'
 
   try {
     dbPath = os.path.resolve(dbPath)
@@ -402,7 +406,7 @@ function initHub(args) {
   var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
   var pkey = new crypto.PublicKey(key)
 
-  return ca.init().then(
+  return ca.init(args['--ca']).then(
     () => Promise.all([
       ca.getCertificate('ca'),
       ca.signCertificate('root', pkey),
@@ -615,12 +619,14 @@ function stopService(name) {
 function runHub(args, program) {
   return initHub(args).then(
     () => {
-      exec([program,
+      var command = [program,
         '--pipy', 'repo://ztm/hub',
         '--args',
         '--data', args['--data'] || '~/.ztm',
         '--listen', args['--listen'] || '0.0.0.0:8888',
-      ])
+      ]
+      if ('--ca' in args) command.push('--ca', args['--ca'])
+      return exec(command)
     }
   )
 }

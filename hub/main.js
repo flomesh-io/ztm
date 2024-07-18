@@ -107,6 +107,7 @@ function main() {
         -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
         -l, --listen  <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
         -n, --names   <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
+            --ca      <url>             Specify the location of an external CA service if any
       `,
       action: (args) => {
         var dbPath = args['--data'] || '~/.ztm'
@@ -135,7 +136,7 @@ function main() {
 
         myNames = args['--names'] || []
 
-        return ca.init().then(() => {
+        return ca.init(args['--ca']).then(() => {
           myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
           var pkey = new crypto.PublicKey(myKey)
           return Promise.all([
