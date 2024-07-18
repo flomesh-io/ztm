@@ -7,6 +7,7 @@ export default function ({ app, mesh, utils }) {
 
   var $ctx
 
+  var gui = new http.Directory(os.path.join(app.root, 'gui'))
   var response = utils.createResponse
   var responder = utils.createResponder
 
@@ -30,6 +31,12 @@ export default function ({ app, mesh, utils }) {
         var config = JSON.decode(req.body)
         return api.setEndpointConfig(ep, config).then(response(201))
       }),
+    },
+
+    '*': {
+      'GET': responder((_, req) => {
+        return Promise.resolve(gui.serve(req) || response(404))
+      })
     },
   })
 
