@@ -21,4 +21,4 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: release
-        path: ./gui/src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+        path: ./gui/src-tauri/target/debug/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64.dmg
