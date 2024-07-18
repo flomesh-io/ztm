@@ -203,6 +203,18 @@ const installAPP = (app, options) => {
 	}
 }
 const current = ref(false);
+const logApp = (app) => {
+	///app/log/:mesh/:provider/:app
+	const mappingApp = mapping.value[`${app?.provider||''}/${app.name}`];
+	const webviewOptions = {
+		url: `/#/app/log/${selectedMesh.value?.name}/${selectedMesh.value?.agent?.id}/${app.provider||'ztm'}/${app.name}`,
+		name: `${mappingApp?.name || app.name}Log`,
+		width:mappingApp?.width || 1280,
+		height:mappingApp?.height || 860,
+		proxy:''
+	}
+	openWebview(webviewOptions);
+}
 onMounted(()=>{
 	loaddata();
 	resize(455,570,false);
@@ -281,6 +293,9 @@ const mapping = ref(appMapping);
 							<div class="flex">
 								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								
+								<Button v-if="!!app.provider && !app.shortcut" v-tooltip.left="'App Log'" icon="pi pi-file" severity="help" text rounded aria-label="Filter" @click="logApp(app)" >
+								</Button>
 								<Button v-if="app.isRunning === false" v-tooltip.left="'Start'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
 								</Button>
 								<Button v-else-if="!!app.isRunning" v-tooltip.left="'Stop'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >

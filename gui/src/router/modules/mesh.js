@@ -20,8 +20,8 @@ const mesh = {
 		},
 		{
 				path: '/mesh/log',
-				name: 'log',
-				component: () => import('@/views/mesh/Log.vue')
+				name: 'ep log',
+				component: () => import('@/views/log/EpLog.vue')
 		},
   ],
 };
