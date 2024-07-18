@@ -13,14 +13,6 @@ const go = (path) => {
 
 <template>
 	<div class="relative min-h-screen">
-		<AppHeader :main="true">
-				<template #center>
-					<b>App Store</b>
-				</template>
-		
-				<template #end> 
-				</template>
-		</AppHeader>
-		<Apps layout="absolute_container"/>
+		<Apps layout="absolute_container" :noInners="true"/>
 	</div>
 </template>

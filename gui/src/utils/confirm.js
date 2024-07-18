@@ -23,12 +23,14 @@ const remove = (accept, cancel) => {
 		}
 	})
 }
-const custom = (msg, accept, cancel) => {
+const custom = ({
+	header,message,icon, accept, cancel
+}) => {
 	const confirm = store.getters["notice/confirm"];
 	confirm.require({
-		message: msg,
-		header: 'Tips',
-		icon: 'pi pi-exclamation-triangle',
+		message,
+		header: header || 'Tips',
+		icon: icon||'pi pi-exclamation-triangle',
 		rejectProps: {
 				label: 'Cancel',
 				severity: 'secondary',

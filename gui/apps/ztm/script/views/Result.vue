@@ -2,7 +2,7 @@
 import { ref,onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex';
-import { mkConfig, generateCsv, download } from "export-to-csv";
+import exportFromJSON from 'export-from-json';
 const props = defineProps(['response','loading'])
 const emits = defineEmits(['back'])
 const back = () => {
@@ -11,7 +11,6 @@ const back = () => {
 const route = useRoute();
 const store = useStore();
 const result = ref()
-const csvConfig = mkConfig({ useKeysAsHeaders: true });
 const exportCsv = () => {
 	let exportData = [];
 	if(Array.isArray(props.response?.data)) {
@@ -23,8 +22,12 @@ const exportCsv = () => {
 		});
 		exportData.push(_data)
 	}
-	const csv = generateCsv(csvConfig)(exportData);
-	download(csvConfig)(csv);
+
+	exportFromJSON({ 
+		data: exportData,
+		fileName:`result.csv`,
+		exportType: exportFromJSON.types.csv 
+	})
 }
 </script>
 
