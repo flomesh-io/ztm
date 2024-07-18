@@ -6,7 +6,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { FilterMatchMode } from 'primevue/api';
 dayjs.extend(relativeTime)
 
-const props = defineProps('d');
+const props = defineProps(['d','endpoints']);
 const severityMap = computed(() => (severity) => {
 	if(severity == 'error'){
 		return "danger";
@@ -44,12 +44,12 @@ const filters = ref({
     type: { value: null, matchMode: FilterMatchMode.EQUALS }
 });
 
+const logs = computed(() => props.d || []);
 </script>
 
 <template>
 	<div class="grid text-left px-3 py-3" >
-		<DataTable v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" :value="props.d" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" tableStyle="min-width: 50rem">
-			
+		<DataTable v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]"  :value="logs" tableStyle="min-width: 50rem">
 			<Column style="width: 160px;" header="Time" sortable field="time">
 				<template #body="slotProps">
 					{{timeago(slotProps.data.time)}}
@@ -68,9 +68,9 @@ const filters = ref({
 						</Select>
 				</template>
 			</Column>
-			<Column header="Endpoint">
+			<Column header="Endpoint" v-if="!!props.endpoints && props.endpoints.length>0">
 				<template #body="slotProps">
-					{{endpoints.find((n)=>n.id == slotProps.data.ep)?.name}}
+					{{props.endpoints.find((n)=>n.id == slotProps.data.ep)?.name}}
 				</template>
 			</Column>
 			

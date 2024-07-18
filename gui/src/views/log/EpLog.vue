@@ -112,9 +112,7 @@ onActivated(()=>{
 	</Card>
 	<Loading v-if="loading"/>
 	<div v-else-if="logsFilter && logsFilter.length >0" class="text-center">
-		<div class="grid text-left px-3 py-3" >
-			<Log :d="logsFilter"/>
-		</div>
+		<Log :d="logsFilter" :endpoints="endpoints"/>
 	</div>
 	<Empty v-else />
 </template>

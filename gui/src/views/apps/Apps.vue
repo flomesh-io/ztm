@@ -148,12 +148,13 @@ const openAppUI = (app, base) => {
 		appService.openbrowser(app)
 	}else if(!mappingApp?.component && !app?.component){
 		const webviewOptions = {
-			url: mappingApp?.url || base,
+			url: mappingApp?.url || app?.url || base,
 			name: mappingApp?.name || app.name,
-			width:mappingApp?.width || 1280,
-			height:mappingApp?.height || 860,
+			width:mappingApp?.width || app?.width || 1280,
+			height:mappingApp?.height || app?.height || 860,
 			proxy:''
 		}
+		console.log(webviewOptions)
 		openWebview(webviewOptions);
 	} else {
 		selectApp.value = {
