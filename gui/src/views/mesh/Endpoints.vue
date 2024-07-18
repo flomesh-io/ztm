@@ -7,6 +7,7 @@ import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import exportFromJSON from 'export-from-json';
 dayjs.extend(relativeTime)
 
 const store = useStore();
@@ -85,6 +86,24 @@ const emptyMsg = computed(()=>{
 		return `First, join a Mesh.`
 	}
 });
+const username = ref('');
+const op = ref();
+const toggle = (event) => {
+	op.value.toggle(event);
+}
+const invokeEp = () => {
+	
+	ztmService.invokeEp(selectedMesh.value?.name, username.value)
+		.then(data => {
+			exportFromJSON({ data,
+				fileName:`${username.value}-permit.json`,
+				exportType: exportFromJSON.types.json 
+			})
+			toast.add({ severity: 'success', summary:'Tips', detail: `${username.value} permit generated.`, life: 3000 });
+			username.value = "";
+		})
+		.catch(err => console.log('Request Failed', err)); 
+}
 </script>
 
 <template>
@@ -98,8 +117,14 @@ const emptyMsg = computed(()=>{
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
+						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invoke'" aria-haspopup="true" aria-controls="op" @click="toggle"/>
 					</template>
 			</AppHeader>
+			
+			<Popover ref="op" >
+				<InputText size="small" placeholder="Username" v-model="username"  class="w-10rem"></InputText>
+				<Button size="small" :disabled="!username || username == 'root'" label="Invoke" class="ml-2"  @click="invokeEp"></Button>
+			</Popover>
 			<Loading v-if="loading"/>
 			<ScrollPanel class="w-full absolute" style="top:35px;bottom: 0;" v-else-if="endpoints && endpoints.length >0">
 			<DataView class="message-list" :value="endpoints">
@@ -129,7 +154,7 @@ const emptyMsg = computed(()=>{
 
 		<div class="flex-item" v-if="!!selectEp">
 			<div class="shadow mobile-fixed">
-				<EndpointDetail @back="() => selectEp=false" :ep="selectEp"/>
+				<EndpointDetail @back="() => selectEp=false" :ep="selectEp" @reload="getEndpoints"/>
 			</div>
 		</div>
 	</div>

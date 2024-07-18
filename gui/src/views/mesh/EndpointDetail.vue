@@ -2,19 +2,22 @@
 import { ref,onActivated,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
+import AppService from '@/service/AppService';
 import EndpointInfo from './EndpointInfo.vue';
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
-import freeSvg from "@/assets/img/free.svg";
+import Apps from '@/views/apps/Apps.vue';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import defaultIcon from "@/assets/img/apps/default.png";
 dayjs.extend(relativeTime)
 
 const props = defineProps(['ep']);
-const emits = defineEmits(['back']);
+const emits = defineEmits(['back','reload']);
 const store = useStore();
 const router = useRouter();
 const ztmService = new ZtmService();
+const appService = new AppService();
 const confirm = useConfirm();
 const loading = ref(false);
 const loader = ref(false);
@@ -42,11 +45,28 @@ const back = () => {
 const go = (path) => {
 	router.push(path);
 }
+const removeEp = () => {
+	ztmService.deleteEp(selectedMesh.value?.name, props.ep?.username,() => {
+			setTimeout(()=>{
+				emits('reload')
+				emits('back')
+			},300)
+		});
+}
+const apps = ref([])
+const getProviderApps = () => {
+	
+	appService.getApps(selectedMesh.value?.name).then((res)=>{
+		apps.value = res.filter((app) => !!app.provider && app.provider == props.ep.username)
+	}).catch((e)=>{
+		console.log(e)
+	});
+}
 </script>
 
 <template>
 	
-	<div class="min-h-screen surface-ground">
+	<div class="min-h-screen surface-ground relative">
 	<AppHeader :back="back">
 			<template #center>
 				<Status v-if="!!props.ep" :run="props.ep.online" :tip="timeago(props.ep.heartbeat)"  style=""/>
@@ -57,9 +77,10 @@ const go = (path) => {
 	
 			<template #end> 
 				<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >{{props.ep.isLocal?'Local':'Remote'}}</Tag></span>
+				<Button v-if="selectedMesh?.agent?.username == 'root' && props.ep.username != 'root'" icon="pi pi-trash" severity="danger"  @click="removeEp"/>
 			</template>
 	</AppHeader>
-	<div class="text-center">
+	<div class="text-center ">
 		<TabView class="" v-model:activeIndex="active">
 			
 			<TabPanel>
@@ -72,10 +93,27 @@ const go = (path) => {
 			</TabPanel>
 			<TabPanel>
 				<template #header>
-					<div>
-						<i class="pi pi-server mr-2" />Apps
+					<div >
+						<i class="pi pi-objects-column mr-2" />Apps
 					</div>
 				</template>
+				<Apps :embed="true" :noInners="true" :embedEp="props.ep.id"/>
+			</TabPanel>
+			<TabPanel>
+				<template #header>
+					<div >
+						<i class="iconfont icon-provider mr-1" style="font-size: 20px;height: 16px;line-height: 16px;" /> Providers
+					</div>
+				</template>
+				<div class="grid text-center" >
+					<div v-if="!!apps && apps.length > 0" class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in apps">
+						<div class="flex">
+							<img :src="app.icon || defaultIcon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+							<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 40px;"><b>{{ app.label || app.name}}</b> | {{app.provider}}</div>
+						</div>
+					</div>
+					<Empty title="No providers" v-else/>
+				</div>
 			</TabPanel>
 		</TabView>
 	</div>

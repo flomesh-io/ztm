@@ -218,18 +218,23 @@ export default class AppService {
 		});
 	}
 	pubApp({
-		mesh, ep, provider, app, body
-	}) {
-		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
-			isPublished: true
-		});
-	}
-	unpubApp({
-		mesh, ep, provider, app, body
-	}) {
-		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
-			isPublished: false
-		});
+		mesh, ep, provider,isPublished, app
+	},callback) {
+    confirm.custom({
+        message: `Are you sure ${isPublished?'publish':'cancel publish'} [${app}] app to [${mesh}] mesh?`,
+        header: isPublished?'Publish':'Cancel publish',
+        icon: isPublished?'pi pi-cloud-upload':'pi pi-cloud-download',
+        accept: () => {
+					request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
+						isPublished
+					}).then(()=>{
+						if(!!callback)
+						callback();
+					});
+        },
+        reject: () => {
+        }
+    });
 	}
 	setApp({
 		mesh, ep, provider, app, body

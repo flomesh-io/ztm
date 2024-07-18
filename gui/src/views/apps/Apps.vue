@@ -13,7 +13,7 @@ const slots = useSlots();
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
-const props = defineProps(['layout'])
+const props = defineProps(['layout','noInners','embed','embedEp'])
 const emits = defineEmits(['close','reload']);
 const hide = () => {
 	emits('close','')
@@ -58,8 +58,7 @@ const upload = (d)=>{
 	}
 }
 const loaddata = () => {
-	console.log("load apps",[selectedMesh.value?.name,selectedMesh.value?.agent?.id])
-	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
+	appService.getEpApps(selectedMesh.value?.name,props.embedEp || selectedMesh.value?.agent?.id).then((res)=>{
 		console.log("start getApps")
 		meshApps.value = res?.filter((app) => app.name !='terminal') || [];
 		console.log(res);
@@ -85,9 +84,9 @@ const loaddata = () => {
 	});
 	
 }
-const appPageSize = 16;
+const appPageSize = props.layout=='absolute_container'?24:16;
 const pages = computed(()=>{
-	const _apps = (props.layout!='absolute_container'?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
+	const _apps = (!props.noInners?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
 	const _pages = Math.ceil((_apps.length - 1)/appPageSize);
 	return _pages>0?new Array(_pages):[];
 });
@@ -101,7 +100,7 @@ const removeApp = (app) => {
 	}else{
 		appService.removeApp({
 			mesh:selectedMesh.value?.name,
-			ep:selectedMesh.value?.agent?.id,
+			ep:props.embedEp || selectedMesh.value?.agent?.id,
 			provider:app.provider,
 			app:app.name,
 		}, () => {
@@ -112,7 +111,7 @@ const removeApp = (app) => {
 const appLoading = ref({})
 const manage = ref(false);
 const appPage = computed(()=>(page)=>{
-	return (props.layout!='absolute_container'?innerApps.value:[]).concat((meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value)).filter((n,i) => i>=(page*appPageSize) && i< ((page+1)*appPageSize));
+	return (!props.noInners?innerApps.value:[]).concat((meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value)).filter((n,i) => i>=(page*appPageSize) && i< ((page+1)*appPageSize));
 })
 const openAppContent = (app) => {
 		const options = {
@@ -121,10 +120,10 @@ const openAppContent = (app) => {
 		}
 		if(!!app.mesh){
 			options.mesh = app.mesh?.name;
-			options.ep = app.mesh?.agent?.id;
+			options.ep = props.embedEp || app.mesh?.agent?.id;
 		} else {
 			options.mesh = selectedMesh.value?.name;
-			options.ep = selectedMesh.value?.agent?.id;
+			options.ep = props.embedEp || selectedMesh.value?.agent?.id;
 		}
 		const base = appService.getAppUrl(options);
 		if(app.uninstall){
@@ -172,17 +171,28 @@ const openAppUI = (app, base) => {
 const startApp = (app) => {
 	appService.startApp({
 		mesh:selectedMesh.value?.name,
-		ep:selectedMesh.value?.agent?.id,
+		ep:props.embedEp || selectedMesh.value?.agent?.id,
 		provider:app.provider||'ztm',
 		app:app.name,
 	}).then(()=>{
 		loaddata();
 	})
 }
+const publishApp = (app, isPublished) => {
+	appService.pubApp({
+		mesh:selectedMesh.value?.name,
+		ep:props.embedEp || selectedMesh.value?.agent?.id,
+		provider:app.provider,
+		isPublished,
+		app:app.name,
+	},()=>{
+		loaddata();
+	});
+}
 const stopApp = (app) => {
 	appService.stopApp({
 		mesh:selectedMesh.value?.name,
-		ep:selectedMesh.value?.agent?.id,
+		ep:props.embedEp || selectedMesh.value?.agent?.id,
 		provider:app.provider||'ztm',
 		app:app.name,
 	}).then(()=>{
@@ -208,7 +218,7 @@ const logApp = (app) => {
 	///app/log/:mesh/:provider/:app
 	const mappingApp = mapping.value[`${app?.provider||''}/${app.name}`];
 	const webviewOptions = {
-		url: `/#/app/log/${selectedMesh.value?.name}/${selectedMesh.value?.agent?.id}/${app.provider||'ztm'}/${app.name}`,
+		url: `/#/app/log/${selectedMesh.value?.name}/${props.embedEp || selectedMesh.value?.agent?.id}/${app.provider||'ztm'}/${app.name}`,
 		name: `${mappingApp?.name || app.name}Log`,
 		width:mappingApp?.width || 1280,
 		height:mappingApp?.height || 860,
@@ -216,16 +226,19 @@ const logApp = (app) => {
 	}
 	openWebview(webviewOptions);
 }
+const mapping = ref(appMapping);
+
+const windowHeight = ref(window.innerHeight);
+const pannelHeight = computed(() => windowHeight.value - 80);
 onMounted(()=>{
 	loaddata();
 	resize(455,570,false);
 })
-const mapping = ref(appMapping);
 </script>
 
 <template>
 	<ScrollPanel :class="props.layout">
-	<div class="container_pannel">
+	<div class="container_pannel" :style="`height: ${pannelHeight}px`">
 			<AppHeader v-if="props.layout=='absolute_container'" :main="true">
 					<template #center>
 						<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
@@ -241,15 +254,15 @@ const mapping = ref(appMapping);
 			</AppHeader>
 			<div v-else class="flex actions transparent-header">
 				<div class="flex-item">
-					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
+					<Button  v-if="!current && !props.embed" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
 						<i class="pi pi-chevron-left " />
 					</Button>
 				</div>
-				<div v-if="!!selectedMesh" class="flex-item text-center text-white" style="line-height: 30px;">
+				<div v-if="!!selectedMesh && !props.embed" class="flex-item text-center text-white" style="line-height: 30px;">
 					<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
 					{{selectedMesh?.name}}
 				</div>
-				<div v-else class="flex-item text-center text-white-alpha-70" style="line-height: 30px;">
+				<div v-else-if="!props.embed" class="flex-item text-center text-white-alpha-70" style="line-height: 30px;">
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
 				</div>
 				<div class="flex-item text-right">
@@ -263,15 +276,15 @@ const mapping = ref(appMapping);
 	    <div class="terminal_body" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
 				<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
-	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else-if="!manage">
+	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-6':'pt-2'" v-else-if="!manage">
 				<div v-if="props.layout=='absolute_container' && !selectedMesh" class="flex-item text-center text-white-alpha-60 text-3xl" style="line-height: 30px;margin-top: 20%;">
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
 				</div>
 				<Carousel v-else :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
 						<template #item="slotProps">
-							<div class="pt-1" style="min-height: 440px;">
+							<div class="pt-1" style="min-height: 440px;" >
 								<div class="grid text-center" >
-										<div :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" @click="openAppContent(app)" class="col-3 py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
+										<div :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall,'col-3':props.layout!='absolute_container','col-2':props.layout=='absolute_container'}" @click="openAppContent(app)" class="py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
 											<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 											    animationDuration="2s" aria-label="Progress" />
@@ -292,8 +305,8 @@ const mapping = ref(appMapping);
 				<div class="grid text-center" >
 						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in meshApps.concat(uninstallApps)">
 							<div class="flex">
-								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 40px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
 								
 								<Button v-if="!!app.provider && !app.shortcut" v-tooltip.left="'App Log'" icon="pi pi-file" severity="help" text rounded aria-label="Filter" @click="logApp(app)" >
 								</Button>
@@ -301,14 +314,21 @@ const mapping = ref(appMapping);
 								</Button>
 								<Button v-else-if="!!app.isRunning" v-tooltip.left="'Stop'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >
 								</Button>
+								<Button 
+									v-if="!props.embed && !!app.provider && app.provider == selectedMesh?.agent?.username && !app.shortcut" 
+									v-tooltip.left="!app.isPublished?'Publish':'Cancel publish'" 
+									:icon="!app.isPublished?'pi pi-cloud-upload':'pi pi-cloud-download'" 
+									severity="help" text rounded aria-label="Filter" 
+									@click="publishApp(app, !app.isPublished)" >
+								</Button>
 								<Button v-if="app.provider != 'ztm' || app.shortcut" v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 								</Button>
 							</div>
 						</div>
 						<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in shortcutApps">
 							<div class="flex">
-								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon" class="pointer" width="20" height="20" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 35px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
+								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 40px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}}</div>
 								<Button  v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 								</Button>
 							</div>
@@ -361,7 +381,6 @@ const mapping = ref(appMapping);
 		min-height: 100%;
 	}
 	.terminal_body, :deep(.terminal_body){
-	  height: calc(100%);
 	  padding-top: 2px;
 	  margin-top: 0px;
 	  font-size: 12px;

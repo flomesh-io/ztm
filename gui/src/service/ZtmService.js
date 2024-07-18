@@ -10,6 +10,21 @@ export default class ZtmService {
 	info({id}) {
 		return request('/api/info');
 	}
+	invokeEp(mesh, username) {
+		return request(`/api/meshes/${mesh}/permits/${username}`);
+	}
+	deleteEp(mesh, username, callback) {
+		confirm.remove(() => {
+			request(`/api/meshes/${mesh}/permits/${username}`,"DELETE").then((res) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: `${username} permit deleted.`, life: 3000 });
+				if(!!callback)
+				callback(res);
+			}).catch(err => {
+				if(!!callback)
+				callback(res);
+			});
+		});
+	}
 	getMeshes() {
 		return request('/api/meshes');
 	}
