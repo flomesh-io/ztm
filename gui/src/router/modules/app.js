@@ -12,6 +12,12 @@ const app = {
 				name: 'ZTM Log',
 				component: () => import('@/views/apps/core/ZtmLog.vue')
 		},
+		
+		{
+				path: '/app/log/:mesh/:ep/:provider/:app',
+				name: 'app log',
+				component: () => import('@/views/log/AppLog.vue')
+		},
   ],
 };
 
