@@ -4,6 +4,7 @@ import Cookie from './cookie'
 import toast from "@/utils/toast";
 
 const xsrfHeaderName = "Authorization";
+const DEFAULT_VITE_APP_API_PORT = import.meta.env.VITE_APP_API_PORT;
 
 const AUTH_TYPE = {
   BEARER: "Bearer",
@@ -37,10 +38,9 @@ function getUrl(url){
 		return `http://127.0.0.1:${getPort()}${path}${url}`
 	}
 }
-const defaultPort = 7777;
 const getPort = () => {
 	const VITE_APP_API_PORT = localStorage.getItem("VITE_APP_API_PORT") || (!!location?.port && location.port>=2000?location.port:null);
-	return VITE_APP_API_PORT || defaultPort;
+	return VITE_APP_API_PORT || DEFAULT_VITE_APP_API_PORT || 7777;
 }
 const setPort = (port) => {
 	localStorage.setItem("VITE_APP_API_PORT",port);
