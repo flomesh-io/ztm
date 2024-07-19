@@ -18,7 +18,7 @@ export default class ShellService {
 		open(appDataDirPath)
 	}
 	async loadLog() {
-		const pm = await platform();
+		const pm = platform();
 		if(true){
 			const resourceDirPath = await resourceDir();
 			const lines = await readTextFileLines('ztm.log', { baseDir: BaseDirectory.Resource });
@@ -34,7 +34,7 @@ export default class ShellService {
 		}
 	}
 	async takePipyVersion (apiGet) {
-		const pm = await platform();
+		const pm = platform();
 		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
 		if(pm != "android"){
@@ -62,7 +62,7 @@ export default class ShellService {
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
-		const pm = await platform();
+		const pm = platform();
 		if(pm != "android"){
 			
 			const args = [
@@ -132,7 +132,7 @@ export default class ShellService {
 		}
 	}
 	async pausePipy (port){
-		const pm = await platform();
+		const pm = platform();
 		if(pm != "android"){
 			let child = store.getters['account/child'];
 			let pid = localStorage.getItem("PID");

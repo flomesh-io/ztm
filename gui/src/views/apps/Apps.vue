@@ -132,7 +132,9 @@ const openAppContent = (app) => {
 			openAppUI(app, base);
 		}else if(!app.isRunning && !!app.provider){
 			appService.startApp(options).then(()=>{
-				openAppUI(app, base);
+				setTimeout(()=>{
+					openAppUI(app, base);
+				},300)
 				loaddata();
 			})
 		} else {
@@ -148,7 +150,7 @@ const openAppUI = (app, base) => {
 	}else if(!mappingApp?.component && !app?.component){
 		const webviewOptions = {
 			url: mappingApp?.url || app?.url || `${base}/`,
-			name: mappingApp?.name || app.name,
+			name: `${mappingApp?.name || app.name}App`,
 			width:mappingApp?.width || app?.width || 1280,
 			height:mappingApp?.height || app?.height || 860,
 			proxy:''

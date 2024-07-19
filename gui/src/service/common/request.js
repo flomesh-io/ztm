@@ -86,7 +86,7 @@ const getConfig  = (config, params, method) => {
 	}
 }
 async function request(url, method, params, config) {
-	if(!window.__TAURI_INTERNALS__){
+	if(!window.__TAURI_INTERNALS__ || (!!location?.port && location.port>=2000)){
 		switch (method) {
 		  case METHOD.GET:
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => {
@@ -156,7 +156,7 @@ async function request(url, method, params, config) {
 }
 
 async function requestNM(url, method, params, config) {
-	if(!window.__TAURI_INTERNALS__){
+	if(!window.__TAURI_INTERNALS__ || (!!location?.port && location.port>=2000)){
 		switch (method) {
 		  case METHOD.GET:
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => {

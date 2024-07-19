@@ -1,10 +1,10 @@
-import { getCurrent, LogicalSize } from '@tauri-apps/api/window';
+import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 
 const resize = (width,height,resizable) => {
-	if(!!window.__TAURI_INTERNALS__ && getCurrent().setSize){
+	if(!!window.__TAURI_INTERNALS__ && getCurrentWindow().setSize){
 		const label = window.__TAURI_INTERNALS__.metadata.currentWindow.label;
-		// getCurrent().setSize(new LogicalSize(width, height));
+		// getCurrentWindow().setSize(new LogicalSize(width, height));
 		invoke('plugin:window|set_size', {
 		    label,
 		    value: {
@@ -12,8 +12,8 @@ const resize = (width,height,resizable) => {
 				}
 		});
 	}
-	if(!!window.__TAURI_INTERNALS__ && getCurrent().setResizable){
-		getCurrent().setResizable(resizable);
+	if(!!window.__TAURI_INTERNALS__ && getCurrentWindow().setResizable){
+		getCurrentWindow().setResizable(resizable);
 	}
 }
 
