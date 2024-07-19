@@ -9,7 +9,7 @@ export default function ({ app, mesh }) {
     var destPort = null
     var role = null
 
-    // idle handshake punching connected closed fail
+    // (idle) (handshake) (punching connected closed) (left fail)
     var state = 'idle'
     var session
     var pHub = new pipeline.Hub
@@ -45,8 +45,10 @@ export default function ({ app, mesh }) {
 
       // TODO: support TLS connection
       if (role === 'client') {
+        var reverseTunnel = null
+        var reverseTunnelStarted = false
+
         // make session to server side directly
-        var reverseServer = null
         session = pipeline($ => $
           .muxHTTP(() => ep + "direct", { version: 2 }).to($ => $
             .connect(() => `${destIP}:${destPort}`, {
@@ -60,7 +62,11 @@ export default function ({ app, mesh }) {
                   $connection = conn
                   state = 'connected'
                   retryTimes = 0
-                  reverseServer.spawn()
+
+                  if(!reverseTunnelStarted) {
+                    reverseTunnel.spawn()
+                    reverseTunnelStarted = true
+                  }
                 } else if (conn.state === 'closed') {
                   app.log(`Disconnected from peer ${destIP}:${destPort}`)
                   $connection = null
@@ -79,17 +85,22 @@ export default function ({ app, mesh }) {
         )
 
         // reverse server for receiving requests
-        reverseServer = pipeline($ => $
+        reverseTunnel = pipeline($ => $
           .onStart(new Data)
-          .loop($ => $
-            .connectHTTPTunnel(
-              new Message({
-                method: 'CONNECT',
-                path: `/api/punch/tunnel`,
-              })
+          .repeat(() => new Timeout(1).wait().then(() => {
+            console.info("Resp Tunnel should start: ", state != 'fail' && state != 'left')
+            return state != 'fail' && state != 'left'
+          })).to($ => $
+            .loop($ => $
+              .connectHTTPTunnel(
+                new Message({
+                  method: 'CONNECT',
+                  path: `/api/punch/tunnel`,
+                })
+              )
+              .to(session)
+              .pipe(() => svc(buildCtx()))
             )
-            .to(session)
-            .pipe(() => svc(buildCtx()))
           )
         )
 
@@ -131,7 +142,7 @@ export default function ({ app, mesh }) {
           return new StreamEnd
         })
         .onEnd(() => {
-          console.info('Answers in hole: ', $response, state === 'connected', store)
+          console.info('Answers in hole: ', $response, store)
           if (callback)
             callback($response)
           return $response
@@ -198,6 +209,7 @@ export default function ({ app, mesh }) {
 
     function makeRespTunnel() {
       // TODO add state check
+      console.info("Created Resp Tunnel")
       state = 'connected'
 
       return pipeline($ => $
@@ -240,11 +252,10 @@ export default function ({ app, mesh }) {
 
 
     function heartbeat() {
-      if (state === 'fail') return
+      if (state === 'fail' || state === 'left') return
       if (role === 'server') return
 
       var resp = null
-      console.info("Sending heartbeat...")
       pipeline($ => $
         .onStart(new Message({
           method: 'GET',
@@ -254,9 +265,6 @@ export default function ({ app, mesh }) {
         .replaceMessage(res => {
           resp = res
           return new StreamEnd
-        })
-        .onEnd(() => {
-          console.info('Heartbeat: ', resp)
         })
       ).spawn()
       new Timeout(10).wait().then(heartbeat)
@@ -271,7 +279,7 @@ export default function ({ app, mesh }) {
         $connection?.close()
       }
       $connection = null
-      if (state != 'fail') state = 'closed'
+      if (state != 'fail') state = 'left'
       if (!remote) {
         app.log("Hole closed by peer ", ep)
         request(new Message({
@@ -301,7 +309,7 @@ export default function ({ app, mesh }) {
 
   function updateHoles() {
     holes.forEach((key, hole) => {
-      if (hole.state() === 'fail' || hole.state() === 'closed') {
+      if (hole.state() === 'fail' || hole.state() === 'left') {
         hole.leave()
         holes.delete(key)
       }
