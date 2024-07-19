@@ -1,17 +1,17 @@
 export default function ({ app, mesh }) {
   // Only available for symmetric NAT
   function Hole(ep) {
-    // FIXME: throw on init fail?
     // TODO: Add detailed comment.
 
+    // (idle) (handshake) (punching connected closed) (left fail)
+    var state = 'idle'
     var bound = '0.0.0.0:' + randomPort()
     var destIP = null
     var destPort = null
     var role = null
+    var session = null
+    var rtt = null
 
-    // (idle) (handshake) (punching connected closed) (left fail)
-    var state = 'idle'
-    var session
     var pHub = new pipeline.Hub
     var $connection = null
     var $response
@@ -54,7 +54,6 @@ export default function ({ app, mesh }) {
             .connect(() => `${destIP}:${destPort}`, {
               bind: bound,
               onState: function (conn) {
-                console.info('Conn Info: ', conn)
                 if (conn.state === 'open') {
                   conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
                 } else if (conn.state === 'connected') {
@@ -74,13 +73,14 @@ export default function ({ app, mesh }) {
                   retryTimes += 1
                 }
 
-                if (retryTimes > 5 || state === 'fail') {
+                // Max Retry set to 10
+                if (retryTimes > 10 || state === 'fail') {
                   console.info(`Retry limit exceeded, punch failed.`)
                   state = 'fail'
                   updateHoles()
                 }
               },
-            }).handleStreamEnd(evt => console.info('Connection End, event: ', evt))
+            }).handleStreamEnd(evt => console.info('Hole connection end, retry: ', retryTimes, ' reason: ', evt?.error))
           )
         )
 
@@ -88,7 +88,6 @@ export default function ({ app, mesh }) {
         reverseTunnel = pipeline($ => $
           .onStart(new Data)
           .repeat(() => new Timeout(1).wait().then(() => {
-            console.info("Resp Tunnel should start: ", state != 'fail' && state != 'left')
             return state != 'fail' && state != 'left'
           })).to($ => $
             .loop($ => $
@@ -104,7 +103,7 @@ export default function ({ app, mesh }) {
           )
         )
 
-        heartbeat()
+        pacemaker()
       } else if (role === 'server') {
         console.info("Direct Server Listening...")
         var $msg = null
@@ -208,7 +207,6 @@ export default function ({ app, mesh }) {
     }
 
     function makeRespTunnel() {
-      // TODO add state check
       console.info("Created Resp Tunnel")
       state = 'connected'
 
@@ -222,7 +220,11 @@ export default function ({ app, mesh }) {
     }
 
     function connectOrFail() {
-      if (state != 'connected') {
+      if (state === 'left') {
+        // Be quiet when left.
+        // The hole has been released.
+        return
+      } else if (state != 'connected') {
         console.info(`Current state ${state}, made the hole failed`)
         state = 'fail'
         updateHoles()
@@ -230,14 +232,14 @@ export default function ({ app, mesh }) {
     }
 
     // send a SYN to dest, expect no return.
-    // this will cheat the firewall to allow inbound connection from dest.
+    // this will cheat the firewall to allow inbound connection from peer.
     function makeFakeCall(destIP, destPort) {
       console.info("Making fake call")
       pipeline($ => $
         .onStart(new Data).connect(`${destIP}:${destPort}`, {
           bind: bound,
           onState: function (conn) {
-            // REUSEPORT
+            // Socket Option: REUSEPORT
             if (conn.state === 'open') conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
 
             // abort this connection.
@@ -250,24 +252,67 @@ export default function ({ app, mesh }) {
       ).spawn()
     }
 
-
-    function heartbeat() {
+    // Send something to server from time to time
+    // So the firewall and NAT rule should be held.
+    //
+    // Params:
+    // - pacemaker: whether called from pacemaker function
+    //
+    function heartbeat(pacemaker) {
       if (state === 'fail' || state === 'left') return
       if (role === 'server') return
 
-      var resp = null
-      pipeline($ => $
+      var heart = pipeline($ => $
         .onStart(new Message({
           method: 'GET',
           path: '/api/ping'
         }))
         .pipe(session)
         .replaceMessage(res => {
-          resp = res
+          console.info("Heartbeat OK: ", res.head.status == 200)
+          if(pacemaker) return res
           return new StreamEnd
         })
+      )
+
+      if (pacemaker)
+        return heart
+
+      // if not called from pacemaker
+      // the heart should beat automatically :)
+      console.info('Heartbeating...')
+      heart.spawn()
+      new Timeout(10).wait().then(() => heartbeat(false))
+    }
+
+    // Used on direct connection setup.
+    // To urge the connect filter try to call the peer
+    function pacemaker(rtt) {
+      if(!rtt) rtt = 0.02
+
+      var $resp = null
+      var timeout = [rtt, rtt, rtt, rtt, rtt, 2 * rtt, 3 * rtt, 5 * rtt, 8 *rtt, 13 * rtt]
+      var round = 0
+      var cont = true
+
+      console.info('Pacemaking......')
+      pipeline($=>$
+        .onStart(new Data)
+        .repeat(() => new Timeout(timeout[round]).wait().then(() => cont && round < 10))
+        .to($=>$
+          .pipe(() => heartbeat(true))
+          .replaceMessage(resp => {
+            $resp = resp
+            round += 1
+            if (resp.head.status == 200) {
+              cont = false
+              heartbeat(false)
+            }
+            console.info('Pacemaker: ', resp)
+            return new StreamEnd
+          })
+        )
       ).spawn()
-      new Timeout(10).wait().then(heartbeat)
     }
 
     function leave(remote) {
@@ -281,12 +326,11 @@ export default function ({ app, mesh }) {
       $connection = null
       if (state != 'fail') state = 'left'
       if (!remote) {
-        app.log("Hole closed by peer ", ep)
         request(new Message({
           method: 'GET',
           path: '/api/punch/leave'
         }))
-      }
+      } else app.log("Hole closed by peer ", ep)
     }
 
     return {
@@ -299,7 +343,6 @@ export default function ({ app, mesh }) {
       punch,
       makeRespTunnel,
       directSession,
-      heartbeat,
       leave,
     }
   } // End of Hole
