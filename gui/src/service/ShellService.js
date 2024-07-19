@@ -65,9 +65,20 @@ export default class ShellService {
 		const pm = platform();
 		if(pm != "android"){
 			
+			// const args = [
+			// 	"run",
+			// 	"agent",
+			// 	`--listen`,
+			// 	`${port}`,
+			// 	`--data`,
+			// 	`${resourceDirPath}/ztm.db`,
+			// 	"--pipy-options",
+			// 	`--log-file=${resourceDirPath}/ztm.log`,
+			// ];
 			const args = [
-				"run",
-				"agent",
+				"--pipy",
+				"repo://ztm/agent",
+				"--args",
 				`--listen`,
 				`${port}`,
 				`--data`,
@@ -75,7 +86,6 @@ export default class ShellService {
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
-			
 			await this.pausePipy(port);
 			console.log(`[starting pipy:${args}]`);
 			const command = Command.sidecar("bin/cli", args);
@@ -151,8 +161,6 @@ export default class ShellService {
 				command.execute();
 				const command2 = Command.create("kill", [`${pid*1+1}`]);
 				command2.execute();
-				const command3 = Command.create("kill", [`${pid*1+12}`]);
-				command3.execute();
 			}
 			store.commit('account/setPid', null);
 			console.log('[paused pipy]');
