@@ -37,7 +37,7 @@ export default class ShellService {
 		const pm = platform();
 		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
-		if(pm != "android"){
+		if(pm != "android" && false){
 			let command = await Command.sidecar("bin/cli", ['version','--json','','','','']);
 			await command.spawn();
 			command.stdout.on('data', line => {
@@ -101,7 +101,9 @@ export default class ShellService {
 				callError(error);
 			});
 			let child = await command.spawn();
+			console.log(child)
 			store.commit('account/setPid', child.pid);
+			console.log(`account/setPid=${child.pid}`)
 			store.commit('account/setChild', child);
 		} else {
 			const args = [
@@ -136,6 +138,7 @@ export default class ShellService {
 		if(pm != "android"){
 			let child = store.getters['account/child'];
 			let pid = localStorage.getItem("PID");
+			console.log(`PID=${pid}`)
 			if(!!child){
 				child.kill();
 			}
@@ -148,6 +151,8 @@ export default class ShellService {
 				command.execute();
 				const command2 = Command.create("kill", [`${pid*1+1}`]);
 				command2.execute();
+				const command3 = Command.create("kill", [`${pid*1+12}`]);
+				command3.execute();
 			}
 			store.commit('account/setPid', null);
 			console.log('[paused pipy]');
