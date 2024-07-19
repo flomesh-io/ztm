@@ -224,13 +224,12 @@ function tokenize(str) {
       var last = a.pop()
       if (last.startsWith('<')) {
         a.push(`${last} ${b}`)
-        if (b.endsWith('>')) a.push('')
       } else if (last.startsWith('[')) {
         a.push(`${last} ${b}`)
-        if (b.endsWith(']')) a.push('')
       } else {
         a.push(last, b)
       }
+      if (b.endsWith('>') || b.endsWith(']')) a.push('')
       return a
     }
   )
