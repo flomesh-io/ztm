@@ -12,24 +12,24 @@ name = "ztm_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.0.0-beta", features = [] }
+tauri-build = { version = "=2.0.0-beta.19", features = [] }
 
 # tauri = { version = "2.0.0-beta", features = ["devtools"] }
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri = { version = "=2.0.0-beta.22", features = ["macos-proxy", "unstable"] }
-tauri-utils = "=2.0.0-beta.17"
-tauri-runtime = "=2.0.0-beta.18"
-tauri-plugin-shell = "=2.0.0-beta.5"
+tauri = { version = "=2.0.0-beta.24", features = ["macos-proxy", "unstable"] }
+tauri-utils = "=2.0.0-beta.19"
+tauri-runtime = "=2.0.0-beta.20"
+tauri-plugin-shell = "=2.0.0-beta.9"
+tauri-plugin-process = "=2.0.0-beta.8"
+tauri-plugin-http = "=2.0.0-beta.12"
+tauri-plugin-os = "=2.0.0-beta.8"
+tauri-plugin-fs = "=2.0.0-beta.11"
+tauri-plugin-deep-link = "=2.0.0-beta.9"
 lazy_static = "1.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 url = "2.2"
-tauri-plugin-process = "=2.0.0-beta.5"
-tauri-plugin-http = "=2.0.0-beta.5"
-tauri-plugin-os = "=2.0.0-beta.5"
-tauri-plugin-fs = "=2.0.0-beta.7"
-tauri-plugin-deep-link = "=2.0.0-beta.6"
 libloading = "0.7"
 j4rs = "0.20.0"
 wry = "0.41.0"

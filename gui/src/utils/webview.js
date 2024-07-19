@@ -1,7 +1,7 @@
 import store from '@/store';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Webview } from '@tauri-apps/api/webview';
-import { getCurrent, Window } from '@tauri-apps/api/window';
+import { getCurrentWindow, Window } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 // import { getCurrent as getCurrentDL } from '@tauri-apps/plugin-deep-link';
 
@@ -43,7 +43,7 @@ const openWebview = (app)=>{
 			// })
 		}	else if(platform=='windows'){
 			// windows API not available on mobile
-			options.parent = getCurrent();
+			options.parent = getCurrentWindow();
 			delete options.proxyUrl;
 			const appWindow = new Window(`${app.name}-window`,options);
 			 

@@ -48,14 +48,12 @@ const loginGuard = (to, from, next, options) => {
     next();
   } else if(to.path == "/root"){
 		if(!!window.__TAURI_INTERNALS__ ){
-			platform().then((pm)=>{
-				if(pm != "android"){
-					resize(455,350,false);
-					next();
-				}else {
-					next("/mesh/list");
-				}
-			});
+			if(platform() != "android"){
+				resize(455,350,false);
+				next();
+			}else {
+				next("/mesh/list");
+			}
 		} else {
 			next("/mesh/list");
 		}
