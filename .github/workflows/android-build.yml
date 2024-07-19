@@ -33,6 +33,12 @@ jobs:
     - name: Setup Rustup Target
       run: |
         rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+    - name: Build child app
+      run: |
+        cd gui
+        yarn install
+        yarn build:tunnel
+        yarn build:script
     - name: Build ztm
       run: |
         cd gui
@@ -49,7 +55,6 @@ jobs:
         export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/usr/local/lib/android/sdk'
         export NDK_HOME="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
-        yarn install
         yarn android-init
         cp -f ./src-android/app/src/main/assets/libc++_shared.so  ./src-tauri/bin/cli-aarch64-apple-darwin
         NODE_OPTIONS="--max-old-space-size=4096" yarn android-build
