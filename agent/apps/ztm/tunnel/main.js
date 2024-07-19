@@ -187,7 +187,6 @@ export default function ({ app, mesh, utils }) {
     // Tricky callback to set ctx,
     // expecting everything in hole works
     // just like it's coming from hub.
-    console.info("Setting ctx manually: ", ctx)
     $ctx = ctx
     return servePeer
   })

@@ -31,7 +31,10 @@ export default function ({ app, mesh }) {
 
       var buildCtx = () => {
         return {
-          source: 'peer',
+          source: 'direct',
+          self: {
+            id: app.endpoint.id,
+          },
           peer: {
             id: ep,
             ip: destIP,
@@ -57,7 +60,7 @@ export default function ({ app, mesh }) {
                   $connection = conn
                   state = 'connected'
                   retryTimes = 0
-                  // reverseServer.spawn()
+                  reverseServer.spawn()
                 } else if (conn.state === 'closed') {
                   app.log(`Disconnected from peer ${destIP}:${destPort}`)
                   $connection = null
@@ -76,19 +79,19 @@ export default function ({ app, mesh }) {
         )
 
         // reverse server for receiving requests
-        // reverseServer = pipeline($ => $
-        //   .onStart(new Data)
-        //   .loop($ => $
-        //     .connectHTTPTunnel(
-        //       new Message({
-        //         method: 'CONNECT',
-        //         path: `/api/punch/tunnel`,
-        //       })
-        //     )
-        //     .to($session)
-        //     .pipe(() => svc(buildCtx()))
-        //   )
-        // )
+        reverseServer = pipeline($ => $
+          .onStart(new Data)
+          .loop($ => $
+            .connectHTTPTunnel(
+              new Message({
+                method: 'CONNECT',
+                path: `/api/punch/tunnel`,
+              })
+            )
+            .to(session)
+            .pipe(() => svc(buildCtx()))
+          )
+        )
 
         heartbeat()
       } else if (role === 'server') {
@@ -101,12 +104,11 @@ export default function ({ app, mesh }) {
         }).pipe(() => svc(buildCtx())), () => $msg)
 
         session = pipeline($ => $
-          .muxHTTP(() => ep + "direct", /* { version: 2 } */).to($ => $
+          .muxHTTP(() => ep + "direct", { version: 2 }).to($ => $
             .swap(() => pHub)
           )
         )
       }
-      state = 'connected'
       return session
     }
 
@@ -114,22 +116,15 @@ export default function ({ app, mesh }) {
       var store = req
       return pipeline($ => $
         .onStart(req)
-        .pipe(() => {
-          if (state === 'connected' || state === 'closed' || state === 'punching') {
-            return session
-          }
-          return pipeline($ => $
-            .muxHTTP().to($ => $.pipe(
-              mesh.connect(ep, {
-                bind: bound,
-                onState: conn => {
-                  if (conn.state === 'open')
-                    conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
-                }
-              })
-            ))
-          )
-        })
+        .muxHTTP().to($ => $.pipe(
+          mesh.connect(ep, {
+            bind: bound,
+            onState: conn => {
+              if (conn.state === 'open')
+                conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
+            }
+          })
+        ))
         .print()
         .replaceMessage(res => {
           $response = res
@@ -174,6 +169,8 @@ export default function ({ app, mesh }) {
           updateHoles()
         }
       })
+      // Just do it, regardless if accept fail.
+      // Because it's faster.
       punch()
       new Timeout(60).wait().then(connectOrFail)
     }
@@ -243,8 +240,8 @@ export default function ({ app, mesh }) {
 
 
     function heartbeat() {
-      // FIXME use direct session
       if (state === 'fail') return
+      if (role === 'server') return
 
       var resp = null
       console.info("Sending heartbeat...")
@@ -262,12 +259,6 @@ export default function ({ app, mesh }) {
           console.info('Heartbeat: ', resp)
         })
       ).spawn()
-      // request(new Message({
-      //   method: 'GET',
-      //   path: '/api/ping'
-      // }), (resp) => {
-      //   console.info('Heartbeat: ', resp)
-      // })
       new Timeout(10).wait().then(heartbeat)
     }
 
@@ -327,7 +318,6 @@ export default function ({ app, mesh }) {
       hole.requestPunch()
       holes.set(ep, hole)
     } catch (err) {
-      hole.leave()
       updateHoles()
       app.log(`Failed to create Inbound Hole, peer ${ep}, err ${err}`)
     }
@@ -346,7 +336,6 @@ export default function ({ app, mesh }) {
       hole.acceptPunch()
       holes.set(ep, hole)
     } catch (err) {
-      hole.leave()
       updateHoles()
       app.log(`Failed to create Outbound Hole, peer ${ep}, err ${err}`)
     }

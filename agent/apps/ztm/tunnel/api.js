@@ -247,7 +247,7 @@ export default function ({ app, mesh, punch }) {
           punch.createInboundHole($selectedEP)
           var hole = punch.findHole($selectedEP)
           if(hole && hole.ready()) {
-            console.info("Using direct session: ", hole)
+            console.info("Using direct session")
             return hole.directSession()
           }
           console.info("Using hub forwarded session")
@@ -396,25 +396,21 @@ export default function ({ app, mesh, punch }) {
     )
   )
 
-  var $hole = null
+  var tunnelHole = null
   var makeRespTunnel = pipeline($=>$
     .onStart(ctx => {
       console.info("Making resp tunnel: ", ctx)
       var ep = ctx.peer.id
-      $hole = punch.findHole(ep)
-      if(!$hole) throw `Invalid Hole State for ${ep}`
+      tunnelHole = punch.findHole(ep)
+      if(!tunnelHole) throw `Invalid Hole State for ${ep}`
       return new Data
     })
     .pipe(() => {
-      var p = $hole.makeRespTunnel()
-      $hole = null
+      var p = tunnelHole.makeRespTunnel()
+      tunnelHole = null
       return p
-    })
+    }, () => tunnelHole)
   )
-
-  // var makeRespTunnel = pipeline($=>$
-  //   .pipe(punch.makeRespTunnel())
-  // )
 
   getLocalConfig().then(applyLocalConfig)
 
