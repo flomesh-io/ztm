@@ -1,6 +1,6 @@
+import initHole from './punch.js'
 import initAPI from './api.js'
 import initCLI from './cli.js'
-import initHole from './punch.js'
 
 export default function ({ app, mesh, utils }) {
   var punch = initHole({ app, mesh })
@@ -170,13 +170,16 @@ export default function ({ app, mesh, utils }) {
             api.updateHoleInfo(ep, ip, port)
             api.syncPunch(ep)
             break
+          case 'leave':
+            api.deleteHole(ep, true)
+            break
           default:
             return Promise.resolve(response(500, "Unknown punch action"))
         }
         return Promise.resolve(response(200))
       }),
 
-      'CONNECT': pipeline($=>$.onStart(() => $ctx).pipe(() => api.makeRespTunnel))
+      'CONNECT': pipeline($=>$.pipe(api.makeRespTunnel, () => $ctx))
     },
   })
 

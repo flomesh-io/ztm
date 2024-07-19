@@ -9,12 +9,11 @@ export default function ({ app, mesh }) {
     var destPort = null
     var role = null
 
-    // closed forwarding connecting(ready punching) connected fail
-    var state = 'closed'  // inner state
-    var ready = false     // exposed state
+    // idle handshake punching connected closed fail
+    var state = 'idle'
+    var session
+    var pHub = new pipeline.Hub
     var $connection = null
-    var $pHub = new pipeline.Hub
-    var $session
     var $response
 
     console.info(`Creating hole to peer ${ep}, bound ${bound}`)
@@ -25,11 +24,8 @@ export default function ({ app, mesh }) {
     }
 
     function directSession() {
-      // TODO !!! state error would happen when network is slow
-      // must handle this
-
       if (!role || !destIP || !destPort) throw 'Hole not init correctly'
-      if ($session) return $session
+      if (session) return session
 
       var retryTimes = 0
 
@@ -47,94 +43,101 @@ export default function ({ app, mesh }) {
       // TODO: support TLS connection
       if (role === 'client') {
         // make session to server side directly
-        $session = pipeline($ => $
-          .repeat(() => new Timeout(5).wait().then(() => {
-            console.info("Retrying...... ", state != 'fail' && retryTimes <= 5)
-            return state != 'fail' && retryTimes <= 5
-          })).to($=>$
-            .muxHTTP(() => ep + "direct", /* { version: 2 } */).to($ => $
-              .connect(() => `${destIP}:${destPort}`, {
-                onState: function (conn) {
-                  console.info('Conn Info: ', conn)
-                  if (conn.state === 'open') {
-                    conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
-                  } else if (conn.state === 'connected') {
-                    app.log(`Connected to remote ${destIP}:${destPort}`)
-                    $connection = conn
-                    state = 'connected'
-                  } else if (conn.state === 'closed') {
-                    app.log(`Disconnected from remote ${destIP}:${destPort}`)
-                    $connection = null
-                    retryTimes += 1
-                  }
-                },
-                bind: bound
-              })
-            )
-            .onEnd(evt => {
-              console.info('Direct session end: ', evt)
-            })
+        var reverseServer = null
+        session = pipeline($ => $
+          .muxHTTP(() => ep + "direct", { version: 2 }).to($ => $
+            .connect(() => `${destIP}:${destPort}`, {
+              bind: bound,
+              onState: function (conn) {
+                console.info('Conn Info: ', conn)
+                if (conn.state === 'open') {
+                  conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
+                } else if (conn.state === 'connected') {
+                  app.log(`Connected to peer ${destIP}:${destPort}`)
+                  $connection = conn
+                  state = 'connected'
+                  retryTimes = 0
+                  // reverseServer.spawn()
+                } else if (conn.state === 'closed') {
+                  app.log(`Disconnected from peer ${destIP}:${destPort}`)
+                  $connection = null
+                  state = 'closed'
+                  retryTimes += 1
+                }
+
+                if (retryTimes > 5 || state === 'fail') {
+                  console.info(`Retry limit exceeded, punch failed.`)
+                  state = 'fail'
+                  updateHoles()
+                }
+              },
+            }).handleStreamEnd(evt => console.info('Connection End, event: ', evt))
           )
-          .onEnd(() => {
-            app.log(`Direct session to ${ep} failed, hole closing...`)
-            state = 'fail'
-            leave()
-          })
         )
 
         // reverse server for receiving requests
-        pipeline($ => $
-          .onStart(new Data)
-          .repeat(() => new Timeout(5).wait().then(() => {
-            return state != 'fail' && state != 'closed'
-          })).to($ => $
-            .loop($ => $
-              .connectHTTPTunnel(
-                new Message({
-                  method: 'CONNECT',
-                  path: `/api/punch/tunnel`,
-                })
-              )
-              .to($session)
-              .pipe(() => svc(buildCtx()))
-            )
-          )
-        ).spawn()
+        // reverseServer = pipeline($ => $
+        //   .onStart(new Data)
+        //   .loop($ => $
+        //     .connectHTTPTunnel(
+        //       new Message({
+        //         method: 'CONNECT',
+        //         path: `/api/punch/tunnel`,
+        //       })
+        //     )
+        //     .to($session)
+        //     .pipe(() => svc(buildCtx()))
+        //   )
+        // )
 
+        heartbeat()
       } else if (role === 'server') {
         console.info("Direct Server Listening...")
-        pipy.listen(bound, 'tcp', () => svc(buildCtx()))
+        var $msg = null
+        pipy.listen(bound, 'tcp', $ => $.handleMessage(msg => {
+          console.info('Server Received: ', msg)
+          $msg = msg
+          return new Data
+        }).pipe(() => svc(buildCtx())), () => $msg)
 
-        $session = pipeline($ => $
+        session = pipeline($ => $
           .muxHTTP(() => ep + "direct", /* { version: 2 } */).to($ => $
-            .swap(() => $pHub)
+            .swap(() => pHub)
           )
         )
       }
-
-      return $session
+      state = 'connected'
+      return session
     }
 
-    function fwdRequest(req, callback) {
+    function request(req, callback) {
+      var store = req
       return pipeline($ => $
         .onStart(req)
-        .muxHTTP().to($ => $
-          .pipe(mesh.connect(ep, {
-            bind: bound,
-            onState: conn => {
-              if (conn.state === 'open')
-                conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
-            }
-          }))
-        )
+        .pipe(() => {
+          if (state === 'connected' || state === 'closed' || state === 'punching') {
+            return session
+          }
+          return pipeline($ => $
+            .muxHTTP().to($ => $.pipe(
+              mesh.connect(ep, {
+                bind: bound,
+                onState: conn => {
+                  if (conn.state === 'open')
+                    conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
+                }
+              })
+            ))
+          )
+        })
         .print()
         .replaceMessage(res => {
           $response = res
           return new StreamEnd
         })
         .onEnd(() => {
-          console.info('Hub Answers in hole: ', $response)
-          if(callback)
+          console.info('Answers in hole: ', $response, state === 'connected', store)
+          if (callback)
             callback($response)
           return $response
         })
@@ -144,11 +147,11 @@ export default function ({ app, mesh }) {
     // use THE port sending request to hub.
     function requestPunch() {
       // FIXME: add state check
-      // state = 'connecting'
       role = 'client'
+      state = 'handshake'
 
       console.info("Requesting punch")
-      fwdRequest(new Message({
+      request(new Message({
         method: 'GET',
         path: '/api/punch/request',
       }))
@@ -157,23 +160,21 @@ export default function ({ app, mesh }) {
 
     function acceptPunch() {
       // TODO add cert info into response
-      // state = 'connecting'
       role = 'server'
+      state = 'handshake'
 
       console.info("Accepting punch")
-      fwdRequest(new Message({
+      request(new Message({
         method: 'GET',
         path: '/api/punch/accept',
       }), (resp) => {
-        if(resp.head.status != 200) {
+        if (resp.head.status != 200) {
           app.log(`Failed on accepting`)
           state = 'fail'
-          leave()
           updateHoles()
-          return
         }
-        punch()
       })
+      punch()
       new Timeout(60).wait().then(connectOrFail)
     }
 
@@ -184,11 +185,10 @@ export default function ({ app, mesh }) {
     }
 
     // Punch when:
-    // 1. Server accept got 200 OK
+    // 1. Server accept message got 200 OK
     // 2. Client receive accept
     function punch() {
       // TODO receive TLS options
-      // TODO add retry logic here
       // TODO estimate RTT and use it to make peer synchronized.
       state = 'punching'
 
@@ -196,9 +196,7 @@ export default function ({ app, mesh }) {
       if (role === 'server') {
         makeFakeCall(destIP, destPort)
       }
-
       directSession()
-      heartbeat() // activate the session pipeline
     }
 
     function makeRespTunnel() {
@@ -206,19 +204,18 @@ export default function ({ app, mesh }) {
       state = 'connected'
 
       return pipeline($ => $
-        .acceptHTTPTunnel(() => response200()).to($ => $
+        .acceptHTTPTunnel(() => new Message({ status: 200 })).to($ => $
           .onStart(new Data)
-          .swap(() => $pHub)
+          .swap(() => pHub)
           .onEnd(() => console.info(`Direct Connection from ${ep} lost`))
         )
       )
     }
 
     function connectOrFail() {
-      console.info(`Failed unpunchable hole: ${ep}`)
       if (state != 'connected') {
-        state = fail
-        console.info("Made the hole failed")
+        console.info(`Current state ${state}, made the hole failed`)
+        state = 'fail'
         updateHoles()
       }
     }
@@ -227,7 +224,7 @@ export default function ({ app, mesh }) {
     // this will cheat the firewall to allow inbound connection from dest.
     function makeFakeCall(destIP, destPort) {
       console.info("Making fake call")
-      pipeline($=>$
+      pipeline($ => $
         .onStart(new Data).connect(`${destIP}:${destPort}`, {
           bind: bound,
           onState: function (conn) {
@@ -247,23 +244,56 @@ export default function ({ app, mesh }) {
 
     function heartbeat() {
       // FIXME use direct session
-      fwdRequest(new Message({
-        method: 'GET',
-        path: '/api/ping'
-      }))
+      if (state === 'fail') return
+
+      var resp = null
+      console.info("Sending heartbeat...")
+      pipeline($ => $
+        .onStart(new Message({
+          method: 'GET',
+          path: '/api/ping'
+        }))
+        .pipe(session)
+        .replaceMessage(res => {
+          resp = res
+          return new StreamEnd
+        })
+        .onEnd(() => {
+          console.info('Heartbeat: ', resp)
+        })
+      ).spawn()
+      // request(new Message({
+      //   method: 'GET',
+      //   path: '/api/ping'
+      // }), (resp) => {
+      //   console.info('Heartbeat: ', resp)
+      // })
+      new Timeout(10).wait().then(heartbeat)
     }
 
-    function leave() {
-      if($connection) {
+    function leave(remote) {
+      if (role === 'server') {
+        pipy.listen(bound, 'tcp', null)
+      }
+
+      if ($connection) {
         $connection?.close()
       }
       $connection = null
       if (state != 'fail') state = 'closed'
+      if (!remote) {
+        app.log("Hole closed by peer ", ep)
+        request(new Message({
+          method: 'GET',
+          path: '/api/punch/leave'
+        }))
+      }
     }
 
     return {
-      role,
-      ready,
+      role: () => role,
+      state: () => state,
+      ready: () => state === 'connected',
       requestPunch,
       acceptPunch,
       updateNatInfo,
@@ -280,7 +310,7 @@ export default function ({ app, mesh }) {
 
   function updateHoles() {
     holes.forEach((key, hole) => {
-      if (hole.state === 'fail' || hole.state === 'closed') {
+      if (hole.state() === 'fail' || hole.state() === 'closed') {
         hole.leave()
         holes.delete(key)
       }
@@ -288,20 +318,20 @@ export default function ({ app, mesh }) {
     console.info(`Holes after updating: `, holes)
   }
 
-  function createInboundHole(ep, bound, request) {
+  function createInboundHole(ep) {
     updateHoles()
     if (findHole(ep)) return
     console.info(`Creating Inbound Hole to ${ep}`)
     try {
-      var hole = Hole(ep, bound, request)
+      var hole = Hole(ep)
       hole.requestPunch()
       holes.set(ep, hole)
     } catch (err) {
-      hole = null
+      hole.leave()
+      updateHoles()
       app.log(`Failed to create Inbound Hole, peer ${ep}, err ${err}`)
     }
 
-    updateHoles()
     return hole
   }
 
@@ -316,35 +346,31 @@ export default function ({ app, mesh }) {
       hole.acceptPunch()
       holes.set(ep, hole)
     } catch (err) {
-      hole = null
+      hole.leave()
+      updateHoles()
       app.log(`Failed to create Outbound Hole, peer ${ep}, err ${err}`)
     }
 
-    updateHoles()
     return hole
   }
 
   function updateHoleInfo(ep, natIp, natPort) {
     var hole = findHole(ep)
-    if (!hole) throw 'No hole to update'
+    if (!hole) throw `No hole to update, ep ${ep}`
 
     hole.updateNatInfo(natIp, natPort)
   }
 
-  function deleteHole(ep) {
+  function deleteHole(ep, remote) {
     var sel = findHole(ep)
     if (!sel) return
-    sel.leave()
-    holes.delete(ep)
+    sel.leave(remote)
+    updateHoles()
   }
 
   function findHole(ep) {
     updateHoles()
     return holes.get(ep)
-  }
-
-  function getCtx() {
-
   }
 
   function setService(srvPeer) {
@@ -356,7 +382,7 @@ export default function ({ app, mesh }) {
   }
 
   return {
-    holes,
+    getHoles: () => holes,
     createInboundHole,
     createOutboundHole,
     updateHoleInfo,

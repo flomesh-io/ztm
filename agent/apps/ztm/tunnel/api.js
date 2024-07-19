@@ -198,8 +198,8 @@ export default function ({ app, mesh, punch }) {
     hole.punch()
   }
 
-  function deleteHole(ep) {
-    punch.deleteHole(ep)
+  function deleteHole(ep, remote) {
+    punch.deleteHole(ep, remote)
   }
 
   function getLocalConfig() {
@@ -246,14 +246,14 @@ export default function ({ app, mesh, punch }) {
         ).to($=>$.pipe(() => {
           punch.createInboundHole($selectedEP)
           var hole = punch.findHole($selectedEP)
-          if(hole && hole.ready) {
-            console.info("Using direct session")
-            return h.directSession()
+          if(hole && hole.ready()) {
+            console.info("Using direct session: ", hole)
+            return hole.directSession()
           }
           console.info("Using hub forwarded session")
           return pipeline($=>$
             .muxHTTP().to($=>$
-              .pipe(() => mesh.connect($selectedEP))
+              .pipe(mesh.connect($selectedEP))
             )
           )
         }))
@@ -328,15 +328,22 @@ export default function ({ app, mesh, punch }) {
     var $response
     return pipeline($=>$
       .onStart(req)
-      .muxHTTP().to($=>$
-        .pipe(mesh.connect(ep))
-      )
+      .pipe(() => {
+        var h = punch.findHole(ep)
+        if(h && h.ready()) {
+          return h.directSession()
+        }
+        return pipeline($=>$
+          .muxHTTP().to($=>$
+          .pipe(mesh.connect(ep))
+        ))
+      })
       .replaceMessage(res => {
         $response = res
         return new StreamEnd
       })
       .onEnd(() => {
-        console.info('Hub answers in api: ', $response)
+        console.info('Answers in api: ', $response)
         return $response
       })
     ).spawn()
@@ -389,15 +396,20 @@ export default function ({ app, mesh, punch }) {
     )
   )
 
+  var $hole = null
   var makeRespTunnel = pipeline($=>$
     .onStart(ctx => {
       console.info("Making resp tunnel: ", ctx)
       var ep = ctx.peer.id
-      var hole = punch.findHole(ep)
-      if(!hole) throw `Invalid Hole State for ${ep}`
-      return hole
+      $hole = punch.findHole(ep)
+      if(!$hole) throw `Invalid Hole State for ${ep}`
+      return new Data
     })
-    .pipe(hole => hole.makeRespTunnel())
+    .pipe(() => {
+      var p = $hole.makeRespTunnel()
+      $hole = null
+      return p
+    })
   )
 
   // var makeRespTunnel = pipeline($=>$
