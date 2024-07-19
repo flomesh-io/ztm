@@ -163,15 +163,29 @@ export default function ({ app, mesh, utils }) {
 
         console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
         switch(action) {
+          case 'leave':
+            api.deleteHole(ep, true)
+            break
+          default:
+            return Promise.resolve(response(500, "Unknown punch action"))
+        }
+        return Promise.resolve(response(200))
+      }),
+
+      'POST': responder(({action}, req) => {
+        var obj = JSON.decode(req.body)
+        var ep = $ctx.peer.id
+        var ip = $ctx.peer.ip
+        var port = $ctx.peer.port
+
+        console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}, time ${obj.timestamp}`)
+        switch(action) {
           case 'request':
             api.createHole(ep, ip, port, 'server')
             break
           case 'accept':
             api.updateHoleInfo(ep, ip, port)
             api.syncPunch(ep)
-            break
-          case 'leave':
-            api.deleteHole(ep, true)
             break
           default:
             return Promise.resolve(response(500, "Unknown punch action"))

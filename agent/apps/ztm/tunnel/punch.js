@@ -154,12 +154,25 @@ export default function ({ app, mesh }) {
       // FIXME: add state check
       role = 'client'
       state = 'handshake'
+      var start = Date.now()
 
       console.info("Requesting punch")
       request(new Message({
-        method: 'GET',
+        method: 'POST',
         path: '/api/punch/request',
-      }))
+      }, JSON.encode({
+        timestamp: Date.now()
+      })), (resp) => {
+        var end = Date.now()
+        rtt = (end - start) / 2000
+        console.info('Estimated RTT: ', rtt)
+
+        if (resp.head.status != 200) {
+          app.log(`Failed on requesting`)
+          state = 'fail'
+          updateHoles()
+        }
+      })
       new Timeout(60).wait().then(connectOrFail)
     }
 
@@ -167,12 +180,19 @@ export default function ({ app, mesh }) {
       // TODO add cert info into response
       role = 'server'
       state = 'handshake'
+      var start = Date.now()
 
       console.info("Accepting punch")
       request(new Message({
-        method: 'GET',
+        method: 'POST',
         path: '/api/punch/accept',
-      }), (resp) => {
+      }, JSON.encode({
+        timestamp: Date.now()
+      })), (resp) => {
+        var end = Date.now()
+        rtt = (end - start) / 2000
+        console.info('Estimated RTT: ', rtt)
+
         if (resp.head.status != 200) {
           app.log(`Failed on accepting`)
           state = 'fail'
@@ -196,7 +216,6 @@ export default function ({ app, mesh }) {
     // 2. Client receive accept
     function punch() {
       // TODO receive TLS options
-      // TODO estimate RTT and use it to make peer synchronized.
       state = 'punching'
 
       console.info(`Punching to ${destIP}:${destPort} (${ep})`)
@@ -269,7 +288,8 @@ export default function ({ app, mesh }) {
         }))
         .pipe(session)
         .replaceMessage(res => {
-          console.info("Heartbeat OK: ", res.head.status == 200)
+          if (res.head.status != 200 && !pacemaker)
+            app.log("Cardiac Arrest happens, hole: ", ep)
           if(pacemaker) return res
           return new StreamEnd
         })
@@ -280,15 +300,14 @@ export default function ({ app, mesh }) {
 
       // if not called from pacemaker
       // the heart should beat automatically :)
-      console.info('Heartbeating...')
       heart.spawn()
       new Timeout(10).wait().then(() => heartbeat(false))
     }
 
     // Used on direct connection setup.
     // To urge the connect filter try to call the peer
-    function pacemaker(rtt) {
-      if(!rtt) rtt = 0.02
+    function pacemaker() {
+      rtt ??= 0.02
 
       var $resp = null
       var timeout = [rtt, rtt, rtt, rtt, rtt, 2 * rtt, 3 * rtt, 5 * rtt, 8 *rtt, 13 * rtt]
