@@ -21,6 +21,12 @@ jobs:
     - run: npm install -g win-node-env
     - name: Install NASM
       uses: ilammy/setup-nasm@v1
+    - name: build child app
+      run: |
+        cd gui
+        yarn install
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:tunnel
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:script
     - name: build ztm
       run: |
         ./build.cmd
@@ -28,7 +34,6 @@ jobs:
     - name: build app
       run: |
         cd gui
-        yarn install
         set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:base
     - uses: actions/upload-artifact@v2
       with:
