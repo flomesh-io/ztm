@@ -26,7 +26,7 @@ export default function ({ app, mesh }) {
   var executeScriptLocal = pipeline($=>$
     .replaceMessage(req => {
       var url = new URL(req.head.path)
-      var argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv')))
+      var argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv') || '[]'))
       var exe = app.executable
       var program = exe.endsWith('pipy') || exe.endsWith('pipy.exe') ? [exe] : [exe, '--pipy']
       $hash = addScript(req.body)
