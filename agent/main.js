@@ -470,7 +470,9 @@ pipy.listen(listen, $=>$
               $params.app,
             ) || appNotFound
             return $appPipeline
-          }).to($=>$.pipe(() => $appPipeline, () => ({ source: 'user' })))
+          }, { version: 2 }).to($=>$
+            .pipe(() => $appPipeline, () => ({ source: 'user' }))
+          )
         ),
         'gui': $=>$.replaceMessage(
           req => gui.serve(req) || new Message({ status: 404 })
