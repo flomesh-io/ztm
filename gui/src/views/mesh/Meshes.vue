@@ -109,7 +109,7 @@ const openEditor = () => {
 }
 
 const emptyMsg = computed(()=>{
-	return `First, join a Mesh.`
+	return `You haven't joined a mesh yet.`
 });
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -121,7 +121,7 @@ const select = (mesh) => {
 
 <template>
 	<div class="flex flex-row min-h-screen">
-		<div class="relative h-full" :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+		<div v-if="!visibleEditor || (!!visibleEditor && !!meshes && meshes.length>0)" class="relative h-full" :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
 			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
@@ -129,7 +129,7 @@ const select = (mesh) => {
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
-						<Button icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
+						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
@@ -156,7 +156,7 @@ const select = (mesh) => {
 				</div>
 			</div>
 			</ScrollPanel>
-			<Empty v-else :title="emptyMsg"/>
+			<Empty v-else :title="emptyMsg" button="Join Mesh" @primary="() => visibleEditor = true"/>
 		</div>
 		<div class="flex-item h-full" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
