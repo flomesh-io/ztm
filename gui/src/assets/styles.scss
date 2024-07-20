@@ -648,9 +648,11 @@ pre.app-code code{
 	padding-right: 0;
 }
 .empty-btn{
-	position: absolute !important;
-	opacity: 0.8;
-	top: 41%;left: 50%;width: 160px; margin-left: -80px;font-size: 20px;
+	// position: absolute !important;
+	// opacity: 0.8;
+	// top: 41%;left: 50%;
+	// width: 160px; margin-left: -80px;
+	font-size: 20px;
 }
 
 
@@ -1149,10 +1151,10 @@ fieldset{
 }
 @media screen and (min-width: 768px) and (max-width: 1024px){
 	.empty-btn{
-		top: 39%;
-		left: 50%;
-		width: 120px; 
-		margin-left: -60px;
+		// top: 39%;
+		// left: 50%;
+		// width: 120px; 
+		// margin-left: -60px;
 		font-size: 14px !important;
 	}
 }
