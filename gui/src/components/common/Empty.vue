@@ -38,16 +38,16 @@ const primary = () => {
         <p>{{props.error?.message}}</p>
     </div>
     <div v-else class="w-full text-center empty-result mt-4 relative">
-				<img :src="freeSvg" class="w-4 h-4 mx-aut" style="margin: auto;"  />
-        <h5 class="text-tip">{{props.title||'No data.'}}</h5>
+				<img :src="freeSvg" class="w-4 h-4 mx-aut" style="margin: auto;max-width: 400px;"  />
+				<h5 class="text-tip">{{props.title||'No data.'}}</h5>
         <p>{{props.sub}}</p>
 				<Button 
 					v-if="props.button"
 					class="empty-btn"
 					:label="props.button" 
 					size="large"
-					rounded
 					raised
+					v-ripple
 					severity="primary"
 					@click="primary"/>
     </div>
