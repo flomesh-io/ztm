@@ -173,23 +173,21 @@ export default function ({ app, mesh, punch }) {
     }
   }
 
-  function createHole(ep, ip, port, role) {
+  function createHole(ep, role) {
     var h = punch.findHole(ep)
     if(h) return h
 
     if(role === 'server') {
-      checkIP(ip)
-      checkPort(Number.parseInt(port))
-      punch.createOutboundHole(ep, ip, port)
+      return punch.createOutboundHole(ep)
     } else if(role === 'client') {
-      punch.createInboundHole(ep)
+      return punch.createInboundHole(ep)
     }
   }
 
-  function updateHoleInfo(ep, ip, port) {
+  function updateHoleInfo(ep, ip, port, cert) {
     checkIP(ip)
     checkPort(Number.parseInt(port))
-    punch.updateHoleInfo(ep, ip, port)
+    punch.updateHoleInfo(ep, ip, port, cert)
   }
 
   function syncPunch(ep) {

@@ -178,13 +178,18 @@ export default function ({ app, mesh, utils }) {
         var ip = $ctx.peer.ip
         var port = $ctx.peer.port
 
-        console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}, time ${obj.timestamp}`)
+        console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
+        console.log("Punch req: ", obj)
         switch(action) {
           case 'request':
-            api.createHole(ep, ip, port, 'server')
+            api.createHole(ep, 'server')
+            api.updateHoleInfo(ep, ip, port, obj.cert)
+            api.syncPunch(ep)
+            // var certs = hole.signPeerCert(new crypto.PublicKey(obj.pkey))
+            // return Promise.resolve(response(200, cert))
             break
           case 'accept':
-            api.updateHoleInfo(ep, ip, port)
+            api.updateHoleInfo(ep, ip, port, obj.cert)
             api.syncPunch(ep)
             break
           default:
