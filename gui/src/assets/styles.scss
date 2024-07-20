@@ -647,11 +647,12 @@ pre.app-code code{
 	padding-left: 0;
 	padding-right: 0;
 }
-@media screen and (min-width: 768px){
-	.p-tabview .p-tabview-panels{
-		padding: 0.875rem 1.125rem 1.125rem 1.125rem;
-	}
+.empty-btn{
+	position: absolute !important;
+	opacity: 0.8;
+	top: 41%;left: 50%;width: 160px; margin-left: -80px;font-size: 20px;
 }
+
 
 .mobile-show{
 	display: none !important;
@@ -977,7 +978,7 @@ fieldset{
 		background-color: var(--gray-50);
 	}
 	.p-select{
-		background-color: var(--gray-50);
+		// background-color: var(--gray-50);
 		margin-right: 1px;
 		border-top:none;
 		border-left:none;
@@ -1139,4 +1140,19 @@ fieldset{
 }
 .transparent.p-togglebutton.p-togglebutton-checked .p-togglebutton-icon{
 	color: #fff !important;
+}
+
+@media screen and (min-width: 768px){
+	.p-tabview .p-tabview-panels{
+		padding: 0.875rem 1.125rem 1.125rem 1.125rem;
+	}
+}
+@media screen and (min-width: 768px) and (max-width: 1024px){
+	.empty-btn{
+		top: 39%;
+		left: 50%;
+		width: 120px; 
+		margin-left: -60px;
+		font-size: 14px !important;
+	}
 }

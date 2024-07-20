@@ -41,7 +41,7 @@ export default class ScriptService {
 		}
 		const argvParams = !!argv?`?argv=${argv}`:''
 		// set local listen
-		return request(`/api/endpoints/${ep}/script${''}`,"POST", script, {headers:{
+		return request(`/api/endpoints/${ep}/script${argvParams}`,"POST", script, {headers:{
 			"Content-Type": "text/plain"
 		}})
 	}

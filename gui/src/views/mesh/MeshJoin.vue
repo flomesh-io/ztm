@@ -21,7 +21,7 @@ const placeholder = ref({
 	c:`-----BEGIN CERTIFICATE-----`,
 	ca:`-----BEGIN CERTIFICATE-----`,
 	p:`-----BEGIN RSA PRIVATE KEY-----`,
-	json:`-----BEGIN PERMIT JSON-----`
+	json:`Paste JSON here.`
 })
 
 const newConfig = {
@@ -100,7 +100,11 @@ watch(() => permit.value,() => {
 	if(!!permit.value){
 		try{
 			const permitJSON = JSON.parse(permit.value);
+			const agent_name = config.value?.agent?.name;
 			config.value = {...config.value, ...permitJSON};
+			if(!config.value?.agent?.name){
+				config.value.agent.name = agent_name;
+			}
 			console.log(config.value)
 		}catch(e){
 		}

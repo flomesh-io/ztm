@@ -157,9 +157,6 @@ const typeOk = () => {
                 <Button size="small" v-tooltip="'Input'" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
 								<OverlayPanel ref="op">
 									<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel w-30rem"  >
-											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-												<i class="pi pi-shield" />
-											</span>
 											<span class="font-medium">
 												<Textarea :placeholder="props.placeholder" v-model="val" :autoResize="false" rows="8" />
 											</span>

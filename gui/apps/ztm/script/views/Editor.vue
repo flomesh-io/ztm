@@ -62,7 +62,7 @@ const getEndpoints = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 const windowHeight = ref(window.innerHeight);
-const viewHeight = computed(() => windowHeight.value - 85);
+const viewHeight = computed(() => windowHeight.value - 80);
 onMounted(()=>{
 	name.value = '';
 	getEndpoints();
@@ -87,7 +87,7 @@ defineExpose({ setPjs })
 					<Button icon="pi pi-star" text aria-haspopup="true" aria-controls="op" @click="toggle"/>
 				</template>
 				<template #center>
-					<b>Pjs</b>
+					<b>Script</b>
 				</template>
 		
 				<template #end> 
@@ -106,17 +106,18 @@ defineExpose({ setPjs })
 				<InputText size="small" placeholder="As Name" v-model="name"  class="w-20rem"></InputText>
 				<Button size="small" icon="pi pi-save" class="ml-2"  @click="addScript"></Button>
 		</Popover>
+		
+		<div style="background: #1e1e1e;color:#fff;" class="p-2 container_pannel flex">
+			<b class="w-7rem p-2">Arguments</b>
+			<div class="flex-item">
+				<ChipList placeholder="Add" v-model:list="args" />
+			</div>
+		</div>
 		<JsEditor
 		  id="pluginScript"
 		  v-model:value="pjs"
 			:height="`${viewHeight}px`"
 		/>
-		<div style="background: #2e2e2e;color:#fff;position: absolute;left: 0;right: 0;bottom: 0;" class="p-2 container_pannel flex">
-			<b class="w-4rem p-2">Args:</b>
-			<div class="flex-item">
-				<ChipList placeholder="Arg" v-model:list="args" />
-			</div>
-		</div>
 	</div>
 </template>
 
