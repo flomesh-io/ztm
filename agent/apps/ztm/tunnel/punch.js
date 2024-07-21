@@ -31,7 +31,6 @@ export default function ({ app, mesh }) {
       if (session) return session
 
       var retryTimes = 0
-      var tlsState = null
 
       var buildCtx = () => {
         return {
@@ -57,7 +56,7 @@ export default function ({ app, mesh }) {
             .connectTLS({
               ...tlsOptions,
               onState: tls => {
-                console.info('TLS State: ', tlsState === 'connected')
+                console.info('TLS State: ', tls)
                 if($connection.state === 'connected' && tls.state === 'connected') {
                   app.log(`Connected TLS to peer ${destIP}:${destPort}`)
                   state = 'connected'
@@ -94,7 +93,8 @@ export default function ({ app, mesh }) {
                     updateHoles()
                   }
                 },
-              }).handleStreamEnd(evt => console.info('Hole connection end, retry: ', retryTimes + 1, ' reason: ', evt?.error))
+              })
+              .handleStreamEnd(evt => console.info('Hole connection end, retry: ', retryTimes + 1, ' reason: ', evt?.error))
             )
           )
         )
@@ -237,7 +237,7 @@ export default function ({ app, mesh }) {
       var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
       var pKey = new crypto.PublicKey(key)
       var cert = new crypto.Certificate({
-        subject: { CN: role },
+        subject: { CN: 'Fake CA' },
         publicKey: pKey,
         privateKey: key,
         days: 365,
@@ -431,13 +431,16 @@ export default function ({ app, mesh }) {
   } // End of Hole
 
   var holes = new Map
+  var fails = {}
   var svc = null
 
   function updateHoles() {
     holes.forEach((key, hole) => {
+      fails[key] ??= 0
       if (hole.state() === 'fail' || hole.state() === 'left') {
         hole.leave()
         holes.delete(key)
+        fails[key] += 1
       }
     })
     console.info(`Holes after updating: `, holes)
@@ -446,6 +449,10 @@ export default function ({ app, mesh }) {
   function createInboundHole(ep) {
     updateHoles()
     if (findHole(ep)) return
+    if (fails[ep] && fails[ep] >= 3) {
+      console.info(`Won't create hole to ${ep}, too many fails!`)
+      return
+    }
     console.info(`Creating Inbound Hole to ${ep}`)
     try {
       var hole = Hole(ep)
