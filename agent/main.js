@@ -463,15 +463,15 @@ pipy.listen(listen, $=>$
           }
         ),
         'app': ($=>$
-          .muxHTTP(() => {
-            $appPipeline = api.connectApp(
-              $params.mesh,
-              $params.provider,
-              $params.app,
-            ) || appNotFound
-            return $appPipeline
-          }, { version: 2 }).to($=>$
-            .pipe(() => $appPipeline, () => ({ source: 'user' }))
+          .muxHTTP().to($=>$
+            .pipe(
+              () => api.connectApp(
+                $params.mesh,
+                $params.provider,
+                $params.app,
+              ) || appNotFound,
+              () => ({ source: 'user' })
+            )
           )
         ),
         'gui': $=>$.replaceMessage(
