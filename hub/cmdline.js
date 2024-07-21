@@ -83,8 +83,8 @@ export default function (argv, { commands, notes, help, fallback }) {
     var opts = parseOptions(cmd.options, rest)
 
   } catch (err) {
-    var command = pattern.slice(0, best).join(' ')
-    throw `${err}. Type '${program} help ${command}' for help info.`
+    var command = ['help', ...pattern.slice(0, best)].join(' ')
+    throw `${err}. Type '${program} ${command}' for help info.`
   }
 
   return cmd.action({ ...args, ...opts })
@@ -220,18 +220,15 @@ function parseOptions(format, argv) {
 function tokenize(str) {
   var tokens = str.split(' ').reduce(
     (a, b) => {
-      if (typeof a === 'string') a = [a]
       var last = a.pop()
-      if (last.startsWith('<')) {
-        a.push(`${last} ${b}`)
-      } else if (last.startsWith('[')) {
+      if (last && (last.startsWith('<') || last.startsWith('['))) {
         a.push(`${last} ${b}`)
       } else {
         a.push(last, b)
       }
       if (b.endsWith('>') || b.endsWith(']')) a.push('')
       return a
-    }
+    }, []
   )
   return tokens instanceof Array ? tokens.filter(t => t) : [tokens]
 }
