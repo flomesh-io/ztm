@@ -1054,8 +1054,9 @@ function callApp(argv, mesh, ep) {
     var tagname = app.name
     if (app.tag) tagname += '@' + app.tag
 
+    var program = `ztm ${name}`
     var url = `/api/meshes/${mesh.name}/apps/${app.provider}/${tagname}/cli`
-    url += '?argv=' + URL.encodeComponent(JSON.stringify(argv))
+    url += '?argv=' + URL.encodeComponent(JSON.stringify([program, ...argv]))
     url += '&cwd=' + URL.encodeComponent(os.path.resolve())
     url += '&ep_id=' + ep.id
     url += '&ep_name=' + URL.encodeComponent(ep.name)

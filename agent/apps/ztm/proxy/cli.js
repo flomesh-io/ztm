@@ -21,7 +21,7 @@ export default function ({ api, utils }) {
     }
 
     try {
-      return utils.parseArgv(['ztm proxy', ...argv], {
+      return utils.parseArgv(argv, {
         help: text => Promise.resolve(output(text + '\n')),
         commands: [
           {

@@ -49,7 +49,7 @@ export default function ({ api, utils }) {
     }
 
     try {
-      return utils.parseArgv(['ztm tunnel', ...argv], {
+      return utils.parseArgv(argv, {
         help: text => Promise.resolve(output(text + '\n')),
         notes: objectTypeNotes + objectNameNotes,
         commands: [

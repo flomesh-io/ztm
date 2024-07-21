@@ -50,7 +50,7 @@ export default function ({ app, api, utils }) {
     }
 
     try {
-      return utils.parseArgv(['ztm terminal', ...argv], {
+      return utils.parseArgv(argv, {
         help: text => {
           output(text + '\n')
           return flush()
