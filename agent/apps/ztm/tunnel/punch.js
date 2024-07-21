@@ -73,7 +73,7 @@ export default function ({ app, mesh }) {
               .connect(() => `${destIP}:${destPort}`, {
                 bind: bound,
                 onState: function (conn) {
-                  console.info("Conn Info: ", conn, tlsState)
+                  console.info("Conn Info: ", conn)
 
                   if (conn.state === 'open') {
                     conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
@@ -240,6 +240,14 @@ export default function ({ app, mesh }) {
         subject: { CN: role },
         publicKey: pKey,
         privateKey: key,
+        days: 365,
+      })
+
+      cert = new crypto.Certificate({
+        subject: { CN: role },
+        publicKey: pKey,
+        privateKey: key,
+        issuer: cert,
         days: 365,
       })
 
