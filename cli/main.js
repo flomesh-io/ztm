@@ -1056,6 +1056,7 @@ function callApp(argv, mesh, ep) {
 
     var url = `/api/meshes/${mesh.name}/apps/${app.provider}/${tagname}/cli`
     url += '?argv=' + URL.encodeComponent(JSON.stringify(argv))
+    url += '&cwd=' + URL.encodeComponent(os.path.resolve())
     url += '&ep_id=' + ep.id
     url += '&ep_name=' + URL.encodeComponent(ep.name)
 

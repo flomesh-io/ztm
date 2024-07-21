@@ -131,7 +131,8 @@ function parseOptions(format, argv) {
           if (t.endsWith(',')) t = t.substring(0, t.length - 1)
           aliases.push(t)
         } else {
-          if (t.endsWith('...]') || t.endsWith('...>')) type = 'array'
+          if (t === '...') type = 'remainder array'
+          else if (t.endsWith('...]') || t.endsWith('...>')) type = 'array'
           else if (t.startsWith('[')) type = 'optional string'
           else if (t.startsWith('<')) type = 'string'
           else type = 'boolean'
@@ -147,6 +148,10 @@ function parseOptions(format, argv) {
 
   argv.forEach(arg => {
     if (currentOption) {
+      if (options[currentOption]?.type === 'remainder array') {
+        addOption(currentOption, arg)
+        return
+      }
       if (arg.startsWith('-')) {
         endOption(currentOption)
         currentOption = undefined
@@ -182,6 +187,7 @@ function parseOptions(format, argv) {
         option.value = value
         break
       case 'array':
+      case 'remainder array':
         option.value ??= []
         option.value.push(value)
         break

@@ -43,6 +43,7 @@ export function cliResponder(p) {
       var url = new URL(req.head.path)
       $cliCtx = {
         argv: JSON.parse(URL.decodeComponent(url.searchParams.get('argv'))),
+        cwd: URL.decodeComponent(url.searchParams.get('cwd')),
         endpoint: {
           id: url.searchParams.get('ep_id'),
           name: URL.decodeComponent(url.searchParams.get('ep_name')),

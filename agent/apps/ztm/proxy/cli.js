@@ -17,7 +17,7 @@ export default function ({ api, utils }) {
     }
 
     function flush() {
-      return [buffer, new StreamEnd]
+      return Promise.resolve([buffer, new StreamEnd])
     }
 
     try {
@@ -87,7 +87,7 @@ export default function ({ api, utils }) {
 
     } catch (err) {
       error(err)
-      return Promise.resolve(flush())
+      return flush()
     }
   }
 }
