@@ -24,7 +24,8 @@ export default function ({ app, api, utils }) {
     }
 
     try {
-      return utils.parseArgv(['ztm proxy', ...argv], {
+      println(argv)
+      return utils.parseArgv(argv, {
         help: text => Promise.resolve(output(text + '\n')),
         commands: [
           {
@@ -34,7 +35,8 @@ export default function ({ app, api, utils }) {
               --, --args  ...   Pass all options afterwards to the script
             `,
             action: (args) => {
-              var pathname = os.path.resolve(cwd, args['<filename>'])
+              var filename = args['<filename>']
+              var pathname = os.path.resolve(cwd, filename)
               var script = os.read(pathname)
               var argv = args['--args'] || []
               return pipeline($=>$

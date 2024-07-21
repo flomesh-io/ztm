@@ -7,24 +7,21 @@ try {
   parseArgv(argv, {
     commands: [
       {
-        title: 'Scan for listening ports on a host',
-        usage: '<host> [<port range>]',
-        notes: `
-          The <port range> is in form of 'start-end'
-          Default is 1-65535 if not specified
-        `,
+        title: 'Make an HTTP request',
+        usage: '<URL>',
         options: `
-          -c, --concurrency  <number>     Number of concurrent scanners (default: 100)
-          -t, --timeout      <seconds>    Connection timeout (default: 5)
+          -X, --method  <method>          HTTP request method (default: GET)
+          -H, --header  <name:value ...>  Add a header to the request
+          -d, --data    <string>          Text payload of the request
+              --http2                     Use HTTP/2
         `,
         action: (args) => {
-          var host = args['<host>']
-          var ports = (args['[<port range>]'] || '').split('-')
-          var startPort = ports[0] || 1
-          var endPort = ports[1] || 65535
-          var concurrency = args['--concurrency'] || 100
-          var timeout = args['--timeout'] || 5
-          scan(host, startPort, endPort, { concurrency, timeout }).then(() => {
+          var url = new URL(args['<URL>'])
+          var method = args['--method'] || ('--data' in args ? 'POST' : 'GET')
+          var headers = args['--header'] || []
+          var body = args['--data'] || ''
+          var version = args['--http2'] ? 2 : 1
+          request(url, { method, headers, body, version }).then(() => {
             pipy.exit(0)
           }).catch(err => {
             println(err)
@@ -39,53 +36,52 @@ try {
   pipy.exit(-1)
 }
 
-function scan(host, startPort, endPort, { concurrency, timeout }) {
-  var currentPort = startPort
-
-  var $port
-  var $data
-
-  var results = []
-
-  return pipeline($=>$
-    .onStart(new Data)
-    .forkJoin(Array(concurrency)).to($=>$
-      .repeat(() => currentPort <= endPort).to($=>$
-        .onStart(() => {
-          $port = currentPort++
-          $data = new Data
-        })
-        .pipe(
-          () => $port <= endPort ? 'probe' : 'end', {
-            'probe': ($=>$
-              .connect(() => `${host}:${$port}`, { connectTimeout: timeout, idleTimeout: 5 })
-              .handleData(d => $data.push(d))
-              .handleStreamEnd(evt => {
-                if (evt.error === 'IdleTimeout') {
-                  results.push({
-                    port: $port,
-                    response: $data.toString(),
-                  })
-                }
-              })
-            ),
-            'end': ($=>$.replaceStreamStart(new StreamEnd))
-          }
-        )
+function request(url, { method, headers, body, version }) {
+  var head = {
+    method,
+    path: url.path,
+    headers: {
+      host: url.host,
+      ...Object.fromEntries(
+        headers.map(header => {
+          var kv = header.split(':')
+          var k = kv[0]?.trim?.()
+          var v = kv[1]?.trim?.()
+          return (k && v ? [k, v] : null)
+        }).filter(kv => kv !== null)
       )
+    },
+  }
+  var tls = {
+    sni: url.hostname,
+    alpn: version === 2 ? 'h2' : 'http/1.1',
+  }
+  return pipeline($=>$
+    .onStart(new Message(head, body))
+    .muxHTTP({ version }).to($=>$
+      .pipe(() => url.protocol === 'https:' ? 'tls' : 'tcp', {
+        'tcp': $=>$.connect(`${url.hostname}:${url.port}`),
+        'tls': $=>$.connectTLS(tls).to($=>$.connect(`${url.hostname}:${url.port}`)),
+      })
     )
-    .replaceStreamStart(new StreamEnd)
-
-  ).spawn().then(() => {
-    println(`Scanned ${endPort - startPort + 1} ports from ${startPort} to ${endPort} at ${host}`)
-    results.forEach(({ port, response }) => {
-      println('  Port', port)
-      if (response) {
-        println('    Response:', response)
+    .decompressHTTP()
+    .replaceMessage(res => {
+      if (res) {
+        var head = res.head
+        println(`${head.protocol} ${head.status} ${head.statusText}`)
+        Object.entries(head.headers).forEach(
+          ([k, v]) => println(`${k}: ${v}`)
+        )
+        if (res.body) {
+          println()
+          println(res.body.toString())
+        }
+      } else {
+        println('Empty response')
       }
+      return new StreamEnd
     })
-    println(`Found ${results.length} open ports`)
-  })
+  ).spawn()
 }
 
 function parseArgv(argv, { commands, notes, help, fallback }) {
