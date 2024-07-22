@@ -427,6 +427,11 @@ var appNotFound = pipeline($=>$.serveHTTP(new Message({ status: 404 })))
 
 var $params
 var $appPipeline
+var $appSession
+
+var appSessionPools = new algo.Cache(
+  k => new algo.LoadBalancer([{}])
+)
 
 pipy.listen(listen, $=>$
   .demuxHTTP().to($=>$
@@ -463,21 +468,23 @@ pipy.listen(listen, $=>$
           }
         ),
         'app': ($=>$
-          .muxHTTP().to($=>$
-            .onStart(() => {
-              return api.connectApp(
-                $params.mesh,
-                $params.provider,
-                $params.app,
-              ).then(p => {
-                $appPipeline = p
-              })
+          .onStart(() => api.connectApp(
+              $params.mesh,
+              $params.provider,
+              $params.app,
+            ).then(p => {
+              var pool = appSessionPools.get(p)
+              $appPipeline = p
+              $appSession = pool.allocate()
             })
+          )
+          .muxHTTP(() => $appSession).to($=>$
             .pipe(
               () => $appPipeline || appNotFound,
               () => ({ source: 'user' })
             )
           )
+          .onEnd(() => $appSession?.free?.())
         ),
         'gui': $=>$.replaceMessage(
           req => gui.serve(req) || new Message({ status: 404 })
