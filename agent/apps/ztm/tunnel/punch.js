@@ -237,17 +237,9 @@ export default function ({ app, mesh }) {
       var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
       var pKey = new crypto.PublicKey(key)
       var cert = new crypto.Certificate({
-        subject: { CN: 'Fake CA' },
-        publicKey: pKey,
-        privateKey: key,
-        days: 365,
-      })
-
-      cert = new crypto.Certificate({
         subject: { CN: role },
         publicKey: pKey,
         privateKey: key,
-        issuer: cert,
         days: 365,
       })
 
