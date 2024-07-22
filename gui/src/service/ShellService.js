@@ -45,7 +45,7 @@ export default class ShellService {
 				//{"ztm":{"version":"v0.0.2","commit":"a73787b37cb500044410325b04558d2507a847f7","date":"Sat, 18 May 2024 18:55:27 +0800"},"pipy":{"version":"1.1.0-33","commit":"bd7450a98c9513394869493753456944aa26c1f7","date":"Sat, 18 May 2024 18:10:58 +0800"}}
 				store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
 			});
-		} else if(!!apiGet){
+		} else {
 			ztmService.getVersion()
 				.then(res => {
 					if(!!res){

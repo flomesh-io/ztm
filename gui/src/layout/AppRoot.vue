@@ -86,6 +86,7 @@ const loaddata = () => {
 			loading.value = false;
 			console.log('Request Failed', err)
 		}); 
+	takePipyVersion();
 }
 const play = () => {
 	pipyPlay();
@@ -240,6 +241,10 @@ const addmenu = ref();
 const toggle = (event) => {
     addmenu.value.toggle(event);
 };
+
+const takePipyVersion = () => {
+	shellService.takePipyVersion();
+}
 </script>
 
 <template>
