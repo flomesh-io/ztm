@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, defineExpose } from 'vue';
 import { useStore } from 'vuex';
 import PipySvg from "@/assets/img/pipy-white.png";
 import ShellService from '@/service/ShellService';
@@ -14,7 +14,7 @@ const version = computed(() => {
 
 onMounted(() => {
 	if(!version.value){
-		shellService.takePipyVersion(!!props.playing);
+		shellService.takePipyVersion();
 	}
 });
 const restartPipy = () => {
@@ -23,9 +23,10 @@ const restartPipy = () => {
 	setTimeout(()=>{
 		restart.value = false;
 	},1000);
-	shellService.takePipyVersion(!!props.playing);
+	shellService.takePipyVersion();
 }
 
+defineExpose({ restartPipy })
 </script>
 
 <template>
