@@ -464,12 +464,17 @@ pipy.listen(listen, $=>$
         ),
         'app': ($=>$
           .muxHTTP().to($=>$
-            .pipe(
-              () => api.connectApp(
+            .onStart(() => {
+              return api.connectApp(
                 $params.mesh,
                 $params.provider,
                 $params.app,
-              ) || appNotFound,
+              ).then(p => {
+                $appPipeline = p
+              })
+            })
+            .pipe(
+              () => $appPipeline || appNotFound,
               () => ({ source: 'user' })
             )
           )
