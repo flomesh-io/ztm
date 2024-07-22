@@ -109,15 +109,8 @@ const openAppContent = (app) => {
 		const base = appService.getAppUrl(options);
 		if(app.uninstall){
 			installAPP(app, options)
-		}else if((app.name == 'proxy' || app.name == 'browser') && !app.shortcut){
-			openAppUI(app, base);
-		}else if(!app.isRunning && !!app.provider){
-			appService.startApp(options).then(()=>{
-				setTimeout(()=>{
-					openAppUI(app, base);
-				},300)
-				loaddata();
-			})
+		// }else if((app.name == 'proxy' || app.name == 'browser') && !app.shortcut){
+		// }else if(!app.isRunning && !!app.provider){
 		} else {
 			openAppUI(app, base);
 		}
@@ -150,16 +143,6 @@ const openAppUI = (app, base) => {
 			}
 		};
 	}
-}
-const startApp = (app) => {
-	appService.startApp({
-		mesh:selectedMesh.value?.name,
-		ep:selectedMesh.value?.agent?.id,
-		provider:app.provider||'ztm',
-		app:app.name,
-	}).then(()=>{
-		loaddata();
-	})
 }
 const installAPP = (app, options) => {
 	try{
