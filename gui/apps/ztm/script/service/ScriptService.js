@@ -1,4 +1,4 @@
-import { request, merge, spread } from '@/service/common/request';
+import { request, merge, spread, localRequest } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 export default class ScriptService {
@@ -7,6 +7,21 @@ export default class ScriptService {
 	}
 	getEndpoints() {
 		return request(`/api/endpoints`);
+	}
+	getPubScripts(cb) {
+		const reqs = []
+		localRequest(`/scriptList.json`).then((res)=>{
+			res.files.forEach((file)=>{
+				reqs.push(localRequest(`/scripts/${file}`).then((fileRes) => {
+					return {
+						name: file,
+						script: fileRes,
+						public: true
+					}
+				}))
+			})
+			merge(reqs).then(cb)
+		});
 	}
 	getScripts() {
 		const scriptKeys = JSON.parse(localStorage.getItem("SCRIPTS")||"[]");

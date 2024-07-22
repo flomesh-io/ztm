@@ -19,13 +19,17 @@ export default class TunnelService {
 		targets.forEach((target) => {
 			const _target = {}
 			if(!!target){
-				if(!!target.split(":")[0]){
-					_target.host = target.split(":")[0]
+				if(target.indexOf(":")>=0){
+					if(!!target.split(":")[0]){
+						_target.host = target.split(":")[0]
+					}
+					if(!!target.split(":")[1]){
+						_target.port = target.split(":")[1]*1
+					}
+					_targets.push(_target);
+				} else {
+					_targets.push({host:'127.0.0.1',port:target})
 				}
-				if(!!target.split(":")[1]){
-					_target.port = target.split(":")[1]*1
-				}
-				_targets.push(_target);
 			}
 		})
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"POST", {
@@ -54,14 +58,18 @@ export default class TunnelService {
 		const _listens = [];
 		listens.forEach((listen) => {
 			if(!!listen){
-				const _listen = { ip:listen.split(":")[0] }
-				if(!!listen.split(":")[0]){
-					_listen.host = listen.split(":")[0]
+				if(listen.indexOf(":")>=0){
+					const _listen = { ip:listen.split(":")[0] }
+					if(!_listen.ip){
+						_listen.ip = "127.0.0.1"
+					}
+					if(!!listen.split(":")[1]){
+						_listen.port = listen.split(":")[1]*1
+					}
+					_listens.push(_listen);
+				} else {
+					_listens.push({ip:'127.0.0.1',port:listen})
 				}
-				if(!!listen.split(":")[1]){
-					_listen.port = listen.split(":")[1]*1
-				}
-				_listens.push(_listen);
 			}
 		})
 		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`,"POST", {

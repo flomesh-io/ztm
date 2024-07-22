@@ -6,7 +6,7 @@ import AppService from '@/service/AppService';
 import EndpointInfo from './EndpointInfo.vue';
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
-import Apps from '@/views/apps/Apps.vue';
+import AppManage from '@/views/apps/AppManage.vue';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import defaultIcon from "@/assets/img/apps/default.png";
@@ -53,11 +53,12 @@ const removeEp = () => {
 			},300)
 		});
 }
-const apps = ref([])
-const getProviderApps = () => {
-	
-	appService.getApps(selectedMesh.value?.name).then((res)=>{
-		apps.value = res.filter((app) => !!app.provider && app.provider == props.ep.username)
+const meshApps = ref([]);
+const loadApps = () => {
+	appService.getEpApps(selectedMesh.value?.name, props.ep.id).then((res)=>{
+		console.log("start getApps")
+		meshApps.value = res?.filter((app) => app.name !='terminal') || [];
+		console.log(res);
 	}).catch((e)=>{
 		console.log(e)
 	});
@@ -97,23 +98,15 @@ const getProviderApps = () => {
 						<i class="pi pi-objects-column mr-2" />Apps
 					</div>
 				</template>
-				<Apps :embed="true" :noInners="true" :embedEp="props.ep.id"/>
-			</TabPanel>
-			<TabPanel>
-				<template #header>
-					<div >
-						<i class="iconfont icon-provider mr-1" style="font-size: 20px;height: 16px;line-height: 16px;" /> Providers
-					</div>
-				</template>
-				<div class="grid text-center" >
-					<div v-if="!!apps && apps.length > 0" class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in apps">
-						<div class="flex">
-							<img :src="app.icon || defaultIcon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-							<div class="text-white opacity-90 flex-item text-left pl-3" style="line-height: 40px;"><b>{{ app.label || app.name}}</b> | {{app.provider}}</div>
-						</div>
-					</div>
-					<Empty title="No providers" v-else/>
+				
+				<div class="terminal_body p-4">
+					<AppManage
+						:meshApps="meshApps" 
+						:theme="true" 
+						:embedEp="props.ep" 
+						@reload="loadApps"/>
 				</div>
+				
 			</TabPanel>
 		</TabView>
 	</div>

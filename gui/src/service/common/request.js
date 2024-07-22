@@ -38,6 +38,23 @@ function getUrl(url){
 		return `http://127.0.0.1:${getPort()}${path}${url}`
 	}
 }
+function getLocalUrl(url){
+	let path = "";
+	if(location.pathname){
+		let params = location.pathname.split('/');
+		if(params.length >= 8){
+			params.splice(params.length-1,1)
+			path = params.join("/")
+		}
+	}
+	if(location.port<2000){
+		return `${url}`
+	}else if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
+		return `${path}${url}`
+	} else {
+		return `http://127.0.0.1:${getPort()}${path}${url}`
+	}
+}
 const getPort = () => {
 	const VITE_APP_API_PORT = localStorage.getItem("VITE_APP_API_PORT") || (!!location?.port && location.port>=2000?location.port:null);
 	return VITE_APP_API_PORT || DEFAULT_VITE_APP_API_PORT || 7777;
@@ -84,6 +101,17 @@ const getConfig  = (config, params, method) => {
 		}
 		return rtn;
 	}
+}
+async function localRequest(url, method, params, config) {
+	return axios.get(getLocalUrl(url), { params, ...config }).then((res) => {
+		if (res.status >= 400) {
+			const error = new Error(res.message);
+			error.status = res.status;
+			return Promise.reject(error);
+		} else {
+			return res?.data;
+		}
+	});
 }
 async function request(url, method, params, config) {
 	if(!window.__TAURI_INTERNALS__ || (!!location?.port && location.port>=2000)){
@@ -309,6 +337,7 @@ export {
 	getUrl,
   request,
 	requestNM,
+	localRequest,
   merge,
   spread,
 	mock,

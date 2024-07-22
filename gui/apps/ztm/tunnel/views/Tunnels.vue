@@ -97,25 +97,26 @@ const edit = (d) => {
 			<ScrollPanel class="w-full absolute" style="bottom: 0;"  :style="{'top':'75px'}" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
 			<div class="text-center">
 				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="tunnelsFilter" dataKey="id" tableStyle="min-width: 50rem">
-						<Column expander style="width: 5rem" />
 						<Column header="Tunnel">
 							<template #body="slotProps">
-								<span class="block text-tip font-medium"><i class="pi pi-server text-tip"></i> {{slotProps.name}}</span>
+								<span class="block text-tip font-medium"><i class="pi pi-arrow-right-arrow-left text-tip mr-2"></i> {{slotProps.data.name}}</span>
 							</template>
 						</Column>
 						<Column header="Inbound">
 							<template #body="slotProps">
-								<Badge :value="slotProps.inbounds.length"/>
+								<Badge v-if="slotProps.data.inbounds" :value="slotProps.data.inbounds.length"/>
 							</template>
 						</Column>
 						<Column header="Outbound">
 							<template #body="slotProps">
-								<Badge :value="slotProps.outbounds.length"/>
+								<Badge v-if="slotProps.data.outbounds" :value="slotProps.data.outbounds.length"/>
 							</template>
 						</Column>
 						<Column header="Action"  style="width: 110px;">
 							<template #body="slotProps">
-								
+								 <div @click="edit(slotProps.data)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2rem; height: 2rem'">
+										 <i class="pi pi-pencil text-xl"></i>
+								 </div>
 							</template>
 						</Column>
 				</DataTable>
