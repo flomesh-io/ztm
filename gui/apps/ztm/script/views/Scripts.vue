@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import ScriptService from '../service/ScriptService';
+
 const scriptService = new ScriptService();
 const emits = defineEmits(['hide','edit'])
 const hide = () => {
@@ -14,7 +15,11 @@ const edit = (s) => {
 	emits('edit',s);
 }
 const loaddata = () => {
-	scripts.value = scriptService.getScripts();
+	
+	scriptService.getPubScripts((res)=>{
+		scripts.value = res || [];
+		scripts.value = scripts.value.concat(scriptService.getScripts());
+	})
 }
 const scripts = ref([]);
 onMounted(()=>{
@@ -50,7 +55,7 @@ onMounted(()=>{
 														</Tag> 
 													</div>
 											 </div>
-											 <div class="flex">
+											 <div class="flex" v-if="!script.public">
 												 <div @click="remove(script)" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
 													<i class="pi pi-trash text-tip text-xl"></i>
 												 </div>
