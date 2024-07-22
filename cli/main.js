@@ -126,7 +126,7 @@ function doCommand(meshName, epName, argv, program) {
           switch (type) {
             case 'hub': return stopHub(args)
             case 'agent': return stopAgent(args)
-            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => stopApp(args, name, mesh, ep))
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => stopApp(name, mesh, ep))
             default: return invalidObjectType(type, 'stop')
           }
         }

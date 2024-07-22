@@ -738,18 +738,21 @@ export default function (rootDir, config) {
           var q = new URL(path).searchParams.toObject()
           var username = URL.decodeComponent(q.username)
           $requestedApp = params.app
-          $requestedAppPipeline = apps.connect(params.provider, $requestedApp)
           $requestedAppPeer = {
             id: q.src,
             ip: q.ip,
             port: q.port,
             username,
           }
-          if ($requestedAppPipeline) {
-            logInfo(`Proxy to local app ${$requestedApp}`)
-            return response200
-          }
-          logError(`Local app ${$requestedApp} not found`)
+          return connectApp(params.provider, $requestedApp).then(p => {
+            if (p) {
+              logInfo(`Proxy to local app ${$requestedApp}`)
+              $requestedAppPipeline = p
+              return response200
+            }
+            logError(`Local app ${$requestedApp} not found`)
+            return response404
+          })
         }
         return response404
       }
@@ -983,7 +986,12 @@ export default function (rootDir, config) {
   }
 
   function advertiseAppStates() {
-    var list = apps.listRunning()
+    var list = []
+    ;[...apps.listBuiltin(), ...apps.listDownloaded()].forEach(app => {
+      if (!list.some(a => a.provider === app.provider && a.name === app.name)) {
+        list.push(app)
+      }
+    })
     hubs[0].advertiseAppStates(list)
   }
 
@@ -1327,7 +1335,13 @@ export default function (rootDir, config) {
   }
 
   function connectApp(provider, app) {
-    return apps.connect(provider, app)
+    if (!apps.isRunning(provider, app)) {
+      return startApp(config.agent.id, provider, app).then(
+        () => apps.connect(provider, app)
+      )
+    } else {
+      return Promise.resolve(apps.connect(provider, app))
+    }
   }
 
   function downloadFile(ep, hash) {
