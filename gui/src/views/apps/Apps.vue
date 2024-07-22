@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, useSlots } from 'vue';
+import { ref, computed, onMounted, useSlots, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
@@ -166,6 +166,9 @@ const pannelHeight = computed(() => windowHeight.value - 80);
 onMounted(()=>{
 	loaddata();
 	resize(455,570,false);
+})
+watch(()=>manage,()=>{
+	loaddata();
 })
 </script>
 
