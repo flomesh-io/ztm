@@ -2,6 +2,14 @@ export default function ({ app, mesh }) {
   var currentListens = []
   var currentTargets = {}
 
+  function getListenStatus(protocol, listen) {
+    var ip = listen.ip
+    var port = listen.port
+    var l = currentListens.find(l => (l.protocol === protocol && l.ip === ip && l.port === port))
+    if (l) return { ip, port, open: l.open, error: l.error }
+    return { ip, port, open: false }
+  }
+
   function allEndpoints() {
     return mesh.discover()
   }
@@ -9,7 +17,9 @@ export default function ({ app, mesh }) {
   function allInbound(ep) {
     if (ep === app.endpoint.id) {
       return getLocalConfig().then(
-        config => config.inbound
+        config => config.inbound.map(i => ({
+          ...i, listens: i.listens.map(l => getListenStatus(i.protocol, l))
+        }))
       )
     } else {
       return requestPeer(ep, new Message(
@@ -41,8 +51,11 @@ export default function ({ app, mesh }) {
       return getLocalConfig().then(
         config => config.inbound.find(
           i => i.protocol === protocol && i.name === name
-        ) || null
-      )
+        )
+      ).then(i => {
+        if (!i) return null
+        return { ...i, listens: i.listens.map(l => getListenStatus(i.protocol, l)) }
+      })
     } else {
       return requestPeer(ep, new Message(
         {
@@ -269,9 +282,11 @@ export default function ({ app, mesh }) {
       listens.forEach(l => {
         try {
           pipy.listen(`${l.ip}:${l.port}`, protocol, p)
-          currentListens.push({ protocol, ip: l.ip, port: l.port })
+          currentListens.push({ protocol, ip: l.ip, port: l.port, open: true })
           app.log(`Started ${protocol} listening ${l.ip}:${l.port}`)
         } catch (err) {
+          var error = err.message || err.toString()
+          currentListens.push({ protocol, ip: l.ip, port: l.port, open: false, error })
           app.log(`Cannot open port ${l.ip}:${l.port}: ${err}`)
         }
       })

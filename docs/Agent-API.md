@@ -20,7 +20,7 @@ In addtion to the above resource types, apps can provide extra resource types vi
 - Inbound
 - Outbound
 
-Both **Inbound** and **Outbound** resources are identified by `protocol/name`, where `protocol` can be either `'tcp'` or `'udp'`. You can create as many Inbound and Outbound resources on any endpoint. Multiple Inbound and Outbound resources with the same `protocol/name` are connected to each other to form a **tunnel**.
+Both **Inbound** and **Outbound** resources are identified by `protocol/name`, where `protocol` can be either `'tcp'` or `'udp'`. You can create as many Inbound and Outbound resources as you like on any endpoint. Multiple Inbound and Outbound resources with the same `protocol/name` are connected to each other to form a **tunnel**.
 
 ## Mesh
 
@@ -180,15 +180,15 @@ GET returns:
     "listens": [
         {
             "ip": "x.x.x.x",
-            "port": 12345
+            "port": 12345,
+            "open": true,
+            "error": "xxx"
         }
     ],
     "exits": [
         "endpoint-id-1",
         "endpoint-id-2"
-    ],
-    "open": true,
-    "error": "xxx"
+    ]
 }
 ```
 
@@ -202,7 +202,7 @@ POST requires:
             "port": 12345
         }
     ],
-    "exits": [ // optional
+    "exits": [
         "endpoint-id-1",
         "endpoint-id-2"
     ]
@@ -248,7 +248,7 @@ POST requires:
             "port": 12345
         }
     ],
-    "entrances": [ // optional
+    "entrances": [
         "endpoint-id-1",
         "endpoint-id-2"
     ]
