@@ -7,20 +7,20 @@ The Agent API is organized into 4 types of resources that can be accessed by the
 - Files
 - Apps
 
-A **Mesh** is the root resource of everything. It contains a configuration providing the required information for joining a mesh.
+A **Mesh** is the root resource of everything. It contains a configuration providing required information for joining a mesh.
 
 **Endpoints** are automatically registered to the mesh when an agent joins in, and discovered by agents on other endpoints in the same mesh.
 
-**Files** can be stored in the mesh (on multiple endpoints) and accessible from other endpoints, or locally (in the local database) for private access only.
+**Files** can be stored in the mesh (on multiple endpoints) and accessible from other endpoints, or stored locally (in the local database) for private access only.
 
-**Apps** are bundles of script files written in PipyJS. They can be installed locally or published to the mesh for remote installation on other endpoints. Some builtin apps, such as `tunnel`, `proxy` and `terminal`, are available without the need of an installation.
+**Apps** are bundles of script files written in [PipyJS](https://github.com/flomesh-io/pipy). They can be installed locally or published to the mesh for remote installation on other endpoints. Some builtin apps, including `tunnel`, `proxy` and `terminal`, are available for use without the need of an installation.
 
-In addtion, apps can provide extra resource types via the Agent API. For example, the `tunnel` app provides 2 types of resources:
+In addtion to the above resource types, apps can provide extra resource types via the Agent API. For example, the `tunnel` app provides 2 types of resources:
 
 - Inbound
 - Outbound
 
-Both **Inbound** and **Outbound** resources are identified by `protocol/name`, where `protocol` can be either `'tcp'` or `'udp'`. You can create as many Inbound and Outbound resources on any endpoint. Any number of Inbound and Outbound resources with the same `protocol/name` are connected to each other and considered to be a **tunnel**.
+Both **Inbound** and **Outbound** resources are identified by `protocol/name`, where `protocol` can be either `'tcp'` or `'udp'`. You can create as many Inbound and Outbound resources on any endpoint. Multiple Inbound and Outbound resources with the same `protocol/name` are connected to each other to form a **tunnel**.
 
 ## Mesh
 
