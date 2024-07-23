@@ -37,6 +37,8 @@ const progressStart = (to, from, next) => {
 const loginGuard = (to, from, next, options) => {
   const { toast } = options;
 	const store = useStore();
+	
+	store.commit('notice/setApp', null);
   if (!loginIgnore.includes(to) && !checkAuthorization()) {
 		const toast = useToast();
 		toast.add({ severity: 'warn', summary: 'Tips', detail: 'Login is invalid, please login again', life: 3000 });
