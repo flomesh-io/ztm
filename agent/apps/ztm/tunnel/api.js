@@ -138,6 +138,7 @@ export default function ({ app, mesh }) {
         if (i >= 0) {
           all.splice(i, 1)
           setLocalConfig(config)
+          applyLocalConfig(config)
         }
       })
     } else {
@@ -158,6 +159,7 @@ export default function ({ app, mesh }) {
         if (i >= 0) {
           all.splice(i, 1)
           setLocalConfig(config)
+          applyLocalConfig(config)
         }
       })
     } else {
