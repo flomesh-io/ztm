@@ -27,20 +27,12 @@ var routes = Object.entries({
     'GET': () => getFileData,
   },
 
-  '/api/endpoints/{ep}/services': {
-    'GET': () => getServices,
-  },
-
   '/api/endpoints/{ep}/apps/{app}': {
     'CONNECT': () => connectApp,
   },
 
   '/api/endpoints/{ep}/apps/{provider}/{app}': {
     'CONNECT': () => connectApp,
-  },
-
-  '/api/endpoints/{ep}/services/{proto}/{svc}': {
-    'CONNECT': () => connectService,
   },
 
   '/api/filesystem': {
@@ -62,15 +54,6 @@ var routes = Object.entries({
 
   '/api/apps/{provider}/{app}': {
     'GET': () => getAppState,
-  },
-
-  '/api/services': {
-    'GET': () => getServices,
-    'POST': () => findCurrentEndpointSession() ? postServices : noSession,
-  },
-
-  '/api/services/{proto}/{svc}': {
-    'GET': () => getService,
   },
 
   '/api/forward/{ep}/*': {
@@ -413,82 +396,6 @@ var getAppState = pipeline($=>$
   )
 )
 
-var getServices = pipeline($=>$
-  .replaceData()
-  .replaceMessage(
-    function () {
-      var services = []
-      var collect = (ep) => {
-        ep.services?.forEach?.(
-          function (svc) {
-            var name = svc.name
-            var protocol = svc.protocol
-            var s = services.find(s => s.name === name && s.protocol === protocol)
-            if (!s) services.push(s = { name, protocol, endpoints: [] })
-            s.endpoints.push({ id: ep.id, name: ep.name, users: svc.users })
-          }
-        )
-      }
-      if ($params.ep) {
-        var ep = endpoints[$params.ep]
-        if (ep && isEndpointOnline(ep)) collect(ep)
-      } else {
-        Object.values(endpoints).filter(isEndpointOnline).forEach(collect)
-      }
-      return response(200, services)
-    }
-  )
-)
-
-var postServices = pipeline($=>$
-  .replaceMessage(
-    function (req) {
-      var body = JSON.decode(req.body)
-      var time = body.time
-      var last = $endpoint.servicesUpdateTime
-      if (!last || last <= time) {
-        var services = body.services
-        var oldList = $endpoint.services || []
-        var newList = services instanceof Array ? services : []
-        var who = endpointName($endpoint.id)
-        console.info(`Received service list (length = ${newList.length}) from ${who}`)
-        newList.forEach(({ name, protocol }) => {
-          if (!oldList.some(s => s.name === name && s.protocol === protocol)) {
-            console.info(`Service ${name} published by ${who}`)
-          }
-        })
-        oldList.forEach(({ name, protocol }) => {
-          if (!newList.some(s => s.name === name && s.protocol === protocol)) {
-            console.info(`Service ${name} deleted by ${who}`)
-          }
-        })
-        $endpoint.services = newList
-        $endpoint.servicesUpdateTime = time
-      }
-      return new Message({ status: 201 })
-    }
-  )
-)
-
-var getService = pipeline($=>$
-  .replaceData()
-  .replaceMessage(
-    function () {
-      var name = $params.svc
-      var protocol = $params.proto
-      var providers = Object.values(endpoints).filter(
-        ep => isEndpointOnline(ep) && ep.services.some(s => s.name === name && s.protocol === protocol)
-      )
-      if (providers.length === 0) return response(404)
-      return response(200, {
-        name,
-        protocol,
-        endpoints: providers.map(({ id, name }) => ({ id, name })),
-      })
-    }
-  )
-)
-
 var muxToAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, { version: 2 }).to($=>$
     .swap(() => $hubSelected)
@@ -543,31 +450,6 @@ var connectApp = pipeline($=>$
         path: $params.provider ? `/api/apps/${$params.provider}/${$params.app}${q}` : `/api/apps/${$params.app}${q}`,
       })
     }).to(muxToAgent)
-  )
-)
-
-var connectService = pipeline($=>$
-  .acceptHTTPTunnel(
-    function () {
-      var svc = $params.svc
-      var proto = $params.proto
-      var id = $params.ep
-      var ep = endpoints[id]
-      if (!ep) return response(404, 'Endpoint not found')
-      if (!canConnect($ctx.username, ep, proto, svc)) return response(403)
-      if (!ep.services.some(s => s.name === svc && s.protocol === proto)) return response(404, 'Service not found')
-      sessions[id]?.forEach?.(h => $hubSelected = h)
-      if (!$hubSelected) return response(404, 'Agent not found')
-      console.info(`Forward to ${svc} at ${endpointName(id)}`)
-      return response(200)
-    }
-  ).to($=>$
-    .connectHTTPTunnel(
-      () => new Message({
-        method: 'CONNECT',
-        path: `/api/services/${$params.proto}/${$params.svc}`,
-      })
-    ).to(muxToAgent)
   )
 )
 
