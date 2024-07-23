@@ -7,7 +7,6 @@ import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
 import ztmlog from "@/assets/img/apps/ztmlog.png";
 import eplog from "@/assets/img/apps/eplog.png";
-import ProxyComponent from '@/views/apps/core/Proxy.vue';
 import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
 
@@ -64,7 +63,8 @@ const appMapping = {
 	"ztm/proxy": {
 		icon: proxy,
 		name: "Proxy",
-		component: ProxyComponent
+		width:1280,
+		height:860,
 	},
 	"ztm/terminal": {
 		icon: terminal,

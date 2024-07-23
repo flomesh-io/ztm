@@ -1,27 +1,22 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { merge } from '@/service/common/request';
-import ZtmService from '@/service/ZtmService';
 import TunnelService from '../service/TunnelService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
-import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
 import _ from "lodash"
 const props = defineProps(['d','endpointMap']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
-const selected = ref(props.mesh);
 const endpoints = ref([]);
 const route = useRoute();
 const toast = useToast();
 const tunnelService = new TunnelService();
-const ztmService = new ZtmService();
 const info = computed(() => {
 	return store.getters['app/info']
 });
 const loading = ref(false);
-const scope = ref('public');
 const newTunnel = {
 	name: "",
 	proto: "tcp",
@@ -74,12 +69,6 @@ const back = () => {
 }
 const inboundEditor = ref(false);
 const outboundEditor = ref(false);
-watch(()=> selected,()=>{
-	getEndpoints();
-},{
-	immediate: true,
-	deep:true,
-})
 const createTunnel = () => {
 	const reqs = [];
 	inbounds.value.forEach((_inbound)=>{
