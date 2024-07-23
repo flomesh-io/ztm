@@ -39,6 +39,7 @@ jobs:
         yarn install
         yarn build:tunnel
         yarn build:script
+        yarn build:proxy
     - name: Build ztm
       run: |
         cd gui
