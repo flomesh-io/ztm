@@ -21,7 +21,7 @@ export default function ({ app, mesh }) {
 
 
     // Check if ep is self.
-    console.info(`Creating hole to peer ${ep}, bound ${bound}`)
+    app.log(`Creating hole to peer ${ep}, bound ${bound}`)
     if (ep === app.endpoint.id) {
       throw 'Must not create a hole to self'
     }
@@ -56,7 +56,7 @@ export default function ({ app, mesh }) {
             .connectTLS({
               ...tlsOptions,
               onState: tls => {
-                console.info('TLS State: ', tls)
+                app.log(`TLS State: ${tls.state}`)
                 if($connection.state === 'connected' && tls.state === 'connected') {
                   app.log(`Connected TLS to peer ${destIP}:${destPort}`)
                   state = 'connected'
@@ -72,8 +72,7 @@ export default function ({ app, mesh }) {
               .connect(() => `${destIP}:${destPort}`, {
                 bind: bound,
                 onState: function (conn) {
-                  console.info("Conn Info: ", conn)
-
+                  app.log(`Connection State: ${conn.state}`)
                   if (conn.state === 'open') {
                     conn.socket.setRawOption(1, 15, new Data([1, 0, 0, 0]))
                   } else if (conn.state === 'connected') {
@@ -88,13 +87,13 @@ export default function ({ app, mesh }) {
 
                   // Max Retry set to 10
                   if (retryTimes > 10 || state === 'fail') {
-                    console.info(`Retry limit exceeded, punch failed.`)
+                    app.log(`Retry limit exceeded, punch failed.`)
                     state = 'fail'
                     updateHoles()
                   }
                 },
               })
-              .handleStreamEnd(evt => console.info('Hole connection end, retry: ', retryTimes + 1, ' reason: ', evt?.error))
+              .handleStreamEnd(evt => app.log(`Hole connection end, retry: ${retryTimes + 1}, reason: ${evt?.error}`))
             )
           )
         )
@@ -127,17 +126,15 @@ export default function ({ app, mesh }) {
         var listen = pipeline($ => $
           .acceptTLS({
             ...tlsOptions,
-            onState: tls => console.info('TLS State: ', tls)
+            onState: tls => app.log(`TLS State: ${tls.state}`)
           }).to($ => $
             .handleMessage(msg => {
-              console.info('Server Received: ', msg)
               $msg = msg
               return new Data
             }).pipe(() => svc(buildCtx())), () => $msg
           )
         )
 
-        console.info("Direct Server Listening...")
         pipy.listen(bound, 'tcp', listen)
 
         session = pipeline($ => $
@@ -168,7 +165,6 @@ export default function ({ app, mesh }) {
           return new StreamEnd
         })
         .onEnd(() => {
-          console.info('Answers in hole: ', $response, store)
           if (callback)
             callback($response)
           return $response
@@ -182,7 +178,7 @@ export default function ({ app, mesh }) {
       state = 'handshake'
       var start = Date.now()
 
-      console.info("Requesting punch")
+      app.log("Requesting punch")
       request(new Message({
         method: 'POST',
         path: '/api/punch/request',
@@ -192,7 +188,7 @@ export default function ({ app, mesh }) {
       })), (resp) => {
         var end = Date.now()
         rtt = (end - start) / 2000
-        console.info('Estimated RTT: ', rtt)
+        app.log(`Estimated RTT: ${2 * rtt}`)
 
         if (resp.head.status != 200) {
           app.log(`Failed on requesting`)
@@ -208,7 +204,7 @@ export default function ({ app, mesh }) {
       state = 'handshake'
       var start = Date.now()
 
-      console.info("Accepting punch")
+      app.log("Accepting punch")
       request(new Message({
         method: 'POST',
         path: '/api/punch/accept',
@@ -218,7 +214,7 @@ export default function ({ app, mesh }) {
       })), (resp) => {
         var end = Date.now()
         rtt = (end - start) / 2000
-        console.info('Estimated RTT: ', rtt)
+        app.log(`Estimated RTT: ${2 * rtt}`)
 
         if (!resp || resp.head.status != 200) {
           app.log(`Failed on accepting`)
@@ -255,12 +251,11 @@ export default function ({ app, mesh }) {
 
     function addPeerCert(cert) {
       var peerCert = new crypto.Certificate(cert)
-      console.info("TLS: ", tlsOptions)
       tlsOptions['trusted'] = [peerCert]
     }
 
     function updateNatInfo(ip, port) {
-      console.info(`Peer NAT Info: ${ip}:${port}`)
+      app.log(`Peer NAT Info: ${ip}:${port}`)
       destIP = ip
       destPort = port
     }
@@ -271,7 +266,7 @@ export default function ({ app, mesh }) {
     function punch() {
       state = 'punching'
 
-      console.info(`Punching to ${destIP}:${destPort} (${ep})`)
+      app.log(`Punching to ${destIP}:${destPort} (${ep})`)
       if (role === 'server') {
         makeFakeCall(destIP, destPort)
       }
@@ -279,14 +274,14 @@ export default function ({ app, mesh }) {
     }
 
     function makeRespTunnel() {
-      console.info("Created Resp Tunnel")
+      app.log("Created Resp Tunnel")
       state = 'connected'
 
       return pipeline($ => $
         .acceptHTTPTunnel(() => new Message({ status: 200 })).to($ => $
           .onStart(new Data)
           .swap(() => pHub)
-          .onEnd(() => console.info(`Direct Connection from ${ep} lost`))
+          .onEnd(() => app.log(`Direct Connection from ${ep} lost`))
         )
       )
     }
@@ -297,7 +292,7 @@ export default function ({ app, mesh }) {
         // The hole has been released.
         return
       } else if (state != 'connected') {
-        console.info(`Current state ${state}, made the hole failed`)
+        app.log(`Current state ${state}, force the hole failed`)
         state = 'fail'
         updateHoles()
       }
@@ -306,7 +301,7 @@ export default function ({ app, mesh }) {
     // send a SYN to dest, expect no return.
     // this will cheat the firewall to allow inbound connection from peer.
     function makeFakeCall(destIP, destPort) {
-      console.info("Making fake call")
+      app.log("Making fake call")
       pipeline($ => $
         .onStart(new Data).connect(`${destIP}:${destPort}`, {
           bind: bound,
@@ -316,7 +311,6 @@ export default function ({ app, mesh }) {
 
             // abort this connection.
             if (conn.state === 'connecting') {
-              console.info('Performing early close')
               conn.close()
             }
           }
@@ -366,7 +360,6 @@ export default function ({ app, mesh }) {
       var round = 0
       var cont = true
 
-      console.info('Pacemaking......')
       pipeline($ => $
         .onStart(new Data)
         .repeat(() => {
@@ -382,7 +375,6 @@ export default function ({ app, mesh }) {
               cont = false
               heartbeat(false)
             }
-            console.info('Pacemaker: ', resp)
             return new StreamEnd
           })
         )
@@ -435,17 +427,17 @@ export default function ({ app, mesh }) {
         fails[key] += 1
       }
     })
-    console.info(`Holes after updating: `, holes)
+    app.log(`Holes after updating: ${holes.size}`)
   }
 
   function createInboundHole(ep) {
     updateHoles()
     if (findHole(ep)) return
     if (fails[ep] && fails[ep] >= 3) {
-      console.info(`Won't create hole to ${ep}, too many fails!`)
+      app.log(`Won't create hole to ${ep}, too many fails!`)
       return
     }
-    console.info(`Creating Inbound Hole to ${ep}`)
+    app.log(`Creating Inbound Hole to ${ep}`)
     try {
       var hole = Hole(ep)
       hole.requestPunch()
@@ -461,7 +453,7 @@ export default function ({ app, mesh }) {
   function createOutboundHole(ep, natIp, natPort) {
     updateHoles()
     if (findHole(ep)) return
-    console.info(`Creating Outbound Hole to ${ep}`)
+    app.log(`Creating Outbound Hole to ${ep}`)
     try {
       var hole = Hole(ep)
       hole.acceptPunch()

@@ -161,7 +161,7 @@ export default function ({ app, mesh, utils }) {
         var ip = $ctx.peer.ip
         var port = $ctx.peer.port
 
-        console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
+        app.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
         switch(action) {
           case 'leave':
             api.deleteHole(ep, true)
@@ -178,8 +178,7 @@ export default function ({ app, mesh, utils }) {
         var ip = $ctx.peer.ip
         var port = $ctx.peer.port
 
-        console.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
-        console.log("Punch req: ", obj)
+        app.log(`Punch Event: ${action} from ${ep} ${ip} ${port}`)
         switch(action) {
           case 'request':
             api.createHole(ep, 'server')

@@ -40,10 +40,9 @@ export default function ({ app, mesh, punch }) {
     if (ep === app.endpoint.id) {
       return getLocalConfig().then(
         config => {
-          var inbound = config.inbound.find(
+          config.inbound.find(
             i => i.protocol === protocol && i.name === name
           ) || null
-          var hole = punch.findHole(ep)
         }
       )
     } else {
@@ -227,8 +226,6 @@ export default function ({ app, mesh, punch }) {
     currentListens = []
     currentTargets = {}
 
-    console.info(`Applying config: ${JSON.encode(config)}`)
-
     config.inbound.forEach(i => {
       var protocol = i.protocol
       var name = i.name
@@ -245,10 +242,10 @@ export default function ({ app, mesh, punch }) {
           punch.createInboundHole($selectedEP)
           var hole = punch.findHole($selectedEP)
           if(hole && hole.ready()) {
-            console.info("Using direct session")
+            app.log("Using direct session")
             return hole.directSession()
           }
-          console.info("Using hub forwarded session")
+          app.log("Using hub forwarded session")
           return pipeline($=>$
             .muxHTTP().to($=>$
               .pipe(mesh.connect($selectedEP))
@@ -341,7 +338,6 @@ export default function ({ app, mesh, punch }) {
         return new StreamEnd
       })
       .onEnd(() => {
-        console.info('Answers in api: ', $response)
         return $response
       })
     ).spawn()
@@ -397,7 +393,6 @@ export default function ({ app, mesh, punch }) {
   var tunnelHole = null
   var makeRespTunnel = pipeline($=>$
     .onStart(ctx => {
-      console.info("Making resp tunnel: ", ctx)
       var ep = ctx.peer.id
       tunnelHole = punch.findHole(ep)
       if(!tunnelHole) throw `Invalid Hole State for ${ep}`
