@@ -4,16 +4,16 @@ The Agent API is organized into 4 types of resources that can be accessed by the
 
 - Meshes
 - Endpoints
-- Files
 - Apps
+- Files
 
 A **Mesh** is the root resource of everything. It contains a configuration providing required information for joining a mesh.
 
 **Endpoints** are automatically registered to the mesh when an agent joins in, and discovered by agents on other endpoints in the same mesh.
 
-**Files** can be stored in the mesh (on multiple endpoints) and accessible from other endpoints, or stored locally (in the local database) for private access only.
-
 **Apps** are bundles of script files written in [PipyJS](https://github.com/flomesh-io/pipy). They can be installed locally or published to the mesh for remote installation on other endpoints. Some builtin apps, including `tunnel`, `proxy` and `terminal`, are available for use without the need of an installation.
+
+**Files** can be stored in the mesh (on multiple endpoints) and accessible from other endpoints, or stored locally (in the local database) for private access only.
 
 In addtion to the above resource types, apps can provide extra resource types via the Agent API. For example, the `tunnel` app provides 2 types of resources:
 
@@ -140,6 +140,34 @@ GET /api/meshes/{meshName}/endpoints/{uuid}/apps
 GET /api/meshes/{meshName}/endpoints/{uuid}/apps/{provider}/{name[@tag]}
 POST /api/meshes/{meshName}/endpoints/{uuid}/apps/{provider}/{name[@tag]}
 DELETE /api/meshes/{meshName}/endpoints/{uuid}/apps/{provider}/{name[@tag]}
+```
+
+## File
+
+GET returns metainfo:
+
+```json
+{
+    "size": 1024,
+    "time": 1721711888888,
+    "hash": "012345678abcdef",
+    "sources": [
+        "endpoint-id-1",
+        "endpoint-id-2"
+    ]
+}
+```
+
+Or returns raw binary content for `/file-data` based paths.
+
+Paths and methods:
+
+```
+GET /api/meshes/{meshName}/files
+GET /api/meshes/{meshName}/files/{pathname}
+GET /api/meshes/{meshName}/file-data/{pathname}
+POST /api/meshes/{meshName}/file-data/{pathname}
+DELETE /api/meshes/{meshName}/file-data/{pathname}
 ```
 
 ## Inbound
