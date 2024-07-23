@@ -280,15 +280,15 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
-        title: `Unpublish an app from the mesh`,
-        usage: 'unpublish app <app name>',
+        title: `Unpublish an app or file from the mesh`,
+        usage: 'unpublish <object type> <object name>',
         action: (args) => {
           var type = args['<object type>']
           var name = args['<object name>']
           switch (type) {
             case 'app': return selectMesh(meshName).then(mesh => unpublishApp(name, mesh))
             case 'file': return selectMesh(meshName).then(mesh => unpublishFile(name, mesh))
-            default: return invalidObjectType(type, 'impublish')
+            default: return invalidObjectType(type, 'unpublish')
           }
         }
       },
