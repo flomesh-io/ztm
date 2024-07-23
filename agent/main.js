@@ -56,21 +56,6 @@ try {
   return
 }
 
-//
-// Data model:
-//   MeshA
-//     EndpointA
-//       Port1 -> some service
-//       Port2 -> some service
-//       ServiceX
-//       ServiceY
-//       ...
-//     EndpointB
-//     ...
-//   MeshB
-//   ...
-//
-
 var routes = Object.entries({
 
   '/api/version': {
@@ -314,98 +299,6 @@ var routes = Object.entries({
         ret => ret ? response(200, ret) : response(404)
       )
     }
-  },
-
-  //
-  // Service
-  //   name: string
-  //   protocol: string (tcp|udp)
-  //   endpoints?: { id: string, name: string }[]
-  //   isDiscovered: boolean
-  //   isLocal: boolean
-  //   host?: string (only when isLocal == true)
-  //   port?: number (only when isLocal == true)
-  //
-
-  '/api/meshes/{mesh}/services': {
-    'GET': function ({ mesh }) {
-      return api.allServices(mesh).then(
-        ret => response(200, ret)
-      )
-    },
-  },
-
-  '/api/meshes/{mesh}/services/{proto}/{svc}': {
-    'GET': function ({ mesh, proto, svc }) {
-      return api.getService(mesh, undefined, proto, svc).then(
-        ret => ret ? response(200, ret) : response(404)
-      )
-    },
-  },
-
-  '/api/meshes/{mesh}/endpoints/{ep}/services': {
-    'GET': function ({ mesh, ep }) {
-      return api.allServices(mesh, ep).then(
-        ret => response(200, ret)
-      )
-    },
-  },
-
-  '/api/meshes/{mesh}/endpoints/{ep}/services/{proto}/{svc}': {
-    'GET': function ({ mesh, ep, proto, svc }) {
-      return api.getService(mesh, ep, proto, svc).then(
-        ret => ret ? response(200, ret) : response(404)
-      )
-    },
-
-    'POST': function ({ mesh, ep, proto, svc }, req) {
-      return api.setService(mesh, ep, proto, svc, JSON.decode(req.body)).then(
-        ret => response(201, ret)
-      )
-    },
-
-    'DELETE': function ({ mesh, ep, proto, svc }) {
-      return api.delService(mesh, ep, proto, svc).then(response(204))
-    },
-  },
-
-  //
-  // Port
-  //   protocol: string (tcp|udp)
-  //   listen:
-  //     ip: string
-  //     port: number
-  //   target:
-  //     endpoint: string?
-  //     service: string
-  //   open: boolean
-  //   error: string?
-  //
-
-  '/api/meshes/{mesh}/endpoints/{ep}/ports': {
-    'GET': function ({ mesh, ep }) {
-      return api.allPorts(mesh, ep).then(
-        ret => response(200, ret)
-      )
-    },
-  },
-
-  '/api/meshes/{mesh}/endpoints/{ep}/ports/{ip}/{proto}/{port}': {
-    'GET': function ({ mesh, ep, ip, proto, port }) {
-      return api.getPort(mesh, ep, ip, proto, Number.parseInt(port)).then(
-        ret => ret ? response(200, ret) : response(404)
-      )
-    },
-
-    'POST': function ({ mesh, ep, ip, proto, port }, req) {
-      return api.setPort(mesh, ep, ip, proto, Number.parseInt(port), JSON.decode(req.body).target).then(
-        ret => response(201, ret)
-      )
-    },
-
-    'DELETE': function ({ mesh, ep, ip, proto, port }) {
-      return api.delPort(mesh, ep, ip, proto, Number.parseInt(port)).then(response(204))
-    },
   },
 
 }).map(
