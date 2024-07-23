@@ -1,6 +1,6 @@
 import _ from "lodash";
 import main from "./main";
-import EmptyLayout from '../../../common/layout/EmptyLayout.vue';
+import EmptyLayout from '@/layout/EmptyLayout.vue';
 
 const options = {
   routes: [
