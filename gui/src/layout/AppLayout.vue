@@ -22,6 +22,9 @@ watch(isSidebarActive, (newVal) => {
     }
 });
 
+const app = computed(() => {
+	return store.getters['notice/app'];
+});
 const mobileLeftbar = computed(() => {
 	return store.getters['account/mobileLeftbar'];
 });
@@ -74,6 +77,8 @@ const isMobile = computed(() => windowWidth.value<=768);
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);
 }
+const windowHeight = ref(window.innerHeight);
+const viewHeight = computed(() => windowHeight.value - 0);
 </script>
 
 <template>
@@ -87,8 +92,9 @@ const toggleLeft = () => {
         </div> -->
         <div class="layout-main-container"  >
             <div class="layout-main" >
-							
+							<iframe v-if="app && !!app.url" :src="app.url" width="100%" frameborder="0" :height="viewHeight"/>
 							<router-view
+								v-else
 							  v-slot="{ Component }"
 							>
 							  <keep-alive>

@@ -6,9 +6,9 @@ import { invoke } from '@tauri-apps/api/core';
 // import { getCurrent as getCurrentDL } from '@tauri-apps/plugin-deep-link';
 
 const openWebview = (app)=>{
-	
 	if(!window.__TAURI_INTERNALS__ ){
-		window.open(app.url);
+		store.commit('notice/setApp', app);
+		// window.open(app.url);
 		return
 	}
 	try{

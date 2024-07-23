@@ -3,6 +3,7 @@ export default {
   state: {
 		confirm:null,
 		toast:null,
+		app:null,
   },
   getters: {
     confirm: (state) => {
@@ -11,6 +12,9 @@ export default {
     toast: (state) => {
       return state.toast;
     },
+    app: (state) => {
+      return state.app;
+    },
   },
   mutations: {
     setConfirm(state, confirm) {
@@ -18,6 +22,9 @@ export default {
     },
     setToast(state, toast) {
       state.toast = toast;
+    },
+    setApp(state, app) {
+      state.app = app;
     },
   },
 };
