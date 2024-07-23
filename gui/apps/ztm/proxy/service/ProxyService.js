@@ -12,8 +12,14 @@ export default class ProxyService {
 		return request(`/api/endpoints/${ep}/config`)
 	}
 	setProxy({ep,listen,targets}) {
-		return request(`/api/endpoints/${ep}/config`,"POST", {
-			listen,targets
-		})
+		const body = {};
+		if(!!listen){
+			body.listen = listen
+		}
+		const _targets = !!targets?targets.filter((t)=>!!t):[];
+		if(_targets.length > 0){
+			body.targets = _targets
+		}
+		return request(`/api/endpoints/${ep}/config`,"POST", body)
 	}
 }

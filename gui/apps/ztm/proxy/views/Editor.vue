@@ -40,8 +40,8 @@ const create = () => {
 }
 const loaddata = () => {
 	proxyService.getProxy(props?.ep?.id).then((res)=>{
-		config.value.listen = res.listen;
-		config.value.targets = res.targets;
+		config.value.listen = res.listen || "";
+		config.value.targets = res.targets || [];
 	})
 }
 onMounted(() => {
