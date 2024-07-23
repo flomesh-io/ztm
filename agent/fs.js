@@ -80,7 +80,7 @@ export default function(storeDir) {
 
   function write(filename, data) {
     var path = os.path.normalize(filename)
-    if (!path.startsWith('/home/')) return
+    if (!path.startsWith('/home/')) return false
 
     var username = path.split('/')[2]
     var dirname = os.path.join(storeDir, username)
@@ -95,11 +95,12 @@ export default function(storeDir) {
     os.write(os.path.join(dirname, h + '.meta'), JSON.encode(meta))
 
     pathMap[path] = hashMap[h] = makeEntry(path, h, data.size, t)
+    return true
   }
 
   function remove(filename) {
     var path = os.path.normalize(filename)
-    if (!path.startsWith('/home/')) return
+    if (!path.startsWith('/home/')) return false
 
     var username = path.split('/')[2]
     var dirname = os.path.join(storeDir, username)
@@ -112,7 +113,12 @@ export default function(storeDir) {
       }
     })
 
-    delete pathMap[path]
+    if (path in pathMap) {
+      delete pathMap[path]
+      return true
+    }
+
+    return false
   }
 
   function raw(hash) {

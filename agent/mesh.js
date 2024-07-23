@@ -1076,6 +1076,22 @@ export default function (rootDir, config) {
     )
   }
 
+  function publishFile(pathname, data) {
+    if (fs.write(pathname, data)) {
+      advertiseFilesystem()
+      return true
+    }
+    return false
+  }
+
+  function unpublishFile(pathname) {
+    if (fs.remove(pathname)) {
+      advertiseFilesystem()
+      return true
+    }
+    return false
+  }
+
   function syncFile(pathname) {
     return findFile(pathname).then(meta => {
       if (!meta) return null
@@ -1293,6 +1309,8 @@ export default function (rootDir, config) {
     dumpAppLog,
     connectApp,
     downloadFile,
+    publishFile,
+    unpublishFile,
     syncFile,
     remoteQueryLog,
     leave,

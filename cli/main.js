@@ -232,33 +232,65 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `Download an app or file from the mesh`,
         usage: 'download <object type> <object name>',
+        options: `
+          -o, --output <pathname>   Output to the specified file (default: output to stdout)
+                                    Only applicable when downloading a file
+        `,
         action: (args) => {
           var type = args['<object type>']
           var name = args['<object name>']
           switch (type) {
             case 'app': return selectMesh(meshName).then(mesh => downloadApp(name, mesh))
-            case 'file': return selectMesh(meshName).then(mesh => downloadFile(name, args, mesh))
+            case 'file': return selectMesh(meshName).then(mesh => downloadFile(name, args['--output'], mesh))
             default: return invalidObjectType(type, 'download')
           }
         }
       },
 
       {
-        title: `Erase a downloaded app`,
-        usage: 'erase app <app name>',
-        action: (args) => selectMesh(meshName).then(mesh => eraseApp(args, mesh)),
+        title: `Erase a downloaded app or file`,
+        usage: 'erase <object type> <object name>',
+        action: (args) => {
+          var type = args['<object type>']
+          var name = args['<object name>']
+          switch (type) {
+            case 'app': return selectMesh(meshName).then(mesh => eraseApp(name, mesh))
+            case 'file': return selectMesh(meshName).then(mesh => eraseFile(name, mesh))
+            default: return invalidObjectType(type, 'erase')
+          }
+        }
       },
 
       {
-        title: `Publish an app to the mesh`,
-        usage: 'publish app <app name>',
-        action: (args) => selectMesh(meshName).then(mesh => publishApp(args, mesh)),
+        title: `Publish an app or file to the mesh`,
+        usage: 'publish <object type> <object name>',
+        options: `
+          -i, --input <pathname>   Specify a local file containing the data to publish (default: read from stdin)
+                                   Only applicable when publishing a file
+        `,
+        action: (args) => {
+          var type = args['<object type>']
+          var name = args['<object name>']
+          switch (type) {
+            case 'app': return selectMesh(meshName).then(mesh => publishApp(name, mesh))
+            case 'file': return selectMesh(meshName).then(mesh => publishFile(name, args['--input'], mesh))
+            default: return invalidObjectType(type, 'publish')
+          }
+        }
       },
 
       {
         title: `Unpublish an app from the mesh`,
         usage: 'unpublish app <app name>',
-        action: (args) => selectMesh(meshName).then(mesh => unpublishApp(args, mesh)),
+        action: (args) => {
+          var type = args['<object type>']
+          var name = args['<object name>']
+          switch (type) {
+            case 'app': return selectMesh(meshName).then(mesh => unpublishApp(name, mesh))
+            case 'file': return selectMesh(meshName).then(mesh => unpublishFile(name, mesh))
+            default: return invalidObjectType(type, 'impublish')
+          }
+        }
       },
 
       {
@@ -945,12 +977,12 @@ function downloadApp(name) {
   })
 }
 
-function downloadFile(name, opts, mesh) {
+function downloadFile(name, output, mesh) {
   var path = os.path.normalize(name)
   return client.get(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path)).then(
     ret => pipeline($=>$
       .onStart([ret, new StreamEnd])
-      .tee(opts['--output'] || '-')
+      .tee(output || '-')
     ).spawn()
   ).catch(
     err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
@@ -961,7 +993,7 @@ function downloadFile(name, opts, mesh) {
 // Command: erase
 //
 
-function eraseApp(name) {
+function eraseApp(name, mesh) {
   var appName = normalizeAppName(name)
   if (!appName) throw 'missing app name'
   return selectApp(appName, mesh, ep).then(app => {
@@ -970,6 +1002,13 @@ function eraseApp(name) {
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
     return client.delete(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}`)
   })
+}
+
+function eraseFile(name, mesh) {
+  var path = os.path.normalize(name)
+  return client.delete(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path)).catch(
+    err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
+  )
 }
 
 //
@@ -990,6 +1029,14 @@ function publishApp(name) {
   })
 }
 
+function publishFile(name, input, mesh) {
+  var path = os.path.normalize(name)
+  var data = new Data
+  return pipy.read(input || '-', $=>$.handleData(d => data.push(d))).then(
+    () => client.post(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path), data)
+  )
+}
+
 //
 // Command: unpublish
 //
@@ -1006,6 +1053,13 @@ function unpublishApp(name) {
       JSON.encode({ isPublished: false })
     )
   })
+}
+
+function unpublishFile(name, mesh) {
+  var path = os.path.normalize(name)
+  return client.delete(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path)).catch(
+    err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
+  )
 }
 
 //

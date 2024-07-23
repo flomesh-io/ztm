@@ -237,7 +237,19 @@ var routes = Object.entries({
       return api.getFileData(params.mesh, params['*']).then(
         ret => ret ? response(200, ret) : response(404)
       )
-    }
+    },
+
+    'POST': function (params, req) {
+      return api.setFileData(params.mesh, params['*'], req.body).then(
+        ret => ret ? response(201) : response(404)
+      )
+    },
+
+    'DELETE': function (params) {
+      return api.delFileData(params.mesh, params['*']).then(
+        ret => ret ? response(204) : response(404)
+      )
+    },
   },
 
   '/api/meshes/{mesh}/endpoints/{ep}/file-data/{hash}': {

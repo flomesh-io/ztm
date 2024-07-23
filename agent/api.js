@@ -126,6 +126,18 @@ function getFileData(mesh, pathname) {
   return m.syncFile(pathname)
 }
 
+function setFileData(mesh, pathname, data) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(false)
+  return Promise.resolve(m.publishFile(pathname, data))
+}
+
+function delFileData(mesh, pathname) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(false)
+  return Promise.resolve(m.unpublishFile(pathname))
+}
+
 function getFileDataFromEP(mesh, ep, hash) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
@@ -200,6 +212,8 @@ export default {
   allFiles,
   getFileInfo,
   getFileData,
+  setFileData,
+  delFileData,
   getFileDataFromEP,
   allApps,
   getApp,
