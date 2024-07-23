@@ -1,19 +1,26 @@
 # Agent API
 
-This API is organized into 4 types of resources that can be accessed by the standard HTTP semantics. The 4 types of resources are:
+The Agent API is organized into 4 types of resources that can be accessed by the standard HTTP semantics. The 4 types of resources are:
 
 - Meshes
 - Endpoints
-- Services
-- Ports
+- Files
+- Apps
 
 A **Mesh** is the root resource of everything. It contains a configuration providing the required information for joining a mesh.
 
 **Endpoints** are automatically registered to the mesh when an agent joins in, and discovered by agents on other endpoints in the same mesh.
 
-**Services** are identified by `protocol/name`, where `protocol` can be either `'tcp'` or `'udp'`. You must specify the endpoint when creating a service. Multiple endpoints can provide services by the same name.
+**Files** can be stored in the mesh (on multiple endpoints) and accessible from other endpoints, or locally (in the local database) for private access only.
 
-**Ports** are identified by `ip/protocol/port`, where `protocol` can be either `'tcp'` or `'udp'`. You need to specify the endpoint and the targeted service when creating a port. 
+**Apps** are bundles of script files written in PipyJS. They can be installed locally or published to the mesh for remote installation on other endpoints. Some builtin apps, such as `tunnel`, `proxy` and `terminal`, are available without the need of an installation.
+
+In addtion, apps can provide extra resource types via the Agent API. For example, the `tunnel` app provides 2 types of resources:
+
+- Inbound
+- Outbound
+
+Both **Inbound** and **Outbound** resources are identified by `protocol/name`, where `protocol` can be either `'tcp'` or `'udp'`. You can create as many Inbound and Outbound resources on any endpoint. Any number of Inbound and Outbound resources with the same `protocol/name` are connected to each other and considered to be a **tunnel**.
 
 ## Mesh
 
@@ -100,24 +107,19 @@ GET /api/meshes/{meshName}/endpoints/{uuid}
 GET /api/meshes/{meshName}/endpoints/{uuid}/log
 ```
 
-## Service
+## App
 
 GET returns:
 
 ```json
 {
     "name": "xxx",
-    "protocol": "tcp|udp",
-    "endpoints": [
-        {
-            "id": "<UUID>",
-            "name": "xxx"
-        }
-    ],
-    "isDiscovered": true,
-    "isLocal": true,
-    "host": "<address>",
-    "port": 12345
+    "tag": "yyy",
+    "provider": "zzz",
+    "isBuiltin": false,
+    "isDownloaded": true,
+    "isPublished": false,
+    "isRunning": true
 }
 ```
 
@@ -125,36 +127,38 @@ POST requires:
 
 ```json
 {
-    "host": "<address>",
-    "port": 12345
+    "isPublished": false,
+    "isRunning": true
 }
 ```
 
 Paths and methods:
 
 ```
-GET /api/meshes/{meshName}/services
-GET /api/meshes/{meshName}/services/{protocol}/{name}
-GET /api/meshes/{meshName}/endpoints/{uuid}/services
-GET /api/meshes/{meshName}/endpoints/{uuid}/services/{protocol}/{name}
-POST /api/meshes/{meshName}/endpoints/{uuid}/services/{protocol}/{name}
-DELETE /api/meshes/{meshName}/endpoints/{uuid}/services/{protocol}/{name}
+GET /api/meshes/{meshName}/apps
+GET /api/meshes/{meshName}/endpoints/{uuid}/apps
+GET /api/meshes/{meshName}/endpoints/{uuid}/apps/{provider}/{name[@tag]}
+POST /api/meshes/{meshName}/endpoints/{uuid}/apps/{provider}/{name[@tag]}
+DELETE /api/meshes/{meshName}/endpoints/{uuid}/apps/{provider}/{name[@tag]}
 ```
 
-## Port
+## Inbound
 
 GET returns:
 
 ```json
 {
     "protocol": "tcp|udp",
-    "listen": {
-        "ip": "x.x.x.x",
-        "port": 12345
-    },
-    "target": {
-        "service": "xxx"
-    },
+    "listens": [
+        {
+            "ip": "x.x.x.x",
+            "port": 12345
+        }
+    ],
+    "exits": [
+        "endpoint-id-1",
+        "endpoint-id-2"
+    ],
     "open": true,
     "error": "xxx"
 }
@@ -164,17 +168,70 @@ POST requires:
 
 ```json
 {
-    "target": {
-        "service": "xxx"
-    }
+    "listens": [
+        {
+            "ip": "x.x.x.x",
+            "port": 12345
+        }
+    ],
+    "exits": [ // optional
+        "endpoint-id-1",
+        "endpoint-id-2"
+    ]
 }
 ```
 
 Paths and methods:
 
 ```
-GET /api/meshes/{meshName}/endpoints/{uuid}/ports
-GET /api/meshes/{meshName}/endpoints/{uuid}/ports/{ip}/{protocol}/{port}
-POST /api/meshes/{meshName}/endpoints/{uuid}/ports/{ip}/{protocol}/{port}
-DELETE /api/meshes/{meshName}/endpoints/{uuid}/ports/{ip}/{protocol}/{port}
+GET /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/inbound
+GET /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/inbound/{protocol}/{name}
+POST /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/inbound/{protocol}/{name}
+DELETE /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/inbound/{protocol}/{name}
+```
+
+## Outbound
+
+GET returns:
+
+```json
+{
+    "protocol": "tcp|udp",
+    "targets": [
+        {
+            "host": "xxx",
+            "port": 12345
+        }
+    ],
+    "entrances": [
+        "endpoint-id-1",
+        "endpoint-id-2"
+    ]
+}
+```
+
+POST requires:
+
+```json
+{
+    "targets": [
+        {
+            "host": "xxx",
+            "port": 12345
+        }
+    ],
+    "entrances": [ // optional
+        "endpoint-id-1",
+        "endpoint-id-2"
+    ]
+}
+```
+
+Paths and methods:
+
+```
+GET /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound
+GET /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound/{protocol}/{name}
+POST /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound/{protocol}/{name}
+DELETE /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound/{protocol}/{name}
 ```
