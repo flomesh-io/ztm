@@ -312,7 +312,7 @@ export default function (rootDir, config) {
               ca: config.ca,
               agent: {
                 certificate: res.body.toString(),
-                privateKey: pkey.toPEM().toString(),
+                privateKey: key.toPEM().toString(),
               },
               bootstraps: [...config.bootstraps],
             }
