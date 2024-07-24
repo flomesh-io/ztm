@@ -32,7 +32,7 @@ onMounted(()=>{
 		<div  class="relative h-full min-h-screen w-full" >
 			<AppHeader :main="true" >
 					<template #start>
-						<Button icon="pi pi-eye-slash" text @click="hide" />
+						<Button icon="pi pi-eye-slash" @click="hide" />
 					</template>
 					<template #center> 
 						<b>Favorites</b>
