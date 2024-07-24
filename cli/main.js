@@ -371,7 +371,7 @@ function startHub(args) {
     ('--ca' in args)
   )
   if (optsChanged || !hasService('hub')) {
-    initHub(args).then(
+    return initHub(args).then(
       () => {
         startService('hub', opts, optsChanged)
       }
