@@ -6,6 +6,7 @@ import EndpointDetail from './EndpointDetail.vue'
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import dayjs from 'dayjs';
+import { useToast } from "primevue/usetoast";
 import relativeTime from 'dayjs/plugin/relativeTime';
 import exportFromJSON from 'export-from-json';
 dayjs.extend(relativeTime)
@@ -15,6 +16,7 @@ const router = useRouter();
 const ztmService = new ZtmService();
 const confirm = useConfirm();
 const loading = ref(false);
+const toast = useToast();
 const loader = ref(false);
 const status = ref({});
 const endpoints = ref([]);
@@ -89,20 +91,26 @@ const emptyMsg = computed(()=>{
 const username = ref('');
 const op = ref();
 const toggle = (event) => {
+	username.value = "";
+	permit.value = null;
 	op.value.toggle(event);
 }
-const invokeEp = () => {
-	
-	ztmService.invokeEp(selectedMesh.value?.name, username.value)
+const permit = ref(null)
+const inviteEp = () => {
+	ztmService.inviteEp(selectedMesh.value?.name, username.value)
 		.then(data => {
-			exportFromJSON({ data,
-				fileName:`${username.value}-permit.json`,
-				exportType: exportFromJSON.types.json 
-			})
+			permit.value = data;
 			toast.add({ severity: 'success', summary:'Tips', detail: `${username.value} permit generated.`, life: 3000 });
-			username.value = "";
 		})
 		.catch(err => console.log('Request Failed', err)); 
+}
+const download = () => {
+	
+	exportFromJSON({ 
+		data: JSON.stringify(permit.value),
+		fileName:`${username.value}-permit`,
+		exportType: exportFromJSON.types.txt
+	})
 }
 </script>
 
@@ -117,13 +125,19 @@ const invokeEp = () => {
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
-						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invoke'" aria-haspopup="true" aria-controls="op" @click="toggle"/>
+						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invite'" aria-haspopup="true" aria-controls="op" @click="toggle"/>
 					</template>
 			</AppHeader>
 			
 			<Popover ref="op" >
-				<InputText size="small" placeholder="Username" v-model="username"  class="w-10rem"></InputText>
-				<Button size="small" :disabled="!username || username == 'root'" label="Invoke" class="ml-2"  @click="invokeEp"></Button>
+				<div class="flex" v-if="!permit">
+					<InputText size="small" placeholder="Username" v-model="username"  class="w-10rem"></InputText>
+					<Button size="small" :disabled="!username || username == 'root'" label="Invite" class="ml-2"  @click="inviteEp"></Button>
+				</div>
+				<div v-else>
+					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="JSON.stringify(permit)"/>
+					<Button size="small"  label="Download" class="w-full mt-1"  @click="download"></Button>
+				</div>
 			</Popover>
 			<Loading v-if="loading"/>
 			<ScrollPanel class="w-full absolute" style="top:35px;bottom: 0;" v-else-if="endpoints && endpoints.length >0">

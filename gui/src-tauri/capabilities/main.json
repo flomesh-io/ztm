@@ -187,6 +187,8 @@
     "fs:allow-resource-read-recursive",
     "fs:allow-resource-write",
     "fs:allow-resource-write-recursive",
+		"fs:scope-download",
+		"fs:allow-download-write",
     "deep-link:default",
     "deep-link:allow-get-current",
     "deep-link:default",

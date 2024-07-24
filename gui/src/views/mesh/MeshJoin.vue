@@ -166,37 +166,13 @@ const isMobile = computed(() => windowWidth.value<=768);
 					<div class="surface-section">
 						<h6 class="flex">
 							<Tag severity="contrast" value="Contrast">Permit</Tag>
-							<div class="flex justify-content-end flex-item gap-3">
-									<div class="flex align-items-center">
-											<RadioButton v-model="permitType" inputId="ingredient1" name="pizza" value="Json" />
-											<label for="ingredient1" class="ml-2 text-tip">JSON</label>
-									</div>
-									<div class="flex align-items-center">
-											<RadioButton v-model="permitType" inputId="ingredient2" name="pizza" value="Form" />
-											<label for="ingredient2" class="ml-2 text-tip">Form</label>
-									</div>
-							</div>
 						</h6>
-						<ul class="list-none p-0 m-0" v-if="permitType == 'Json'">
+						<ul class="list-none p-0 m-0" >
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
 									<div class="text-900 w-full">
 										<CertificateUploder :placeholder="placeholder.json" v-model="permit" format="json" label="your permit"/>
 									</div>
 							</li>
-						</ul>
-						<ul class="list-none p-0 m-0" v-else>
-							<FormItem label="Hubs">
-								<ChipList icon="pi-desktop" placeholder="Host:Port" v-model:list="config.bootstraps" />
-							</FormItem>
-							<FormItem label="CA Certificate">
-								<CertificateUploder :placeholder="placeholder.ca" v-model="config.ca"/>
-							</FormItem>
-							<FormItem label="Certificate">
-								<CertificateUploder :placeholder="placeholder.c" v-model="config.agent.certificate"/>
-							</FormItem>
-							<FormItem label="Private Key">
-								<CertificateUploder :placeholder="placeholder.p" v-model="config.agent.privateKey"/>
-							</FormItem>
 						</ul>
 					</div>
 				</div>

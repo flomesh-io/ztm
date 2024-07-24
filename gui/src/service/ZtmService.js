@@ -10,7 +10,7 @@ export default class ZtmService {
 	info({id}) {
 		return request('/api/info');
 	}
-	invokeEp(mesh, username) {
+	inviteEp(mesh, username) {
 		return request(`/api/meshes/${mesh}/permits/${username}`);
 	}
 	deleteEp(mesh, username, callback) {
