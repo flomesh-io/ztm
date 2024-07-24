@@ -184,6 +184,7 @@ const loaddata = () => {
 		inbounds.value = props.d.inbounds;
 		outbounds.value = props.d.outbounds;
 	}
+	getEndpoints();
 }
 const inboundEdit = (t,index) => {
 	inboundEditor.value = true;
@@ -301,7 +302,6 @@ watch(()=>props.d,()=>{
 										</div>
 									</div>
 								</h6>
-						
 								<ul v-if="inboundEditor" class="list-none p-0 m-0">
 									<FormItem label="Endpoint">
 										<Chip class="pl-0 pr-3 mr-2">
@@ -321,7 +321,7 @@ watch(()=>props.d,()=>{
 										</Chip>
 									</FormItem>
 									<FormItem label="Listens">
-										<ChipList icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" />
+										<ChipList icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
 									<FormItem label="Entrances"  :border="false">
 											<Chip class="pl-0 pr-3 mr-2">
@@ -359,8 +359,14 @@ watch(()=>props.d,()=>{
 														<div class="flex flex-col md:items-end gap-4">
 															<div>
 																<div  class="flex flex-col gap-4 mb-2">
+																	
 																	<span class="font-semibold w-6rem ">Listens:</span>
-																	<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens" :value="listen" severity="secondary" /></span>
+																	<span class="text-xl font-semibold">
+																		<Tag class="block" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens" severity="secondary" >
+																			<Status v-if="listen?.open != null" :run="!!listen?.open" :errors="listen?.error" />
+																			{{ listen.value }}
+																		</Tag>
+																	</span>
 																</div>
 																<div class="flex flex-col gap-4">
 																	<span class="font-semibold w-6rem " v-if="item.exits && item.exits.length>0">Exits:</span>

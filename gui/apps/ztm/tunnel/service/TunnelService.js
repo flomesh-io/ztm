@@ -57,18 +57,18 @@ export default class TunnelService {
 	createInbound({ep, proto, name, listens, exits}) {
 		const _listens = [];
 		listens.forEach((listen) => {
-			if(!!listen){
-				if(listen.indexOf(":")>=0){
-					const _listen = { ip:listen.split(":")[0] }
+			if(!!listen?.value){
+				if(listen.value.indexOf(":")>=0){
+					const _listen = { ip:listen.value.split(":")[0] }
 					if(!_listen.ip){
 						_listen.ip = "127.0.0.1"
 					}
-					if(!!listen.split(":")[1]){
-						_listen.port = listen.split(":")[1]*1
+					if(!!listen.value.split(":")[1]){
+						_listen.port = listen.value.split(":")[1]*1
 					}
 					_listens.push(_listen);
 				} else {
-					_listens.push({ip:'127.0.0.1',port:listen})
+					_listens.push({ip:'127.0.0.1',port:listen.value})
 				}
 			}
 		})
@@ -107,10 +107,13 @@ export default class TunnelService {
 									}
 								}
 								if(childres.type == "inbound"){
-									const listens = [] 
+									const listens = [];
 									if(!!res.listens){
 										res.listens.forEach((listen)=>{
-											listens.push(`${listen.ip}${!!listen.port?(':'+listen.port):''}`)
+											listens.push({
+												...listen,
+												value:`${listen.ip}${!!listen.port?(':'+listen.port):''}`,
+											})
 										})
 									}
 									tunnels[_key].inbounds.push({

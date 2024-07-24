@@ -121,6 +121,8 @@ const openAppUI = (app, base) => {
 	const mappingApp = mapping.value[`${app?.provider||''}/${app.name}`];
 	if(app.shortcut){
 		appService.openbrowser(app)
+	// }else if(app.url.indexOf("/#/") == 0){
+	// 	router.push(app.url.replace('/#/','/'));
 	}else if(!mappingApp?.component && !app?.component){
 		const webviewOptions = {
 			url: mappingApp?.url || app?.url || `${base}/`,
