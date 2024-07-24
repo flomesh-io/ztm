@@ -13,7 +13,7 @@ const route = useRoute();
 const scriptService = new ScriptService();
 const store = useStore();
 const args = ref([])
-const pjs = ref('println(pipy.argv)');
+const pjs = ref("println('Hello, world!')");
 const name = ref('');
 const info = computed(() => {
 	return store.getters['app/info']
@@ -110,7 +110,7 @@ defineExpose({ setPjs })
 		<div style="background: #1e1e1e;color:#fff;" class="p-2 container_pannel flex">
 			<b class="w-7rem p-2">Arguments</b>
 			<div class="flex-item">
-				<ChipList placeholder="Add" v-model:list="args" />
+				<ChipList :placeholder="`Argument ${args.length}`" v-model:list="args" />
 			</div>
 		</div>
 		<JsEditor

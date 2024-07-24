@@ -82,17 +82,10 @@ const loaddata = () => {
 	});
 	
 }
-const appPageSize = props.layout=='absolute_container'?24:16;
-const pages = computed(()=>{
-	const _apps = (!props.noInners?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
-	const _pages = Math.ceil((_apps.length - 1)/appPageSize);
-	return _pages>0?new Array(_pages):[];
-});
-
 const appLoading = ref({})
 const manage = ref(false);
-const appPage = computed(()=>(page)=>{
-	return (!props.noInners?innerApps.value:[]).concat((meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value)).filter((n,i) => i>=(page*appPageSize) && i< ((page+1)*appPageSize));
+const mergeApps = computed(()=>{
+	return (!props.noInners?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
 })
 const openAppContent = (app) => {
 		const options = {
@@ -175,77 +168,75 @@ watch(()=>manage,()=>{
 </script>
 
 <template>
-	<ScrollPanel :class="props.layout">
-	<div class="container_pannel" :style="`height: ${pannelHeight}px`">
-			<AppHeader v-if="props.layout=='absolute_container'" :main="true">
-					<template #center>
-						<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
-							<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
-							{{selectedMesh?.name}}
-						</div>
-						<b v-else>Apps</b>
-					</template>
-					<template #end> 
-						<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
-												offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="' '"/>
-					</template>
-			</AppHeader>
-			<div v-else class="flex actions transparent-header">
-				<div class="flex-item">
-					<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
-						<i class="pi pi-chevron-left " />
-					</Button>
-				</div>
-				<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
-					<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
-					{{selectedMesh?.name}}
-				</div>
-				<div v-else class="flex-item text-center" :class="{'text-white-alpha-70':!props.theme}" style="line-height: 30px;">
-					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
-				</div>
-				<div class="flex-item text-right">
-					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-times" 
-					            offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
-				</div>
+	<ScrollPanel class="container_pannel pb-2" :class="props.layout" >
+		<AppHeader v-if="props.layout=='absolute_container'" :main="true">
+				<template #center>
+					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
+						<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
+						{{selectedMesh?.name}}
+					</div>
+					<b v-else>Apps</b>
+				</template>
+				<template #end> 
+					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
+											offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="' '"/>
+				</template>
+		</AppHeader>
+		<div v-else class="flex actions transparent-header">
+			<div class="flex-item">
+				<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
+					<i class="pi pi-chevron-left " />
+				</Button>
 			</div>
-	    <div class="terminal_body" v-if="!!app?.component">
+			<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
+				<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
+				{{selectedMesh?.name}}
+			</div>
+			<div v-else class="flex-item text-center" :class="{'text-white-alpha-70':!props.theme}" style="line-height: 30px;">
+				<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
+			</div>
+			<div class="flex-item text-right">
+				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-times" 
+										offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
+			</div>
+		</div>
+		
+			<div class="terminal_body" v-if="!!app?.component">
 				<component :is="app.component" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
-	    <div class="terminal_body" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
+			<div class="terminal_body" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
 				<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
-	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-6':'pt-2'" v-else-if="!manage">
+			
+			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-6':'pt-2'" v-else-if="!manage">
 				<div v-if="props.layout=='absolute_container' && !selectedMesh" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
 				</div>
-				<Carousel v-else :showNavigators="false" :value="pages" :numVisible="1" :numScroll="1" >
-						<template #item="slotProps">
-							<div class="pt-1" style="min-height: 440px;" >
-								<div class="grid text-center" >
-										<div :class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall,'col-3':props.layout!='absolute_container','col-2':props.layout=='absolute_container'}" @click="openAppContent(app)" class="py-4 relative text-center" v-for="(app) in appPage(slotProps.index)" >
-											<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-											<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
-											    animationDuration="2s" aria-label="Progress" />
-											<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
-												<!-- <Badge value="3" severity="danger"></Badge> -->
-												<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
-													<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
-													{{ app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}
-												</b>
-											</div>
-										</div>
-								</div>
+				<div class="grid text-center" >
+						<div  
+							v-for="(app) in mergeApps"
+							:class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" 
+							@click="openAppContent(app)" 
+							class="py-4 relative text-center col-3 md:col-2" >
+							<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+							<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
+									animationDuration="2s" aria-label="Progress" />
+							<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
+								<!-- <Badge value="3" severity="danger"></Badge> -->
+								<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
+									<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
+									{{ app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}
+								</b>
 							</div>
-						</template>
-				</Carousel>
-	    </div>
-	    <div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else>
+						</div>
+				</div>
+			</div>
+			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else>
 				<AppManage 
 					:theme="props.theme"
 					:meshApps="meshApps" 
 					@reload="loaddata"/>
-	    </div>
-	</div>
+			</div>
 	</ScrollPanel>
 </template>
 
