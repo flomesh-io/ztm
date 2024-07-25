@@ -2,9 +2,9 @@
 	<div style="top: 0;position: fixed;bottom: 0;left: 0;right: 0;background: rgba(50, 4, 40, 1);">
 		<Terminal
 			style="height: 100%;"
-			welcomeMessage="Welcome to ztm cli"
+			welcomeMessage="Welcome to ztmctl"
 			prompt="ztm $"
-			aria-label="ztm cli"
+			aria-label="ztmctl"
 		/>
 	</div>
 </template>
@@ -37,13 +37,21 @@ const commandHandler = (text) => {
 }
 const commandHandlerCore = async (args) => {
 	console.log(args)
-	let command = await Command.sidecar("bin/cli", args);
+	let command = await Command.sidecar("bin/ztmctl", args);
 	await command.spawn();
 	let rst = ""
 	command.stdout.on('data', line => {
 		console.log(line)
 		rst += line;
 		TerminalService.emit('response', rst);
+	});
+	command.stderr.on('data', line => {
+		console.log("[stderr]");
+		console.log(line);
+	});
+	command.on('error', error => {
+		console.log("[error]");
+		console.log(error);
 	});
 }
 
