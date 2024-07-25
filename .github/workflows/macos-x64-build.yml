@@ -17,7 +17,7 @@ jobs:
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:tunnel
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:script
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:proxy
-        yarn build-ztm-macos
+        yarn build-ztm-macos-x64
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
     - uses: actions/upload-artifact@v2
       with:
