@@ -14,13 +14,14 @@ jobs:
       env:
         MACOS_BASE64: ${{ secrets.MACOS_BASE64 }}
         MACOS_PASSWORD: ${{ secrets.MACOS_PASSWORD }}
+        MACOS_IDENTITY: ${{ secrets.MACOS_IDENTITY }}
       run: |
         echo "$MACOS_BASE64" | base64 --decode > certificate.p12
         security create-keychain -p actions temp.keychain
         security import certificate.p12 -k temp.keychain -P "$MACOS_PASSWORD" -T /usr/bin/codesign
         security list-keychains -d user -s temp.keychain
         security unlock-keychain -p actions temp.keychain
-        security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain
+        security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain -D "$MACOS_IDENTITY"
     - name: build app
       run: |
         cd gui
@@ -32,12 +33,13 @@ jobs:
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
     - name: sign
       env:
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         MACOS_IDENTITY: ${{ secrets.MACOS_IDENTITY }}
       run: |
         cd gui/src-tauri/target/release/bundle/dmg
+        echo "Signing DMG with identity: $MACOS_IDENTITY"
         codesign --deep --force --verify --verbose --sign "$MACOS_IDENTITY" ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+        echo "Codesign completed"
+      timeout-minutes: 60
     - name: notarize
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
