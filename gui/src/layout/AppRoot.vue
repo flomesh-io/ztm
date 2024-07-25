@@ -214,26 +214,13 @@ const actions = ref([
 								command: ()=>{
 									openWebview({
 										url:'/#/mesh',
-										name:'Console',
+										name:'ZTMGui',
 										width:1280,
 										height:860,
 										proxy:''
 									})
 								}
-            },
-            {
-                label: 'Find Apps',
-                icon: 'pi pi-search',
-								command: ()=>{
-									openWebview({
-										url:'/#/store/apps',
-										name:'Console',
-										width:1280,
-										height:860,
-										proxy:''
-									})
-								}
-            },
+            }
         ]
     }
 ]);
