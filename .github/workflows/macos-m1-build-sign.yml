@@ -10,6 +10,17 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
+    - name: Decode and import certificate
+      env:
+        MACOS_BASE64: ${{ secrets.MACOS_BASE64 }}
+        MACOS_PASSWORD: ${{ secrets.MACOS_PASSWORD }}
+      run: |
+        echo "$MACOS_BASE64" | base64 --decode > certificate.p12
+        security create-keychain -p actions temp.keychain
+        security import certificate.p12 -k temp.keychain -P "$MACOS_PASSWORD" -T /usr/bin/codesign
+        security list-keychains -d user -s temp.keychain
+        security unlock-keychain -p actions temp.keychain
+        security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain
     - name: build app
       run: |
         cd gui
@@ -23,10 +34,10 @@ jobs:
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
         APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-        SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
+        MACOS_IDENTITY: ${{ secrets.MACOS_IDENTITY }}
       run: |
         cd gui/src-tauri/target/release/bundle/dmg
-        codesign --deep --force --verify --verbose --sign "$SIGNING_IDENTITY" ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+        codesign --deep --force --verify --verbose --sign "$MACOS_IDENTITY" ztm_${{ vars.APP_VERSION }}_aarch64.dmg
     - name: notarize
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
