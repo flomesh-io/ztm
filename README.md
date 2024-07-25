@@ -100,10 +100,10 @@ ztm start agent
 And then, join the mesh by saying:
 
 ```sh
-ztm join my-personal-mesh --as my-first-endpoint --permit root.json
+ztm join MESH_NAME --as EP_NAME --permit root.json
 ```
 
-Where `my-personal-mesh` can be any name of your choice for identifying a mesh locally if you have many. `my-first-endpoint` is the name of your current endpoint seen by other endpoints in the same mesh. `root.json` is the permit file generated in our first step where a Hub is set up.
+Where `MESH_NAME` can be any name of your choice for identifying a mesh locally if you have many. `EP_NAME` is the name of your current endpoint seen by other endpoints in the same mesh. `root.json` is the permit file generated in our first step where a Hub is set up.
 
 If everything works out, you can now check out the mesh status by typing:
 
@@ -123,7 +123,7 @@ For detailed usage of the command-line tool, type:
 ztm help
 ```
 
-If you prefer GUI, you can open your browser and point it to `http://localhost:7777` right after command `ztm start agent`. You can join a mesh, find other endpoints, using apps and everything. Almost all functionalities ZTM provides are available in both the CLI and the GUI.
+If you prefer GUI, you can open your browser and point it to `http://localhost:7777` right after command `ztm start agent`. You can join a mesh, find other endpoints, using apps and everything. Almost all functionalities ZTM provides are available from both the CLI and the GUI.
 
 Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any of the endpoints. Official ZTM releases come with a number of builtin apps including:
 
