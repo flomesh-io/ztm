@@ -11,8 +11,8 @@ import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
 
 const apps = [{
-	name: "WebConsole",
-	label: "Web Console",
+	name: "ZTMGui",
+	label: "ZTM Gui",
 	url:'/#/mesh/list',
 	width:1280,
 	height:860,
