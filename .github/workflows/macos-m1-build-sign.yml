@@ -14,14 +14,13 @@ jobs:
       env:
         MACOS_BASE64: ${{ secrets.MACOS_BASE64 }}
         MACOS_PASSWORD: ${{ secrets.MACOS_PASSWORD }}
-        MACOS_IDENTITY: ${{ secrets.MACOS_IDENTITY }}
       run: |
         echo "$MACOS_BASE64" | base64 --decode > certificate.p12
         security create-keychain -p actions temp.keychain
         security import certificate.p12 -k temp.keychain -P "$MACOS_PASSWORD" -T /usr/bin/codesign
         security list-keychains -d user -s temp.keychain
         security unlock-keychain -p actions temp.keychain
-        security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain -D "$MACOS_IDENTITY"
+        security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain
     - name: build app
       run: |
         cd gui
