@@ -20,13 +20,13 @@ ZTM can be used in various settings ranging from a ***2-node personal network co
 
 ## Features
 
-ZTM is written in ***PipyJS***, a JavaScript dialect designed for [***Pipy***](https://github.com/flomesh-io/pipy) (https://github.com/flomesh-io/pipy). ***Pipy*** is an open source programmable proxy software. Thanks to ***Pipy***, ZTM has many unique features on top of the capabilities it offers:
+ZTM is written in **PipyJS**, a JavaScript dialect designed for [**Pipy**](https://github.com/flomesh-io/pipy) (https://github.com/flomesh-io/pipy). **Pipy** is an open source programmable proxy software. Thanks to **Pipy**, ZTM has many unique features on top of the capabilities it offers:
 
-* **Fast**. HTTP/2 multiplexing is fast. And ***Pipy*** is fast. Like, C++ fast.
+* **Fast**. HTTP/2 multiplexing is fast. And **Pipy** is fast. Like, C++ fast.
 
-* **Secure**. All traffic is encrypted by TLS and has identities via certificates. By using ***PipyJS***, security policy can be easily customized to meet the requirements in your organization.
+* **Secure**. All traffic is encrypted by TLS and has identities via certificates. By using **PipyJS**, security policy can be easily customized to meet the requirements in your organization.
 
-* **Highly customizable and programmable**, since ***Pipy*** in itself is a general-purpose networking scripting engine.
+* **Highly customizable and programmable**, since **Pipy** in itself is a general-purpose networking scripting engine.
 
 * **Portable**. Choose your CPU architecture: x86, ARM, MIPS, RISC-V, LoongArch... Choose your operating system: Linux, Windows, macOS, FreeBSD, Android... ZTM runs anywhere.
 
@@ -81,13 +81,15 @@ Suppose you have a Linux box in the cloud, with a public IP address `1.2.3.4` an
 ztm start hub --listen 0.0.0.0:8888 --names 1.2.3.4:8888 --permit root.json
 ```
 
-> You might need `sudo` when executing the above command because it will install a service to `systemd`.
+> You might need `sudo` when executing the above command because it needs to install a service to `systemd`.
 
-Now the Hub should be up an running. A file named `root.json` should also be generated for us to allow *endpoints* to join our mesh.
+Now the Hub should be up an running. Plus, a file named `root.json` should have been generated for us to allow *endpoints* to join our mesh.
 
 #### Setup Endpoints
 
-Once the Hub gets up and running in the cloud, we can go on and add as many endpoints as we like to the mesh by using the generated permit file `root.json`.
+Once the Hub gets up and running in the cloud, we can go on and add as many *endpoints* as we like to the mesh by using the generated permit file `root.json`.
+
+> An *endpoint* is just a computer running in various network environments with access to the Internet.
 
 First, start an Agent on an endpoint computer that is going to join our mesh:
 
@@ -105,7 +107,7 @@ ztm join MESH_NAME --as EP_NAME --permit root.json
 
 Where `MESH_NAME` can be any name of your choice for identifying a mesh locally if you have many. `EP_NAME` is the name of your current endpoint seen by other endpoints in the same mesh. `root.json` is the permit file generated in our first step where a Hub is set up.
 
-If everything works out, you can now check out the mesh status by typing:
+If everything works out, you can now check out the status of the mesh by typing:
 
 ```sh
 ztm get mesh
@@ -125,12 +127,18 @@ ztm help
 
 If you prefer GUI, you can open your browser and point it to `http://localhost:7777` right after command `ztm start agent`. You can join a mesh, find other endpoints, using apps and everything. Almost all functionalities ZTM provides are available from both the CLI and the GUI.
 
-Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any endpoint in the mesh. Official ZTM releases come with a number of builtin apps including:
+Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any endpoint in the mesh.
+
+#### Using Your Mesh
+
+Only connecting a bunch of endpoints as a mesh isn't very useful. What makes your mesh useful is the *apps* running in it. The official ZTM releases come with a number of builtin apps including:
 
 - Tunnel - Establish secure TCP/UDP tunnels between endpoints
 - Proxy - A SOCKS/HTTP forward proxy that takes in traffic from one endpoint and forward out via another endpoint 
 - Script - Execute *PipyJS* scripts remotely on an endpoint
-- Terminal - Remote log in to the shell on an endpoint
+- Terminal - Remote access to the shell on an endpoint
+
+Third-party apps can also be installed. Also, new apps can be developed rather easily thanks to the *PipyJS* scripting capability of [**Pipy**](https://github.com/flomesh-io/pipy).
 
 To get a list of all installed apps, type:
 
