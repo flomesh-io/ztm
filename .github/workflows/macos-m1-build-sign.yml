@@ -33,7 +33,7 @@ jobs:
         APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
       run: |
         cd gui/src-tauri/target/release/bundle/dmg
-        xcrun altool --notarize-app --primary-bundle-id "com.yourcompany.yourapp" --username "$APPLE_ID" --password "$APPLE_PASSWORD" --file ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+        xcrun altool --notarize-app --primary-bundle-id "com.flomesh.ztm" --username "$APPLE_ID" --password "$APPLE_PASSWORD" --file ztm_${{ vars.APP_VERSION }}_aarch64.dmg
         xcrun stapler staple ztm_${{ vars.APP_VERSION }}_aarch64.dmg
     - uses: actions/upload-artifact@v2
       with:
