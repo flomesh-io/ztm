@@ -1,20 +1,15 @@
 # macOS aarch64
-pipy-aarch64-apple-darwin
-ztm-aarch64-apple-darwin
+ztmctl-aarch64-apple-darwin
 
 # macOS x86
-pipy-x86_64-apple-darwin
-cli-x86_64-apple-darwin
+ztmctl-x86_64-apple-darwin
 
 # Windows
-pipy-x86_64-pc-windows-msvc.exe
-cli-x86_64-pc-windows-msvc.exe
+ztmctl-x86_64-pc-windows-msvc.exe
 
 # Linux
-pipy-x86_64-unknown-linux-gnu
-cli-x86_64-unknown-linux-gnu
+ztmctl-x86_64-unknown-linux-gnu
 
 # Android
-pipy-aarch64-linux-android
-cli-aarch64-linux-android
-cli-armv7-linux-androideabi
+ztmctl-aarch64-linux-android
+ztmctl-armv7-linux-androideabi
