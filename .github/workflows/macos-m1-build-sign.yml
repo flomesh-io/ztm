@@ -1,0 +1,41 @@
+name: macos-m1-build-sign
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+    - name: build app
+      run: |
+        cd gui
+        yarn install
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build:tunnel
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build:script
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build:proxy
+        yarn build-ztm-macos
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
+    - name: sign
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY }}
+      run: |
+        cd gui/src-tauri/target/release/bundle/dmg
+        codesign --deep --force --verify --verbose --sign "$SIGNING_IDENTITY" ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+    - name: notarize
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      run: |
+        cd gui/src-tauri/target/release/bundle/dmg
+        xcrun altool --notarize-app --primary-bundle-id "com.yourcompany.yourapp" --username "$APPLE_ID" --password "$APPLE_PASSWORD" --file ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+        xcrun stapler staple ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+    - uses: actions/upload-artifact@v2
+      with:
+        name: release
+        path: ./gui/src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64.dmg
