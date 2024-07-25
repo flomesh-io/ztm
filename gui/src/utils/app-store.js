@@ -11,6 +11,8 @@ import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
 
 const apps = [{
+	name: "setting",
+},{
 	name: "ZTMGui",
 	label: "ZTM Gui",
 	url:'/#/mesh/list',
@@ -18,15 +20,13 @@ const apps = [{
 	height:860,
 	icon: consoleIcon,
 },{
-	name: "setting",
-},{
-	name: "ZTMCli",
-	label: "ZTM Cli",
-	url:'/#/app/term',
-	width:455,
-	height:455,
-	icon: terminal,
-},{
+// 	name: "ZTMCli",
+// 	label: "ZTM Cli",
+// 	url:'/#/app/term',
+// 	width:455,
+// 	height:455,
+// 	icon: terminal,
+// },{
 	name: "ZTMLog",
 	label: "ZTM Log",
 	url:'/#/app/term',
