@@ -125,10 +125,10 @@ ztm help
 
 If you prefer GUI, you can open your browser and point it to `http://localhost:7777` right after command `ztm start agent`. You can join a mesh, find other endpoints, using apps and everything. Almost all functionalities ZTM provides are available from both the CLI and the GUI.
 
-Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any of the endpoints. Official ZTM releases come with a number of builtin apps including:
+Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any endpoint in the mesh. Official ZTM releases come with a number of builtin apps including:
 
-- Tunnel - Establish a secure TCP/UDP tunnel between any endpoints
-- Proxy - A SOCKS/HTTP forward proxy that accepts traffic from one endpoint and forward it out via another endpoint 
+- Tunnel - Establish secure TCP/UDP tunnels between endpoints
+- Proxy - A SOCKS/HTTP forward proxy that takes in traffic from one endpoint and forward out via another endpoint 
 - Script - Execute *PipyJS* scripts remotely on an endpoint
 - Terminal - Remote log in to the shell on an endpoint
 
@@ -138,16 +138,16 @@ To get a list of all installed apps, type:
 ztm get app
 ```
 
-You can use an app both from the browser GUI or the command-line tool. On a terminal, one can access an app's CLI in a way like:
+You can use an app from either the browser GUI or the command-line tool. On a terminal, one can access an app's CLI in a way like:
 
 ```sh
-ztm APPNAME ...
+ztm APP_NAME ...
 ```
 
-To find out detailed information about using an app from CLI, type:
+To find out detailed information about using an app via CLI, type:
 
 ```sh
-ztm APPNAME help
+ztm APP_NAME help
 ```
 
 #### CLI Commands Summary
