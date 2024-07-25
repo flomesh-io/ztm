@@ -132,6 +132,24 @@ Repeat the above procedure for every endpoint in your mesh. Then, you will be ab
 - Script - Execute *PipyJS* scripts remotely on an endpoint
 - Terminal - Remote log in to the shell on an endpoint
 
+To get a list of all installed apps, type:
+
+```sh
+ztm get app
+```
+
+You can use an app both from the browser GUI or the command-line tool. On a terminal, one can access an app's CLI in a way like:
+
+```sh
+ztm APPNAME ...
+```
+
+To find out detailed information about using an app from CLI, type:
+
+```sh
+ztm APPNAME help
+```
+
 #### CLI Commands Summary
 
 Here's a recap of what CLI commands you need to do on each computer node.
