@@ -9,40 +9,53 @@ import ztmlog from "@/assets/img/apps/ztmlog.png";
 import eplog from "@/assets/img/apps/eplog.png";
 import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
-
-const apps = [{
-	name: "setting",
-},{
-	name: "ZTMGui",
-	label: "ZTM Gui",
-	url:'/#/mesh/list',
-	width:1280,
-	height:860,
-	icon: consoleIcon,
-},{
-// 	name: "ZTMCli",
-// 	label: "ZTM Cli",
-// 	url:'/#/app/term',
-// 	width:455,
-// 	height:455,
-// 	icon: terminal,
-// },{
-	name: "ZTMLog",
-	label: "ZTM Log",
-	url:'/#/app/term',
-	width:455,
-	height:600,
-	icon: ztmlog,
-},{
-	name: "EPLog",
-	label: "EP Log",
-	url:'/#/mesh/log',
-	width:455,
-	height:600,
-	icon: eplog,
-},{
-	name: "browser",
-}]
+import { platform } from '@tauri-apps/plugin-os';
+const defaultApp = [{
+		name: "setting",
+	},{
+		name: "ZTMGui",
+		label: "ZTM Gui",
+		url:'/#/mesh/list',
+		width:1280,
+		height:860,
+		icon: consoleIcon,
+	},{
+	// 	name: "ZTMCli",
+	// 	label: "ZTM Cli",
+	// 	url:'/#/app/term',
+	// 	width:455,
+	// 	height:455,
+	// 	icon: terminal,
+	// },{
+		name: "ZTMLog",
+		label: "ZTM Log",
+		url:'/#/app/term',
+		width:455,
+		height:600,
+		icon: ztmlog,
+	},{
+		name: "EPLog",
+		label: "EP Log",
+		url:'/#/mesh/log',
+		width:455,
+		height:600,
+		icon: eplog,
+	},{
+		name: "browser",
+	}];
+const mobileApp = [{
+		name: "setting",
+	},{
+		name: "ZTMLog",
+		label: "ZTM Log",
+		url:'/#/app/term',
+		width:455,
+		height:600,
+		icon: ztmlog,
+	},{
+		name: "browser",
+	}]
+const apps = !!window.__TAURI_INTERNALS__ && platform() != "android" ? defaultApp : mobileApp;
 const appMapping = {
 	"/setting": {
 		icon: setting,
