@@ -80,34 +80,34 @@ jobs:
           name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
           path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-x86_64.tar.gz
 
-  # build-ztm-aio-linux-arm64:
-  #   needs: set-release-version
-  #   name: build-ztm-aio-linux-arm64
-  #   runs-on: [self-hosted, linux, ARM64]
-  #   steps:
-  #     - uses: actions/checkout@v4
+  build-ztm-aio-linux-arm64:
+    needs: set-release-version
+    name: build-ztm-aio-linux-arm64
+    runs-on: [self-hosted, linux, ARM64]
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-  #     - name: Build
-  #       id: build
-  #       env:
-  #         RELEASE_VERSION: ${{ needs.set-release-version.outputs.release_version }}
-  #         ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
-  #         ZTM_COMMIT_SHA: ${{needs.set-release-version.outputs.commit_sha}}
-  #         ZTM_COMMIT_DATE: ${{needs.set-release-version.outputs.commit_date}}
-  #       run: |
-  #         set -x
-  #         ./build.sh
-  #         ls -al
+      - name: Build
+        id: build
+        env:
+          RELEASE_VERSION: ${{ needs.set-release-version.outputs.release_version }}
+          ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
+          ZTM_COMMIT_SHA: ${{needs.set-release-version.outputs.commit_sha}}
+          ZTM_COMMIT_DATE: ${{needs.set-release-version.outputs.commit_date}}
+        run: |
+          set -x
+          ./build.sh
+          ls -al
 
-  #     - name: Upload artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
-  #         path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-generic_linux-arm64.tar.gz
 
   build-ztm-aio-macos-x86_64:
     needs: set-release-version
@@ -260,6 +260,7 @@ jobs:
     needs:
       - set-release-version
       - build-ztm-aio-linux-x86_64
+      - build-ztm-aio-linux-arm64
       - build-ztm-aio-macos-x86_64
       - build-ztm-aio-macos-arm64
       - build-ztm-aio-win-x86_64
@@ -283,6 +284,7 @@ jobs:
           tag_name: ${{needs.set-release-version.outputs.release_version}}
           files: |
             ztm-aio-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-generic_linux-x86_64.tar.gz
+            ztm-aio-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip/ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip
