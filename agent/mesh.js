@@ -1218,11 +1218,6 @@ export default function (rootDir, config) {
   }
 
   function leave() {
-    db.allPorts(meshName).forEach(
-      function ({ protocol, listen }) {
-        closePort(listen.ip, protocol, listen.port)
-      }
-    )
     hubs.forEach(hub => hub.leave())
     exited = true
     logInfo(`Left ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)

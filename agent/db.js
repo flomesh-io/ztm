@@ -86,10 +86,7 @@ function setMesh(name, mesh) {
 }
 
 function delMesh(name) {
-  db.sql('DELETE FROM ports WHERE mesh = ?')
-    .bind(1, name)
-    .exec()
-  db.sql('DELETE FROM services WHERE mesh = ?')
+  db.sql('DELETE FROM files WHERE mesh = ?')
     .bind(1, name)
     .exec()
   db.sql('DELETE FROM apps WHERE mesh = ?')
