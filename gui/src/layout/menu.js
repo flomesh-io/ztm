@@ -1,4 +1,4 @@
-
+import { platform } from '@tauri-apps/plugin-os';
 const menus = {
 	tauri: [
 		{
@@ -28,5 +28,5 @@ const menus = {
 };
 
 export function getMenu(){
-	return menus[!!window.__TAURI_INTERNALS__?'tauri':'web'];
+	return menus[!!window.__TAURI_INTERNALS__ && platform() != "android" ?'tauri':'webhq'];
 }

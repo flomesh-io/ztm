@@ -21,6 +21,7 @@ import { getPort } from '@/service/common/request';
 import { resourceDir } from '@tauri-apps/api/path';
 import { openWebview } from '@/utils/webview';
 
+
 const store = useStore();
 const playing = ref(false);
 const loading = ref(false);
@@ -313,7 +314,7 @@ const takePipyVersion = () => {
 					<i class="pi pi-upload text-3xl"  />
 				</FileUploderSmall>
 			</div>
-			<div class="flex-item">
+			<div class="flex-item" v-if="platform!='android'">
 				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-th-large text-3xl"  />
 				</Button>
