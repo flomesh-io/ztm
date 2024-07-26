@@ -65,7 +65,7 @@ const getTunnels = (tunnel) => {
 				@edit="(tunnel) => {visibleEditor = true;selectedTunnel = tunnel}"/>
 		</div>
 		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
-			<div class="shadow mobile-fixed h-full">
+			<div class="mobile-fixed h-full">
 				<TunnelEditor
 					:title="selectedTunnel?`${selectedTunnel?.proto}/${selectedTunnel?.name}`:null"
 					:d="selectedTunnel" 

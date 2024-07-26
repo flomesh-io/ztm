@@ -7,8 +7,8 @@ import { useStore } from 'vuex';
 import { useToast } from "primevue/usetoast";
 
 const toast = useToast();
-const props = defineProps(['loading','scriptsHide'])
-const emits = defineEmits(['response','update:loading','update:scriptsHide','reload'])
+const props = defineProps(['loading','scriptsHide','isMobile'])
+const emits = defineEmits(['response','update:loading','update:scriptsHide','reload','show'])
 const route = useRoute();
 const scriptService = new ScriptService();
 const store = useStore();
@@ -68,13 +68,13 @@ onMounted(()=>{
 	getEndpoints();
 })
 const show = () => {
+	emits('show');
 	emits('update:scriptsHide',false);
 }
 
 const setPjs = (value) =>{
 	pjs.value = value?.script
 }
-
 defineExpose({ setPjs })
 </script>
 
@@ -83,7 +83,7 @@ defineExpose({ setPjs })
 		<AppHeader :main="true" >
 				<template #start>
 					
-					<Button v-tooltip="'Show Favorites'" v-if="props.scriptsHide" icon="pi pi-eye" aria-haspopup="true" aria-controls="op" @click="show"/>
+					<Button v-tooltip="'Show Favorites'" v-if="props.scriptsHide || props.isMobile" icon="pi pi-list-check" aria-haspopup="true" aria-controls="op" @click="show"/>
 					<Button icon="pi pi-star" text aria-haspopup="true" aria-controls="op" @click="toggle"/>
 				</template>
 				<template #center>

@@ -54,12 +54,12 @@ onMounted(() => {
 	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
 		<AppHeader :back="back">
 				<template #center>
+					<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag v-if="props.ep.id == info.endpoint?.id" severity="contrast" >Local</Tag></span>
 					<b v-if="!!props.ep">{{ props.ep.name|| 'Unknow EP' }}</b>
 					<span v-else>Loading...</span>
 				</template>
 				<template #end> 
-					<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag v-if="props.ep.id == info.endpoint?.id" severity="contrast" >Local</Tag></span>
-					<Button :loading="loading" label="Save" aria-label="Submit" size="small" @click="create"/>
+					<Button :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="create"/>
 				</template>
 		</AppHeader>
 		<div class="md:m-3 h-full relative">
@@ -69,9 +69,6 @@ onMounted(() => {
 				<Loading v-if="loading" />
 				<div v-else class="surface-ground surface-section h-full p-4" >
 						<div class="mb-4" v-if="!props.d">
-							<h6>
-								<Tag>Proxy</Tag>
-							</h6>
 							<div class="grid" >
 								<div class="col-12 p-0">
 									<FormItem label="Listen" :border="false">

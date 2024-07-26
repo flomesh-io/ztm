@@ -28,7 +28,7 @@ onMounted(()=>{
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':false}">
+	<div class="flex flex-row min-h-screen "  :class="{'embed-ep-header':false}">
 		<div  class="relative h-full min-h-screen w-full" >
 			<AppHeader :main="true" >
 					<template #start>
@@ -75,15 +75,4 @@ onMounted(()=>{
 </template>
 
 <style scoped lang="scss">
-:deep(.p-dataview-content) {
-  background-color: transparent !important;
-}
-:deep(.p-tabview-nav),
-:deep(.p-tabview-panels),
-:deep(.p-tabview-nav-link){
-	background: transparent !important;
-}
-:deep(.p-tabview-panels){
-	padding: 0;
-}
 </style>

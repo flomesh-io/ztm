@@ -102,21 +102,19 @@ const loadproxys = () => {
 								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 										<div class="w-40 relative">
 											<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
-											<span class="ml-2 relative" style="top: -1px;">
-												<Tag v-if="node.id == info.endpoint?.id" severity="contrast" >Local</Tag>
-											</span>
 										</div>
-										<div class="flex-item">
+										<div class="flex-item" style="min-width: 150px;">
 												<div class="flex">
 													<div class="flex-item pt-1">
+														<Tag class="mr-2" v-if="node.id == info.endpoint?.id" severity="contrast" >Local</Tag>
 														<b>{{ node.name || 'Unknow EP' }}</b>
 													</div>
 												</div>
 										</div>
-										<div v-if="!visibleEditor && node.proxy">
-											<Tag v-if="node.proxy?.listen" class="ml-2" severity="secondary" value="Secondary">Listen {{node.proxy.listen}}</Tag> 
-											<Tag v-show="index<2" v-if="node.proxy?.targets" v-for="(target,index) in node.proxy?.targets" class="ml-2" severity="secondary" value="Secondary">Target {{target}}</Tag> 
-											<Tag v-if="!!node.proxy?.targets && node.proxy?.targets.length>2" v-tooltip="JSON.stringify(node.proxy?.targets)"  class="ml-2" severity="secondary" value="Secondary">...</Tag> 
+										<div class="grid align-items-center justify-content-end pr-2 gap-1 pt-3" v-if="!visibleEditor && node.proxy">
+											<Tag v-if="node.proxy?.listen" severity="secondary" value="Secondary">Listen {{node.proxy.listen}}</Tag> 
+											<Tag v-show="index<2" v-if="node.proxy?.targets" v-for="(target,index) in node.proxy?.targets" severity="secondary" value="Secondary">Target {{target}}</Tag> 
+											<Tag v-if="!!node.proxy?.targets && node.proxy?.targets.length>2" v-tooltip="JSON.stringify(node.proxy?.targets)"  severity="secondary" value="Secondary">...</Tag> 
 										</div>
 								</div>
 							</div>
@@ -125,11 +123,13 @@ const loadproxys = () => {
 			</ScrollPanel>
 			<Empty v-else title="No endpoint."/>
 		</div>
-		<div class="flex-item h-full shadow mobile-fixed" v-if="!!visibleEditor">
-			<Editor
-				:ep="selectedEp" 
-				@save="save" 
-				@back="() => {selectedEp=null;visibleEditor=false;}"/>
+		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
+			<div class="h-full mobile-fixed" >
+				<Editor
+					:ep="selectedEp" 
+					@save="save" 
+					@back="() => {selectedEp=null;visibleEditor=false;}"/>
+			</div>
 		</div>
 	</div>
 </template>
