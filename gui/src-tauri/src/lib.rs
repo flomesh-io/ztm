@@ -95,10 +95,14 @@ async fn create_proxy_webview(
 	proxy_url: String,
 	curl: String,
 ) -> Result<(),()> {
-	create_proxy_webview_core(app.clone(), label.to_string(), window_label.to_string(), proxy_url.to_string(), curl);
+	#[cfg(target_os = "windows")]
+	{
+		create_proxy_webview_core(app.clone(), label.to_string(), window_label.to_string(), proxy_url.to_string(), curl);
+	}
 	Ok(())
 }
 
+#[cfg(target_os = "windows")]
 fn create_proxy_webview_core(
 	app: tauri::AppHandle,
 	label: String,
