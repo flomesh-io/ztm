@@ -13,6 +13,7 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
     os.mkdir(rootDir, { recursive: true })
   }
 
+  pipy.unmount(mountName)
   pipy.mount(mountName, rootDir)
 
   function listRecursive(path, base, list) {
