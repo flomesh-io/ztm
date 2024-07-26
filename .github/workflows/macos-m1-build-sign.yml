@@ -37,7 +37,6 @@ jobs:
         cd gui/src-tauri/target/release/bundle/dmg
         echo "Signing DMG with identity: $MACOS_IDENTITY"
         codesign -s "$MACOS_IDENTITY" -fv ztm_${{ vars.APP_VERSION }}_aarch64.dmg
-        codesign -v --deep --strict ztm_${{ vars.APP_VERSION }}_aarch64.dmg
         echo "Codesign completed"
       timeout-minutes: 60
     - name: notarize
