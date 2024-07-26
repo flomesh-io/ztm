@@ -672,7 +672,9 @@ pre.app-code code{
 .layout-main-container{
 	z-index: 2;
 }
-
+.surface-ground{
+	background-color: var(--surface-ground);
+}
 .embed-root{
 	width: 80%;
 	overflow: hidden;

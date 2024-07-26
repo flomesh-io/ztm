@@ -35,10 +35,7 @@ const exportCsv = () => {
 
 
 	<div  class="relative h-full min-h-screen w-full" >
-		<AppHeader :main="true" >
-				<template #start>
-					<Button @click="back" icon="pi pi-list-check" text />
-				</template>
+		<AppHeader :back="back" >
 				<template #center>
 					<b>Result</b>
 				</template>

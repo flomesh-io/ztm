@@ -12,21 +12,29 @@ const loaddata = () => {
 const loading = ref(false);
 const response = ref({});
 const selectedScript = ref();
-const layout = ref('list');
+const result = ref(false);
 const toggle = ()=>{
-	layout.value = layout.value == 'list'?'result':'list'
+	result.value = !result.value;
 }
 const getResponse = (res) => {
 	response.value = res;
-	layout.value = "result";
+	result.value = true;
 }
+
+const mobileSctiptShow = ref(false);
 const scriptsHide = ref(false)
 const hide = () => {
 	scriptsHide.value = true;
+	mobileSctiptShow.value = false;
 }
+const show = () => {
+	mobileSctiptShow.value = true;
+}
+
 const editor = ref();
 const setPjs = (s) => {
 	editor.value.setPjs(s);
+	mobileSctiptShow.value = false;
 }
 const reloadScripts = () => {
 	scriptsHide.value = true;
@@ -34,25 +42,33 @@ const reloadScripts = () => {
 		scriptsHide.value = false;
 	},100)
 }
+
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
+
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen" >
-		<div v-if="!scriptsHide" class="h-full "  style="flex:1">
-			<Scripts 
-				@hide="hide"
-				@edit="setPjs"/>
-		</div>
-		<div class="flex-item h-full shadow" style="flex:3">
-			<div class="shadow mobile-fixed h-full">
-				<Editor @reload="reloadScripts" ref="editor" v-model:scriptsHide="scriptsHide" v-model:loading="loading" @response="getResponse"/>
+	<div class="flex flex-row min-h-screen " >
+		<div v-if="!scriptsHide" class="h-full" :class="{'mobile-hidden':(!mobileSctiptShow)}"  style="flex:1">
+			<div class="shadow mobile-fixed h-full surface-ground" style="z-index: 100;">
+				<Scripts 
+					@hide="hide"
+					:isMobile="isMobile"
+					@edit="setPjs"/>
 			</div>
 		</div>
-		<div class="flex-item h-full shadow" :style="scriptsHide?'flex:3':'flex:2'" >
-			<div class="shadow mobile-fixed h-full">
+		<div class="flex-item h-full shadow" style="flex:3">
+			<div class="shadow h-full">
+				<Editor :isMobile="isMobile" @show="show" @reload="reloadScripts" ref="editor" v-model:scriptsHide="scriptsHide" v-model:loading="loading" @response="getResponse"/>
+			</div>
+		</div>
+		<div class="flex-item h-full shadow" :class="{'mobile-hidden':(!result)}" :style="scriptsHide?'flex:3':'flex:2'" >
+			<div class="shadow mobile-fixed h-full surface-ground" style="z-index: 100;">
 				<Result
 					:loading="loading"
 					:response="response"
+					:isMobile="isMobile"
 					@back="toggle"/>
 			</div>
 		</div>
