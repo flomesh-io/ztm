@@ -65,7 +65,7 @@ jobs:
         export ANDROID_HOME='/usr/local/lib/android/sdk'
         ls $ANDROID_HOME
         ls $ANDROID_HOME/build-tools
-        $ANDROID_HOME/build-tools/30.0.3/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
+        $ANDROID_HOME/build-tools/31.0.0/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
     - name: Decode keystore
       run: |
         echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > ./my-release-key.jks
@@ -73,7 +73,7 @@ jobs:
       run: |
         export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/usr/local/lib/android/sdk'
-        $ANDROID_HOME/build-tools/30.0.3/apksigner sign --ks ./my-release-key.jks \
+        $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks ./my-release-key.jks \
                                                        --ks-pass env:KEYSTORE_PASSWORD \
                                                        --key-pass env:KEY_PASSWORD \
                                                        --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
@@ -86,7 +86,7 @@ jobs:
       run: |
         export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/usr/local/lib/android/sdk'
-        $ANDROID_HOME/build-tools/30.0.3/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm.apk
+        $ANDROID_HOME/build-tools/31.0.0/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm.apk
     - uses: actions/upload-artifact@v2
       with:
         name: release
