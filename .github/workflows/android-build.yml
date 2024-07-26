@@ -63,6 +63,8 @@ jobs:
       run: |
         export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/usr/local/lib/android/sdk'
+        ls $ANDROID_HOME
+        ls $ANDROID_HOME/build-tools
         $ANDROID_HOME/build-tools/30.0.3/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
     - name: Decode keystore
       run: |
