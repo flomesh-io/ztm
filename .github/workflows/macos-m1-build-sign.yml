@@ -10,6 +10,11 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
+    - name: Install Xcode Command Line Tools
+      run: |
+        xcode-select --install
+        sudo xcode-select -switch /Applications/Xcode.app
+        sudo xcodebuild -license accept
     - name: Decode and import certificate
       env:
         MACOS_BASE64: ${{ secrets.MACOS_BASE64 }}
