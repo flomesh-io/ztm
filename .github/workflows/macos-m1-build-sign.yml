@@ -43,7 +43,7 @@ jobs:
         echo "Signing DMG with identity: $MACOS_IDENTITY"
         codesign -s "$MACOS_IDENTITY" -fv ztm_${{ vars.APP_VERSION }}_aarch64.dmg
         echo "Codesign completed"
-      timeout-minutes: 60
+      timeout-minutes: 600
     - name: notarize
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
