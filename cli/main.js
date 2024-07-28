@@ -87,7 +87,9 @@ function doCommand(meshName, epName, argv, program) {
         usage: 'config',
         options: `
           --agent <host:port>   Set the access address and port to the agent
+                                Can be overriden by environment variable 'ZTM_AGENT'
           --mesh  <name>        Set the default mesh to operate when not specified
+                                Can be overriden by environment variable 'ZTM_MESH'
         `,
         notes: `Print the current configuration when no options are specified`,
         action: config,
@@ -107,6 +109,7 @@ function doCommand(meshName, epName, argv, program) {
           -p, --permit  <pathname>      Specify an optional output filename for the root user's permit
                                         Only applicable to hubs
         `,
+        notes: `Available object types include: hub, agent, app`,
         action: (args) => {
           var type = args['<object type>']
           var name = args['[app name]']
@@ -122,6 +125,7 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: 'Stop running a hub, agent or app as background service',
         usage: 'stop <object type> [app name]',
+        notes: `Available object types include: hub, agent, app`,
         action: (args) => {
           var type = args['<object type>']
           var name = args['[app name]']
@@ -151,6 +155,7 @@ function doCommand(meshName, epName, argv, program) {
               --join-as <endpoint>        When joining a mesh, give the current endpoint a name
                                           Only applicable to agents
         `,
+        notes: `Available object types include: hub, agent`,
         action: (args) => {
           var type = args['<object type>']
           switch (type) {
@@ -196,6 +201,13 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `List objects of a certain type`,
         usage: 'get <object type> [object name]',
+        notes: `
+          Available object types include:
+            mesh     meshes
+            endpoint endpoints ep
+            file     files
+            app      apps
+        `,
         action: (args) => {
           var type = args['<object type>']
           var name = args['[object name]']
@@ -221,6 +233,13 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `View detailed information about an object`,
         usage: 'describe <object type> <object name>',
+        notes: `
+          Available object types include:
+            mesh
+            endpoint ep
+            file
+            app
+        `,
         action: (args) => {
           var type = args['<object type>']
           var name = args['<object name>']
@@ -237,6 +256,7 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `Download an app or file from the mesh`,
         usage: 'download <object type> <object name>',
+        notes: `Available object types include: file, app`,
         options: `
           -o, --output <pathname>   Output to the specified file (default: output to stdout)
                                     Only applicable when downloading a file
@@ -255,6 +275,7 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `Erase a downloaded app or file`,
         usage: 'erase <object type> <object name>',
+        notes: `Available object types include: file, app`,
         action: (args) => {
           var type = args['<object type>']
           var name = args['<object name>']
@@ -269,6 +290,7 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `Publish an app or file to the mesh`,
         usage: 'publish <object type> <object name>',
+        notes: `Available object types include: file, app`,
         options: `
           -i, --input <pathname>   Specify a local file containing the data to publish (default: read from stdin)
                                    Only applicable when publishing a file
@@ -287,6 +309,7 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `Unpublish an app or file from the mesh`,
         usage: 'unpublish <object type> <object name>',
+        notes: `Available object types include: file, app`,
         action: (args) => {
           var type = args['<object type>']
           var name = args['<object name>']
@@ -301,6 +324,11 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `View logs from an app or endpoint`,
         usage: 'log <object type> [object name]',
+        notes: `
+          Available object types include:
+            app
+            endpoint ep
+        `,
         action: (args) => {
           var type = args['<object type>']
           var name = args['[object name]']
