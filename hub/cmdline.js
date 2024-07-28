@@ -236,6 +236,7 @@ function tokenize(str) {
 function stripIndentation(s, indent) {
   var lines = s.split('\n')
   if (lines[0].trim() === '') lines.shift()
+  if (lines[lines.length - 1].trim() === '') lines.pop()
   var depth = lines[0].length - lines[0].trimStart().length
   var padding = ' '.repeat(indent || 0)
   return lines.map(l => padding + l.substring(depth)).join('\n')
