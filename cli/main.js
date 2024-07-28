@@ -19,6 +19,7 @@ try {
 
 function error(err) {
   println('ztm:', err.message || err)
+  if (err.stack) println(err.stack)
   pipy.exit(-1)
 }
 
@@ -143,8 +144,12 @@ function doCommand(meshName, epName, argv, program) {
           -n, --names   <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
                                           Only applicable to hubs
               --ca      <url>             Specify the location of an external CA service if any
-          -p, --permit  <pathname>        Specify an optional output filename for the root user's permit
-                                          Only applicable to hubs
+          -p, --permit  <pathname>        An optional output filename for generating the root user's permit when starting a hub
+                                          Or an input filename to load the user permit when joining a mesh while starting an agent
+              --join    <mesh>            If specified, join a mesh with the given name
+                                          Only applicable to agents
+              --join-as <endpoint>        When joining a mesh, give the current endpoint a name
+                                          Only applicable to agents
         `,
         action: (args) => {
           var type = args['<object type>']
@@ -664,12 +669,17 @@ function runHub(args, program) {
 }
 
 function runAgent(args, program) {
-  return exec([program,
+  var cmd = [
+    program,
     '--pipy', 'repo://ztm/agent',
     '--args',
     '--data', args['--data'] || '~/.ztm',
     '--listen', args['--listen'] || '127.0.0.1:7777',
-  ])
+  ]
+  if ('--join' in args) cmd.push('--join', args['--join'])
+  if ('--join-as' in args) cmd.push('--join-as', args['--join-as'])
+  if ('--permit' in args) cmd.push('--permit', args['--permit'])
+  return exec(cmd)
 }
 
 function exec(argv) {
