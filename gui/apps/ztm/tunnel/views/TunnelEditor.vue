@@ -323,7 +323,7 @@ watch(()=>props.d,()=>{
 									<FormItem label="Listens">
 										<ChipList icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
-									<FormItem label="Entrances"  :border="false">
+									<FormItem label="Exits"  :border="false">
 											<Chip class="pl-0 pr-3 mr-2">
 													<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 														<i class="pi pi-chart-scatter"/>

@@ -28,7 +28,7 @@ export default class TunnelService {
 					}
 					_targets.push(_target);
 				} else {
-					_targets.push({host:'127.0.0.1',port:target})
+					_targets.push({host:'127.0.0.1',port:target*1})
 				}
 			}
 		})
@@ -68,7 +68,7 @@ export default class TunnelService {
 					}
 					_listens.push(_listen);
 				} else {
-					_listens.push({ip:'127.0.0.1',port:listen.value})
+					_listens.push({ip:'127.0.0.1',port:listen.value*1})
 				}
 			}
 		})
