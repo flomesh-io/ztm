@@ -87,6 +87,7 @@ function doCommand(meshName, epName, argv, program) {
         usage: 'config',
         options: `
           --agent <host:port>   Set the access address and port to the agent
+          --mesh  <name>        Set the default mesh to operate when not specified
         `,
         notes: `Print the current configuration when no options are specified`,
         action: config,
@@ -138,12 +139,11 @@ function doCommand(meshName, epName, argv, program) {
         usage: 'run <object type>',
         options: `
           -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-                                          Only applicable to hubs and agents
           -l, --listen  <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                          Only applicable to hubs and agents
           -n, --names   <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
                                           Only applicable to hubs
               --ca      <url>             Specify the location of an external CA service if any
+                                          Only applicable to hubs
           -p, --permit  <pathname>        An optional output filename for generating the root user's permit when starting a hub
                                           Or an input filename to load the user permit when joining a mesh while starting an agent
               --join    <mesh>            If specified, join a mesh with the given name
@@ -349,10 +349,12 @@ function version(args) {
 function config(args) {
   var conf = {
     agent: args['--agent'],
+    mesh: args['--mesh'],
   }
   if (Object.values(conf).filter(i=>i).length === 0) {
     var c = client.config()
     println('Current agent:', c.agent)
+    println('Default mesh:', c.mesh || '(none)')
   } else {
     client.config(conf)
   }
@@ -1186,6 +1188,12 @@ function selectMesh(name) {
       var list = JSON.decode(ret)
       if (list.length === 1) return list[0]
       if (list.length === 0) throw `you haven't joined a mesh yet`
+      var defaultMesh = client.mesh()
+      if (defaultMesh) {
+        var mesh = list.find(m => m.name === defaultMesh)
+        if (mesh) return mesh
+        throw `default mesh '${defaultMesh}' not found`
+      }
       throw `no mesh specified`
     }
   )

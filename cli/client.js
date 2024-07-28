@@ -7,16 +7,21 @@ if (!config || typeof config !== 'object') config = {}
 function getConfig() {
   return {
     agent: config.agent || 'localhost:7777',
+    mesh: config.mesh,
   }
 }
 
 var agent = null
 
 function getHost() {
-  var host = getConfig().agent
+  var host = os.env.ZTM_AGENT || getConfig().agent
   if (host.startsWith(':')) return 'localhost' + host
   if (!Number.isNaN(Number.parseInt(host))) return 'localhost:' + host
   return host
+}
+
+function getMesh() {
+  return os.env.ZTM_MESH || getConfig().mesh
 }
 
 function getAgent() {
@@ -47,6 +52,7 @@ export default {
   config: (c) => {
     if (c) {
       if (c.agent) config.agent = c.agent
+      if (c.mesh) config.mesh = c.mesh
       os.write(CONFIG_PATHNAME, JSON.encode(config, null, 2))
     } else {
       return getConfig()
@@ -54,6 +60,8 @@ export default {
   },
 
   host: getHost,
+  mesh: getMesh,
+
   get: (path) => getAgent().request('GET', path).then(check),
   post: (path, body) => getAgent().request('POST', path, null, body).then(check),
   delete: (path) => getAgent().request('DELETE', path).then(check),
