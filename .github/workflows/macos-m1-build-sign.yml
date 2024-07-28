@@ -48,10 +48,11 @@ jobs:
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
         APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        APPLE_TRAM_ID: ${{ secrets.APPLE_TRAM_ID }}
       run: |
         cd gui/src-tauri/target/release/bundle/dmg
-        xcrun altool --notarize-app --primary-bundle-id "com.flomesh.ztm" --username "$APPLE_ID" --password "$APPLE_PASSWORD" --file ztm_${{ vars.APP_VERSION }}_aarch64.dmg
-        xcrun stapler staple ztm_${{ vars.APP_VERSION }}_aarch64.dmg
+        xcrun notarytool submit "ztm_${{ vars.APP_VERSION }}_aarch64.dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TRAM_ID" --wait
+        xcrun stapler staple "ztm_${{ vars.APP_VERSION }}_aarch64.dmg"
     - uses: actions/upload-artifact@v2
       with:
         name: release
