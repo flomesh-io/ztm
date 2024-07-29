@@ -1,6 +1,6 @@
 export default function ({ app, mesh }) {
   var currentListens = []
-  var currentTargets = {}
+  var currentOutbound = {}
 
   function getListenStatus(protocol, listen) {
     var ip = listen.ip
@@ -8,6 +8,14 @@ export default function ({ app, mesh }) {
     var l = currentListens.find(l => (l.protocol === protocol && l.ip === ip && l.port === port))
     if (l) return { ip, port, open: l.open, error: l.error }
     return { ip, port, open: false }
+  }
+
+  function checkResponse(res, f) {
+    var status = res.head.status
+    if (200 <= status && status <= 299) {
+      return typeof f === 'function' ? f(res.body) : f
+    }
+    throw res.head.statusText
   }
 
   function allEndpoints() {
@@ -27,7 +35,7 @@ export default function ({ app, mesh }) {
           method: 'GET',
           path: `/api/inbound`,
         }
-      )).then(res => res ? JSON.decode(res.body) : null)
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
   }
 
@@ -42,7 +50,7 @@ export default function ({ app, mesh }) {
           method: 'GET',
           path: `/api/outbound`,
         }
-      )).then(res => res ? JSON.decode(res.body) : null)
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
   }
 
@@ -62,7 +70,7 @@ export default function ({ app, mesh }) {
           method: 'GET',
           path: `/api/inbound/${protocol}/${name}`,
         }
-      )).then(res => res?.head?.status === 200 ? JSON.decode(res.body) : null)
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
   }
 
@@ -79,7 +87,7 @@ export default function ({ app, mesh }) {
           method: 'GET',
           path: `/api/outbound/${protocol}/${name}`,
         }
-      )).then(res => res?.head?.status === 200 ? JSON.decode(res.body) : null)
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
   }
 
@@ -109,20 +117,22 @@ export default function ({ app, mesh }) {
           path: `/api/inbound/${protocol}/${name}`,
         },
         JSON.encode({ listens, exits })
-      ))
+      )).then(checkResponse)
     }
   }
 
-  function setOutbound(ep, protocol, name, targets, entrances) {
+  function setOutbound(ep, protocol, name, targets, entrances, users) {
     if (ep === app.endpoint.id) {
       entrances = entrances || []
+      users = users || []
       checkProtocol(protocol)
       checkName(name)
       checkTargets(targets)
       checkEntrances(entrances)
+      checkUsers(users)
       return getLocalConfig().then(config => {
         var all = config.outbound
-        var ent = { protocol, name, targets, entrances }
+        var ent = { protocol, name, targets, entrances, users }
         var i = all.findIndex(o => o.protocol === protocol && o.name === name)
         if (i >= 0) {
           all[i] = ent
@@ -139,7 +149,7 @@ export default function ({ app, mesh }) {
           path: `/api/outbound/${protocol}/${name}`,
         },
         JSON.encode({ targets, entrances })
-      ))
+      )).then(checkResponse)
     }
   }
 
@@ -160,7 +170,7 @@ export default function ({ app, mesh }) {
           method: 'DELETE',
           path: `/api/inbound/${protocol}/${name}`,
         }
-      ))
+      )).then(checkResponse)
     }
   }
 
@@ -181,7 +191,7 @@ export default function ({ app, mesh }) {
           method: 'DELETE',
           path: `/api/outbound/${protocol}/${name}`,
         }
-      ))
+      )).then(checkResponse)
     }
   }
 
@@ -210,7 +220,7 @@ export default function ({ app, mesh }) {
     })
 
     currentListens = []
-    currentTargets = {}
+    currentOutbound = {}
 
     config.inbound.forEach(i => {
       var protocol = i.protocol
@@ -233,7 +243,7 @@ export default function ({ app, mesh }) {
       )
 
       var pass = null
-      var deny = pipeline($=>$.replaceStreamStart(new StreamEnd))
+      var deny = pipeline($=>$.replaceStreamStart(new StreamEnd).replaceData())
 
       switch (protocol) {
         case 'tcp':
@@ -259,14 +269,12 @@ export default function ({ app, mesh }) {
             exits.map(
               id => getOutbound(id, protocol, name).then(
                 o => o ? { ep: id, ...o } : null
-              )
+              ).catch(() => null)
             )
           )).then(list => {
-            list = list.filter(o => (o && (
-              !o.entrances ||
-              o.entrances.length === 0 ||
-              o.entrances.includes(app.endpoint.id)
-            )))
+            var ep = app.endpoint.id
+            var user = app.username
+            list = list.filter(o => (o && canAccess(o, ep, user)))
             if (list.length > 0) {
               $selectedEP = list[Math.floor(Math.random() * list.length)].ep
               app.log(`Connect to ep ${$selectedEP} for ${protocol}/${name}`)
@@ -294,7 +302,11 @@ export default function ({ app, mesh }) {
 
     config.outbound.forEach(o => {
       var key = `${o.protocol}/${o.name}`
-      currentTargets[key] = new algo.LoadBalancer(o.targets)
+      currentOutbound[key] = {
+        entrances: o.entrances,
+        users: o.users,
+        balancer: new algo.LoadBalancer(o.targets),
+      }
     })
   }
 
@@ -315,28 +327,37 @@ export default function ({ app, mesh }) {
 
   var matchApiOutbound = new http.Match('/api/outbound/{proto}/{name}')
   var response200 = new Message({ status: 200 })
+  var response401 = new Message({ status: 401 })
   var response404 = new Message({ status: 404 })
 
+  var $ctx
   var $resource
   var $target
   var $protocol
 
   var servePeerInbound = pipeline($=>$
+    .onStart(c => { $ctx = c })
     .acceptHTTPTunnel(req => {
       var params = matchApiOutbound(req.head.path)
       var proto = params?.proto
       var name = params?.name
       var key = `${proto}/${name}`
-      var lb = currentTargets[key]
-      if (lb) {
-        $resource = lb.allocate()
-        var target = $resource.target
-        var host = target.host
-        var port = target.port
-        $target = `${host}:${port}`
-        $protocol = proto
-        app.log(`Connect to ${$target} for ${key}`)
-        return response200
+      var outbound = currentOutbound[key]
+      if (outbound) {
+        var peer = $ctx.peer
+        if (canAccess(outbound, peer.id, peer.username)) {
+          $resource = outbound.balancer.allocate()
+          var target = $resource.target
+          var host = target.host
+          var port = target.port
+          $target = `${host}:${port}`
+          $protocol = proto
+          app.log(`Connect to ${$target} for ${key}`)
+          return response200
+        } else {
+          app.log(`Rejected inbound from ${peer.id} (user = ${peer.username}) for ${key}`)
+          return response401
+        }
       }
       app.log(`No target found for ${key}`)
       return response404
@@ -360,6 +381,20 @@ export default function ({ app, mesh }) {
     )
   )
 
+  function canAccess(outbound, ep, user) {
+    var entrances = outbound.entrances
+    if (entrances instanceof Array && entrances.length > 0) {
+      if (!entrances.includes(ep)) return false
+    }
+
+    var users = outbound.users
+    if (users instanceof Array && users.length > 0) {
+      if (!users.includes(user)) return false
+    }
+
+    return true
+  }
+
   getLocalConfig().then(applyLocalConfig)
 
   return {
@@ -373,6 +408,7 @@ export default function ({ app, mesh }) {
     deleteInbound,
     deleteOutbound,
     servePeerInbound,
+    canAccess,
   }
 }
 
@@ -453,4 +489,9 @@ function checkExits(exits) {
 function checkEntrances(entrances) {
   if (!(entrances instanceof Array)) throw 'invalid entrance array'
   entrances.forEach(e => checkUUID(e))
+}
+
+function checkUsers(users) {
+  if (!(users instanceof Array)) throw 'invalid user array'
+  users.forEach(u => checkName(u))
 }

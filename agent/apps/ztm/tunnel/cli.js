@@ -14,6 +14,10 @@ export default function ({ api, utils }) {
       output('ztm: ')
       output(err.message || err.toString())
       output('\n')
+      if (err.stack) {
+        output(err.stack)
+        output('\n')
+      }
     }
 
     function flush() {
@@ -86,19 +90,20 @@ export default function ({ api, utils }) {
               For inbound end:
 
               --listen    <[ip:]port ...>   Set local ports to listen on
-              --exit      <endpoint ...>    Select endpoints as the outbound end
+              --exits     <endpoint ...>    Select endpoints as the outbound end
 
               For outbound end:
 
-              --target    <host:port ...>   Set targets to connect to
-              --entrance  <endpoint ...>    Select endpoints as the inbound end
+              --targets   <host:port ...>   Set targets to connect to
+              --entrances <endpoint ...>    Select endpoints as the inbound end
+              --users     <username ...>    Only allow specified users to connect if present
             `,
             notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
               var name = args['<object name>']
               switch (validateObjectType(args, 'open')) {
-                case 'inbound': return openInbound(name, args['--listen'], args['--exit'])
-                case 'outbound': return openOutbound(name, args['--target'], args['--entrance'])
+                case 'inbound': return openInbound(name, args['--listen'], args['--exits'])
+                case 'outbound': return openOutbound(name, args['--targets'], args['--entrances'], args['--users'])
               }
             }
           },
@@ -189,6 +194,12 @@ export default function ({ api, utils }) {
           output(`Entrances:\n`)
           entrances.forEach(e => output(`  ${e}\n`))
           if (entrances.length === 0) output(`  (all endpoints)\n`)
+          output(`Users:\n`)
+          if (obj.users && obj.users.length > 0) {
+            obj.users.forEach(u => output(`  ${u}\n`))
+          } else {
+            output(`  (all users)\n`)
+          }
         })
       })
     }
@@ -202,12 +213,12 @@ export default function ({ api, utils }) {
       )
     }
 
-    function openOutbound(tunnelName, targets, entrances) {
+    function openOutbound(tunnelName, targets, entrances, users) {
       var obj = validateObjectName(tunnelName)
       if (!targets || targets.length === 0) throw `Option '--target' is required`
       targets = targets.map(t => validateHostPort(t))
       return lookupEndpointIDs(entrances || []).then(
-        entrances => api.setOutbound(endpoint.id, obj.protocol, obj.name, targets, entrances)
+        entrances => api.setOutbound(endpoint.id, obj.protocol, obj.name, targets, entrances, users)
       )
     }
 

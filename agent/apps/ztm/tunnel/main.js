@@ -10,6 +10,9 @@ export default function ({ app, mesh, utils }) {
   var gui = new http.Directory(os.path.join(app.root, 'gui'))
   var response = utils.createResponse
   var responder = utils.createResponder
+  var responderOwnerOnly = (f) => responder((params, req) => (
+    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(401))
+  ))
 
   var serveUser = utils.createServer({
     '/cli': {
@@ -66,7 +69,7 @@ export default function ({ app, mesh, utils }) {
     '/api/endpoints/{ep}/outbound/{proto}/{name}': {
       'GET': responder(({ ep, proto, name }) => {
         return api.getOutbound(ep, proto, name).then(
-          ret => ret ? response(200, ret) : response(404)
+          ret => response(200, ret)
         )
       }),
 
@@ -91,51 +94,54 @@ export default function ({ app, mesh, utils }) {
 
   var servePeer = utils.createServer({
     '/api/inbound': {
-      'GET': responder(() => api.allInbound(app.endpoint.id).then(
+      'GET': responderOwnerOnly(() => api.allInbound(app.endpoint.id).then(
         ret => ret ? response(200, ret) : response(404)
       ))
     },
 
     '/api/outbound': {
-      'GET': responder(() => api.allOutbound(app.endpoint.id).then(
-        ret => ret ? response(200, ret) : response(404)
-      ))
+      'GET': responder(() => api.allOutbound(app.endpoint.id).then(ret => {
+        var ep = $ctx.peer.id
+        var user = $ctx.peer.username
+        return ret ? response(200, ret.filter(o => api.canAccess(o, ep, user))) : response(404)
+      }))
     },
 
     '/api/inbound/{proto}/{name}': {
-      'GET': responder(({ proto, name }) => api.getInbound(app.endpoint.id, proto, name).then(
+      'GET': responderOwnerOnly(({ proto, name }) => api.getInbound(app.endpoint.id, proto, name).then(
         ret => ret ? response(200, ret) : response(404)
       )),
 
-      'POST': responder(({ proto, name }, req) => {
+      'POST': responderOwnerOnly(({ proto, name }, req) => {
         var obj = JSON.decode(req.body)
         var listens = obj.listens
         var exits = obj.exits || null
         return api.setInbound(app.endpoint.id, proto, name, listens, exits).then(response(201))
       }),
 
-      'DELETE': responder(({ proto, name }) => {
+      'DELETE': responderOwnerOnly(({ proto, name }) => {
         return api.deleteInbound(app.endpoint.id, proto, name).then(response(204))
       }),
     },
 
     '/api/outbound/{proto}/{name}': {
       'GET': responder(({ proto, name }) => api.getOutbound(app.endpoint.id, proto, name).then(
-        ret => ret ? response(200, ret) : response(404)
+        ret => ret && api.canAccess(ret, $ctx.peer.id, $ctx.peer.username) ? response(200, ret) : response(404)
       )),
 
-      'POST': responder(({ proto, name }, req) => {
+      'POST': responderOwnerOnly(({ proto, name }, req) => {
         var obj = JSON.decode(req.body)
         var targets = obj.targets
-        var entrances = obj.entrances || null
-        return api.setOutbound(app.endpoint.id, proto, name, targets, entrances).then(response(201))
+        var entrances = obj.entrances
+        var users = obj.users
+        return api.setOutbound(app.endpoint.id, proto, name, targets, entrances, users).then(response(201))
       }),
 
-      'DELETE': responder(({ proto, name }) => {
+      'DELETE': responderOwnerOnly(({ proto, name }) => {
         return api.deleteOutbound(app.endpoint.id, proto, name).then(response(204))
       }),
 
-      'CONNECT': api.servePeerInbound,
+      'CONNECT': pipeline($=>$.pipe(api.servePeerInbound, () => $ctx)),
     },
   })
 

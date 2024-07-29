@@ -350,9 +350,12 @@ function doCommand(meshName, epName, argv, program) {
         }
       },
     ],
-    fallback: (argv) => selectMeshEndpoint(meshName, epName).then(
-      ({ mesh, ep }) => callApp(argv, mesh, ep)
-    ),
+    fallback: (argv) => {
+      if (argv.length === 0) throw `no command or app specified. Type 'ztm help' for help info.`
+      return selectMeshEndpoint(meshName, epName).then(
+        ({ mesh, ep }) => callApp(argv, mesh, ep)
+      )
+    }
   })
 }
 
@@ -1166,8 +1169,6 @@ function logApp(name, mesh, ep) {
 function callApp(argv, mesh, ep) {
   var name = argv.shift()
   var appName = normalizeAppName(name)
-  if (!appName) throw `no command or app specified. Type 'ztm help' for help info.`
-
   return selectEndpoint('', mesh).then(
     local => selectApp(appName, mesh, local)
   ).then(app => {
