@@ -26,6 +26,13 @@ function init(dirname, listen) {
   )
 }
 
+function getIdentity() {
+  var keyData = db.getKey('agent')
+  var key = keyData ? new crypto.PrivateKey(keyData) : new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+  if (!keyData) db.setKey('agent', key.toPEM().toString())
+  return new crypto.PublicKey(key).toPEM().toString()
+}
+
 function allMeshes() {
   return Object.values(meshes).map(
     (mesh) => mesh.getStatus()
@@ -69,10 +76,10 @@ function delMesh(name) {
   }
 }
 
-function getPermit(mesh, username) {
+function getPermit(mesh, username, identity) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
-  return m.issuePermit(username)
+  return m.issuePermit(username, identity)
 }
 
 function delPermit(mesh, username) {
@@ -199,6 +206,7 @@ function connectApp(mesh, provider, app) {
 
 export default {
   init,
+  getIdentity,
   allMeshes,
   getMesh,
   getMeshLog,
