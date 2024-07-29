@@ -96,6 +96,12 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `Print the identity of the current running agent`,
+        usage: 'identity',
+        action: identity,
+      },
+
+      {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
@@ -170,10 +176,14 @@ function doCommand(meshName, epName, argv, program) {
         title: `Issue a permit to a user for joining the mesh`,
         usage: 'invite <username>',
         options: `
-          -p, --permit <pathname>   Specify an output file to write the user permit to
-                                    Print the user permit to stdout if not specified
+          -i, --identity <pathname>   Specify an input file to read the user identity from
+                                      Read from stdin if not specified
+          -p, --permit   <pathname>   Specify an output file to write the user permit to
+                                      Print the user permit to stdout if not specified
         `,
-        action: (args) => selectMesh(meshName).then(mesh => invite(args['<username>'], args, mesh)),
+        action: (args) => selectMesh(meshName).then(
+          mesh => invite(args['<username>'], args['--identity'], args['--permit'], mesh)
+        ),
       },
 
       {
@@ -189,7 +199,7 @@ function doCommand(meshName, epName, argv, program) {
           --as          <ep name>    Specify an endpoint name seen by others within the mesh
           --permit, -p  <pathname>   Point to a permit file
         `,
-        action: (args) => join(args['<mesh name>'], args),
+        action: (args) => join(args['<mesh name>'], args['--as'], args['--permit']),
       },
 
       {
@@ -386,6 +396,23 @@ function config(args) {
   } else {
     client.config(conf)
   }
+}
+
+//
+// Command: identity
+//
+
+function identity() {
+  return client.get('/api/identity').then(
+    ret => {
+      var s = ret.toString()
+      if (s.endsWith('\n')) {
+        print(s)
+      } else {
+        println(s)
+      }
+    }
+  )
 }
 
 //
@@ -725,21 +752,23 @@ function exec(argv) {
 // Command: invite
 //
 
-function invite(name, args, mesh) {
+function invite(name, identity, permit, mesh) {
   if (!mesh) throw `no mesh specified`
   var username = normalizeName(name)
-  return client.get(`/api/meshes/${mesh.name}/permits/${username}`).then(ret => {
-    var filename = args['--permit']
-    if (filename) {
-      try {
-        os.write(filename, ret)
-      } catch {
-        throw `cannot write to file: ${os.path.resolve(filename)}`
+  var data = new Data
+  return pipy.read(identity || '-', $=>$.handleData(d => data.push(d))).then(
+    () => client.post(`/api/meshes/${mesh.name}/permits/${username}`, data).then(ret => {
+      if (permit) {
+        try {
+          os.write(permit, ret)
+        } catch {
+          throw `cannot write to file: ${os.path.resolve(permit)}`
+        }
+      } else {
+        println(ret.toString())
       }
-    } else {
-      println(ret.toString())
-    }
-  })
+    })
+  )
 }
 
 //
@@ -758,16 +787,13 @@ function evict(name, mesh) {
 // Command: join
 //
 
-function join(name, args) {
+function join(name, epName, permitPathname) {
   var meshName = normalizeName(name)
-  var epName = normalizeName(args['--as'])
-  var permitPathname = args['--permit']
   if (!epName) throw 'endpoint name not specified (with option --as)'
   if (!permitPathname) throw 'permit file not specified (with option --permit)'
   var permit = JSON.decode(os.read(permitPathname))
   if (!permit.ca) throw 'permit missing CA certificate'
   if (!permit.agent?.certificate) throw 'permit missing user certificate'
-  if (!permit.agent?.privateKey) throw 'permit missing user key'
   if (!(permit.bootstraps instanceof Array)) throw 'permit missing bootstraps'
   if (permit.bootstraps.some(
     addr => {
@@ -779,15 +805,16 @@ function join(name, args) {
       return true
     }
   )) throw 'invalid bootstrap address'
-  return client.post(`/api/meshes/${meshName}`, JSON.encode({
+  var json = {
     ca: permit.ca,
     agent: {
       name: epName,
       certificate: permit.agent.certificate,
-      privateKey: permit.agent.privateKey,
     },
     bootstraps: permit.bootstraps,
-  }))
+  }
+  if (permit.agent.privateKey) json.agent.privateKey = permit.agent.privateKey
+  return client.post(`/api/meshes/${meshName}`, JSON.encode(json))
 }
 
 //

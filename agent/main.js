@@ -91,6 +91,12 @@ function main(listen) {
       },
     },
 
+    '/api/identity': {
+      'GET': function () {
+        return response(200, api.getIdentity())
+      },
+    },
+
     //
     // Mesh
     //   name: string
@@ -182,8 +188,8 @@ function main(listen) {
     },
 
     '/api/meshes/{mesh}/permits/{username}': {
-      'GET': function ({ mesh, username }) {
-        return api.getPermit(mesh, username).then(
+      'POST': function ({ mesh, username }, req) {
+        return api.getPermit(mesh, username, req.body).then(
           ret => ret ? response(200, ret) : response(403)
         )
       },

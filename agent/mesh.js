@@ -48,9 +48,10 @@ export default function (rootDir, config) {
     meshError('Missing agent certificate')
   }
 
-  if (config.agent.privateKey) {
+  var key = (username === 'root' ? config.agent.privateKey : db.getKey('agent'))
+  if (key) {
     try {
-      agentKey = new crypto.PrivateKey(config.agent.privateKey)
+      agentKey = new crypto.PrivateKey(key)
     } catch {
       meshError('Invalid agent private key')
     }
@@ -300,11 +301,9 @@ export default function (rootDir, config) {
       )
     }
 
-    function issuePermit(username) {
-      var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
-      var pkey = new crypto.PublicKey(key)
+    function issuePermit(username, identity) {
       return requestHub.spawn(
-        new Message({ method: 'POST', path: `/api/sign/${username}`}, pkey.toPEM())
+        new Message({ method: 'POST', path: `/api/sign/${username}`}, identity)
       ).then(
         function (res) {
           if (res && res.head.status === 201) {
@@ -312,7 +311,6 @@ export default function (rootDir, config) {
               ca: config.ca,
               agent: {
                 certificate: res.body.toString(),
-                privateKey: key.toPEM().toString(),
               },
               bootstraps: [...config.bootstraps],
             }
@@ -714,8 +712,8 @@ export default function (rootDir, config) {
     hubs[0].advertiseAppStates(list)
   }
 
-  function issuePermit(username) {
-    return hubs[0].issuePermit(username)
+  function issuePermit(username, identity) {
+    return hubs[0].issuePermit(username, identity)
   }
 
   function revokePermit(username) {

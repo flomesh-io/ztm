@@ -547,9 +547,10 @@ function findCurrentEndpointSession() {
       ip: $ctx.ip,
       port: $ctx.port,
       via: $ctx.via,
-      services: [],
       hubs: [...myNames]
     }
+  } else {
+    $endpoint.username = $ctx.username
   }
   $endpoint.isConnected = true
   return true
@@ -577,25 +578,8 @@ function updateFileInfo(fs, f, ep) {
   }
 }
 
-function canSee(username, ep) {
-  if (username === 'root') return true
-  if (username === ep.username) return true
-  return false
-}
-
 function canOperate(username, ep) {
-  if (username === 'root') return true
-  if (username === ep.username) return true
-  return false
-}
-
-function canConnect(username, ep, proto, svc) {
-  if (username === 'root') return true
-  if (username === ep.username) return true
-  var s = ep.services.find(({ protocol, name }) => (protocol === proto && name === svc))
-  if (!s) return false
-  if (!s.users) return true
-  return s.users.includes(username)
+  return (username === ep.username)
 }
 
 function response(status, body) {
