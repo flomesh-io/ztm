@@ -76,8 +76,9 @@ export default function ({ app, mesh, utils }) {
       'POST': responder(({ ep, proto, name }, req) => {
         var obj = JSON.decode(req.body)
         var targets = obj.targets
-        var entrances = obj.entrances || null
-        return api.setOutbound(ep, proto, name, targets, entrances).then(response(201))
+        var entrances = obj.entrances
+        var users = obj.users
+        return api.setOutbound(ep, proto, name, targets, entrances, users).then(response(201))
       }),
 
       'DELETE': responder(({ ep, proto, name }) => {
