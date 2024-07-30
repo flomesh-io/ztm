@@ -1,62 +1,74 @@
 export default function ({ app, api, utils }) {
-  var $handler
+  var $ctx
+  var $script
+  var $argv
+  var $output
 
   return pipeline($=>$
-    .onStart(ctx => main(ctx))
+    .onStart(c => {
+      $ctx = c
+      return new MessageStart
+    })
+    .pipe(
+      function () {
+        try {
+          return utils.parseArgv($ctx.argv, {
+            help: text => {
+              $output = new Data(text)
+              $output.push('\n')
+              return 'output'
+            },
+            commands: [
+              {
+                title: 'Execute a script on a remote endpoint',
+                usage: '<filename>',
+                options: `
+                  --, --args  ...   Pass all options afterwards to the script
+                `,
+                action: (args) => {
+                  $argv = args['--args'] || []
+                  var filename = args['<filename>']
+                  if (filename === '-') {
+                    $script = new Data
+                    return 'read'
+                  }
+                  var pathname = os.path.resolve($ctx.cwd, filename)
+                  $script = os.read(pathname)
+                  return 'exec'
+                }
+              }
+            ]
+          })
+        } catch (err) {
+          $output = new Data('ztm: ')
+          $output.push(err.message || err.toString())
+          $output.push('\n')
+          return 'output'
+        }
+      }, {
+        'output': $=>$.replaceData().replaceStreamStart(() => [$output, new StreamEnd]),
+        'exec': $=>$.replaceData().replaceStreamStart(() => exec().then(output => [output, new StreamEnd])),
+        'read': $=>$.replaceData(data => { $script.push(data) }).replaceStreamEnd(() => exec().then(output => [output, new StreamEnd])),
+      }
+    )
   )
 
-  function main({ argv, cwd, endpoint }) {
-    var buffer = new Data
-
-    function output(str) {
-      buffer.push(str)
-    }
-
-    function flush() {
-      return Promise.resolve([buffer, new StreamEnd])
-    }
-
-    function error(err) {
-      output('ztm: ')
-      output(err.message || err.toString())
-      output('\n')
-      return flush()
-    }
-
-    try {
-      return utils.parseArgv(argv, {
-        help: text => Promise.resolve(output(text + '\n')),
-        commands: [
-          {
-            title: 'Execute a script on a remote endpoint',
-            usage: '<filename>',
-            options: `
-              --, --args  ...   Pass all options afterwards to the script
-            `,
-            action: (args) => {
-              var filename = args['<filename>']
-              var pathname = os.path.resolve(cwd, filename)
-              var script = os.read(pathname)
-              var argv = args['--args'] || []
-              return pipeline($=>$
-                .onStart(new Message(
-                  {
-                    method: 'POST',
-                    path: `/api/script?argv=${URL.encodeComponent(JSON.stringify(argv))}`
-                  },
-                  script
-                ))
-                .pipe(api.executeScriptRemote, () => endpoint.id)
-                .replaceMessage(res => {
-                  output(res?.body || new Data)
-                  return new StreamEnd
-                })
-              ).spawn()
-            }
-          }
-        ]
-      }).then(flush).catch(error)
-
-    } catch (err) { return error(err) }
+  function exec() {
+    var ep = $ctx.endpoint.id
+    return pipeline($=>$
+      .onStart(new Message(
+        {
+          method: 'POST',
+          path: `/api/script?argv=${URL.encodeComponent(JSON.stringify($argv))}`
+        },
+        $script
+      ))
+      .pipe(api.executeScriptRemote, () => ep)
+      .replaceMessage(res => {
+        $output = res?.body || new Data
+        return new StreamEnd
+      })
+      .onEnd(() => $output)
+    ).spawn()
   }
 }

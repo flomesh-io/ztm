@@ -92,7 +92,7 @@ export default function (argv, { commands, notes, help, fallback }) {
 
 function matchCommand(pattern, argv) {
   var i = argv.findIndex(
-    (arg, i) => arg.startsWith('-') || arg !== pattern[i]
+    (arg, i) => (arg.length > 1 && arg.startsWith('-')) || arg !== pattern[i]
   )
   return i < 0 ? argv.length : i
 }
@@ -101,7 +101,7 @@ function parseCommand(pattern, argv, rest) {
   var values = {}
   var i = argv.findIndex((arg, i) => {
     var tok = pattern[i]
-    if (arg.startsWith('-')) return true
+    if (arg.length > 1 && arg.startsWith('-')) return true
     if (!tok) throw `Excessive positional argument: ${arg}`
     if (tok.startsWith('[') || tok.startsWith('<')) {
       values[tok] = arg
@@ -152,7 +152,7 @@ function parseOptions(format, argv) {
         addOption(currentOption, arg)
         return
       }
-      if (arg.startsWith('-')) {
+      if (arg.length > 1 && arg.startsWith('-')) {
         endOption(currentOption)
         currentOption = undefined
       } else {
@@ -162,7 +162,7 @@ function parseOptions(format, argv) {
     }
     if (arg.startsWith('--')) {
       currentOption = arg
-    } else if (arg.startsWith('-')) {
+    } else if (arg.length > 1 && arg.startsWith('-')) {
       if (arg.length === 2) {
         currentOption = arg
       } else {
