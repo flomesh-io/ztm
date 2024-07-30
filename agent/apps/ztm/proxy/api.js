@@ -30,7 +30,10 @@ export default function ({ app, mesh }) {
           path: `/api/config`,
         },
         JSON.encode(config)
-      ))
+      )).then(res => {
+        var status = res?.head?.status
+        if (!(200 <= status && status <= 299)) throw res.head.statusText
+      })
     }
   }
 

@@ -327,7 +327,7 @@ export default function ({ app, mesh }) {
 
   var matchApiOutbound = new http.Match('/api/outbound/{proto}/{name}')
   var response200 = new Message({ status: 200 })
-  var response401 = new Message({ status: 401 })
+  var response403 = new Message({ status: 403 })
   var response404 = new Message({ status: 404 })
 
   var $ctx
@@ -356,7 +356,7 @@ export default function ({ app, mesh }) {
           return response200
         } else {
           app.log(`Rejected inbound from ${peer.id} (user = ${peer.username}) for ${key}`)
-          return response401
+          return response403
         }
       }
       app.log(`No target found for ${key}`)

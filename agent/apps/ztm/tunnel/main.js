@@ -11,7 +11,7 @@ export default function ({ app, mesh, utils }) {
   var response = utils.createResponse
   var responder = utils.createResponder
   var responderOwnerOnly = (f) => responder((params, req) => (
-    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(401))
+    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(403))
   ))
 
   var serveUser = utils.createServer({

@@ -10,6 +10,9 @@ export default function ({ app, mesh, utils }) {
   var gui = new http.Directory(os.path.join(app.root, 'gui'))
   var response = utils.createResponse
   var responder = utils.createResponder
+  var responderOwnerOnly = (f) => responder((params, req) => (
+    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(403))
+  ))
 
   var serveUser = utils.createServer({
     '/cli': {
@@ -55,7 +58,7 @@ export default function ({ app, mesh, utils }) {
         ret => ret ? response(200, ret) : response(404)
       )),
 
-      'POST': responder((_, req) => {
+      'POST': responderOwnerOnly((_, req) => {
         var config = JSON.decode(req.body)
         return api.setEndpointConfig(app.endpoint.id, config).then(response(201))
       }),

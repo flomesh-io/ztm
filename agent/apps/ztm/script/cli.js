@@ -24,7 +24,6 @@ export default function ({ app, api, utils }) {
     }
 
     try {
-      println(argv)
       return utils.parseArgv(argv, {
         help: text => Promise.resolve(output(text + '\n')),
         commands: [
