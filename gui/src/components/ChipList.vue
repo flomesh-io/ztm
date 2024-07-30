@@ -105,8 +105,8 @@ const typing = (e,idx) => {
 						<i class="pi" :class="icon"/>
 					</span>
 					<span class="ml-2 font-medium">
-						<InputText v-if="!props.listKey" @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
-						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
+						<InputText v-if="!props.listKey" @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
+						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
 						<i class="pi pi-arrow-down-left" />
 					</span>
 			</Chip>

@@ -180,6 +180,8 @@ fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+	
+	// 
 		tauri::Builder::default()
 				.plugin(tauri_plugin_os::init())
 				.plugin(tauri_plugin_http::init())
@@ -187,6 +189,7 @@ pub fn run() {
 				.plugin(tauri_plugin_process::init())
 				.plugin(tauri_plugin_fs::init())				
 				.plugin(tauri_plugin_deep_link::init())
+				.plugin(tauri_plugin_clipboard_manager::init())
 				.invoke_handler(tauri::generate_handler![
 					pipylib,create_proxy_webview,create_wry_webview
 				])

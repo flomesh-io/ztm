@@ -7,11 +7,18 @@ export default class ZtmService {
 			user, password
 		});
 	}
+	identity() {
+		return request('/api/identity',"GET",null, {headers:{
+			"Content-Type": "text/plain"
+		}});
+	}
 	info({id}) {
 		return request('/api/info');
 	}
-	inviteEp(mesh, username) {
-		return request(`/api/meshes/${mesh}/permits/${username}`);
+	inviteEp(mesh, username, identity) {
+		return request(`/api/meshes/${mesh}/permits/${username}`, "POST", identity, {headers:{
+			"Content-Type": "text/plain"
+		}});
 	}
 	deleteEp(mesh, username, callback) {
 		confirm.remove(() => {

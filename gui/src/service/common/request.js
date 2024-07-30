@@ -150,16 +150,18 @@ async function request(url, method, params, config) {
 				});
 		}
 	} else {
+		const _header = config?.header || config?.headers || {};
+		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
 		if(!!method && method != METHOD.GET){
 			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
 				console.log('response:')
 				console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
-				} else if(typeof(res) == 'object' && !!res.body){
+				} else if(typeof(res) == 'object' && !!res.body && isJson){
 					return res.json();
 				} else {
-					return res
+					return res.text();
 				}
 			}).catch((e)=>{
 				console.log(e)
@@ -171,10 +173,10 @@ async function request(url, method, params, config) {
 				console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
-				} else if(typeof(res) == 'object' && !!res.body){
+				} else if(typeof(res) == 'object' && !!res.body && isJson){
 					return res.json();
 				} else {
-					return res
+					return res.text();
 				}
 			}).catch((e)=>{
 				console.log(e)
@@ -220,15 +222,17 @@ async function requestNM(url, method, params, config) {
 				});
 		}
 	} else {
+		const _header = config?.header || config?.headers || {};
+		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
 		return fetch(getUrl(url), getConfig(config,params, method)).then((res) => res.json()).then((res) => {
 			console.log('response:')
 			console.log(res)
 			if(typeof(res) == 'object' && res.status >= 400){
 				return Promise.reject(res);
-			} else if(typeof(res) == 'object' && !!res.body){
+			} else if(typeof(res) == 'object' && !!res.body && isJson){
 				return res.json();
 			} else {
-				return res
+				return res.text();
 			}
 		}).catch((e)=>{
 			if(!!method && method != METHOD.GET){
