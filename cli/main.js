@@ -177,7 +177,7 @@ function doCommand(meshName, epName, argv, program) {
         usage: 'invite <username>',
         options: `
           -i, --identity <pathname>   Specify an input file to read the user identity from
-                                      Read from stdin if not specified
+                                      Use '-' to read from stdin
           -p, --permit   <pathname>   Specify an output file to write the user permit to
                                       Print the user permit to stdout if not specified
         `,
@@ -302,7 +302,8 @@ function doCommand(meshName, epName, argv, program) {
         usage: 'publish <object type> <object name>',
         notes: `Available object types include: file, app`,
         options: `
-          -i, --input <pathname>   Specify a local file containing the data to publish (default: read from stdin)
+          -i, --input <pathname>   Specify a local file containing the data to publish
+                                   Use '-' to read data from stdin
                                    Only applicable when publishing a file
         `,
         action: (args) => {
@@ -757,9 +758,10 @@ function exec(argv) {
 
 function invite(name, identity, permit, mesh) {
   if (!mesh) throw `no mesh specified`
+  if (!identity) throw `missing option --identity`
   var username = normalizeName(name)
   var data = new Data
-  return pipy.read(identity || '-', $=>$.handleData(d => data.push(d))).then(
+  return pipy.read(identity, $=>$.handleData(d => data.push(d))).then(
     () => client.post(`/api/meshes/${mesh.name}/permits/${username}`, data).then(ret => {
       if (permit) {
         try {
@@ -1100,9 +1102,10 @@ function publishApp(name) {
 }
 
 function publishFile(name, input, mesh) {
+  if (!input) throw 'missing option --input'
   var path = os.path.normalize(name)
   var data = new Data
-  return pipy.read(input || '-', $=>$.handleData(d => data.push(d))).then(
+  return pipy.read(input, $=>$.handleData(d => data.push(d))).then(
     () => client.post(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path), data)
   )
 }

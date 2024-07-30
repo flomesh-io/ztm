@@ -92,7 +92,7 @@ export default function (argv, { commands, notes, help, fallback }) {
 
 function matchCommand(pattern, argv) {
   var i = argv.findIndex(
-    (arg, i) => arg.startsWith('-') || arg !== pattern[i]
+    (arg, i) => (arg.length > 1 && arg.startsWith('-')) || arg !== pattern[i]
   )
   return i < 0 ? argv.length : i
 }
@@ -101,7 +101,7 @@ function parseCommand(pattern, argv, rest) {
   var values = {}
   var i = argv.findIndex((arg, i) => {
     var tok = pattern[i]
-    if (arg.startsWith('-')) return true
+    if (arg.length > 1 && arg.startsWith('-')) return true
     if (!tok) throw `Excessive positional argument: ${arg}`
     if (tok.startsWith('[') || tok.startsWith('<')) {
       values[tok] = arg
@@ -131,7 +131,8 @@ function parseOptions(format, argv) {
           if (t.endsWith(',')) t = t.substring(0, t.length - 1)
           aliases.push(t)
         } else {
-          if (t.endsWith('...]') || t.endsWith('...>')) type = 'array'
+          if (t === '...') type = 'remainder array'
+          else if (t.endsWith('...]') || t.endsWith('...>')) type = 'array'
           else if (t.startsWith('[')) type = 'optional string'
           else if (t.startsWith('<')) type = 'string'
           else type = 'boolean'
@@ -147,7 +148,11 @@ function parseOptions(format, argv) {
 
   argv.forEach(arg => {
     if (currentOption) {
-      if (arg.startsWith('-')) {
+      if (options[currentOption]?.type === 'remainder array') {
+        addOption(currentOption, arg)
+        return
+      }
+      if (arg.length > 1 && arg.startsWith('-')) {
         endOption(currentOption)
         currentOption = undefined
       } else {
@@ -157,7 +162,7 @@ function parseOptions(format, argv) {
     }
     if (arg.startsWith('--')) {
       currentOption = arg
-    } else if (arg.startsWith('-')) {
+    } else if (arg.length > 1 && arg.startsWith('-')) {
       if (arg.length === 2) {
         currentOption = arg
       } else {
@@ -182,6 +187,7 @@ function parseOptions(format, argv) {
         option.value = value
         break
       case 'array':
+      case 'remainder array':
         option.value ??= []
         option.value.push(value)
         break
@@ -236,6 +242,7 @@ function tokenize(str) {
 function stripIndentation(s, indent) {
   var lines = s.split('\n')
   if (lines[0].trim() === '') lines.shift()
+  if (lines[lines.length - 1].trim() === '') lines.pop()
   var depth = lines[0].length - lines[0].trimStart().length
   var padding = ' '.repeat(indent || 0)
   return lines.map(l => padding + l.substring(depth)).join('\n')
