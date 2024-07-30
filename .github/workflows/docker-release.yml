@@ -1,0 +1,60 @@
+name: Release ZTM docker image
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+env:
+  PACKAGE_OUTPUT: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-docker:
+    name: build-docker
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set version
+        id: get_version
+        run: |
+          VERSION=$(sed 's#^refs/tags/\(.*\)#\1#' <<< '${{ github.ref }}' | sed 's/^v//g')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build Hub
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{secrets.REGISTRY_NAMESPACE}}/ztm-hub:${{steps.get_version.outputs.version}}
+          platforms: linux/amd64,linux/arm64
+          file: build/docker/Dockerfile
+          context: build/docker
+          build-args: |
+            TARGET=hub
+            ZTM_VERSION=${{steps.get_version.outputs.version}}
+
+      - name: Build agent
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{secrets.REGISTRY_NAMESPACE}}/ztm-agent:${{steps.get_version.outputs.version}}
+          platforms: linux/amd64,linux/arm64
+          file: build/docker/Dockerfile
+          context: build/docker
+          build-args: |
+            TARGET=agent
+            ZTM_VERSION=${{steps.get_version.outputs.version}}
