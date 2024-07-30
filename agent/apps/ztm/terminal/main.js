@@ -9,6 +9,9 @@ export default function ({ app, mesh, utils }) {
 
   var response = utils.createResponse
   var responder = utils.createResponder
+  var responderOwnerOnly = (f) => responder((params, req) => (
+    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(403))
+  ))
 
   var serveUser = utils.createServer({
     '/cli': {
@@ -44,18 +47,18 @@ export default function ({ app, mesh, utils }) {
 
   var servePeer = utils.createServer({
     '/api/config': {
-      'GET': responder(() => api.getEndpointConfig(app.endpoint.id).then(
+      'GET': responderOwnerOnly(() => api.getEndpointConfig(app.endpoint.id).then(
         ret => ret ? response(200, ret) : response(404)
       )),
 
-      'POST': responder((_, req) => {
+      'POST': responderOwnerOnly((_, req) => {
         var config = JSON.decode(req.body)
         return api.setEndpointConfig(app.endpoint.id, config).then(response(201))
       }),
     },
 
     '/api/shell': {
-      'CONNECT': api.serveTerminal,
+      'CONNECT': pipeline($=>$.pipe(api.serveTerminal, () => $ctx)),
     },
   })
 

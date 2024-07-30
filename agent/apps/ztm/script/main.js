@@ -55,7 +55,7 @@ export default function ({ app, mesh, utils }) {
 
   var servePeer = utils.createServer({
     '/api/script': {
-      'POST': api.executeScriptLocal,
+      'POST': pipeline($=>$.pipe(api.executeScriptLocal, () => $ctx)),
     },
   })
 

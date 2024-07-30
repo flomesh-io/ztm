@@ -1,4 +1,5 @@
 export default function ({ app, mesh }) {
+  var $ctx
   var $shell
 
   function allEndpoints() {
@@ -14,7 +15,11 @@ export default function ({ app, mesh }) {
           method: 'GET',
           path: `/api/config`,
         }
-      )).then(res => res ? JSON.decode(res.body) : null)
+      )).then(res => {
+        var status = res?.head?.status
+        if (!(200 <= status && status <= 299)) throw res.head.statusText
+        return JSON.decode(res.body)
+      })
     }
   }
 
@@ -49,18 +54,24 @@ export default function ({ app, mesh }) {
   }
 
   var serveTerminal = pipeline($=>$
-    .acceptHTTPTunnel(() => new Message({ status: 200 })).to($=>$
-      .onStart(() => getLocalConfig().then(config => {
-        $shell = config.shell || os.env['SHELL'] || 'sh'
-        return new Data
-      }))
-      .exec(
-        () => $shell, {
-          pty: true,
-          onExit: () => new StreamEnd
-        }
-      )
-    )
+    .onStart(c => { $ctx = c })
+    .pipe(() => $ctx.peer.username === app.username ? 'exec' : 'deny', {
+      'exec': ($=>$
+        .acceptHTTPTunnel(() => new Message({ status: 200 })).to($=>$
+          .onStart(() => getLocalConfig().then(config => {
+            $shell = config.shell || os.env['SHELL'] || 'sh'
+            return new Data
+          }))
+          .exec(
+            () => $shell, {
+              pty: true,
+              onExit: () => new StreamEnd
+            }
+          )
+        )
+      ),
+      'deny': $=>$.replaceMessage(new Message({ status: 403 }))
+    })
   )
 
   function getLocalConfig() {

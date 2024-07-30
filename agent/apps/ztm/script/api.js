@@ -5,6 +5,7 @@ export default function ({ app, mesh }) {
 
   var scripts = {}
 
+  var $ctx
   var $ep
   var $hash
   var $command
@@ -24,27 +25,34 @@ export default function ({ app, mesh }) {
   )
 
   var executeScriptLocal = pipeline($=>$
-    .replaceMessage(req => {
-      var url = new URL(req.head.path)
-      var argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv') || '[]'))
-      var exe = app.executable
-      var program = exe.endsWith('pipy') || exe.endsWith('pipy.exe') ? [exe] : [exe, '--pipy']
-      $hash = addScript(req.body)
-      $command = [
-        ...program,
-        '--no-reload',
-        '--log-level=error',
-        `${app.url}/api/scripts/${$hash}`,
-        '--args', ...argv
-      ]
-      return new Data
+    .onStart(c => { $ctx = c })
+    .pipe(() => $ctx.peer.username === app.username ? 'exec' : 'deny', {
+      'exec': ($=>$
+        .replaceMessage(req => {
+          var url = new URL(req.head.path)
+          var argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv') || '[]'))
+          var exe = app.executable
+          var program = exe.endsWith('pipy') || exe.endsWith('pipy.exe') ? [exe] : [exe, '--pipy']
+          $hash = addScript(req.body)
+          $command = [
+            ...program,
+            '--no-reload',
+            '--log-level=error',
+            `${app.url}/api/scripts/${$hash}`,
+            '--args', ...argv
+          ]
+          return new Data
+        })
+        .exec(() => $command, { stderr: true })
+        .replaceStreamStart(evt => [new MessageStart, evt])
+        .replaceStreamEnd(() => {
+          delete scripts[$hash]
+          return new MessageEnd
+        })
+      ),
+      'deny': $=>$.replaceMessage(new Message({ status: 403 }, 'Forbidden'))
     })
-    .exec(() => $command, { stderr: true })
-    .replaceStreamStart(evt => [new MessageStart, evt])
-    .replaceStreamEnd(() => {
-      delete scripts[$hash]
-      return new MessageEnd
-    })
+
   )
 
   function addScript(script) {
