@@ -1,5 +1,6 @@
 export default function ({ app, mesh }) {
   var $ctx
+  var $config
   var $shell
 
   function allEndpoints() {
@@ -54,14 +55,17 @@ export default function ({ app, mesh }) {
   }
 
   var serveTerminal = pipeline($=>$
-    .onStart(c => { $ctx = c })
-    .pipe(() => $ctx.peer.username === app.username ? 'exec' : 'deny', {
+    .onStart(c => {
+      $ctx = c
+      return getLocalConfig().then(config => { $config = config })
+    })
+    .pipe(() => canAccess($ctx.peer.username) ? 'exec' : 'deny', {
       'exec': ($=>$
         .acceptHTTPTunnel(() => new Message({ status: 200 })).to($=>$
-          .onStart(() => getLocalConfig().then(config => {
-            $shell = config.shell || os.env['SHELL'] || 'sh'
+          .onStart(() => {
+            $shell = $config.shell || os.env['SHELL'] || 'sh'
             return new Data
-          }))
+          })
           .exec(
             () => $shell, {
               pty: true,
@@ -73,6 +77,13 @@ export default function ({ app, mesh }) {
       'deny': $=>$.replaceMessage(new Message({ status: 403 }))
     })
   )
+
+  function canAccess(username) {
+    if (username === app.username) return true
+    var users = $config.users
+    if (users instanceof Array && users.includes(username)) return true
+    return false
+  }
 
   function getLocalConfig() {
     return mesh.read('/local/config.json').then(

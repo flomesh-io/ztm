@@ -62,11 +62,25 @@ export default function ({ app, api, utils }) {
             usage: 'config',
             options: `
               --set-shell [command]   Set the command to start the shell program when a terminal is opened
+              --add-user  [username]  Allow the specified user to access the terminal
+              --del-user  [username]  Forbid the specified user to access the terminal
             `,
             action: (args) => api.getEndpointConfig(endpoint.id).then(config => {
               var changed = false
               if ('--set-shell' in args) {
                 config.shell = args['--set-shell']
+                changed = true
+              }
+
+              if ('--add-user' in args) {
+                config.users ??= []
+                config.users.push(args['--add-user'])
+                changed = true
+              }
+
+              if ('--del-user' in args) {
+                var user = args['--del-user']
+                config.users = (config.users || []).filter(u => u !== user)
                 changed = true
               }
 
@@ -82,6 +96,13 @@ export default function ({ app, api, utils }) {
               function printConfig(config) {
                 output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
                 output(`Shell: ${config.shell || '(default)'}\n`)
+                output(`Allowed Users:`)
+                if (config.users instanceof Array && config.users.length > 0) {
+                  output('\n')
+                  config.users.forEach(user => output(`  ${user}\n`))
+                } else {
+                  output(' (owner only)\n')
+                }
               }
             })
           },
