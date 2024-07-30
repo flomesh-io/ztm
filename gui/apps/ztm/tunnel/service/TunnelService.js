@@ -14,7 +14,7 @@ export default class TunnelService {
 	getOutbound({ep, proto, name}) {
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`);
 	}
-	createOutbound({ep, proto, name, targets, entrances}) {
+	createOutbound({ep, proto, name, targets, entrances, users}) {
 		const _targets = [];
 		targets.forEach((target) => {
 			const _target = {}
@@ -33,7 +33,7 @@ export default class TunnelService {
 			}
 		})
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"POST", {
-			targets: _targets, entrances
+			targets: _targets, entrances, users: users||[]
 		});
 	}
 	deleteOutbound({ep, proto, name}, callback) {

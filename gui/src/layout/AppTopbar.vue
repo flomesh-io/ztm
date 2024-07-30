@@ -8,7 +8,12 @@ import XeyeSvg from "@/assets/img/white.png";
 import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
+import { copy } from '@/utils/clipboard';
+import exportFromJSON from 'export-from-json';
+import toast from "@/utils/toast";
+import ZtmService from '@/service/ZtmService';
 
+const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -135,6 +140,51 @@ const load = (d) => {
 const select = (selected) => {
 	store.commit('account/setSelectedMesh', selected);
 }
+
+const usermenu = ref();
+const usermenuitems = ref([
+		{
+				label: 'Copy Identity',
+				icon: 'pi pi-copy',
+				command(){
+					ztmService.identity()
+						.then(res => {
+							if(!!res){
+								copy(res);
+							}
+						})
+						.catch(err => {
+							loading.value = false;
+							console.log('Request Failed', err)
+						}); 
+				},
+		},
+		{
+				label: 'Download Identity',
+				icon: 'pi pi-download',
+				command(){
+					ztmService.identity()
+						.then(res => {
+							if(!!res){
+								
+								exportFromJSON({ 
+									data: res,
+									fileName:`identity`,
+									exportType: exportFromJSON.types.txt
+								})
+							}
+						})
+						.catch(err => {
+							loading.value = false;
+							console.log('Request Failed', err)
+						}); 
+				},
+		},
+]);
+
+const toggleUsermenu = (event) => {
+    usermenu.value.toggle(event);
+};
 </script>
 
 <template>
@@ -160,7 +210,7 @@ const select = (selected) => {
 					<div class="flex align-items-center flex-column w-full">
 						
 							<div v-tooltip="`${selectedMesh?.agent?.name||'Unname'} (${selectedMesh?.agent?.username})`" class="w-full flex flex-column justify-content-center align-items-center py-3">
-									<Avatar icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
+									<Avatar  @click="toggleUsermenu" icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
 									<div class="text-ellipsis w-full text-sm px-2 text-center"><b>{{selectedMesh?.agent?.name||selectedMesh?.agent?.username||'Agent'}}</b></div>
 									<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
 							</div>
@@ -173,7 +223,7 @@ const select = (selected) => {
 					
 			</template>
 	</Menubar>
-   
+   <Menu ref="usermenu" id="user_menu" :model="usermenuitems" :popup="true" />
 </template>
 
 <style scoped lang="scss">

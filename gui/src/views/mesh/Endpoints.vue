@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import { useToast } from "primevue/usetoast";
 import relativeTime from 'dayjs/plugin/relativeTime';
 import exportFromJSON from 'export-from-json';
+import clipboard from 'clipboardy';
 dayjs.extend(relativeTime)
 
 const store = useStore();
@@ -89,15 +90,17 @@ const emptyMsg = computed(()=>{
 	}
 });
 const username = ref('');
+const identity = ref('');
 const op = ref();
 const toggle = (event) => {
 	username.value = "";
+	identity.value = "";
 	permit.value = null;
 	op.value.toggle(event);
 }
 const permit = ref(null)
 const inviteEp = () => {
-	ztmService.inviteEp(selectedMesh.value?.name, username.value)
+	ztmService.inviteEp(selectedMesh.value?.name, username.value, identity.value)
 		.then(data => {
 			permit.value = data;
 			toast.add({ severity: 'success', summary:'Tips', detail: `${username.value} permit generated.`, life: 3000 });
@@ -111,6 +114,11 @@ const download = () => {
 		fileName:`${username.value}-permit`,
 		exportType: exportFromJSON.types.txt
 	})
+}
+const copy = () => {
+	clipboard.write(JSON.stringify(permit.value)).then(()=>{
+		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
+	});
 }
 </script>
 
@@ -130,13 +138,21 @@ const download = () => {
 			</AppHeader>
 			
 			<Popover ref="op" >
-				<div class="flex" v-if="!permit">
-					<InputText size="small" placeholder="Username" v-model="username"  class="w-10rem"></InputText>
-					<Button size="small" :disabled="!username || username == 'root'" label="Invite" class="ml-2"  @click="inviteEp"></Button>
+				<div  v-if="!permit">
+					<div class="w-full">
+						<CertificateUploder placeholder="Identity" v-model="identity" label="Identity"/>
+					</div>
+					<div class="flex mt-2 w-full">
+						<InputText size="small" placeholder="Username" v-model="username"  class="flex-item"></InputText>
+						<Button size="small" :disabled="!username || username == 'root'" label="Invite" class="ml-2"  @click="inviteEp"></Button>
+					</div>
 				</div>
 				<div v-else>
 					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="JSON.stringify(permit)"/>
-					<Button size="small"  label="Download" class="w-full mt-1"  @click="download"></Button>
+					<div class="flex mt-1">
+						<Button size="small"  label="Copy" class="flex-item mr-1"  @click="copy"></Button>
+						<Button size="small"  label="Download" class="flex-item"  @click="download"></Button>
+					</div>
 				</div>
 			</Popover>
 			<Loading v-if="loading"/>

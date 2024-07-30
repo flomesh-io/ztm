@@ -20,7 +20,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { resourceDir } from '@tauri-apps/api/path';
 import { openWebview } from '@/utils/webview';
-
+import { copy } from '@/utils/clipboard';
+import exportFromJSON from 'export-from-json';
+import toast from "@/utils/toast";
 
 const store = useStore();
 const playing = ref(false);
@@ -233,6 +235,50 @@ const toggle = (event) => {
 const takePipyVersion = () => {
 	shellService.takePipyVersion();
 }
+const usermenu = ref();
+const usermenuitems = ref([
+		{
+				label: 'Copy Identity',
+				icon: 'pi pi-copy',
+				command(){
+					ztmService.identity()
+						.then(res => {
+							if(!!res){
+								copy(res)
+							}
+						})
+						.catch(err => {
+							loading.value = false;
+							console.log('Request Failed', err)
+						}); 
+				},
+		},
+		{
+				label: 'Download Identity',
+				icon: 'pi pi-download',
+				command(){
+					ztmService.identity()
+						.then(res => {
+							if(!!res){
+								
+								exportFromJSON({ 
+									data: res,
+									fileName:`identity`,
+									exportType: exportFromJSON.types.txt
+								})
+							}
+						})
+						.catch(err => {
+							loading.value = false;
+							console.log('Request Failed', err)
+						}); 
+				},
+		},
+]);
+
+const toggleUsermenu = (event) => {
+    usermenu.value.toggle(event);
+};
 </script>
 
 <template>
@@ -242,10 +288,11 @@ const takePipyVersion = () => {
 	  <div class="wave"></div>
 	  <div class="wave"></div>
 		<PipyVersion class="left-fixed" :playing="playing"/>
-		<div class="userinfo" v-if="user" v-tooltip="user?.id">
-			<Avatar icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
-			{{user?.id}}
+		<div class="userinfo" v-if="user" >
+			<Avatar @click="toggleUsermenu" icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
+			<span v-tooltip="user?.id">{{user?.id}}</span>
 		</div>
+		<Menu ref="usermenu" id="user_menu" :model="usermenuitems" :popup="true" />
 		<div class="infotop">
 			<div>
 				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" />

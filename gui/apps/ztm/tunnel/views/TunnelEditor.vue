@@ -10,6 +10,7 @@ const props = defineProps(['d','endpointMap']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
 const endpoints = ref([]);
+const users = ref([]);
 const route = useRoute();
 const toast = useToast();
 const tunnelService = new TunnelService();
@@ -28,6 +29,7 @@ const newOutbound = {
 	ep: info.value.endpoint?.id,
 	targets: [],
 	entrances: [],
+	users: [],
 }
 const outbound = ref(_.cloneDeep(newOutbound))
 const outbounds = ref([])
@@ -42,11 +44,16 @@ const newInbound = {
 const inbound = ref(_.cloneDeep(newInbound))
 const inbounds = ref([])
 const getEndpoints = () => {
+	const _users = [];
 	tunnelService.getEndpoints()
 		.then(res => {
 			console.log("Endpoints:")
 			console.log(res)
 			endpoints.value = res || [];
+			endpoints.value.forEach((ep)=>{
+				_users.push(ep.username);
+			});
+			users.value = Array.from(new Set(_users));
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
@@ -58,10 +65,10 @@ const enabled = computed(() => {
 	);
 });
 const addInEnabled = computed(() => {
-	return inbound.value.listens.length>0 && inbound.value.ep;
+	return inbound.value.listens.length>0 && !!inbound.value.listens[0]?.value && inbound.value.ep;
 });
 const addOutEnabled = computed(() => {
-	return outbound.value.targets.length>0 && outbound.value.ep;
+	return outbound.value.targets.length>0 && !!outbound.value.targets[0] && outbound.value.ep;
 });
 const error = ref();
 const back = () => {
@@ -218,6 +225,22 @@ const outboundRemove = (t,index) => {
 		})
 	}
 }
+
+const visibleOutboundType = ref(false);
+const outboundType = ref('');
+const outboundTypeEnter = () => {
+	if(!!outboundType.value){
+		if(!users.value.find((u)=>u==outboundType.value)){
+			users.value.push(outboundType.value);
+		}
+		if(!outbound.value.users.find((u)=>u==outboundType.value)){
+			outbound.value.users.push(outboundType.value);
+		}
+		outboundType.value = "";
+	}
+	visibleOutboundType.value = false;
+}
+
 onMounted(() => {
 	loaddata()
 });
@@ -248,11 +271,11 @@ watch(()=>props.d,()=>{
 				<div v-else class="surface-ground surface-section h-full p-4" >
 						<div class="mb-4" v-if="!props.d">
 							<h6>
-								<Tag>Metadata</Tag>
+								<Tag>Tunnel</Tag>
 							</h6>
 							<div class="grid" >
 								<div class="col-12 md:col-6">
-									<FormItem label="Tunnel" :border="false">
+									<FormItem label="Name" :border="false">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 													<i class="pi pi-bookmark"/>
@@ -285,7 +308,7 @@ watch(()=>props.d,()=>{
 							<div class="col-12 md:col-6">
 								<h6 class="flex">
 									<div>
-										<Tag >Inbounds
+										<Tag >Inbound
 											<Badge v-if="!!props.d" :value="inbounds.length" />
 										</Tag> 
 									</div>
@@ -321,9 +344,9 @@ watch(()=>props.d,()=>{
 										</Chip>
 									</FormItem>
 									<FormItem label="Listens">
-										<ChipList icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
+										<ChipList direction="v" icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
-									<FormItem label="Exits"  :border="false">
+									<FormItem label="Allowed Exits"  :border="false">
 											<Chip class="pl-0 pr-3 mr-2">
 													<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 														<i class="pi pi-chart-scatter"/>
@@ -343,7 +366,7 @@ watch(()=>props.d,()=>{
 								</ul>
 								<DataView v-else :value="inbounds">
 										<template #empty>
-											No inbounds.
+											No inbound.
 										</template>
 									<template #list="slotProps">
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
@@ -386,7 +409,7 @@ watch(()=>props.d,()=>{
 							<div class="col-12 md:col-6">
 								<h6 class="flex">
 									<div>
-										<Tag >Outbounds
+										<Tag >Outbound
 											<Badge v-if="!!props.d" :value="outbounds.length" />
 										</Tag> 
 									</div>
@@ -422,9 +445,9 @@ watch(()=>props.d,()=>{
 											</Chip>
 										</FormItem>
 										<FormItem label="Targets">
-											<ChipList icon="pi-desktop" placeholder="Host:Port" v-model:list="outbound.targets" />
+											<ChipList direction="v" icon="pi-desktop" placeholder="Host:Port" v-model:list="outbound.targets" />
 										</FormItem>
-										<FormItem label="Entrances"  :border="false">
+										<FormItem label="Allowed Entrances" >
 												<Chip class="pl-0 pr-3 mr-2">
 														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 															<i class="pi pi-chart-scatter"/>
@@ -441,10 +464,31 @@ watch(()=>props.d,()=>{
 													</span>
 											</Chip>
 										</FormItem>
+										<FormItem label="Users"  :border="false">
+												<Chip class="pl-0 pr-3 mr-2">
+														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+															<i class="pi pi-users"/>
+														</span>
+														<span class="font-medium">
+															<MultiSelect
+																v-model="outbound.users" 
+																:options="users" 
+																:filter="users.length>=8"
+																placeholder="Users" 
+																class="flex" :maxSelectedLabels="3">
+																
+																<template #dropdownicon>
+																	<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
+																</template>
+															</MultiSelect>
+															<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" placeholder="Add" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
+													</span>
+											</Chip>
+										</FormItem>
 									</ul>
 									<DataView v-else :value="outbounds">
 										<template #empty>
-											No outbounds.
+											No outbound.
 										</template>
 										<template #list="slotProps">
 										
@@ -461,9 +505,13 @@ watch(()=>props.d,()=>{
 																		<span class="font-semibold w-6rem text-right">Targets:</span>
 																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets" :value="target" severity="secondary" /></span>
 																	</div>	
-																	<div  class="flex flex-col gap-4">
+																	<div  class="flex flex-col gap-4 mb-2">
 																		<span class="font-semibold w-6rem text-right" v-if="item.entrances && item.entrances.length>0">Entrances:</span>
 																		<span class="text-xl font-semibold" v-if="item.entrances && item.entrances.length>0"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></span>
+																	</div>
+																	<div class="flex flex-col gap-4">
+																		<span class="font-semibold w-6rem text-right" v-if="item.users && item.users.length>0">Users:</span>
+																		<span class="text-xl font-semibold" v-if="item.users && item.users.length>0"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></span>
 																	</div>
 																</div>	
 																	<div class="flex flex-row-reverse md:flex-row gap-2 pl-4">

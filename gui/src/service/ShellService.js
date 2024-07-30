@@ -11,7 +11,7 @@ const ztmService = new ZtmService();
 export default class ShellService {
 	async getDB () {
 		const appDataDirPath = await resourceDir();
-		return `${appDataDirPath}/ztm.db`
+		return `${appDataDirPath}/ztmdb`
 	}
 	async openFinder() {
 		const appDataDirPath = await resourceDir();
@@ -58,11 +58,17 @@ export default class ShellService {
 		}
 	}
 	async startPipy (port, reset, callError){
+		const pm = platform();
+		console.log(pm)
+		if(pm == "ios"){
+			console.log("BaseDirectory.Resource")
+			console.log(BaseDirectory.Resource)
+		}
+		
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
-		const pm = platform();
 		if(pm != "android"){
 			
 			// const args = [
@@ -71,7 +77,7 @@ export default class ShellService {
 			// 	`--listen`,
 			// 	`${port}`,
 			// 	`--data`,
-			// 	`${resourceDirPath}/ztm.db`,
+			// 	`${resourceDirPath}/ztmdb`,
 			// 	"--pipy-options",
 			// 	`--log-file=${resourceDirPath}/ztm.log`,
 			// ];
@@ -82,7 +88,7 @@ export default class ShellService {
 				`--listen`,
 				`${port}`,
 				`--data`,
-				`${resourceDirPath}/ztm.db`,
+				`${resourceDirPath}/ztmdb`,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
@@ -95,12 +101,12 @@ export default class ShellService {
 				store.commit('account/pushLog', {level:'Info',msg:`pipy pause with code ${data.code} and signal ${data.signal}`});
 			});
 			command.stdout.on('data', line => {
-				console.log("[data]");
+				console.log("[stdout]");
 				console.log(line);
 				store.commit('account/pushLog', {level:'Info',msg:line});
 			});
 			command.stderr.on('data', line => {
-				console.log("[data]");
+				console.log("[stderr]");
 				console.log(line);
 				store.commit('account/pushLog', {level:'Error',msg:line});
 				callError(line);
@@ -124,7 +130,7 @@ export default class ShellService {
 				`--listen`,
 				`${port}`,
 				`--data`,
-				`${resourceDirPath}/ztm.db`,
+				`${resourceDirPath}/ztmdb`,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];

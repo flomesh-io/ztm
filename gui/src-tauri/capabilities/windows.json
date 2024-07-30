@@ -6,6 +6,7 @@
     "*"
   ],
   "permissions": [
+		"clipboard-manager:allow-write-text",
     "path:default",
     "event:default",
     "window:default",
@@ -46,6 +47,15 @@
           "args": [
             {
               "validator": ".+"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
+            },
+            {
+              "validator": ".*"
             },
             {
               "validator": ".*"

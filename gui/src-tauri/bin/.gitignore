@@ -13,3 +13,6 @@ ztmctl-x86_64-unknown-linux-gnu
 # Android
 ztmctl-aarch64-linux-android
 ztmctl-armv7-linux-androideabi
+
+# IOS
+ztmctl-aarch64-apple-ios-sim
