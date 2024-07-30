@@ -1132,9 +1132,7 @@ export default function (rootDir, config) {
 
   function discoverFromApp(provider, app) {
     return function () {
-      if (app) {
-        return hubs[0].findApp(provider, app).then(ret => ret?.endpoints || [])
-      }
+      return discoverEndpoints()
     }
   }
 
