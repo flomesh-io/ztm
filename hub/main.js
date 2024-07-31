@@ -397,7 +397,10 @@ var getAppState = pipeline($=>$
 )
 
 var muxToAgent = pipeline($=>$
-  .muxHTTP(() => $hubSelected, { version: 2 }).to($=>$
+  .muxHTTP(() => $hubSelected, {
+    version: 2,
+    ping: () => new Timeout(10).wait().then(new Data),
+  }).to($=>$
     .swap(() => $hubSelected)
   )
 )

@@ -621,7 +621,10 @@ export default function (rootDir, config) {
             path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}${q}` : `/api/endpoints/${ep}/apps/${app}${q}`,
           })
         }).to($=>$
-          .muxHTTP(() => $selectedHub, { version: 2 }).to($=>$
+          .muxHTTP(() => $selectedHub, {
+            version: 2,
+            ping: () => new Timeout(10).wait().then(new Data),
+          }).to($=>$
             .connectTLS(tlsOptions).to($=>$
               .connect(() => $selectedHub, connectOptions)
             )
