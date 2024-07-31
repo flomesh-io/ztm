@@ -11,7 +11,7 @@ import cmdline from './cmdline.js'
 
 try {
   main().then(
-    () => pipy.exit(0)
+    () => exit(0)
   ).catch(error)
 } catch (err) {
   error(err)
@@ -20,7 +20,11 @@ try {
 function error(err) {
   println('ztm:', err.message || err)
   if (err.stack) println(err.stack)
-  pipy.exit(-1)
+  exit(-1)
+}
+
+function exit(code) {
+  pipy.exit(code)
 }
 
 function main() {
@@ -498,7 +502,7 @@ function initHub(args) {
   } catch (e) {
     if (e.stack) println(e.stack)
     println('ztm:', e.toString())
-    pipy.exit(0)
+    exit(0)
   }
 
   var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
@@ -749,7 +753,7 @@ function exec(argv) {
     .onStart(new Data)
     .exec(argv, { stderr: true, onExit: code => void (exitCode = code) })
     .tee('-')
-  ).spawn().then(() => pipy.exit(exitCode))
+  ).spawn().then(() => exit(exitCode))
 }
 
 //
@@ -1186,6 +1190,8 @@ function callApp(argv, mesh, ep) {
     url += '&ep_id=' + ep.id
     url += '&ep_name=' + URL.encodeComponent(ep.name)
 
+    pipy.tty.raw = true
+
     return pipy.read('-', $=>$
       .onStart(new Data)
       .connectHTTPTunnel(
@@ -1195,10 +1201,11 @@ function callApp(argv, mesh, ep) {
         })
       ).to($=>$
         .muxHTTP().to($=>$
-          .connect(client.host())
+          .connect(client.host(), { idleTimeout: 0 })
         )
       )
       .tee('-')
+      .onEnd(() => { pipy.tty.raw = false })
     )
   })
 }

@@ -366,7 +366,7 @@ function main(listen) {
     k => new algo.LoadBalancer([{}])
   )
 
-  pipy.listen(listen, $=>$
+  pipy.listen(listen, { idleTimeout: 0 }, $=>$
     .demuxHTTP().to($=>$
       .pipe(
         function (evt) {
