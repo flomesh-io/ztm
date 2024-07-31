@@ -431,8 +431,8 @@ function startHub(args) {
   var opts = {
     '--data': args['--data'] || '~/.ztm',
     '--listen': args['--listen'] || '0.0.0.0:8888',
-    '--names': args['--names'],
   }
+  if ('--names' in args) opts['--names'] = args['--names']
   if ('--ca' in args) opts['--ca'] = args['--ca']
   var optsChanged = (
     ('--data' in args) ||
