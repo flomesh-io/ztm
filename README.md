@@ -194,3 +194,6 @@ For more information on the CLI, please refer to:
 ```sh
 ztm help
 ```
+
+## Quick Links:
+ * HowTo: Using ZTM for Secure Remote Desktop Protocol (RDP) Access (https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
