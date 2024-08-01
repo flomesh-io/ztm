@@ -37,7 +37,7 @@ export default class ShellService {
 		const pm = platform();
 		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
-		if(pm != "android" && false){
+		if(false){
 			let command = await Command.sidecar("bin/ztmctl", ['version','--json','','','','']);
 			await command.spawn();
 			command.stdout.on('data', line => {
@@ -60,16 +60,12 @@ export default class ShellService {
 	async startPipy (port, reset, callError){
 		const pm = platform();
 		console.log(pm)
-		if(pm == "ios"){
-			console.log("BaseDirectory.Resource")
-			console.log(BaseDirectory.Resource)
-		}
 		
 		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
-		if(pm != "android"){
+		if(pm != "android" && pm != "ios"){
 			
 			// const args = [
 			// 	"run",
@@ -151,7 +147,7 @@ export default class ShellService {
 	}
 	async pausePipy (port){
 		const pm = platform();
-		if(pm != "android"){
+		if(pm != "android" && pm != "ios"){
 			let child = store.getters['account/child'];
 			let pid = localStorage.getItem("PID");
 			console.log(`PID=${pid}`)
