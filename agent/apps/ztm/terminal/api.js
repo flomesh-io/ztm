@@ -59,9 +59,9 @@ export default function ({ app, mesh }) {
       $ctx = c
       return getLocalConfig().then(config => { $config = config })
     })
-    .pipe(() => canAccess($ctx.peer.username) ? 'exec' : 'deny', {
-      'exec': ($=>$
-        .acceptHTTPTunnel(() => new Message({ status: 200 })).to($=>$
+    .acceptHTTPTunnel(() => new Message({ status: 200 })).to($=>$
+      .pipe(() => canAccess($ctx.peer.username) ? 'exec' : 'deny', {
+        'exec': ($=>$
           .onStart(() => {
             $shell = $config.shell || os.env['SHELL'] || 'sh'
             return new Data
@@ -72,10 +72,14 @@ export default function ({ app, mesh }) {
               onExit: () => new StreamEnd
             }
           )
-        )
-      ),
-      'deny': $=>$.replaceMessage(new Message({ status: 403 }))
-    })
+        ),
+        'deny': ($=>$
+          .replaceStreamStart(new StreamEnd)
+          .replaceData()
+          .replaceStreamEnd(eos => [new Data('Forbidden\n'), eos])
+        ),
+      })
+    )
   )
 
   function canAccess(username) {

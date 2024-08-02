@@ -26,7 +26,7 @@ ZTM is written in **PipyJS**, a JavaScript dialect designed for [**Pipy**](https
 
 * **Secure**. All traffic is encrypted by TLS and has identities via certificates. By using **PipyJS**, security policy can be easily customized to meet the requirements in your organization.
 
-* **Highly customizable and programmable**, since **Pipy** in itself is a general-purpose networking scripting engine.
+* **Highly customizable and programmable**, since **Pipy** in itself is a general-purpose network scripting engine.
 
 * **Portable**. Choose your CPU architecture: x86, ARM, MIPS, RISC-V, LoongArch... Choose your operating system: Linux, Windows, macOS, FreeBSD, Android... ZTM runs anywhere.
 
@@ -196,4 +196,5 @@ ztm help
 ```
 
 ## Quick Links:
- * HowTo: Using ZTM for Secure Remote Desktop Protocol (RDP) Access (https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
+
+* [How-to: Using ZTM for Secure Remote Desktop Protocol (RDP) Access](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
