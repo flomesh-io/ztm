@@ -32,9 +32,9 @@ ZTM is written in **PipyJS**, a JavaScript dialect designed for [**Pipy**](https
 
 ## Documentation
 
-* [Architecture & Concepts](docs/Architecture-Concepts_zh.md)
-* [CLI](docs/CLI_zh.md)
-* [ZT-App](docs/ZT-App_zh.md)
+* [Architecture & Concepts](docs/Architecture-Concepts.md)
+* [CLI](docs/CLI.md)
+* [ZT-App](docs/ZT-App.md)
 * [Agent API](docs/Agent-API.md)
 * [Build](docs/Build.md)  
 
