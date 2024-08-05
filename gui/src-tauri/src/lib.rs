@@ -20,8 +20,9 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 						
 				unsafe {
 					// 加载动态库
+					println!("pipylib start!");
 					let lib = Library::new(&lib).map_err(|e| e.to_string())?;
-					
+					println!("pipylib loaded!");
 					// 获取pipy_main符号
 					let pipy_main: Symbol<unsafe extern "C" fn(i32, *const *const c_char) -> i32> = lib.get(b"pipy_main\0")
 							.map_err(|e| e.to_string())?;
@@ -41,12 +42,13 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 					 let c_argv_ptr = c_argv.as_ptr();
 
 
+					 println!("pipylib call!");
 						// 调用外部函数
 					 pipy_main(argc, c_argv_ptr);
 				 }
 				 Ok(())
 			});
-			
+		
 		let thread_id_str = format!("{:?}", handle.thread().id());
      // 返回线程 ID
      Ok(thread_id_str)

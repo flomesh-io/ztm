@@ -1,6 +1,6 @@
 import { Command, Child, open } from '@tauri-apps/plugin-shell';
 import { invoke } from '@tauri-apps/api/core';
-import { resourceDir, appLogDir, appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
+import { resourceDir, appLogDir, appDataDir, appLocalDataDir, documentDir } from '@tauri-apps/api/path';
 import { platform } from '@tauri-apps/plugin-os';
 import { readTextFileLines, BaseDirectory } from '@tauri-apps/plugin-fs';
 import ZtmService from '@/service/ZtmService';
@@ -65,14 +65,64 @@ export default class ShellService {
 		let resourceDirPath = '';
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
-		if(pm == "ios") {
-			resourceDirPath = await appLocalDataDir();
+		if(pm == "ios" ){
+			let resourceDirPath = await documentDir();
 			console.log(resourceDirPath)
+			const args = [
+				"./main",
+				"--pipy",
+				"repo://ztm/agent",
+				"--args",
+				`--listen`,
+				`${port}`,
+				`--data`,
+				`${resourceDirPath}/ztmdb`,
+				"--pipy-options",
+				`--log-file=${resourceDirPath}/ztm.log`,
+			];
+			console.log(args)
+			const filePath = await documentDir();
+			invoke('pipylib', {
+				lib:`${filePath}/libpipy.dylib`,
+				argv: args,
+				argc: args.length
+			}).then((res)=>{
+				store.commit('account/setPid', 1);
+				setTimeout(()=>{
+					this.takePipyVersion(true);
+				},1000)
+				console.log(`[pipyioslib]Result: ${res}`);
+			});
+		} else if(pm == "android" ){
+			let resourceDirPath = await appLocalDataDir();
+			console.log(resourceDirPath)
+			const args = [
+				"./main",
+				"--pipy",
+				"repo://ztm/agent",
+				"--args",
+				`--listen`,
+				`${port}`,
+				`--data`,
+				`${resourceDirPath}/ztmdb`,
+				"--pipy-options",
+				`--log-file=${resourceDirPath}/ztm.log`,
+			];
+			console.log(args)
+			const filePath = await appLocalDataDir();
+			invoke('pipylib', {
+				lib:`${filePath}/files/libztm.so`,
+				argv: args,
+				argc: args.length
+			}).then((res)=>{
+				store.commit('account/setPid', 1);
+				setTimeout(()=>{
+					this.takePipyVersion(true);
+				},1000)
+				console.log(`[pipylib]Result: ${res}`);
+			});
 		} else {
-			resourceDirPath = await resourceDir();
-		}
-		if(pm != "android" && pm != "ios"){
-			
+			let resourceDirPath = await resourceDir();
 			// const args = [
 			// 	"run",
 			// 	"agent",
@@ -123,32 +173,6 @@ export default class ShellService {
 			store.commit('account/setPid', child.pid);
 			console.log(`account/setPid=${child.pid}`)
 			store.commit('account/setChild', child);
-		} else {
-			const args = [
-				"./main",
-				"--pipy",
-				"repo://ztm/agent",
-				"--args",
-				`--listen`,
-				`${port}`,
-				`--data`,
-				`${resourceDirPath}/ztmdb`,
-				"--pipy-options",
-				`--log-file=${resourceDirPath}/ztm.log`,
-			];
-			console.log(args)
-			const filePath = await appLocalDataDir();
-			invoke('pipylib', {
-				lib:`${filePath}/files/libztm.so`,
-				argv: args,
-				argc: args.length
-			}).then((res)=>{
-				store.commit('account/setPid', 1);
-				setTimeout(()=>{
-					this.takePipyVersion(true);
-				},1000)
-				console.log(`[pipylib]Result: ${res}`);
-			});
 		}
 	}
 	async pausePipy (port){
