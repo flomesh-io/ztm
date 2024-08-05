@@ -207,31 +207,15 @@ const choose_button_click = ()=>{
 		choose_button.click()
 	},100)
 } 
-const actions = ref([
-    {
-        label: 'Actions',
-        items: [
-            {
-                label: 'Join Mesh',
-                icon: 'pi pi-plus',
-								command: ()=>{
-									openWebview({
-										url:'/#/mesh',
-										name:'ZTMGui',
-										width:1280,
-										height:860,
-										proxy:''
-									})
-								}
-            }
-        ]
-    }
-]);
-const addmenu = ref();
-const toggle = (event) => {
-    addmenu.value.toggle(event);
-};
-
+const joinMesh = () => {
+	openWebview({
+		url:'/#/mesh',
+		name:'ZTMGui',
+		width:1280,
+		height:860,
+		proxy:''
+	})
+}
 const takePipyVersion = () => {
 	shellService.takePipyVersion();
 }
@@ -352,7 +336,7 @@ const toggleUsermenu = (event) => {
 			</div> -->
 
 			<div class="flex-item">
-				<Button @click="toggle" aria-haspopup="true" aria-controls="addmenu" class="pointer" severity="help" rounded text aria-label="Filter" >
+				<Button @click="joinMesh" v-tooltip="'Join Mesh'" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
 				</Button>
 			</div>
@@ -377,8 +361,6 @@ const toggleUsermenu = (event) => {
 		</div>
 	</div>
 	<Apps v-if="appsOpen" @close="() => appsOpen = false" layout="fixed_container"/>
-	
-	<Menu ref="addmenu" id="addmenu" :model="actions" :popup="true" />
 </template>
 
 <style lang="scss" scoped>
