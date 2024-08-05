@@ -12,17 +12,30 @@ use tauri::AppHandle;
 use url::Url;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
+// use oslog::{OsLogger};
+// use log::{LevelFilter, trace, debug, info, warn, error};
 
 #[command]
 fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> {
 			// 创建一个通道用于线程输出
+			// if cfg!(target_os = "ios") {
+			// 	OsLogger::new("com.flomesh.ztm")
+			// 	        .level_filter(LevelFilter::Debug)
+			// 	        .category_level_filter("Settings", LevelFilter::Trace)
+			// 	        .init()
+			// 	        .unwrap();
+			// }
 			let handle = thread::spawn(move || -> Result<(), String> {
-						
 				unsafe {
 					// 加载动态库
-					println!("pipylib start!");
+					// if cfg!(target_os = "ios") {
+					// 		warn!("pipylib start!");
+					// }
 					let lib = Library::new(&lib).map_err(|e| e.to_string())?;
-					println!("pipylib loaded!");
+					
+					// if cfg!(target_os = "ios") {
+					// 		warn!("pipylib loaded!");
+					// }
 					// 获取pipy_main符号
 					let pipy_main: Symbol<unsafe extern "C" fn(i32, *const *const c_char) -> i32> = lib.get(b"pipy_main\0")
 							.map_err(|e| e.to_string())?;
@@ -42,7 +55,9 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 					 let c_argv_ptr = c_argv.as_ptr();
 
 
-					 println!("pipylib call!");
+					// if cfg!(target_os = "ios") {
+					// 		warn!("pipylib call!");
+					// }
 						// 调用外部函数
 					 pipy_main(argc, c_argv_ptr);
 				 }
