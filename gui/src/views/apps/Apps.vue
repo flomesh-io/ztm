@@ -64,7 +64,7 @@ const loaddata = () => {
 			console.log("uninstallApps:")
 			console.log(res2)
 			const _uninstallApps = [];
-			res2.forEach((_uninstallApp)=>{
+			(res2||[]).forEach((_uninstallApp)=>{
 				const installed = meshApps.value.find((_app)=>app.name == _uninstallApp.name && app.provider == _uninstallApp.provider )
 				if(!installed){
 					_uninstallApps.push({

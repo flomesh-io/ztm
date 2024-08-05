@@ -30,7 +30,7 @@ const openWebview = (app)=>{
 		if(!options.url && !!app?.port){
 			options.url = "http://"+(app?.port?.listen?.ip||'127.0.0.1')+':'+app?.port?.listen?.port;
 		}
-		if(platform=='android'){
+		if(platform=='android' || platform=='ios' ){
 			//=============
 			// invoke('load_webview_with_proxy', { 
 			// 	url: options.url, 

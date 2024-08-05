@@ -266,7 +266,7 @@ const toggleUsermenu = (event) => {
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': false,'android':platform=='android'}">
+	<div class="e-card playing transparent-form" :class="{'blur': false,'android':platform=='android','ios':platform=='ios'}">
 	  <div class="image"></div>
 	  <div class="wave"></div>
 	  <div class="wave"></div>
@@ -345,7 +345,7 @@ const toggleUsermenu = (event) => {
 					<i class="pi pi-upload text-3xl"  />
 				</FileUploderSmall>
 			</div>
-			<div class="flex-item" v-if="platform!='android'">
+			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-th-large text-3xl"  />
 				</Button>
@@ -570,6 +570,24 @@ const toggleUsermenu = (event) => {
 	}
 @media screen and (max-width: 768px){
 	.android{
+		.logo{
+			height: 90px;
+			width: 90px;
+			opacity: 0.85;
+			margin-bottom: 30px;
+		}
+		.infotop {
+		  top: 30%;
+			margin-top: 0px;
+			
+		}
+		.transparent.p-select{
+			width: 80%;
+			line-height: 26px;
+			font-size: 1.2rem;
+		}
+	}
+	.ios{
 		.logo{
 			height: 90px;
 			width: 90px;
