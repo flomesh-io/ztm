@@ -16,3 +16,4 @@ ztmctl-armv7-linux-androideabi
 
 # IOS
 ztmctl-aarch64-apple-ios-sim
+libpipy.dylib
