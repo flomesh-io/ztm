@@ -46,12 +46,12 @@ const defaultApp = [{
 const mobileApp = [{
 		name: "setting",
 	},{
-		name: "EPLog",
-		label: "EP Log",
-		url:'/#/mesh/log',
+		name: "ZTMLog",
+		label: "ZTM Log",
+		url:'/#/app/term',
 		width:455,
 		height:600,
-		icon: eplog,
+		icon: ztmlog,
 	},{
 		name: "browser",
 	}];
