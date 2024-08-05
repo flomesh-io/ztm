@@ -11,4 +11,4 @@ yarn tauri ios init
 chmod +x setup_lib.sh
 /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-ios/setup_lib.sh /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen/apple /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen/apple/Externals/arm64-sim/debug/libpipy.dylib
 并验证
-otool -L src-tauri/gen/apple/Runner.app/Runner
+otool -L /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen/apple/Runner.app/Runner
