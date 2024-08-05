@@ -46,6 +46,18 @@ const defaultApp = [{
 const mobileApp = [{
 		name: "setting",
 	},{
+		name: "EPLog",
+		label: "EP Log",
+		url:'/#/mesh/log',
+		width:455,
+		height:600,
+		icon: eplog,
+	},{
+		name: "browser",
+	}];
+const webApp = [{
+		name: "setting",
+	},{
 		name: "ZTMLog",
 		label: "ZTM Log",
 		url:'/#/app/term',
@@ -55,7 +67,12 @@ const mobileApp = [{
 	},{
 		name: "browser",
 	}]
-const apps = !!window.__TAURI_INTERNALS__ && platform() != "android" && platform() != "ios" ? defaultApp : mobileApp;
+const appSelect = {
+	web:webApp,
+	ios:mobileApp,
+	android:mobileApp,
+}
+const apps = !!window.__TAURI_INTERNALS__ ? (appSelect[platform()] || defaultApp) : mobileApp;
 const appMapping = {
 	"/setting": {
 		icon: setting,
