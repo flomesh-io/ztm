@@ -61,10 +61,16 @@ export default class ShellService {
 		const pm = platform();
 		console.log(pm)
 		
-		const resourceDirPath = await resourceDir();
 		localStorage.setItem("VITE_APP_API_PORT", port);
+		let resourceDirPath = '';
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
+		if(pm == "ios") {
+			resourceDirPath = await appLogDir();
+			console.log(resourceDirPath)
+		} else {
+			resourceDirPath = await resourceDir();
+		}
 		if(pm != "android" && pm != "ios"){
 			
 			// const args = [
