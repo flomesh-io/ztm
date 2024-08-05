@@ -28,5 +28,5 @@ const menus = {
 };
 
 export function getMenu(){
-	return menus[!!window.__TAURI_INTERNALS__ && platform() != "android" ?'tauri':'web'];
+	return menus[!!window.__TAURI_INTERNALS__ && platform() != "android" && platform() != "ios" ?'tauri':'web'];
 }

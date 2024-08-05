@@ -55,7 +55,7 @@ const mobileApp = [{
 	},{
 		name: "browser",
 	}]
-const apps = !!window.__TAURI_INTERNALS__ && platform() != "android" ? defaultApp : mobileApp;
+const apps = !!window.__TAURI_INTERNALS__ && platform() != "android" && platform() != "ios" ? defaultApp : mobileApp;
 const appMapping = {
 	"/setting": {
 		icon: setting,

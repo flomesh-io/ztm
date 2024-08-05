@@ -48,7 +48,7 @@ onMounted(()=>{
 	<Toolbar class="nopd-header">
 			<template #start>
 				<slot v-if="hasStartSlot" name="start"/>
-				<Button v-else-if="props.main && (isMobile || platform =='android')" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
+				<Button v-else-if="props.main && (isMobile || platform =='android'|| platform =='ios')" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
 				<Button v-else-if="props.main" @click="home" icon="iconfont icon-home" text />
 				<Button v-else @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>

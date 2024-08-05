@@ -66,7 +66,7 @@ export default class ShellService {
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
 		if(pm == "ios") {
-			resourceDirPath = await appLogDir();
+			resourceDirPath = await appLocalDataDir();
 			console.log(resourceDirPath)
 		} else {
 			resourceDirPath = await resourceDir();
