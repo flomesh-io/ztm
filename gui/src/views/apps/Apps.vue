@@ -200,7 +200,6 @@ watch(()=>manage,()=>{
 										offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
 			</div>
 		</div>
-		
 			<div class="terminal_body" v-if="!!app?.component">
 				<component :is="app.component" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
@@ -209,7 +208,7 @@ watch(()=>manage,()=>{
 			</div>
 			
 			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-6':'pt-2'" v-else-if="!manage">
-				<div v-if="props.layout=='absolute_container' && !selectedMesh" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
+				<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
 				</div>
 				<div class="grid text-center" >
@@ -229,6 +228,9 @@ watch(()=>manage,()=>{
 								</b>
 							</div>
 						</div>
+				</div>
+				<div v-if="props.layout=='absolute_container' && !selectedMesh && !props.noInners" class="flex-item text-center text-xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px">
+					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected-
 				</div>
 			</div>
 			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else>
