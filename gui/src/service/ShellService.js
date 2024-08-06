@@ -69,7 +69,7 @@ export default class ShellService {
 			let resourceDirPath = await documentDir();
 			console.log(resourceDirPath)
 			const args = [
-				"./main",
+				// "./main",
 				"--pipy",
 				"repo://ztm/agent",
 				"--args",
