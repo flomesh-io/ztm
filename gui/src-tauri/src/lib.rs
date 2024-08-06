@@ -18,20 +18,18 @@ use tauri_plugin_shell::ShellExt;
 #[command]
 fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> {
 			// 创建一个通道用于线程输出
-			// if cfg!(target_os = "ios") {
-			// 	OsLogger::new("com.flomesh.ztm")
-			// 	        .level_filter(LevelFilter::Debug)
-			// 	        .category_level_filter("Settings", LevelFilter::Trace)
-			// 	        .init()
-			// 	        .unwrap();
-			// }
+			
 			let handle = thread::spawn(move || -> Result<(), String> {
 				unsafe {
 					// 加载动态库
 					// if cfg!(target_os = "ios") {
 					// 		warn!("pipylib start!");
 					// }
-					let lib = Library::new(&lib).map_err(|e| e.to_string())?;
+					let lib = Library::new(&lib).map_err(|e| {
+							let error_message = format!("Failed to load pipylib from path {}: {}", lib, e);
+							// error!("{}", error_message);
+							error_message
+					})?;
 					
 					// if cfg!(target_os = "ios") {
 					// 		warn!("pipylib loaded!");
@@ -60,6 +58,26 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 					// }
 						// 调用外部函数
 					 pipy_main(argc, c_argv_ptr);
+					 
+					 // 调用外部函数并检查返回值
+					 // let result = std::panic::catch_unwind(|| {
+						// 	 pipy_main(argc, c_argv_ptr)
+					 // });
+
+					 // match result {
+						// 	 Ok(code) => {
+						// 			 if code != 0 {
+						// 					 let error_message = format!("pipy_main returned error code: {}", code);
+						// 					 error!("{}", error_message);
+						// 					 return Err(error_message);
+						// 			 }
+						// 	 }
+						// 	 Err(_) => {
+						// 			 let error_message = "pipy_main panicked".to_string();
+						// 			 error!("{}", error_message);
+						// 			 return Err(error_message);
+						// 	 }
+					 // }
 				 }
 				 Ok(())
 			});
@@ -198,7 +216,13 @@ fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	
-	// 
+	// if cfg!(target_os = "ios") {
+	// 	OsLogger::new("com.flomesh.ztm")
+	// 	        .level_filter(LevelFilter::Debug)
+	// 	        .category_level_filter("Settings", LevelFilter::Trace)
+	// 	        .init()
+	// 	        .unwrap();
+	// }
 		tauri::Builder::default()
 				.plugin(tauri_plugin_os::init())
 				.plugin(tauri_plugin_http::init())
