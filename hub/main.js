@@ -44,18 +44,6 @@ var routes = Object.entries({
     'GET': () => getFileInfo,
   },
 
-  '/api/apps': {
-    'POST': () => findCurrentEndpointSession() ? postAppStates : noSession,
-  },
-
-  '/api/apps/{app}': {
-    'GET': () => getAppState,
-  },
-
-  '/api/apps/{provider}/{app}': {
-    'GET': () => getAppState,
-  },
-
   '/api/forward/{ep}/*': {
     'GET': () => forwardRequest,
     'POST': () => forwardRequest,
@@ -73,6 +61,28 @@ var routes = Object.entries({
     return { match, handler }
   }
 )
+
+//
+// endpoints[uuid] = {
+//   id: 'uuid',
+//   name: 'ep-xxx',
+//   username: 'root',
+//   ip: 'x.x.x.x',
+//   port: 12345,
+//   via: '127.0.0.1:8888',
+//   hubs: ['x.x.x.x:8888'],
+//   heartbeat: 1723012345678,
+//   isConnected: true,
+//   files: [
+//     {
+//       pathname: '/home/root/xxx',
+//       time: 1723012345678,
+//       hash: '012345678abcdef',
+//       size: 12345,
+//     }
+//   ]
+// }
+//
 
 var endpoints = {}
 var sessions = {}
@@ -324,15 +334,6 @@ var postFilesystem = pipeline($=>$
   )
 )
 
-var postAppStates = pipeline($=>$
-  .replaceMessage(
-    function (req) {
-      $endpoint.apps = JSON.decode(req.body)
-      return new Message({ status: 201 })
-    }
-  )
-)
-
 var getFileInfo = pipeline($=>$
   .replaceData()
   .replaceMessage(
@@ -366,32 +367,6 @@ var getFileData = pipeline($=>$
         req.head.path = `/api/file-data/${hash}`
         return muxToAgent
       }
-    }
-  )
-)
-
-var getAppState = pipeline($=>$
-  .replaceData()
-  .replaceMessage(
-    function () {
-      var provider = $params.provider
-      var name = $params.app
-      var runners = []
-      Object.values(endpoints).forEach(ep => {
-        if (!isEndpointOnline(ep)) return
-        if (!ep.apps) return
-        var app = ep.apps.find(
-          a => a.name === name && (!provider || a.provider === provider)
-        )
-        if (app) {
-          runners.push({
-            id: ep.id,
-            name: ep.name,
-            username: app.username,
-          })
-        }
-      })
-      return response(200, { name, provider, endpoints: runners })
     }
   )
 )
