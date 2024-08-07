@@ -122,7 +122,6 @@ export default function (rootDir, config) {
                 meshErrors.length = 0
                 connections.add(conn)
                 advertiseFilesystem(filesystemLatest)
-                advertiseAppStates(appStateLatest)
               } else if (conn.state === 'closed') {
                 logInfo(`Connection to hub ${address} closed`)
                 connections.delete(conn)
@@ -204,45 +203,6 @@ export default function (rootDir, config) {
       })
     }
 
-    // Start advertising app states
-    var appStateLatest = null
-    var appStateUpdate = null
-    var appStateSending = null
-    sendAppStateUpdate()
-
-    function sendAppStateUpdate() {
-      if (closed) return
-      new Timeout(1).wait().then(() => {
-        if (appStateUpdate) {
-          appStateSending = appStateUpdate
-          appStateUpdate = null
-        }
-        if (appStateSending) {
-          var size = appStateSending.length
-          logInfo(`Sending app states to ${address} (size = ${size})...`)
-          requestHub.spawn(
-            new Message(
-              {
-                method: 'POST',
-                path: '/api/apps',
-              },
-              JSON.encode(appStateSending)
-            )
-          ).then(res => {
-            if (res && res.head.status === 201) {
-              logInfo(`Sent app states to ${address} (size = ${size})`)
-              appStateSending = null
-            } else {
-              logError(`Unable to send app states to ${address} (status = ${res?.head?.status})`)
-            }
-            sendAppStateUpdate()
-          })
-        } else {
-          sendAppStateUpdate()
-        }
-      })
-    }
-
     function heartbeat() {
       if (closed) return
       requestHub.spawn(
@@ -256,11 +216,6 @@ export default function (rootDir, config) {
     function advertiseFilesystem(files) {
       filesystemLatest = files
       filesystemUpdate = files
-    }
-
-    function advertiseAppStates(apps) {
-      appStateLatest = apps
-      appStateUpdate = apps
     }
 
     function discoverEndpoints() {
@@ -359,23 +314,6 @@ export default function (rootDir, config) {
       )
     }
 
-    function findApp(provider, app) {
-      return requestHub.spawn(
-        new Message({
-          method: 'GET',
-          path: provider ? `/api/apps/${provider}/${app}` : `/api/apps/${app}`
-        })
-      ).then(
-        function (res) {
-          if (res && res.head.status === 200) {
-            return JSON.decode(res.body)
-          } else {
-            return null
-          }
-        }
-      )
-    }
-
     function leave() {
       closed = true
       connections.forEach(
@@ -388,14 +326,12 @@ export default function (rootDir, config) {
       address,
       heartbeat,
       advertiseFilesystem,
-      advertiseAppStates,
       discoverEndpoints,
       discoverFiles,
       issuePermit,
       revokePermit,
       findEndpoint,
       findFile,
-      findApp,
       leave,
     }
 
@@ -658,9 +594,8 @@ export default function (rootDir, config) {
     }
   }
 
-  // Advertise the filesystem & app states
+  // Advertise the filesystem
   advertiseFilesystem()
-  advertiseAppStates()
 
   // Start apps
   db.allApps(meshName).forEach(app => {
@@ -703,16 +638,6 @@ export default function (rootDir, config) {
       }
     })
     hubs[0].advertiseFilesystem(files)
-  }
-
-  function advertiseAppStates() {
-    var list = []
-    ;[...apps.listBuiltin(), ...apps.listDownloaded()].forEach(app => {
-      if (!list.some(a => a.provider === app.provider && a.name === app.name)) {
-        list.push(app)
-      }
-    })
-    hubs[0].advertiseAppStates(list)
   }
 
   function issuePermit(username, identity) {
@@ -980,7 +905,6 @@ export default function (rootDir, config) {
           apps.start(provider, app, username)
           return new Timeout(1).wait().then(() => {
             db.setApp(meshName, provider, nt.name, nt.tag, { username, state: 'running' })
-            advertiseAppStates()
             logInfo(`App ${provider}/${app} started locally`)
           })
         } catch (e) {
@@ -1015,7 +939,6 @@ export default function (rootDir, config) {
       var nt = getAppNameTag(app)
       db.setApp(meshName, provider, nt.name, nt.tag, { state: 'stopped' })
       apps.stop(provider, app)
-      advertiseAppStates()
       logInfo(`App ${provider}/${app} exited locally`)
       return Promise.resolve()
     } else {
