@@ -17,7 +17,7 @@ otool -L /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen
 xcrun simctl list devices
 
 xcrun simctl get_app_container "4C41487E-105E-4EC2-B072-2D83F5F5E71B" "com.flomesh.ztm" data
-
+/Users/lindongchen/Library/Developer/CoreSimulator/Devices/4C41487E-105E-4EC2-B072-2D83F5F5E71B/data/Containers/Data/Application
 find /Users/lindongchen/Library/Developer/CoreSimulator/Devices/4C41487E-105E-4EC2-B072-2D83F5F5E71B/data/Containers/Data/Application/0647839B-70A2-48CD-943F-234DFC732FE3 -name "libpipy.dylib"
 
 /Users/lindongchen/Library/Developer/CoreSimulator/Devices/4C41487E-105E-4EC2-B072-2D83F5F5E71B/data/Containers/Data/Application/0647839B-70A2-48CD-943F-234DFC732FE3/Documents/libpipy.dylib
