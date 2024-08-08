@@ -242,9 +242,10 @@ export default function (rootDir, config) {
               Object.entries(JSON.decode(res.body)).map(
                 ([k, v]) => [
                   k, {
+                    hash: v['#'],
                     size: v['$'],
                     time: v['T'],
-                    hash: v['#'],
+                    learnedAt: v['+'],
                   }
                 ]
               )
@@ -302,9 +303,10 @@ export default function (rootDir, config) {
           if (res && res.head.status === 200) {
             var meta = JSON.decode(res.body)
             return {
+              hash: meta['#'],
               size: meta['$'],
               time: meta['T'],
-              hash: meta['#'],
+              learnedAt: meta['+'],
               sources: meta['@'],
             }
           } else {
@@ -660,7 +662,7 @@ export default function (rootDir, config) {
     if (ep === config.agent.id) {
       var isBuiltin = apps.isBuiltin(provider, app)
       var isDownloaded = apps.isDownloaded(provider, app)
-      var isPublished = Boolean(fs.stat(`/home/${provider}/pub/apps/pkg/${app}`))
+      var isPublished = Boolean(fs.stat(`/home/${provider}/pub/pkg/${app}`))
       if (isPublished || isDownloaded || isBuiltin) {
         return Promise.resolve({
           ...getAppNameTag(app),
@@ -707,7 +709,7 @@ export default function (rootDir, config) {
           isRunning: apps.isRunning(app.provider, app.name),
         })
       })
-      var match = new http.Match('/home/{provider}/pub/apps/pkg/{name}')
+      var match = new http.Match('/home/{provider}/pub/pkg/{name}')
       fs.list('/home/').forEach(pathname => {
         var app = match(pathname)
         if (!app) return
@@ -790,7 +792,7 @@ export default function (rootDir, config) {
           if (i < 0) return
           var provider = pathname.substring(0, i)
           pathname = pathname.substring(i)
-          if (!pathname.startsWith('/pub/apps/pkg/')) return
+          if (!pathname.startsWith('/pub/pkg/')) return
           var app = pathname.substring(14)
           if (app.indexOf('/') >= 0) return
           if (app.indexOf('@') == 0) return
@@ -803,7 +805,7 @@ export default function (rootDir, config) {
 
   function publishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/pub/apps/pkg/${app}`
+      var packagePathname = `/home/${provider}/pub/pkg/${app}`
       if (fs.stat(packagePathname)) return Promise.resolve()
       return apps.pack(provider, app).then(data => {
         fs.write(packagePathname, data)
@@ -821,7 +823,7 @@ export default function (rootDir, config) {
 
   function unpublishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/pub/apps/pkg/${app}`
+      var packagePathname = `/home/${provider}/pub/pkg/${app}`
       if (fs.stat(packagePathname)) {
         fs.remove(packagePathname)
         advertiseFilesystem()
@@ -840,7 +842,7 @@ export default function (rootDir, config) {
   function installApp(ep, provider, app) {
     logInfo(`App ${provider}/${app} installing to ${ep}...`)
     if (ep === config.agent.id) {
-      return syncFile(`/home/${provider}/pub/apps/pkg/${app}`).then(data => {
+      return syncFile(`/home/${provider}/pub/pkg/${app}`).then(data => {
         if (data) {
           apps.unpack(provider, app, data).then(() => {
             logInfo(`App ${provider}/${app} installed locally`)
@@ -1016,9 +1018,17 @@ export default function (rootDir, config) {
     return false
   }
 
+  function deleteFile(pathname) {
+    if (fs.tombstone(pathname)) {
+      advertiseFilesystem()
+      return true
+    }
+    return false
+  }
+
   function syncFile(pathname) {
     return findFile(pathname).then(meta => {
-      if (!meta) return null
+      if (!meta || meta.size < 0) return null
       pathname = os.path.normalize(pathname)
 
       var hash = meta.hash
@@ -1228,6 +1238,7 @@ export default function (rootDir, config) {
     downloadFile,
     publishFile,
     unpublishFile,
+    deleteFile,
     syncFile,
     remoteQueryLog,
     leave,

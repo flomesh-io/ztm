@@ -73,19 +73,23 @@ var routes = Object.entries({
 //   hubs: ['x.x.x.x:8888'],
 //   heartbeat: 1723012345678,
 //   isConnected: true,
-//   files: [
-//     {
-//       pathname: '/home/root/xxx',
-//       time: 1723012345678,
-//       hash: '012345678abcdef',
-//       size: 12345,
-//     }
-//   ]
 // }
 //
 
 var endpoints = {}
 var sessions = {}
+
+//
+// files[pathname] = {
+//   '#': '012345678abcdef',  // hash
+//   '$': 12345,              // size
+//   'T': 1789012345678,      // time
+//   '+': 1789012345678,      // learnedAt
+//   '@': [],                 // sources
+// }
+//
+
+var files = {}
 
 var caCert = null
 var myCert = null
@@ -163,6 +167,7 @@ function endpointName(id) {
 }
 
 function isEndpointOnline(ep) {
+  if (!ep) return false
   if (!sessions[ep.id]?.size) return false
   if (ep.heartbeat + 30*1000 < Date.now()) return false
   return true
@@ -180,6 +185,10 @@ var $hubSelected = null
 var $pingID
 
 function start(listen) {
+  db.allFiles().forEach(f => {
+    files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.learnedAt)
+  })
+
   pipy.listen(listen, $=>$
     .onStart(
       function (conn) {
@@ -220,15 +229,28 @@ function start(listen) {
   console.info('Hub started at', listen)
 
   function clearOutdatedEndpoints() {
-    Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
-      (ep) => {
-        console.info(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
-        if (sessions[ep.id]?.size === 0) {
-          delete endpoints[ep.id]
+    new Timeout(60).wait().then(() => {
+      var outdated = []
+      Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
+        (ep) => {
+          console.info(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
+          if (sessions[ep.id]?.size === 0) {
+            outdated.push(ep.id)
+            delete endpoints[ep.id]
+          }
         }
+      )
+      if (outdated.length > 0) {
+        outdated = Object.fromEntries(outdated.map(ep => [ep, true]))
+        Object.values(files).forEach(file => {
+          var sources = file['@']
+          if (sources.some(ep => ep in outdated)) {
+            file['@'] = sources.filter(ep => !(ep in outdated))
+          }
+        })
       }
-    )
-    new Timeout(60).wait().then(clearOutdatedEndpoints)
+      clearOutdatedEndpoints()
+    })
   }
 
   clearOutdatedEndpoints()
@@ -305,14 +327,19 @@ var getFilesystem = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
-      var fs = {}
-      Object.values(endpoints).forEach(ep => {
-        if (!ep.files) return
-        ep.files.forEach(f => {
-          updateFileInfo(fs, f, ep.id)
-        })
-      })
-      return response(200, fs)
+      return response(200, Object.fromEntries(
+        Object.entries(files).filter(
+          ([_, v]) => (v['$'] >= 0)
+        ).map(
+          ([k, v]) => [
+            k, {
+              '#': v['#'],
+              '$': v['$'],
+              'T': v['T'],
+            }
+          ]
+        )
+      ))
     }
   )
 )
@@ -321,13 +348,9 @@ var postFilesystem = pipeline($=>$
   .replaceMessage(
     function (req) {
       var body = JSON.decode(req.body)
-      $endpoint.files = Object.entries(body).map(
-        ([k, v]) => ({
-          pathname: k,
-          time: v['T'],
-          hash: v['#'],
-          size: v['$'],
-        })
+      var prefix = `/home/${$endpoint.username}/`
+      Object.entries(body).map(
+        ([k, v]) => updateFileInfo(k, v, $endpoint.id, k.startsWith(prefix))
       )
       return new Message({ status: 201 })
     }
@@ -338,18 +361,12 @@ var getFileInfo = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
-      var fs = {}
       var pathname = '/' + $params['*']
-      Object.values(endpoints).forEach(ep => {
-        if (!ep.files) return
-        ep.files.forEach(f => {
-          if (f.pathname === pathname) {
-            updateFileInfo(fs, f, ep.id)
-          }
-        })
-      })
-      var info = fs[pathname]
-      return info ? response(200, info) : response(404)
+      var info = files[pathname]
+      if (!info || info['$'] < 0) return response(404)
+      var sources = info['@']
+      if (sources) info['@'] = sources.filter(ep => isEndpointOnline(endpoints[ep]))
+      return response(200, info)
     }
   )
 )
@@ -534,25 +551,38 @@ function findCurrentEndpointSession() {
   return true
 }
 
-function updateFileInfo(fs, f, ep) {
-  var e = (fs[f.pathname] ??= {
-    'T': 0,
-    '$': 0,
-    '#': null,
-    '@': null,
-  })
+function makeFileInfo(hash, size, time, learnedAt) {
+  return {
+    '#': hash,
+    '$': size,
+    'T': time,
+    '+': learnedAt,
+    '@': [],
+  }
+}
+
+function updateFileInfo(pathname, f, ep, update) {
+  var e = (files[pathname] ??= makeFileInfo('', 0, 0, 0))
   var t1 = e['T']
   var h1 = e['#']
-  var t2 = f.time
-  var h2 = f.hash
+  var t2 = f['T']
+  var h2 = f['#']
   if (h2 === h1) {
-    e['@'].push(ep)
-    e['T'] = Math.max(t1, t2)
-  } else if (t2 > t1) {
+    var sources = e['@']
+    if (!sources.includes(ep)) sources.push(ep)
+    if (update) e['T'] = Math.max(t1, t2)
+  } else if (t2 > t1 && update) {
     e['#'] = h2
-    e['$'] = f.size
-    e['@'] = [ep]
+    e['$'] = f['$']
     e['T'] = t2
+    e['+'] = Date.now()
+    e['@'] = [ep]
+    db.setFile(pathname, {
+      hash: h2,
+      size: e['$'],
+      time: t2,
+      learnedAt: e['+'],
+    })
   }
 }
 

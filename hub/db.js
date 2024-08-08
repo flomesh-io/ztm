@@ -16,6 +16,16 @@ function open(pathname) {
       data TEXT NOT NULL
     )
   `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS files (
+      path TEXT PRIMARY KEY,
+      hash TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      time REAL NOT NULL,
+      learnedAt REAL NOT NULL
+    )
+  `)
 }
 
 function getCert(name) {
@@ -70,6 +80,55 @@ function delKey(name) {
     .exec()
 }
 
+function recordToFile(rec) {
+  return {
+    pathname: rec.path,
+    hash: rec.hash,
+    size: +rec.size,
+    time: rec.time,
+    learnedAt: rec.learnedAt,
+  }
+}
+
+function allFiles() {
+  return (
+    db.sql('SELECT * FROM files')
+      .exec()
+      .map(recordToFile)
+  )
+}
+
+function getFile(pathname) {
+  return (
+    db.sql('SELECT * FROM files WHERE path = ?')
+      .bind(1, pathname)
+      .exec()
+      .map(recordToFile)[0]
+  )
+}
+
+function setFile(pathname, file) {
+  var obj = getFile(pathname)
+  if (obj) {
+    Object.assign(obj, file)
+    db.sql('UPDATE files SET hash = ?, size = ?, time = ?, learnedAt = ? WHERE path = ?')
+      .bind(1, obj.hash)
+      .bind(2, obj.size)
+      .bind(3, obj.time)
+      .bind(4, obj.learnedAt)
+      .bind(5, pathname)
+      .exec()
+  } else {
+    db.sql('INSERT INTO files(path, hash, size, time, learnedAt) VALUES(?, ?, ?, ?, ?)')
+      .bind(1, pathname)
+      .bind(2, file.hash)
+      .bind(3, file.size)
+      .bind(4, file.time)
+      .bind(5, file.learnedAt)
+      .exec()
+  }
+}
+
 export default {
   open,
   getCert,
@@ -78,4 +137,7 @@ export default {
   getKey,
   setKey,
   delKey,
+  allFiles,
+  getFile,
+  setFile,
 }

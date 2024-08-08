@@ -1082,7 +1082,7 @@ function eraseApp(name, mesh) {
 
 function eraseFile(name, mesh) {
   var path = os.path.normalize(name)
-  return client.delete(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path)).catch(
+  return client.delete(os.path.join(`/api/meshes/${mesh.name}/files/`, path)).catch(
     err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
   )
 }

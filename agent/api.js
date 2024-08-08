@@ -127,6 +127,12 @@ function getFileInfo(mesh, pathname) {
   return m.findFile(pathname)
 }
 
+function delFileInfo(mesh, pathname) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(false)
+  return Promise.resolve(m.deleteFile(pathname))
+}
+
 function getFileData(mesh, pathname) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
@@ -219,6 +225,7 @@ export default {
   getEndpointLog,
   allFiles,
   getFileInfo,
+  delFileInfo,
   getFileData,
   setFileData,
   delFileData,

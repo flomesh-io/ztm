@@ -258,7 +258,13 @@ function main(listen) {
         return api.getFileInfo(params.mesh, params['*']).then(
           ret => ret ? response(200, ret) : response(404)
         )
-      }
+      },
+
+      'DELETE': function (params) {
+        return api.delFileInfo(params.mesh, params['*']).then(
+          ret => ret ? response(204) : response(404)
+        )
+      },
     },
 
     '/api/meshes/{mesh}/file-data/*': {
