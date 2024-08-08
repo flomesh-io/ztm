@@ -232,22 +232,26 @@ export default function (rootDir, config) {
       )
     }
 
-    function discoverFiles() {
+    function discoverFiles(since) {
+      var path = '/api/filesystem'
+      if (since || since === 0) path += `?since=${since}`
       return requestHub.spawn(
-        new Message({ method: 'GET', path: '/api/filesystem' })
+        new Message({ method: 'GET', path })
       ).then(
         function (res) {
           if (res && res.head.status === 200) {
             return Object.fromEntries(
               Object.entries(JSON.decode(res.body)).map(
-                ([k, v]) => [
-                  k, {
+                ([k, v]) => {
+                  var since = v['+']
+                  v = {
                     hash: v['#'],
                     size: v['$'],
                     time: v['T'],
-                    learnedAt: v['+'],
                   }
-                ]
+                  if (since) v.since = since
+                  return [k, v]
+                }
               )
             )
           } else {
@@ -306,7 +310,7 @@ export default function (rootDir, config) {
               hash: meta['#'],
               size: meta['$'],
               time: meta['T'],
-              learnedAt: meta['+'],
+              since: meta['+'],
               sources: meta['@'],
             }
           } else {
@@ -662,7 +666,7 @@ export default function (rootDir, config) {
     if (ep === config.agent.id) {
       var isBuiltin = apps.isBuiltin(provider, app)
       var isDownloaded = apps.isDownloaded(provider, app)
-      var isPublished = Boolean(fs.stat(`/home/${provider}/pub/pkg/${app}`))
+      var isPublished = Boolean(fs.stat(`/shared/${provider}/pkg/${app}`))
       if (isPublished || isDownloaded || isBuiltin) {
         return Promise.resolve({
           ...getAppNameTag(app),
@@ -692,8 +696,8 @@ export default function (rootDir, config) {
     return hubs[0].discoverEndpoints()
   }
 
-  function discoverFiles() {
-    return hubs[0].discoverFiles()
+  function discoverFiles(since) {
+    return hubs[0].discoverFiles(since)
   }
 
   function discoverApps(ep) {
@@ -709,8 +713,8 @@ export default function (rootDir, config) {
           isRunning: apps.isRunning(app.provider, app.name),
         })
       })
-      var match = new http.Match('/home/{provider}/pub/pkg/{name}')
-      fs.list('/home/').forEach(pathname => {
+      var match = new http.Match('/shared/{provider}/pkg/{name}')
+      fs.list('/shared/').forEach(pathname => {
         var app = match(pathname)
         if (!app) return
         var provider = app.provider
@@ -786,14 +790,14 @@ export default function (rootDir, config) {
       return hubs[0].discoverFiles().then(files => {
         var apps = []
         Object.keys(files).forEach(pathname => {
-          if (!pathname.startsWith('/home/')) return
-          pathname = pathname.substring(6)
+          if (!pathname.startsWith('/shared/')) return
+          pathname = pathname.substring(8)
           var i = pathname.indexOf('/')
           if (i < 0) return
           var provider = pathname.substring(0, i)
           pathname = pathname.substring(i)
-          if (!pathname.startsWith('/pub/pkg/')) return
-          var app = pathname.substring(14)
+          if (!pathname.startsWith('/pkg/')) return
+          var app = pathname.substring(5)
           if (app.indexOf('/') >= 0) return
           if (app.indexOf('@') == 0) return
           apps.push({ ...getAppNameTag(app), provider })
@@ -805,7 +809,7 @@ export default function (rootDir, config) {
 
   function publishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/pub/pkg/${app}`
+      var packagePathname = `/shared/${provider}/pkg/${app}`
       if (fs.stat(packagePathname)) return Promise.resolve()
       return apps.pack(provider, app).then(data => {
         fs.write(packagePathname, data)
@@ -823,7 +827,7 @@ export default function (rootDir, config) {
 
   function unpublishApp(ep, provider, app) {
     if (ep === config.agent.id) {
-      var packagePathname = `/home/${provider}/pub/pkg/${app}`
+      var packagePathname = `/shared/${provider}/pkg/${app}`
       if (fs.stat(packagePathname)) {
         fs.remove(packagePathname)
         advertiseFilesystem()
@@ -842,7 +846,7 @@ export default function (rootDir, config) {
   function installApp(ep, provider, app) {
     logInfo(`App ${provider}/${app} installing to ${ep}...`)
     if (ep === config.agent.id) {
-      return syncFile(`/home/${provider}/pub/pkg/${app}`).then(data => {
+      return syncFile(`/shared/${provider}/pkg/${app}`).then(data => {
         if (data) {
           apps.unpack(provider, app, data).then(() => {
             logInfo(`App ${provider}/${app} installed locally`)
@@ -1082,25 +1086,54 @@ export default function (rootDir, config) {
   }
 
   function makeAppFilesystem(provider, app) {
-    var basepath = `/home/${provider}/apps/etc/${app}/`
+    var prefixHome = `/home/${username}/`
+    var prefixHomeApp = prefixHome + `apps/${provider}/${app}/`
+    var prefixApp = `/apps/${provider}/${app}/`
+    var matchShared = new http.Match(`/shared/{username}/apps/${provider}/${app}/*`)
+    var matchShared = new http.Match('/shared/{username}' + prefixApp + '*')
+
+    function pathToLocal(path) {
+      if (path.startsWith(prefixHomeApp)) {
+        return prefixHome + path.substring(prefixHomeApp.length)
+      }
+      var params = matchShared(path)
+      if (params) {
+        return `/shared/${params.username}/${params['*']}`
+      }
+    }
+
+    function pathToGlobal(path) {
+      if (path.startsWith(prefixHome)) {
+        return prefixHomeApp + path.substring(prefixHome.length)
+      }
+      if (path.startsWith('/shared/')) {
+        path = path.substring(8)
+        var i = path.indexOf('/')
+        if (i <= 0 || i + 1 == path.length) return
+        var username = path.substring(0, i)
+        return `/shared/${username}` + prefixApp + path.substring(i + 1)
+      }
+    }
 
     function dir(prefix) {
       prefix = os.path.normalize(prefix || '')
       if (!prefix.endsWith('/')) prefix += '/'
+
       return discoverFiles().then(
-        files => Object.keys(files).filter(
-          path => path.startsWith(basepath)
-        ).map(
-          path => path.substring(basepath.length - 1)
-        ).filter(
-          path => path.startsWith(prefix) && !path.startsWith('/local/')
-        ).concat(
-          db.allFiles(meshName, provider, app).filter(
-            path => path.startsWith(prefix)
-          ).map(
-            path => '/local' + path
+        files => {
+          var list = []
+          Object.keys(files).forEach(path => {
+            var localPath = pathToLocal(path)
+            if (localPath && localPath.startsWith(prefix)) list.push(localPath)
+          })
+          db.allFiles(meshName, provider, app).forEach(
+            path => {
+              var fullPath = '/local' + path
+              if (fullPath.startsWith(prefix)) list.push(fullPath)
+            }
           )
-        ).sort()
+          return list.sort()
+        }
       )
     }
 
@@ -1111,7 +1144,12 @@ export default function (rootDir, config) {
           db.getFile(meshName, provider, app, path.substring(6))
         )
       } else {
-        return syncFile(os.path.join(basepath, path))
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          return syncFile(globalPath)
+        } else {
+          return Promise.resolve(null)
+        }
       }
     }
 
@@ -1121,8 +1159,11 @@ export default function (rootDir, config) {
       if (path.startsWith('/local/')) {
         db.setFile(meshName, provider, app, path.substring(6), data)
       } else {
-        fs.write(os.path.join(basepath, path), data)
-        advertiseFilesystem()
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          fs.write(globalPath, data)
+          advertiseFilesystem()
+        }
       }
     }
 

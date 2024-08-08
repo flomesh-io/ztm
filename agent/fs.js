@@ -3,11 +3,15 @@
 //
 // /home
 //   /<username>
-//     /pub
-//       /pkg
-//       /apps
-//         /<provider>
-//           /<appname>
+//     /apps
+//       /<provider>
+//         /<appname>
+// /shared
+//   /<username>
+//     /pkg
+//     /apps
+//       /<provider>
+//         /<appname>
 //
 
 export default function(storeDir) {
@@ -25,31 +29,26 @@ export default function(storeDir) {
     os.mkdir(storeDir, { recursive: true })
   }
 
-  os.readDir(storeDir).forEach(username => {
-    if (username.startsWith('.') || !username.endsWith('/')) return
-    var dirname = os.path.join(storeDir, username)
-    var pathPrefix = `/home/${username}`
-    os.readDir(dirname).forEach(name => {
-      if (!name.endsWith('.meta')) return
-      var hash = name.substring(0, name.length - 5)
-      var filename = os.path.join(dirname, name)
-      try {
-        var meta = JSON.decode(os.read(filename))
-        var time = meta.timestamp
-        var path = meta.pathname
-        if (path.startsWith(pathPrefix) && typeof time === 'number') {
-          var stat = os.stat(os.path.join(dirname, hash))
-          if (stat.isFile()) {
-            var size = meta.deleted ? -1 : stat.size
-            var ent = makeEntry(path, hash, size, time)
-            if (time > (pathMap[path]?.time || 0)) pathMap[path] = ent
-            hashMap[hash] = ent
-          }
+  os.readDir(storeDir).forEach(name => {
+    if (!name.endsWith('.meta')) return
+    var hash = name.substring(0, name.length - 5)
+    var filename = os.path.join(storeDir, name)
+    try {
+      var meta = JSON.decode(os.read(filename))
+      var time = meta.timestamp
+      var path = meta.pathname
+      if (path.startsWith('/') && typeof time === 'number') {
+        var stat = os.stat(os.path.join(storeDir, hash))
+        if (stat.isFile()) {
+          var size = meta.deleted ? -1 : stat.size
+          var ent = makeEntry(path, hash, size, time)
+          if (time > (pathMap[path]?.time || 0)) pathMap[path] = ent
+          hashMap[hash] = ent
         }
-      } catch {
-        println(`ztm: corrupted metadata file: ${filename}`)
       }
-    })
+    } catch {
+      println(`ztm: corrupted metadata file: ${filename}`)
+    }
   })
 
   function makeEntry(pathname, hash, size, time) {
@@ -82,87 +81,53 @@ export default function(storeDir) {
     var path = os.path.normalize(filename)
     var meta = pathMap[path]
     if (!meta) return
-
-    var username = path.split('/')[2]
-    var dirname = os.path.join(storeDir, username)
-
     try {
-      return os.read(os.path.join(dirname, meta.hash))
+      return os.read(os.path.join(storeDir, meta.hash))
     } catch {}
   }
 
   function write(filename, data) {
     var path = os.path.normalize(filename)
-    if (!path.startsWith('/home/')) return false
-
-    var username = path.split('/')[2]
-    var dirname = os.path.join(storeDir, username)
-
-    os.mkdir(dirname, { recursive: true })
-
     var t = Date.now()
     var h = hash(path, data)
     var meta = { pathname: path, timestamp: t }
-
-    os.write(os.path.join(dirname, h), data)
-    os.write(os.path.join(dirname, h + '.meta'), JSON.encode(meta))
-
+    os.write(os.path.join(storeDir, h), data)
+    os.write(os.path.join(storeDir, h + '.meta'), JSON.encode(meta))
     pathMap[path] = hashMap[h] = makeEntry(path, h, data.size, t)
     return true
   }
 
   function tombstone(filename) {
     var path = os.path.normalize(filename)
-    if (!path.startsWith('/home/')) return false
-
-    var username = path.split('/')[2]
-    var dirname = os.path.join(storeDir, username)
-
-    os.mkdir(dirname, { recursive: true })
-
     var t = Date.now()
     var h = hash(path, new Data, -1)
     var meta = { pathname: path, timestamp: t, deleted: true }
-
-    os.write(os.path.join(dirname, h), new Data)
-    os.write(os.path.join(dirname, h + '.meta'), JSON.encode(meta))
-
+    os.write(os.path.join(storeDir, h), new Data)
+    os.write(os.path.join(storeDir, h + '.meta'), JSON.encode(meta))
     pathMap[path] = hashMap[h] = makeEntry(path, h, -1, t)
     return true
   }
 
   function remove(filename) {
     var path = os.path.normalize(filename)
-    if (!path.startsWith('/home/')) return false
-
-    var username = path.split('/')[2]
-    var dirname = os.path.join(storeDir, username)
-
     Object.values(hashMap).forEach(meta => {
       if (meta.pathname === path) {
-        os.rm(os.path.join(dirname, meta.hash), { force: true })
-        os.rm(os.path.join(dirname, meta.hash + '.meta'), { force: true })
+        os.rm(os.path.join(storeDir, meta.hash), { force: true })
+        os.rm(os.path.join(storeDir, meta.hash + '.meta'), { force: true })
         delete hashMap[meta.hash]
       }
     })
-
     if (path in pathMap) {
       delete pathMap[path]
       return true
     }
-
     return false
   }
 
   function raw(hash) {
     var meta = hashMap[hash]
     if (!meta) return
-
-    var path = meta.pathname
-    var username = path.split('/')[2]
-    var dirname = os.path.join(storeDir, username)
-
-    return os.read(os.path.join(dirname, hash))
+    return os.read(os.path.join(storeDir, hash))
   }
 
   function hash(path, data, size) {
