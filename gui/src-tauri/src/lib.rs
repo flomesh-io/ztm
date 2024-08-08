@@ -253,7 +253,7 @@ pub fn run() {
 				.plugin(tauri_plugin_deep_link::init())
 				.plugin(tauri_plugin_clipboard_manager::init())
 				.invoke_handler(tauri::generate_handler![
-					logto,pipylib,create_proxy_webview,create_wry_webview
+					pipylib,create_proxy_webview,create_wry_webview
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");
