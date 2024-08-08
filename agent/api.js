@@ -115,10 +115,10 @@ function getEndpointLog(mesh, ep) {
   }
 }
 
-function allFiles(mesh) {
+function allFiles(mesh, since) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
-  return m.discoverFiles()
+  return m.discoverFiles(since)
 }
 
 function getFileInfo(mesh, pathname) {

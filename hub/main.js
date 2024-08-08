@@ -84,7 +84,7 @@ var sessions = {}
 //   '#': '012345678abcdef',  // hash
 //   '$': 12345,              // size
 //   'T': 1789012345678,      // time
-//   '+': 1789012345678,      // learnedAt
+//   '+': 1789012345678,      // since
 //   '@': [],                 // sources
 // }
 //
@@ -186,7 +186,7 @@ var $pingID
 
 function start(listen) {
   db.allFiles().forEach(f => {
-    files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.learnedAt)
+    files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.since)
   })
 
   pipy.listen(listen, $=>$
@@ -326,20 +326,46 @@ var getEndpoint = pipeline($=>$
 var getFilesystem = pipeline($=>$
   .replaceData()
   .replaceMessage(
-    function () {
-      return response(200, Object.fromEntries(
-        Object.entries(files).filter(
-          ([_, v]) => (v['$'] >= 0)
-        ).map(
-          ([k, v]) => [
-            k, {
-              '#': v['#'],
-              '$': v['$'],
-              'T': v['T'],
-            }
-          ]
+    function (req) {
+      var url = new URL(req.head.path)
+      var since = url.searchParams.get('since')
+      if (since) {
+        var since = Number.parseFloat(since)
+        var until = Date.now()
+        return new Timeout(1.5).wait().then(
+          () => response(200, Object.fromEntries(
+            Object.entries(files).filter(
+              ([_, v]) => {
+                var t = v['+']
+                return since < t && t <= until
+              }
+            ).map(
+              ([k, v]) => [
+                k, {
+                  '#': v['#'],
+                  '$': v['$'],
+                  'T': v['T'],
+                  '+': v['+'],
+                }
+              ]
+            )
+          ))
         )
-      ))
+      } else {
+        return response(200, Object.fromEntries(
+          Object.entries(files).filter(
+            ([_, v]) => (v['$'] >= 0)
+          ).map(
+            ([k, v]) => [
+              k, {
+                '#': v['#'],
+                '$': v['$'],
+                'T': v['T'],
+              }
+            ]
+          )
+        ))
+      }
     }
   )
 )
@@ -551,12 +577,12 @@ function findCurrentEndpointSession() {
   return true
 }
 
-function makeFileInfo(hash, size, time, learnedAt) {
+function makeFileInfo(hash, size, time, since) {
   return {
     '#': hash,
     '$': size,
     'T': time,
-    '+': learnedAt,
+    '+': since,
     '@': [],
   }
 }
@@ -581,7 +607,7 @@ function updateFileInfo(pathname, f, ep, update) {
       hash: h2,
       size: e['$'],
       time: t2,
-      learnedAt: e['+'],
+      since: e['+'],
     })
   }
 }

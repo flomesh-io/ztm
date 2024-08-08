@@ -246,8 +246,10 @@ function main(listen) {
     //
 
     '/api/meshes/{mesh}/files': {
-      'GET': function ({ mesh }) {
-        return api.allFiles(mesh).then(
+      'GET': function ({ mesh }, req) {
+        var url = new URL(req.head.path)
+        var since = url.searchParams.get('since')
+        return api.allFiles(mesh, since).then(
           ret => response(200, ret)
         )
       }
