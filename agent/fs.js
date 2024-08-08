@@ -1,3 +1,15 @@
+//
+// Mesh Filesystem
+//
+// /home
+//   /<username>
+//     /pub
+//       /pkg
+//       /apps
+//         /<provider>
+//           /<appname>
+//
+
 export default function(storeDir) {
   var pathMap = {}
   var hashMap = {}
@@ -28,7 +40,8 @@ export default function(storeDir) {
         if (path.startsWith(pathPrefix) && typeof time === 'number') {
           var stat = os.stat(os.path.join(dirname, hash))
           if (stat.isFile()) {
-            var ent = makeEntry(path, hash, stat.size, time)
+            var size = meta.deleted ? -1 : stat.size
+            var ent = makeEntry(path, hash, size, time)
             if (time > (pathMap[path]?.time || 0)) pathMap[path] = ent
             hashMap[hash] = ent
           }
@@ -98,6 +111,26 @@ export default function(storeDir) {
     return true
   }
 
+  function tombstone(filename) {
+    var path = os.path.normalize(filename)
+    if (!path.startsWith('/home/')) return false
+
+    var username = path.split('/')[2]
+    var dirname = os.path.join(storeDir, username)
+
+    os.mkdir(dirname, { recursive: true })
+
+    var t = Date.now()
+    var h = hash(path, new Data, -1)
+    var meta = { pathname: path, timestamp: t, deleted: true }
+
+    os.write(os.path.join(dirname, h), new Data)
+    os.write(os.path.join(dirname, h + '.meta'), JSON.encode(meta))
+
+    pathMap[path] = hashMap[h] = makeEntry(path, h, -1, t)
+    return true
+  }
+
   function remove(filename) {
     var path = os.path.normalize(filename)
     if (!path.startsWith('/home/')) return false
@@ -132,10 +165,11 @@ export default function(storeDir) {
     return os.read(os.path.join(dirname, hash))
   }
 
-  function hash(path, data) {
+  function hash(path, data, size) {
+    size = size || data.size
     var h = new crypto.Hash('sha256')
     h.update(data)
-    h.update(data.size.toString())
+    h.update(size.toString())
     h.update(path)
     return h.digest().toString('hex')
   }
@@ -145,6 +179,7 @@ export default function(storeDir) {
     stat,
     read,
     write,
+    tombstone,
     remove,
     raw,
     hash,
