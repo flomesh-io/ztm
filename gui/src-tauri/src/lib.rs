@@ -12,8 +12,13 @@ use tauri::AppHandle;
 use url::Url;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
-// use oslog::{OsLogger};
-// use log::{LevelFilter, trace, debug, info, warn, error};
+use oslog::{OsLogger};
+use log::{LevelFilter, trace, debug, info, warn, error};
+
+// #[link(name = "pipy", kind = "framework")]
+// extern {
+//     fn pipy_main(argc: i32, argv: *const *const c_char) -> i32;
+// }
 
 #[command]
 fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> {
@@ -25,37 +30,31 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 					// if cfg!(target_os = "ios") {
 					// 		warn!("pipylib start!");
 					// }
+					
+					// 将Vec<String>转换为C所期望的char*数组
+					let c_strings: Vec<CString> = argv.iter()
+							 .map(|arg| CString::new(arg.as_str()).unwrap())
+							 .collect();
+					 
+					// 将CString转换为指针数组
+					let c_argv: Vec<*const c_char> = c_strings.iter()
+							 .map(|cstr| cstr.as_ptr())
+							 .collect();
+					 
+					// 将指针数组的指针赋值给一个变量
+					let c_argv_ptr = c_argv.as_ptr();
+				
 					let lib = Library::new(&lib).map_err(|e| {
 							let error_message = format!("Failed to load pipylib from path {}: {}", lib, e);
 							// error!("{}", error_message);
 							error_message
 					})?;
 					
-					// if cfg!(target_os = "ios") {
-					// 		warn!("pipylib loaded!");
-					// }
 					// 获取pipy_main符号
 					let pipy_main: Symbol<unsafe extern "C" fn(i32, *const *const c_char) -> i32> = lib.get(b"pipy_main\0")
 							.map_err(|e| e.to_string())?;
-					
-			
-					 // 将Vec<String>转换为C所期望的char*数组
-					 let c_strings: Vec<CString> = argv.iter()
-							 .map(|arg| CString::new(arg.as_str()).unwrap())
-							 .collect();
-					 
-					 // 将CString转换为指针数组
-					 let c_argv: Vec<*const c_char> = c_strings.iter()
-							 .map(|cstr| cstr.as_ptr())
-							 .collect();
-					 
-					 // 将指针数组的指针赋值给一个变量
-					 let c_argv_ptr = c_argv.as_ptr();
 
 
-					// if cfg!(target_os = "ios") {
-					// 		warn!("pipylib call!");
-					// }
 						// 调用外部函数
 					 pipy_main(argc, c_argv_ptr);
 					 
@@ -88,6 +87,28 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 			
 }
 
+
+// #[command]
+// fn logto(lib: String, arg: String) -> Result<String, String> {
+// 			let handle = thread::spawn(move || -> Result<(), String> {
+// 				unsafe {
+// 					let c_arg: CString = CString::new(arg.as_str()).unwrap();
+// 					let lib = Library::new(&lib).map_err(|e| {
+// 							let error_message = format!("Failed to load logto from path {}: {}", lib, e);
+// 							error_message
+// 					})?;
+					
+// 					let logto: Symbol<unsafe extern "C" fn(*const c_char)> = lib.get(b"logto\0")
+// 					            .map_err(|e| e.to_string())?;
+// 					 logto(c_arg.as_ptr());
+// 				 }
+// 				 Ok(())
+// 			});
+		
+// 		let thread_id_str = format!("{:?}", handle.thread().id());
+//      Ok(thread_id_str)
+			
+// }
 #[command]
 async fn create_wry_webview(
 	app: tauri::AppHandle,
@@ -216,13 +237,13 @@ fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	
-	// if cfg!(target_os = "ios") {
-	// 	OsLogger::new("com.flomesh.ztm")
-	// 	        .level_filter(LevelFilter::Debug)
-	// 	        .category_level_filter("Settings", LevelFilter::Trace)
-	// 	        .init()
-	// 	        .unwrap();
-	// }
+	if cfg!(target_os = "ios") {
+		OsLogger::new("com.flomesh.ztm")
+		        .level_filter(LevelFilter::Debug)
+		        .category_level_filter("Settings", LevelFilter::Trace)
+		        .init()
+		        .unwrap();
+	}
 		tauri::Builder::default()
 				.plugin(tauri_plugin_os::init())
 				.plugin(tauri_plugin_http::init())
@@ -232,7 +253,7 @@ pub fn run() {
 				.plugin(tauri_plugin_deep_link::init())
 				.plugin(tauri_plugin_clipboard_manager::init())
 				.invoke_handler(tauri::generate_handler![
-					pipylib,create_proxy_webview,create_wry_webview
+					logto,pipylib,create_proxy_webview,create_wry_webview
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");

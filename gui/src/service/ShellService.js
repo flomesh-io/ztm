@@ -82,8 +82,14 @@ export default class ShellService {
 			];
 			console.log(args)
 			const filePath = await documentDir();
+			// invoke('logto', {
+			// 	lib:`${filePath}/../Library/libsayhello.dylib`,
+			// 	arg: `${resourceDirPath}/libsayhello.log`
+			// }).then((res)=>{
+			// 	console.log(`[pipyioslib]Result: ${res}`);
+			// });
 			invoke('pipylib', {
-				lib:`${filePath}/libpipy.dylib`,
+				lib:`${filePath}/../Library/libpipy.dylib`,//libpipy.dylib//pipy.framework
 				argv: args,
 				argc: args.length
 			}).then((res)=>{
