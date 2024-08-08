@@ -69,7 +69,6 @@ export default class ShellService {
 			let resourceDirPath = await documentDir();
 			console.log(resourceDirPath)
 			const args = [
-				// "./main",
 				"--pipy",
 				"repo://ztm/agent",
 				"--args",
@@ -78,9 +77,10 @@ export default class ShellService {
 				`--data`,
 				`${resourceDirPath}/ztmdb`,
 				"--pipy-options",
-				`--log-file=${resourceDirPath}/ztm.log`,
+				"--log-local-only"
+				// `--log-file=${resourceDirPath}/ztm.log`
 			];
-			console.log(args)
+			console.log(JSON.stringify(args))
 			const filePath = await documentDir();
 			// invoke('logto', {
 			// 	lib:`${filePath}/../Library/libsayhello.dylib`,
@@ -88,6 +88,7 @@ export default class ShellService {
 			// }).then((res)=>{
 			// 	console.log(`[pipyioslib]Result: ${res}`);
 			// });
+			
 			invoke('pipylib', {
 				lib:`${filePath}/../Library/libpipy.dylib`,//libpipy.dylib//pipy.framework
 				argv: args,
