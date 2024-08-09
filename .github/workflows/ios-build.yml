@@ -1,0 +1,32 @@
+name: ios-build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '21'
+    - name: Build child app
+      run: |
+        cd gui
+        yarn install
+        yarn build:tunnel
+        yarn build:script
+        yarn build:proxy
+    - name: Build ztm
+      run: |
+        cd gui
+        yarn build-ztm-ios
+    - name: Build ipa
+      run: |
+        cd gui
+        yarn ios-init
+        NODE_OPTIONS="--max-old-space-size=4096" yarn ios-build
+    - uses: actions/upload-artifact@v2
+      with:
+        name: release
+        path: ./gui/src-tauri/gen/apple/build/arm64/ztm.ipa
