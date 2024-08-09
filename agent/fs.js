@@ -1,17 +1,18 @@
 //
 // Mesh Filesystem
 //
-// /home
+// /users
 //   /<username>
-//     /apps
-//       /<provider>
-//         /<appname>
 // /shared
 //   /<username>
 //     /pkg
-//     /apps
-//       /<provider>
-//         /<appname>
+// /apps
+//   /<provider>
+//     /<appname>
+//       /users
+//         /<username>
+//       /shared
+//         /<username>
 //
 
 export default function(storeDir) {

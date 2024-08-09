@@ -279,7 +279,7 @@ function doCommand(meshName, epName, argv, program) {
           var type = args['<object type>']
           var name = args['<object name>']
           switch (type) {
-            case 'app': return selectMesh(meshName).then(mesh => downloadApp(name, mesh))
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => downloadApp(name, mesh, ep))
             case 'file': return selectMesh(meshName).then(mesh => downloadFile(name, args['--output'], mesh))
             default: return invalidObjectType(type, 'download')
           }
@@ -294,7 +294,7 @@ function doCommand(meshName, epName, argv, program) {
           var type = args['<object type>']
           var name = args['<object name>']
           switch (type) {
-            case 'app': return selectMesh(meshName).then(mesh => eraseApp(name, mesh))
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => eraseApp(name, mesh, ep))
             case 'file': return selectMesh(meshName).then(mesh => eraseFile(name, mesh))
             default: return invalidObjectType(type, 'erase')
           }
@@ -314,7 +314,7 @@ function doCommand(meshName, epName, argv, program) {
           var type = args['<object type>']
           var name = args['<object name>']
           switch (type) {
-            case 'app': return selectMesh(meshName).then(mesh => publishApp(name, mesh))
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => publishApp(name, mesh, ep))
             case 'file': return selectMesh(meshName).then(mesh => publishFile(name, args['--input'], mesh))
             default: return invalidObjectType(type, 'publish')
           }
@@ -329,7 +329,7 @@ function doCommand(meshName, epName, argv, program) {
           var type = args['<object type>']
           var name = args['<object name>']
           switch (type) {
-            case 'app': return selectMesh(meshName).then(mesh => unpublishApp(name, mesh))
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => unpublishApp(name, mesh, ep))
             case 'file': return selectMesh(meshName).then(mesh => unpublishFile(name, mesh))
             default: return invalidObjectType(type, 'unpublish')
           }
@@ -1039,7 +1039,7 @@ function describeApp(name, mesh, ep) {
 // Command: download
 //
 
-function downloadApp(name) {
+function downloadApp(name, mesh, ep) {
   var appName = normalizeAppName(name)
   if (!appName) throw 'missing app name'
   return selectApp(appName, mesh, ep).then(app => {
@@ -1069,7 +1069,7 @@ function downloadFile(name, output, mesh) {
 // Command: erase
 //
 
-function eraseApp(name, mesh) {
+function eraseApp(name, mesh, ep) {
   var appName = normalizeAppName(name)
   if (!appName) throw 'missing app name'
   return selectApp(appName, mesh, ep).then(app => {
@@ -1091,7 +1091,7 @@ function eraseFile(name, mesh) {
 // Command: publish
 //
 
-function publishApp(name) {
+function publishApp(name, mesh, ep) {
   var appName = normalizeAppName(name)
   if (!appName) throw 'missing app name'
   return selectApp(appName, mesh, ep).then(app => {
@@ -1118,7 +1118,7 @@ function publishFile(name, input, mesh) {
 // Command: unpublish
 //
 
-function unpublishApp(name) {
+function unpublishApp(name, mesh, ep) {
   var appName = normalizeAppName(name)
   if (!appName) throw 'missing app name'
   return selectApp(appName, mesh, ep).then(app => {
