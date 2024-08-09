@@ -1,6 +1,6 @@
 # Agent API
 
-The Agent API is organized into 4 types of resources that can be accessed by the standard HTTP semantics. The 4 types of resources are:
+The Agent API is organized into 4 types of resources that can be accessed by standard HTTP semantics. The 4 types of resources are:
 
 - Meshes
 - Endpoints
@@ -163,8 +163,9 @@ Or returns raw binary content for `/file-data` based paths.
 Paths and methods:
 
 ```
-GET /api/meshes/{meshName}/files
+GET /api/meshes/{meshName}/files[?since={time}]
 GET /api/meshes/{meshName}/files/{pathname}
+DELETE /api/meshes/{meshName}/files/{pathname}
 GET /api/meshes/{meshName}/file-data/{pathname}
 POST /api/meshes/{meshName}/file-data/{pathname}
 DELETE /api/meshes/{meshName}/file-data/{pathname}

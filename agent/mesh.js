@@ -11,6 +11,8 @@ export default function (rootDir, config) {
   var agentLog = []
   var meshErrors = []
   var fs = null
+  var fsWatchers = []
+  var fsLastChangeTime = Date.now()
   var apps = null
   var exited = false
 
@@ -1066,6 +1068,49 @@ export default function (rootDir, config) {
     })
   }
 
+  function watchFile(prefix) {
+    var resolve
+    var promise = new Promise(cb => resolve = cb)
+    var isWatching = fsWatchers.length > 0
+    var entry = fsWatchers.find(([k]) => k === prefix)
+    if (entry) {
+      entry[1].push(resolve)
+    } else {
+      fsWatchers.push([prefix, [resolve]])
+    }
+    if (!isWatching) startWatchingFiles()
+    return promise
+  }
+
+  function startWatchingFiles() {
+    new Timeout(5).wait().then(
+      () => discoverFiles(fsLastChangeTime)
+    ).then(files => {
+      var paths = Object.keys(files)
+      if (paths.length > 0) {
+        fsLastChangeTime = Object.values(files).map(f => f.since).reduce(
+          (max, t) => (t > max ? t : max), fsLastChangeTime
+        )
+        fsWatchers.forEach(
+          ([prefix, watchers]) => {
+            var changes = []
+            paths.forEach(path => {
+              if (path.startsWith(prefix)) {
+                changes.push(path)
+              }
+            })
+            if (changes.length > 0) {
+              watchers.forEach(resolve => resolve([...changes]))
+              watchers.length = 0
+            }
+          }
+        )
+        fsWatchers = fsWatchers.filter(([_, watchers]) => watchers.length > 0)
+      }
+      if (fsWatchers.length > 0) startWatchingFiles()
+    })
+  }
+
   //
   // Mesh API exposed to apps
   //
@@ -1086,32 +1131,22 @@ export default function (rootDir, config) {
   }
 
   function makeAppFilesystem(provider, app) {
-    var prefixHome = `/home/${username}/`
-    var prefixHomeApp = prefixHome + `apps/${provider}/${app}/`
-    var prefixApp = `/apps/${provider}/${app}/`
-    var matchShared = new http.Match(`/shared/{username}/apps/${provider}/${app}/*`)
-    var matchShared = new http.Match('/shared/{username}' + prefixApp + '*')
+    var pathApp = `/apps/${provider}/${app}`
+    var pathUser = `/users/${username}/`
+    var pathShared = `/shared/`
+    var pathLocal = `/local/`
+    var pathAppUser = pathApp + pathUser
+    var pathAppShared = pathApp + pathShared
 
     function pathToLocal(path) {
-      if (path.startsWith(prefixHomeApp)) {
-        return prefixHome + path.substring(prefixHomeApp.length)
-      }
-      var params = matchShared(path)
-      if (params) {
-        return `/shared/${params.username}/${params['*']}`
+      if (path.startsWith(pathAppUser) || path.startsWith(pathAppShared)) {
+        return path.substring(pathApp.length)
       }
     }
 
     function pathToGlobal(path) {
-      if (path.startsWith(prefixHome)) {
-        return prefixHomeApp + path.substring(prefixHome.length)
-      }
-      if (path.startsWith('/shared/')) {
-        path = path.substring(8)
-        var i = path.indexOf('/')
-        if (i <= 0 || i + 1 == path.length) return
-        var username = path.substring(0, i)
-        return `/shared/${username}` + prefixApp + path.substring(i + 1)
+      if (path.startsWith(pathUser) || path.startsWith(pathShared)) {
+        return pathApp + path
       }
     }
 
@@ -1124,11 +1159,13 @@ export default function (rootDir, config) {
           var list = []
           Object.keys(files).forEach(path => {
             var localPath = pathToLocal(path)
-            if (localPath && localPath.startsWith(prefix)) list.push(localPath)
+            if (localPath && localPath.startsWith(prefix)) {
+              list.push(path)
+            }
           })
           db.allFiles(meshName, provider, app).forEach(
             path => {
-              var fullPath = '/local' + path
+              var fullPath = os.path.join(pathLocal, path)
               if (fullPath.startsWith(prefix)) list.push(fullPath)
             }
           )
@@ -1139,9 +1176,9 @@ export default function (rootDir, config) {
 
     function read(pathname) {
       var path = os.path.normalize(pathname)
-      if (path.startsWith('/local/')) {
+      if (path.startsWith(pathLocal)) {
         return Promise.resolve(
-          db.getFile(meshName, provider, app, path.substring(6))
+          db.getFile(meshName, provider, app, path.substring(pathLocal.length))
         )
       } else {
         var globalPath = pathToGlobal(path)
@@ -1156,8 +1193,8 @@ export default function (rootDir, config) {
     function write(pathname, data) {
       if (typeof data === 'string') data = new Data(data)
       var path = os.path.normalize(pathname)
-      if (path.startsWith('/local/')) {
-        db.setFile(meshName, provider, app, path.substring(6), data)
+      if (path.startsWith(pathLocal)) {
+        db.setFile(meshName, provider, app, path.substring(pathLocal.length), data)
       } else {
         var globalPath = pathToGlobal(path)
         if (globalPath) {
@@ -1167,7 +1204,17 @@ export default function (rootDir, config) {
       }
     }
 
-    return { dir, read, write }
+    function watch(prefix) {
+      if (!prefix.endsWith('/')) prefix += '/'
+      var globalPath = pathToGlobal(prefix)
+      if (globalPath) {
+        return watchFile(globalPath).then(
+          paths => paths.map(path => pathToLocal(path)).filter(p=>p)
+        )
+      }
+    }
+
+    return { dir, read, write, watch }
   }
 
   function remoteQueryLog(ep) {

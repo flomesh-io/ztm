@@ -374,9 +374,19 @@ var postFilesystem = pipeline($=>$
   .replaceMessage(
     function (req) {
       var body = JSON.decode(req.body)
-      var prefix = `/home/${$endpoint.username}/`
+      var username = $endpoint.username
+      var prefixUser = `/users/${username}/`
+      var prefixShared = `/shared/${username}`
+      var matchAppUser = new http.Match(`/apps/{provider}/{appname}/users/${username}/*`)
+      var matchAppShared = new http.Match(`/apps/{provider}/{appname}/shared/${username}/*`)
+      var canUpdate = (path) => (
+        path.startsWith(prefixUser) ||
+        path.startsWith(prefixShared) ||
+        matchAppUser(path) ||
+        matchAppShared(path)
+      )
       Object.entries(body).map(
-        ([k, v]) => updateFileInfo(k, v, $endpoint.id, k.startsWith(prefix))
+        ([k, v]) => updateFileInfo(k, v, $endpoint.id, canUpdate(k))
       )
       return new Message({ status: 201 })
     }
@@ -588,27 +598,33 @@ function makeFileInfo(hash, size, time, since) {
 }
 
 function updateFileInfo(pathname, f, ep, update) {
-  var e = (files[pathname] ??= makeFileInfo('', 0, 0, 0))
-  var t1 = e['T']
-  var h1 = e['#']
-  var t2 = f['T']
-  var h2 = f['#']
-  if (h2 === h1) {
-    var sources = e['@']
-    if (!sources.includes(ep)) sources.push(ep)
-    if (update) e['T'] = Math.max(t1, t2)
-  } else if (t2 > t1 && update) {
-    e['#'] = h2
-    e['$'] = f['$']
-    e['T'] = t2
-    e['+'] = Date.now()
-    e['@'] = [ep]
-    db.setFile(pathname, {
-      hash: h2,
-      size: e['$'],
-      time: t2,
-      since: e['+'],
-    })
+  var e = files[pathname]
+  if (e || update) {
+    if (!e) e = files[pathname] = makeFileInfo('', 0, 0, 0)
+    var t1 = e['T']
+    var h1 = e['#']
+    var t2 = f['T']
+    var h2 = f['#']
+    if (h2 === h1) {
+      var sources = e['@']
+      if (!sources.includes(ep)) sources.push(ep)
+      if (update && t2 > t1) {
+        e['T'] = t2
+        e['+'] = Date.now()
+      }
+    } else if (t2 > t1 && update) {
+      e['#'] = h2
+      e['$'] = f['$']
+      e['T'] = t2
+      e['+'] = Date.now()
+      e['@'] = [ep]
+      db.setFile(pathname, {
+        hash: h2,
+        size: e['$'],
+        time: t2,
+        since: e['+'],
+      })
+    }
   }
 }
 
