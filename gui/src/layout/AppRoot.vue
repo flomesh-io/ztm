@@ -214,7 +214,8 @@ const joinMesh = () => {
 		width:1280,
 		height:860,
 		proxy:''
-	})
+	});
+	toggleLeft();
 }
 const takePipyVersion = () => {
 	shellService.takePipyVersion();
@@ -263,6 +264,9 @@ const usermenuitems = ref([
 const toggleUsermenu = (event) => {
     usermenu.value.toggle(event);
 };
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', false);
+}
 </script>
 
 <template>
@@ -335,7 +339,7 @@ const toggleUsermenu = (event) => {
 				</Button>
 			</div> -->
 
-			<div class="flex-item">
+			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button @click="joinMesh" v-tooltip="'Join Mesh'" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
 				</Button>

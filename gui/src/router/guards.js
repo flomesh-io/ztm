@@ -22,7 +22,7 @@ const ztmService = new ZtmService();
 const progressStart = (to, from, next) => {
   // start progress bar
   if (!NProgress.isStarted()) {
-    NProgress.start();
+    // NProgress.start();
   }
   next();
 };
@@ -90,7 +90,7 @@ const loginGuard = (to, from, next, options) => {
  */
 const progressDone = () => {
   // finish progress bar
-  NProgress.done();
+  // NProgress.done();
 };
 
 export default {

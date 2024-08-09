@@ -69,16 +69,21 @@ export default class ShellService {
 			let resourceDirPath = await documentDir();
 			console.log(resourceDirPath)
 			const args = [
+				// "version",
+				// "--version",
 				"--pipy",
-				"repo://ztm/agent",
-				"--args",
-				`--listen`,
-				`${port}`,
-				`--data`,
-				`${resourceDirPath}/ztmdb`,
-				"--pipy-options",
-				"--log-local-only"
-				// `--log-file=${resourceDirPath}/ztm.log`
+				"--version",
+				// "repo://ztm/agent",
+				// "--args",
+				// `--listen`,
+				// `${port}`,
+				// `--data`,
+				// `${resourceDirPath}/ztmdb`,
+				// "--pipy-options",
+				// // `--log-file=${resourceDirPath}/ztm.log`
+				// "--log-local-only",
+				// "pipy.listen(7777, $=>$)"
+				
 			];
 			console.log(JSON.stringify(args))
 			const filePath = await documentDir();
@@ -89,17 +94,17 @@ export default class ShellService {
 			// 	console.log(`[pipyioslib]Result: ${res}`);
 			// });
 			
-			invoke('pipylib', {
-				lib:`${filePath}/../Library/libpipy.dylib`,//libpipy.dylib//pipy.framework
-				argv: args,
-				argc: args.length
-			}).then((res)=>{
-				store.commit('account/setPid', 1);
-				setTimeout(()=>{
-					this.takePipyVersion(true);
-				},1000)
-				console.log(`[pipyioslib]Result: ${res}`);
-			});
+			// invoke('pipylib', {
+			// 	lib:`${filePath}/../Library/libpipy.dylib`,//libpipy.dylib//pipy.framework
+			// 	argv: args,
+			// 	argc: args.length
+			// }).then((res)=>{
+			// 	store.commit('account/setPid', 1);
+			// 	setTimeout(()=>{
+			// 		this.takePipyVersion(true);
+			// 	},1000)
+			// 	console.log(`[pipyioslib]Result: ${res}`);
+			// });
 		} else if(pm == "android" ){
 			let resourceDirPath = await appLocalDataDir();
 			console.log(resourceDirPath)
