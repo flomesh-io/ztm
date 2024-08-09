@@ -26,11 +26,6 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 			
 			let handle = thread::spawn(move || -> Result<(), String> {
 				unsafe {
-					// 加载动态库
-					// if cfg!(target_os = "ios") {
-					// 		warn!("pipylib start!");
-					// }
-					
 					// 将Vec<String>转换为C所期望的char*数组
 					let c_strings: Vec<CString> = argv.iter()
 							 .map(|arg| CString::new(arg.as_str()).unwrap())

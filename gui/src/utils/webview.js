@@ -41,7 +41,11 @@ const openWebview = (app)=>{
 			// getCurrentDL().then((urls)=>{
 			// 	console.log(urls)
 			// })
-			store.commit('notice/setApp', app);
+			if(app.url.indexOf('/#/') == 0){
+				location.href=app.url;
+			}else{
+				store.commit('notice/setApp', app);
+			}
 		}	else if(platform=='windows'){
 			// windows API not available on mobile
 			options.parent = getCurrentWindow();
