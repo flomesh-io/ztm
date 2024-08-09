@@ -10,6 +10,17 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
+    - name: Decode and import certificate
+      env:
+        MACOS_BASE64: ${{ secrets.MACOS_BASE64 }}
+        MACOS_PASSWORD: ${{ secrets.MACOS_PASSWORD }}
+      run: |
+        echo "$MACOS_BASE64" | base64 --decode > certificate.p12
+        security create-keychain -p actions temp.keychain
+        security import certificate.p12 -k temp.keychain -P "$MACOS_PASSWORD" -T /usr/bin/codesign
+        security list-keychains -d user -s temp.keychain
+        security unlock-keychain -p actions temp.keychain
+        security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain
     - name: Build child app
       run: |
         cd gui
@@ -26,6 +37,14 @@ jobs:
         cd gui
         yarn ios-init
         NODE_OPTIONS="--max-old-space-size=4096" yarn ios-build
+    - name: sign
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      run: |
+        cd gui
+        src-ios/sign.sh src-tauri/gen/apple/build/arm64/ztm.ipa $APPLE_ID $APPLE_PASSWORD
+      timeout-minutes: 120
     - uses: actions/upload-artifact@v2
       with:
         name: release
