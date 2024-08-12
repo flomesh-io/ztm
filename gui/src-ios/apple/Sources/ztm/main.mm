@@ -75,14 +75,16 @@ void callPipyMain(int argc, char * arguments[]) {
 void startPipyInNewThread(int argc, char * argv[]) {
     // 创建一个新的线程来调用 callPipyMain
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        callPipyMain(argc, argv);
+			// callPipyMain(argc, argv);
+			int result = ffi::pipy_main(argc, argv);
+			NSLog(@"callPipyMain pipy_main 返回值: %d", result);
     });
 }
 
 
 int main(int argc, char * argv[]) {
     @autoreleasepool {
-			copyLibrary(@"assets/libpipy", @"dylib", @"libpipy.dylib");
+			// copyLibrary(@"assets/libpipy", @"dylib", @"libpipy.dylib");
 			// 准备参数
 			
 			NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
