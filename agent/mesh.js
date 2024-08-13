@@ -1160,7 +1160,7 @@ export default function (rootDir, config) {
           Object.keys(files).forEach(path => {
             var localPath = pathToLocal(path)
             if (localPath && localPath.startsWith(prefix)) {
-              list.push(path)
+              list.push(localPath)
             }
           })
           db.allFiles(meshName, provider, app).forEach(
@@ -1204,6 +1204,18 @@ export default function (rootDir, config) {
       }
     }
 
+    function erase(pathname) {
+      var path = os.path.normalize(pathname)
+      if (path.startsWith(pathLocal)) {
+        db.delFile(meshName, provider, app, path.substring(pathLocal.length))
+      } else {
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          deleteFile(globalPath)
+        }
+      }
+    }
+
     function watch(prefix) {
       if (!prefix.endsWith('/')) prefix += '/'
       var globalPath = pathToGlobal(prefix)
@@ -1214,7 +1226,7 @@ export default function (rootDir, config) {
       }
     }
 
-    return { dir, read, write, watch }
+    return { dir, read, write, erase, watch }
   }
 
   function remoteQueryLog(ep) {
