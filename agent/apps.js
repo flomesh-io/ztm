@@ -158,11 +158,17 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
   function start(provider, appname, username) {
     var app = findApp(provider, appname)
     if (!app) {
-      app = App(
-        provider, appname, username,
-        isBuiltin(provider, appname) && !isDownloaded(provider, appname)
-      )
-      apps.push(app)
+      var builtin = isBuiltin(provider, appname)
+      var downloaded = isDownloaded(provider, appname)
+      if (downloaded || builtin) {
+        app = App(
+          provider, appname, username,
+          builtin && !downloaded
+        )
+        apps.push(app)
+      } else {
+        throw `app ${provider}/${appname} not found`
+      }
     }
     app.start()
   }
