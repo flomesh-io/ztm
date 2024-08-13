@@ -529,7 +529,9 @@ export default function (rootDir, config) {
             }
             logError(`Local app ${$requestedApp} not found`)
             return response404
-          })
+          }).catch(
+            () => response404
+          )
         }
         return response404
       }
