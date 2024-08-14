@@ -16,4 +16,4 @@ ZTM_PORT=${ZTM_PORT:-7777}
 ZTM_PERMIT=${ZTM_PERMIT:-/permit}
 
 # Run the command
-exec /usr/local/bin/ztm run agent --listen 0.0.0.0:$ZTM_PORT --permit ${ZTM_PERMIT}/ztm-permit.json --join $ZTM_JOIN_MESH --join-as $ZTM_ENDPOINT
+exec /usr/local/bin/ztm run agent --listen 0.0.0.0:$ZTM_PORT --data ${ZTM_DATA} --permit ${ZTM_PERMIT}/ztm-permit.json --join $ZTM_JOIN_MESH --join-as $ZTM_ENDPOINT
