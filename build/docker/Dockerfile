@@ -34,7 +34,7 @@ FROM minimal AS hub
 # Set environment variables
 ENV ZTM_NAMES=${ZTM_NAMES:-0.0.0.0}
 ENV ZTM_PORT=${ZTM_PORT:-8888}
-ENV ZTM_DATA=$(ZTM_DATA:-~/.ztm)
+ENV ZTM_DATA=${ZTM_DATA:-~/.ztm}
 
 # Expose the required port
 EXPOSE ${ZTM_PORT}
@@ -61,7 +61,7 @@ ENV ZTM_ENDPOINT=${ZTM_ENDPOINT}
 
 ENV ZTM_PORT=${ZTM_PORT:-7777}
 ENV ZTM_PERMIT=${ZTM_PERMIT:-/permit}
-ENV ZTM_DATA=$(ZTM_DATA:-~/.ztm)
+ENV ZTM_DATA=${ZTM_DATA:-~/.ztm}
 
 # Expose the required port
 EXPOSE ${ZTM_PORT}
