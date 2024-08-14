@@ -521,7 +521,7 @@ export default function (rootDir, config) {
             port: q.port,
             username,
           }
-          return connectApp(params.provider, $requestedApp).then(p => {
+          return connectApp(params.provider, $requestedApp, username).then(p => {
             if (p) {
               logInfo(`Proxy to local app ${$requestedApp}`)
               $requestedAppPipeline = p
@@ -987,8 +987,9 @@ export default function (rootDir, config) {
     }
   }
 
-  function connectApp(provider, app) {
+  function connectApp(provider, app, peerUsername) {
     if (!apps.isRunning(provider, app)) {
+      if (peerUsername !== username) return Promise.reject()
       return startApp(config.agent.id, provider, app).then(
         () => apps.connect(provider, app)
       )

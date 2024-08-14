@@ -207,7 +207,7 @@ function getAppLog(mesh, ep, provider, app) {
 function connectApp(mesh, provider, app) {
   var m = findMesh(mesh)
   if (!m) return null
-  return m.connectApp(provider, app)
+  return m.connectApp(provider, app, m.username)
 }
 
 export default {
