@@ -1,6 +1,6 @@
 {
   "productName": "ztm",
-  "version": "0.1.0",
+  "version": "0.0.4",
   "identifier": "com.flomesh.ztm",
   "build": {
     "beforeDevCommand": "npm run dev",

@@ -105,8 +105,28 @@ targets:
     preBuildScripts:
       - script: yarn tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code
-        basedOnDependencyAnalysis: false
+        basedOnDependencyAnalysis: true
         outputFiles:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libztm_lib.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libztm_lib.a
           - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libztm_lib.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libbrotlicommon-static.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libbrotlidec-static.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libcrypto.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libexpat.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libleveldb.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libpipy.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libssl.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libyajl_s.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libyaml.a
+          - $(SRCROOT)/Externals/arm64-sim/${CONFIGURATION}/libz.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libbrotlicommon-static.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libbrotlidec-static.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libcrypto.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libexpat.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libleveldb.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libpipy.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libssl.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libyajl_s.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libyaml.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libz.a

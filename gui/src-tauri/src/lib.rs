@@ -12,8 +12,8 @@ use tauri::AppHandle;
 use url::Url;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
-use oslog::{OsLogger};
-use log::{LevelFilter, trace, debug, info, warn, error};
+// use oslog::{OsLogger};
+// use log::{LevelFilter, trace, debug, info, warn, error};
 
 // #[link(name = "pipy", kind = "framework")]
 // extern {
@@ -232,13 +232,13 @@ fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	
-	if cfg!(target_os = "ios") {
-		OsLogger::new("com.flomesh.ztm")
-		        .level_filter(LevelFilter::Debug)
-		        .category_level_filter("Settings", LevelFilter::Trace)
-		        .init()
-		        .unwrap();
-	}
+	// if cfg!(target_os = "ios") {
+	// 	OsLogger::new("com.flomesh.ztm")
+	// 	        .level_filter(LevelFilter::Debug)
+	// 	        .category_level_filter("Settings", LevelFilter::Trace)
+	// 	        .init()
+	// 	        .unwrap();
+	// }
 		tauri::Builder::default()
 				.plugin(tauri_plugin_os::init())
 				.plugin(tauri_plugin_http::init())
