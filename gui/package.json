@@ -21,7 +21,7 @@
     "android-build": "vite build --emptyOutDir --outDir ../agent/gui && tauri android build",
     "ios-init": "tauri ios init && cp -rf ./src-ios/apple ./src-tauri/gen",
     "ios-dev": "cp -rf ./src-ios/apple ./src-tauri/gen && tauri ios dev",
-    "ios-build": "vite build --emptyOutDir --outDir ../agent/gui && tauri ios build",
+    "ios-build": "vite build --emptyOutDir --outDir ../agent/gui && cp -rf ./src-ios/apple ./src-tauri/gen && tauri ios build",
     "hub": "../bin/ztm run hub --listen 127.0.0.1:8888 --names 127.0.0.1:8888",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
     "build-ztm-macos-x64": "../build.sh && cp -f ../bin/ztm ../gui/src-tauri/bin/ztmctl-x86_64-apple-darwin",
