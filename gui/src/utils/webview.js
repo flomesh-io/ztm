@@ -6,13 +6,17 @@ import { invoke } from '@tauri-apps/api/core';
 // import { getCurrent as getCurrentDL } from '@tauri-apps/plugin-deep-link';
 
 const openWebview = (app)=>{
-	if(!window.__TAURI_INTERNALS__ ){
-		store.commit('notice/setApp', app);
-		// window.open(app.url);
-		return
-	}
 	try{
-		const platform = store.getters['account/platform']
+		const platform = store.getters['account/platform'];
+		if(!window.__TAURI_INTERNALS__ || platform=='android' || platform=='ios' ){
+			if(app.url.indexOf('/#/') == 0){
+				// location.href=app.url;
+			// }else{
+				store.commit('notice/setApp', app);
+			}
+			// window.open(app.url);
+			return
+		}
 		// const appWindow = new Window(`${app.name}-window`);
 		const options = {
 			url: app.url,
@@ -41,11 +45,6 @@ const openWebview = (app)=>{
 			// getCurrentDL().then((urls)=>{
 			// 	console.log(urls)
 			// })
-			if(app.url.indexOf('/#/') == 0){
-				location.href=app.url;
-			}else{
-				store.commit('notice/setApp', app);
-			}
 		}	else if(platform=='windows'){
 			// windows API not available on mobile
 			options.parent = getCurrentWindow();

@@ -3,7 +3,7 @@
     "windows": [
       {
 				"dragDropEnabled": false,
-        "title": "ZTAPP",
+        "title": "ZTM",
         "width": 455,
         "height": 350,
         "resizable": false,

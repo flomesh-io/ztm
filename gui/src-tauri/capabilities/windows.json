@@ -21,8 +21,6 @@
     "core:event:allow-emit-to",
     "core:event:allow-listen",
     "core:event:allow-unlisten",
-		
-
     "core:window:default",
     "core:window:allow-available-monitors",
     "core:window:allow-center",

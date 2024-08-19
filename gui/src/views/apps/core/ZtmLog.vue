@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import ShellService from '@/service/ShellService';
+import { platform } from '@/utils/platform';
 const shellService = new ShellService();
 const store = useStore();
 const logs = computed(() => {
@@ -15,6 +16,7 @@ const clear = () => {
 	store.commit('account/setLogs',null);
 }
 const level = ref('All');
+const allWins = ref()
 onMounted(()=>{
 	timmer.value = true;
 	loaddata();
@@ -31,13 +33,23 @@ const loaddata = () => {
 		loaddata();
 	},3000)
 }
+const showHeader = computed(()=>{
+	return platform() == 'ios' || platform() == 'android' || platform() == 'web'
+})
 </script>
 
 <template>
 	<ScrollPanel class="container">
 	<div class="container_pannel">
+			<AppHeader v-if="showHeader" :child="true">
+					<template #center>
+						<b>Ztm Log</b>
+					</template>
+					<template #end> 
+						<Button icon="pi pi-refresh" text />
+					</template>
+			</AppHeader>
 	    <div class="container_terminal"></div>
-			
 			<div class="flex actions">
 				<Button  v-tooltip.left="'Clear'" icon="iconfont icon-clear" severity="help" text rounded aria-label="Filter" @click="clear" >
 				</Button>
