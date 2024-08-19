@@ -224,7 +224,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 									</div>
 							</li>
 						</ul>
-						<div class="text-center" >
+						<div class="text-center" v-if="!permit">
 							<i class="pi pi-info-circle relative" style="top: 3px;"/>
 							get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> to root user
 						</div>
