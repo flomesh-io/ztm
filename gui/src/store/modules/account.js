@@ -24,7 +24,9 @@ export default {
   },
 	actions: {
 		async meshes({ commit }) {
-			const res = await ztmService.getMeshes;
+			const res = await ztmService.getMeshes();
+			console.log("dispatch('account/meshes')")
+			console.log(res)
 			commit('setMeshes',res || []);
 		},
 	},

@@ -77,7 +77,7 @@ const loginGuard = (to, from, next, options) => {
 					.catch(err => console.log('Request Failed', err)); 
 			}
 		} else {
-		next();
+			next();
 		}
 	}
 };

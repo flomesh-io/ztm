@@ -37,6 +37,11 @@ const mergeLogs = () => {
 const selectEndpoints = ref([]);
 const endpoints = ref([]);
 const getEndpoints = (callback) => {
+	if(!selectedMesh.value){
+		loading.value = false;
+		loader.value = false;
+		return
+	}
 	loading.value = true;
 	loader.value = true;
 	ztmService.getEndpoints(selectedMesh.value?.name)
@@ -47,7 +52,10 @@ const getEndpoints = (callback) => {
 			}
 			mergeLogs();
 		})
-		.catch(err => console.log('Request Failed', err)); 
+		.catch(err => {
+			loading.value = false;
+			loader.value = false;
+		}); 
 }
 const getLogs = (ep) => {
 	ztmService.getLogs(selectedMesh.value?.name, ep)
@@ -61,6 +69,7 @@ const getLogs = (ep) => {
 			logs.value = logs.value.concat(res || []);
 			logs.value  = _.uniqBy(logs.value, item => `${item.ep}-${item.time}-${item.message}`);
 			logs.value = _.sortBy(logs.value, item => item.time).reverse();
+			
 		})
 		.catch(err => {
 			loading.value = false;
