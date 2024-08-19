@@ -67,17 +67,24 @@ const placeholder = computed(() => {
 		return `${_vs}${meshes.value.length} ${meshes.value.length>1?units:unit} Joined.`;
 	}
 });
-onMounted(() => {
-	pipyInit();
-	
+
+const selectedMesh = ref(null);
+const changeMesh = (d) => {
+	store.commit('account/setSelectedMesh', d?.value||d);
+}
+
+const storeMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
 });
+watch(()=>storeMesh,()=>{
+	selectedMesh.value = storeMesh.value
+},{
+	deep:true
+})
 const timmer = () => {
 	setInterval(()=>{
-		store.dispatch('account/meshes');
-		if(!!res){
-			loaddata(true);
-		}
-	},7000)
+		loaddata(true);
+	},6000)
 }
 const loaddata = (reload) => {
 	if(!reload){
@@ -91,6 +98,9 @@ const loaddata = (reload) => {
 				errors.value = [];
 				meshes.value = res;
 				store.commit('account/setMeshes', res);
+			}
+			if(storeMesh.value && !meshes.value.find((mesh)=> mesh?.name == storeMesh.value?.name)){
+				store.commit('account/setSelectedMesh', null);
 			}
 		})
 		.catch(err => {
@@ -194,19 +204,6 @@ const upload = (d)=>{
 		}
 	}
 }
-const selectedMesh = ref(null);
-const changeMesh = (d) => {
-	store.commit('account/setSelectedMesh', d?.value||d);
-}
-
-const storeMesh = computed(() => {
-	return store.getters["account/selectedMesh"]
-});
-watch(()=>storeMesh,()=>{
-	selectedMesh.value = storeMesh.value
-},{
-	deep:true
-})
 
 const choose_button_click = ()=>{
 	setTimeout(()=>{
@@ -281,6 +278,11 @@ const toggleUsermenu = (event) => {
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);
 }
+onMounted(() => {
+	pipyInit();
+	timmer();
+	
+});
 </script>
 
 <template>
