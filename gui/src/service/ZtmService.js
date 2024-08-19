@@ -44,6 +44,9 @@ export default class ZtmService {
 		}
 		delete config.connected;
 		delete config.errors;
+		if(!!config.agent && !config.agent.privateKey){
+			delete config.agent.privateKey;
+		}
 		return request(`/api/meshes/${name}`,"POST",config);
 	}
 	getLogs(mesh, ep) {

@@ -2,6 +2,7 @@
 import { ref, computed,onActivated,onMounted,useSlots } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
+import XeyeSvg from "@/assets/img/logo.png";
 const slots = useSlots();
 const props = defineProps(['main','back','child'])
 const store = useStore();
@@ -55,7 +56,9 @@ onMounted(()=>{
 	<Toolbar class="nopd-header">
 			<template #start>
 				<slot v-if="hasStartSlot" name="start"/>
-				<Button v-else-if="props.main && (isMobile || platform =='android'|| platform =='ios')" @click.stop="toggleLeft" class="mobile-show" icon="pi pi-bars"  text  />
+				<Button v-else-if="props.main && (isMobile || platform =='android'|| platform =='ios')" @click.stop="toggleLeft" class="mobile-show"   text >
+					<img class="logo pointer" :src="XeyeSvg" width="28px" height="28px"/>
+				</Button>
 				<Button v-else-if="props.main" @click="home" icon="iconfont icon-home" text />
 				<Button v-else @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>

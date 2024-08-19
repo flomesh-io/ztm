@@ -43,7 +43,6 @@ const enabled = computed(() => {
 	&& !!config.value.agent?.name>0 
 	&& config.value.agent.certificate.length>0 
 	&& config.value.ca.length>0 
-	&& config.value.agent?.privateKey?.length>0 
 	&& config.value.bootstraps.length>0 
 	&& !!config.value.bootstraps[0];
 });
@@ -226,7 +225,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 						</ul>
 						<div class="text-center" v-if="!permit">
 							<i class="pi pi-info-circle relative" style="top: 3px;"/>
-							get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> to root user
+							Get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> to root user
 						</div>
 					</div>
 				</div>
