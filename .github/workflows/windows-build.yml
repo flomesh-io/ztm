@@ -25,9 +25,7 @@ jobs:
       run: |
         cd gui
         yarn install
-        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:tunnel
-        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:script
-        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:proxy
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:apps
     - name: build ztm
       run: |
         ./build.cmd
