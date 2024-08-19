@@ -37,14 +37,10 @@ const confirm = useConfirm();
 const props = defineProps(['embed']);
 const emits = defineEmits(['collapse']);
 const router = useRouter();
-const meshes = ref([]);
 const logoHover = ref(false);
 
 const platform = computed(() => {
 	return store.getters['account/platform']
-});
-const isLogined = computed(() => {
-	return store.getters['account/user']
 });
 const user = computed(() => {
 	return store.getters['account/user'];
@@ -52,6 +48,7 @@ const user = computed(() => {
 const ztmVersion = computed(() => {
 	return !!version.value?.ztm?.version? `${version.value?.ztm?.version}` : "";
 });
+const meshes = ref([]);
 const placeholder = computed(() => {
 	const _vs = "ZTM : ";
 	const unit = 'Mesh';
@@ -72,17 +69,28 @@ const placeholder = computed(() => {
 });
 onMounted(() => {
 	pipyInit();
+	
 });
-
-const loaddata = () => {
-	loading.value = true;
+const timmer = () => {
+	setInterval(()=>{
+		store.dispatch('account/meshes');
+		if(!!res){
+			loaddata(true);
+		}
+	},7000)
+}
+const loaddata = (reload) => {
+	if(!reload){
+		loading.value = true;
+	}
 	ztmService.getMeshes()
 		.then(res => {
 			loading.value = false;
 			if(!!res){
 				playing.value = true;
-				meshes.value = res;
 				errors.value = [];
+				meshes.value = res;
+				store.commit('account/setMeshes', res);
 			}
 		})
 		.catch(err => {
@@ -221,7 +229,9 @@ const takePipyVersion = () => {
 	shellService.takePipyVersion();
 }
 const usermenu = ref();
-const usermenuitems = ref([
+const usermenuitems = computed(()=>[{
+	label: user.value?.id,
+	items: [
 		{
 				label: 'Copy Identity',
 				icon: 'pi pi-copy',
@@ -245,12 +255,15 @@ const usermenuitems = ref([
 					ztmService.identity()
 						.then(res => {
 							if(!!res){
-								
-								exportFromJSON({ 
-									data: res,
-									fileName:`identity`,
-									exportType: exportFromJSON.types.txt
-								})
+								if(!window.__TAURI_INTERNALS__){
+									exportFromJSON({ 
+										data: res,
+										fileName:`identity`,
+										exportType: exportFromJSON.types.txt
+									})
+								} else {
+									copy(res)
+								}
 							}
 						})
 						.catch(err => {
@@ -259,7 +272,8 @@ const usermenuitems = ref([
 						}); 
 				},
 		},
-]);
+	]
+}]);
 
 const toggleUsermenu = (event) => {
     usermenu.value.toggle(event);
@@ -276,9 +290,9 @@ const toggleLeft = () => {
 	  <div class="wave"></div>
 	  <div class="wave"></div>
 		<PipyVersion class="left-fixed" :playing="playing"/>
-		<div class="userinfo" v-if="user" >
-			<Avatar @click="toggleUsermenu" icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
-			<span v-tooltip="user?.id">{{user?.id}}</span>
+		<div class="userinfo" v-if="user"  @click="toggleUsermenu">
+			<Avatar icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
+			<span>{{user?.id}}</span>
 		</div>
 		<Menu ref="usermenu" id="user_menu" :model="usermenuitems" :popup="true" />
 		<div class="infotop">
@@ -289,7 +303,7 @@ const toggleLeft = () => {
 				
 			</div>
 			<div class="mt-4">
-				<Button v-if="!isLogined" class="w-20rem" @click="goLogin">Login</Button>
+				<Button v-if="!user" class="w-20rem" @click="goLogin">Login</Button>
 				<Select 
 				v-else
 				:options="meshes" 
@@ -333,7 +347,7 @@ const toggleLeft = () => {
 	  </div>
 		
 		<div class="footer">
-<!-- 			<div v-if="isLogined" class="flex-item">
+<!-- 			<div v-if="user" class="flex-item">
 				<Button  v-tooltip="'Logout'" class="pointer" severity="help" text rounded aria-label="Filter" @click="logout" >
 					<i class="pi pi-power-off " />
 				</Button>

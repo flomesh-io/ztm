@@ -17,6 +17,10 @@ const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+
+const user = computed(() => {
+	return store.getters['account/user'];
+});
 const store = useStore();
 const confirm = useConfirm();
 const model = computed(() => {
@@ -142,7 +146,9 @@ const select = (selected) => {
 }
 
 const usermenu = ref();
-const usermenuitems = ref([
+const usermenuitems = computed(()=>[{
+	label: !!selectedMesh.value?`${selectedMesh.value?.agent?.name||'Unname'} (${selectedMesh.value?.agent?.username})`:user.value?.id,
+	items: [
 		{
 				label: 'Copy Identity',
 				icon: 'pi pi-copy',
@@ -150,7 +156,7 @@ const usermenuitems = ref([
 					ztmService.identity()
 						.then(res => {
 							if(!!res){
-								copy(res);
+								copy(res)
 							}
 						})
 						.catch(err => {
@@ -166,12 +172,15 @@ const usermenuitems = ref([
 					ztmService.identity()
 						.then(res => {
 							if(!!res){
-								
-								exportFromJSON({ 
-									data: res,
-									fileName:`identity`,
-									exportType: exportFromJSON.types.txt
-								})
+								if(!window.__TAURI_INTERNALS__){
+									exportFromJSON({ 
+										data: res,
+										fileName:`identity`,
+										exportType: exportFromJSON.types.txt
+									})
+								} else {
+									copy(res)
+								}
 							}
 						})
 						.catch(err => {
@@ -180,7 +189,8 @@ const usermenuitems = ref([
 						}); 
 				},
 		},
-]);
+	]
+}]);
 
 const toggleUsermenu = (event) => {
     usermenu.value.toggle(event);
@@ -209,8 +219,8 @@ const toggleUsermenu = (event) => {
 			<template #end >
 					<div class="flex align-items-center flex-column w-full">
 						
-							<div v-tooltip="`${selectedMesh?.agent?.name||'Unname'} (${selectedMesh?.agent?.username})`" class="w-full flex flex-column justify-content-center align-items-center py-3">
-									<Avatar  @click="toggleUsermenu" icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
+							<div @click="toggleUsermenu" class="w-full flex flex-column justify-content-center align-items-center py-3">
+									<Avatar  icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
 									<div class="text-ellipsis w-full text-sm px-2 text-center"><b>{{selectedMesh?.agent?.name||selectedMesh?.agent?.username||'Agent'}}</b></div>
 									<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
 							</div>

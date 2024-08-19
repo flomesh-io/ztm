@@ -5,8 +5,10 @@ import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
-const store = useStore();
 import _ from "lodash"
+import exportFromJSON from 'export-from-json';
+import { copy } from '@/utils/clipboard';
+const store = useStore();
 const props = defineProps(['pid','title']);
 const emits = defineEmits(['save','back']);
 const route = useRoute();
@@ -114,6 +116,54 @@ watch(() => permit.value,() => {
 const back = () => {
 	emits('back')
 }
+
+const usermenu = ref();
+const usermenuitems = ref([
+	{
+			label: 'Copy Identity',
+			icon: 'pi pi-copy',
+			command(){
+				ztmService.identity()
+					.then(res => {
+						if(!!res){
+							copy(res)
+						}
+					})
+					.catch(err => {
+						loading.value = false;
+						console.log('Request Failed', err)
+					}); 
+			},
+	},
+	{
+			label: 'Download Identity',
+			icon: 'pi pi-download',
+			command(){
+				ztmService.identity()
+					.then(res => {
+						if(!!res){
+							if(!window.__TAURI_INTERNALS__){
+								exportFromJSON({ 
+									data: res,
+									fileName:`identity`,
+									exportType: exportFromJSON.types.txt
+								})
+							} else {
+								copy(res)
+							}
+						}
+					})
+					.catch(err => {
+						loading.value = false;
+						console.log('Request Failed', err)
+					}); 
+			},
+	},
+]);
+
+const toggleUsermenu = (event) => {
+    usermenu.value.toggle(event);
+};
 const windowWidth = computed(() =>  window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 </script>
@@ -174,6 +224,10 @@ const isMobile = computed(() => windowWidth.value<=768);
 									</div>
 							</li>
 						</ul>
+						<div class="text-center" >
+							<i class="pi pi-info-circle relative" style="top: 3px;"/>
+							get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> to root user
+						</div>
 					</div>
 				</div>
 			</div>
@@ -181,6 +235,8 @@ const isMobile = computed(() => windowWidth.value<=768);
 			</ScrollPanel>
 		</div>
 	</div>
+	
+	<Menu ref="usermenu" id="user_menu" :model="usermenuitems" :popup="true" />
 </template>
 
 

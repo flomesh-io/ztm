@@ -9,46 +9,18 @@ const store = useStore();
 const router = useRouter();
 const confirm = useConfirm();
 const ztmService = new ZtmService();
-const meshes = ref([]);
+const meshes = computed(() => {
+	return store.getters['account/meshes']
+});
 const status = ref({});
 const scopeType = ref('All');
 
 const platform = computed(() => {
 	return store.getters['account/platform']
 });
-onMounted(() => {
-	if(platform.value=='android'){
-		loading.value = true;
-		loader.value = true;
-		setTimeout(() => {
-			loaddata();
-		},2000)
-	}else{
-		loaddata();
-	}
-});
 const loading = ref(false);
 const loader = ref(false);
-const loaddata = () => {
-	visibleEditor.value = false;
-	loading.value = true;
-	loader.value = true;
-	ztmService.getMeshes()
-		.then(res => {
-			console.log(res);
-			loading.value = false;
-			setTimeout(() => {
-				loader.value = false;
-			},2000)
-			meshes.value = res || [];
-			store.commit('account/setMeshes', res);
-		})
-		.catch(err => {
-			loading.value = false;
-			loader.value = false;
-			console.log('Request Failed', err)
-		}); 
-}
+
 const deleteMesh = () => {
 	const name = selectedMenu.value?.name;
 	if(!name){
@@ -56,7 +28,6 @@ const deleteMesh = () => {
 	}
 	ztmService.deleteMesh(name,() => {
 		setTimeout(()=>{
-			loaddata();
 			store.dispatch('account/meshes');
 		},1000);
 		selectedMenu.value = null;
@@ -70,7 +41,7 @@ const changeStatus = (mesh,val) => {
 const join = () => {
 	visibleEditor.value = false;
 	setTimeout(()=>{
-		loaddata();
+		store.dispatch('account/meshes');
 	},1000);
 	selectedMenu.value = null;
 	visibleEditor.value = false;
@@ -117,6 +88,20 @@ const selectedMesh = computed(() => {
 const select = (mesh) => {
 	store.commit('account/setSelectedMesh', mesh);
 }
+const loaddata = () => {
+	store.dispatch('account/meshes');
+}
+onMounted(() => {
+	if(platform.value=='android'){
+		loading.value = true;
+		loader.value = true;
+		setTimeout(() => {
+			store.dispatch('account/meshes');
+		},2000)
+	}else{
+		store.dispatch('account/meshes');
+	}
+});
 </script>
 
 <template>
