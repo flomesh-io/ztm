@@ -253,7 +253,7 @@ watch(()=>props.d,()=>{
 
 <template>
 
-	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
+	<div class="surface-ground h-full min-h-screen">
 		<AppHeader :back="back">
 				<template #center>
 					 <Button icon="pi pi-arrow-right-arrow-left" text /> <b>{{props.d?`${props.d?.proto}/${props.d?.name}`:'New Tunnel'}}</b>

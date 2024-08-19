@@ -156,7 +156,7 @@ const copy = () => {
 				</div>
 			</Popover>
 			<Loading v-if="loading"/>
-			<ScrollPanel class="w-full absolute" style="top:35px;bottom: 0;" v-else-if="endpoints && endpoints.length >0">
+			<ScrollPanel class="absolute-scroll-panel" v-else-if="endpoints && endpoints.length >0">
 			<DataView class="message-list" :value="endpoints">
 					<template #list="slotProps">
 							<div class="flex flex-col message-item pointer" v-for="(node, index) in slotProps.items" :key="index" @click="select(node)">

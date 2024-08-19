@@ -3,14 +3,14 @@ import { computed, watch, ref, onMounted } from 'vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { platform } from '@/utils/platform';
 
 const store = useStore();
 const router = useRouter();
 const { layoutConfig, layoutState } = useLayout();
 const outsideClickListener = ref(null);
-
 const containerClass = computed(() => {
-    return {
+     let classAry = {
         'layout-theme-light': layoutConfig.darkTheme.value === 'light',
         'layout-theme-dark': layoutConfig.darkTheme.value === 'dark',
         'layout-overlay': layoutConfig.menuMode.value === 'overlay',
@@ -22,6 +22,10 @@ const containerClass = computed(() => {
         'p-ripple-disabled': !layoutConfig.ripple.value,
 				'mobile-transform-layout':false
     };
+		if(!!platform()){
+			classAry[platform()] = true;
+		}
+		return classAry;
 });
 
 const windowWidth = computed(() => window.innerWidth);

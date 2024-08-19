@@ -118,7 +118,7 @@ onMounted(() => {
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
-			<ScrollPanel class="w-full absolute" style="top:35px;bottom: 0;" v-else-if="meshes.length >0">
+			<ScrollPanel class="absolute-scroll-panel" v-else-if="meshes.length >0">
 			<div class="text-center px-3">
 				<div class="grid mt-1 text-left" >
 						<div :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
