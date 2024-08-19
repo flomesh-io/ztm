@@ -51,7 +51,7 @@ onMounted(() => {
 
 <template>
 
-	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - ${props.embed?'100px':'20px'})`}">
+	<div class="surface-ground h-full min-h-screen">
 		<AppHeader :back="back">
 				<template #center>
 					<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag v-if="props.ep.id == info.endpoint?.id" severity="contrast" >Local</Tag></span>

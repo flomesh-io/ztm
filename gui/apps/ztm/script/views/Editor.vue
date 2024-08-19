@@ -5,6 +5,7 @@ import JsEditor from '@/components/editor/JsEditor.vue';
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex';
 import { useToast } from "primevue/usetoast";
+import { platform } from '@/utils/platform';
 
 const toast = useToast();
 const props = defineProps(['loading','scriptsHide','isMobile'])
@@ -75,14 +76,25 @@ const show = () => {
 const setPjs = (value) =>{
 	pjs.value = value?.script
 }
+
+const back = () => {
+	if(window.parent){
+		window.parent.location.href="/#/mesh/apps";
+	}else{
+		location.href="/#/mesh/apps";
+	}
+}
+const showBack = computed(()=>{
+	return platform() == 'ios' || platform() == 'android' || platform() == 'web'
+})
 defineExpose({ setPjs })
 </script>
 
 <template>
 	<div  class="relative h-full min-h-screen w-full" >
-		<AppHeader :main="true" >
+		<AppHeader>
 				<template #start>
-					
+					<Button v-if="showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 					<Button v-tooltip="'Show Favorites'" v-if="props.scriptsHide || props.isMobile" icon="pi pi-list-check" aria-haspopup="true" aria-controls="op" @click="show"/>
 					<Button icon="pi pi-star" text aria-haspopup="true" aria-controls="op" @click="toggle"/>
 				</template>

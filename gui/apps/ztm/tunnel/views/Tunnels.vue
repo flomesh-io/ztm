@@ -70,15 +70,11 @@ const edit = (d) => {
 
 <template>
 	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':false}">
-		<div  class="relative h-full min-h-screen w-full" >
-			<AppHeader :main="true" >
-					<template #start>
-						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
-					</template>
+		<div  class="relative h-full w-full" >
+			<AppHeader >
 					<template #center>
 						<b>Tunnels</b>
 					</template>
-			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
 						<Button icon="pi pi-plus"   @click="create"/>
@@ -87,14 +83,14 @@ const edit = (d) => {
 			<Card class="nopd" v-if="!props.error">
 				<template #content>
 					<InputGroup class="search-bar" >
-						<Button :disabled="!typing" icon="pi pi-search"  :label="null"/>
+						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
 						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type tunnel name" rows="1" cols="30" />
-						
+						<Button :disabled="!typing" icon="pi pi-search"  :label="null"/>
 					</InputGroup>
 				</template>
 			</Card>
 			<Loading v-if="props.loading"/>
-			<ScrollPanel class="w-full absolute" style="bottom: 0;"  :style="{'top':'75px'}" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
+			<ScrollPanel class="absolute-scroll-panel" :style="{'top':'75px'}" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
 			<div class="text-center">
 				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="tunnelsFilter" dataKey="id" tableStyle="min-width: 50rem">
 						<Column header="Tunnel">

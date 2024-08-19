@@ -30,7 +30,7 @@ onMounted(()=>{
 <template>
 	<div class="flex flex-row min-h-screen "  :class="{'embed-ep-header':false}">
 		<div  class="relative h-full min-h-screen w-full" >
-			<AppHeader :main="true" >
+			<AppHeader>
 					<template #start>
 						<Button icon="pi pi-eye-slash" @click="hide" />
 					</template>
@@ -38,7 +38,7 @@ onMounted(()=>{
 						<b>Favorites</b>
 					</template>
 			</AppHeader>
-			<ScrollPanel class="w-full absolute" style="bottom: 0;"  :style="{'top':'35px'}" v-if="scripts && scripts.length >0">
+			<ScrollPanel class="absolute-scroll-panel" v-if="scripts && scripts.length >0">
 			<div class="text-center">
 				
 				<div class="grid text-left mt-1 px-3" v-if="scripts && scripts.length >0">

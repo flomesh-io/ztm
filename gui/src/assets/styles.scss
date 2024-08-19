@@ -37,19 +37,10 @@ $gutter: 1rem; //for primeflex grid system
 	transform: translateY(0);
 	will-change: transform;
 }
-.ios .app-bottom-bar.p-menubar{
-	bottom: unset;
-	top:calc(100vh - 145px);
-	background: #1e1e1e;
-	height: 100px !important;
-}
 .empty-bottom{
 	display: block;
 	width: 30rem;
 	height: 64px;
-}
-.ios .empty-bottom{
-	height: 145px;
 }
 .app-top-bar.p-menubar .p-menubar-root-list{
 	border: none;
@@ -747,13 +738,50 @@ pre.app-code code{
 			width: 3.5rem;
 		}
 	}
+		
+	.absolute-scroll-panel{
+		padding-top: 3.5rem !important;
+		bottom: 60px;
+	}
 	.empty-header{
 		width: 100px;
 		display: block;
 		height: 3.5rem;
 	}
 }
+.absolute-scroll-panel{
+	width: 100%;
+	position: absolute;
+	top:0px;bottom: 0;
+	padding-top: 35px;
+}
 
+.ios.layout-wrapper{
+	 min-height: calc(100vh - 80px);
+}
+.ios{
+	.nopd-header{
+		height: 4.5rem;
+		padding-top: 1rem !important;
+		top: -1rem;
+	}
+	.p-scrollpanel-content{
+		height: calc(100% + calc(2 * var(--scrollpanel-bar-size)) - 80px);
+	}
+	.layout-main-container,.min-h-screen{
+		 min-height: calc(100vh - 80px) !important;
+	}
+	
+	.empty-bottom{
+		height: 145px;
+	}
+	.app-bottom-bar.p-menubar{
+		bottom: unset;
+		top:calc(100vh - 145px);
+		background: #1e1e1e;
+		height: 100px !important;
+	}
+}
 // .surface-border.flex-wrap>div{
 // 	line-height: 24px;
 // }
