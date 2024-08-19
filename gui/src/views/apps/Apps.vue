@@ -207,7 +207,7 @@ watch(()=>manage,()=>{
 				<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="()=>selectApp=null"/>
 			</div>
 			
-			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-6':'pt-2'" v-else-if="!manage">
+			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-5':'pt-2'" v-else-if="!manage">
 				<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
 				</div>

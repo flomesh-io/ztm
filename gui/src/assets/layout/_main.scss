@@ -5,12 +5,13 @@
 html {
     height: 100%;
     font-size: $scale;
+    background-color: var(--surface-html);
 }
 
 body {
     font-family: var(--font-family);
     color: var(--text-color);
-    background-color: var(--surface-ground);
+    background-color: var(--surface-html);
     margin: 0;
     padding: 0;
     min-height: 100%;
