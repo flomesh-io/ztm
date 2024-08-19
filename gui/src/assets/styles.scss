@@ -25,8 +25,8 @@ $gutter: 1rem; //for primeflex grid system
 .app-bottom-bar.p-menubar {
 	padding:0;
 	position: fixed;
-	bottom: 0;
-	z-index: 1;
+	bottom: 0px;
+	z-index: 2;
 	left: 0;
 	right: 0;
 	// overflow: hidden;
@@ -34,6 +34,22 @@ $gutter: 1rem; //for primeflex grid system
 	color: rgba(255, 255, 255, 0.87);
 	border: 0px solid rgba(255, 255, 255, 0.12);
 	border-radius: 0px;
+	transform: translateY(0);
+	will-change: transform;
+}
+.ios .app-bottom-bar.p-menubar{
+	bottom: unset;
+	top:calc(100vh - 145px);
+	background: #1e1e1e;
+	height: 100px !important;
+}
+.empty-bottom{
+	display: block;
+	width: 30rem;
+	height: 64px;
+}
+.ios .empty-bottom{
+	height: 145px;
 }
 .app-top-bar.p-menubar .p-menubar-root-list{
 	border: none;
@@ -93,7 +109,6 @@ $gutter: 1rem; //for primeflex grid system
 .app-top-bar.p-menubar .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content .p-menubar-item-link{
 	padding: 14px 0px 10px 0px;
 	border-radius: 10px;
-	
 	width: 70px;
 	justify-content: center;
 	text-align: center;
@@ -101,6 +116,7 @@ $gutter: 1rem; //for primeflex grid system
 
 .app-bottom-bar.p-menubar .p-menubar-root-list > .p-menubar-item > .p-menubar-item-content .p-menubar-item-link{
 	padding: 12px 5px 8px 5px;
+	height: 64px;
 	border-radius: 0px;
 	justify-content: center;
 	text-align: center;
@@ -718,6 +734,23 @@ pre.app-code code{
 		right: 0;
 		bottom: 0;
 		z-index: 2;
+	}
+	.layout-wrapper,.layout-main-container,.layout-main{
+		// min-height: 300px;
+	}
+	.nopd-header{
+		height: 3.5rem;
+		z-index: 2;
+		position: fixed;top: 0;
+		width: 100%;
+		.p-button.p-button-icon-only{
+			width: 3.5rem;
+		}
+	}
+	.empty-header{
+		width: 100px;
+		display: block;
+		height: 3.5rem;
 	}
 }
 

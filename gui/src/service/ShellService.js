@@ -1,7 +1,7 @@
 import { Command, Child, open } from '@tauri-apps/plugin-shell';
 import { invoke } from '@tauri-apps/api/core';
 import { resourceDir, appLogDir, appDataDir, appLocalDataDir, documentDir } from '@tauri-apps/api/path';
-import { platform } from '@tauri-apps/plugin-os';
+import { platform } from '@/utils/platform';
 import { readTextFileLines, BaseDirectory } from '@tauri-apps/plugin-fs';
 import ZtmService from '@/service/ZtmService';
 import { relaunch } from "@tauri-apps/plugin-process";

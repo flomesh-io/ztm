@@ -8,6 +8,8 @@ import AppSidebar from './AppSidebar.vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+// import { listen } from '@tauri-apps/api/event';
+// import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const store = useStore();
 const router = useRouter();
@@ -29,7 +31,7 @@ const mobileLeftbar = computed(() => {
 	return store.getters['account/mobileLeftbar'];
 });
 const containerClass = computed(() => {
-    return {
+     let classAry = {
         'layout-theme-light': layoutConfig.darkTheme.value === 'light',
         'layout-theme-dark': layoutConfig.darkTheme.value === 'dark',
         'layout-overlay': layoutConfig.menuMode.value === 'overlay',
@@ -41,6 +43,10 @@ const containerClass = computed(() => {
         'p-ripple-disabled': !layoutConfig.ripple.value,
 				'mobile-transform-layout':!!mobileLeftbar.value
     };
+		if(!!platform.value){
+			classAry[platform.value] = true;
+		}
+		return classAry;
 });
 const bindOutsideClickListener = () => {
     if (!outsideClickListener.value) {
@@ -78,7 +84,15 @@ const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);
 }
 const windowHeight = ref(window.innerHeight);
-const viewHeight = computed(() => windowHeight.value - 0);
+const viewHeight = computed(() => windowHeight.value - 50);
+const platform = computed(() => {
+	return store.getters['account/platform']
+});
+onMounted(()=>{
+	// getCurrentWindow().listen<string>('tauri-back', (event) => {
+	// 	store.commit('notice/setApp', null);
+	// });
+})
 </script>
 
 <template>
@@ -105,12 +119,12 @@ const viewHeight = computed(() => windowHeight.value - 0);
 							    />
 							  </keep-alive>
 							</router-view>
+							<app-bottombar></app-bottombar>
             </div>
             <!-- <app-footer></app-footer> -->
-						<app-bottombar></app-bottombar>
         </div>
-        <app-config></app-config>
-        <div class="layout-mask"></div>
+				<app-config></app-config>
+				<div class="layout-mask"></div>
     </div>
 </template>
 

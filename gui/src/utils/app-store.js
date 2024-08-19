@@ -29,7 +29,7 @@ const defaultApp = [{
 	// },{
 		name: "ZTMLog",
 		label: "ZTM Log",
-		url:'/#/app/term',
+		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
 		icon: ztmlog,
@@ -48,7 +48,7 @@ const mobileApp = [{
 	},{
 		name: "ZTMLog",
 		label: "ZTM Log",
-		url:'/#/app/term',
+		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
 		icon: ztmlog,
@@ -60,7 +60,7 @@ const webApp = [{
 	},{
 		name: "ZTMLog",
 		label: "ZTM Log",
-		url:'/#/app/term',
+		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
 		icon: ztmlog,

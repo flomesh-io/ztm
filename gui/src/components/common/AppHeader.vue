@@ -3,13 +3,19 @@ import { ref, computed,onActivated,onMounted,useSlots } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
 const slots = useSlots();
-const props = defineProps(['main','back'])
+const props = defineProps(['main','back','child'])
 const store = useStore();
 const router = useRouter();
 const hasStartSlot = computed(() => !!slots.start);
 const back = () => {
 	if(!!props.back){
 		props.back();
+	}else if(props.child){
+		if(window.parent){
+			window.parent.location.href="/#/mesh/apps";
+		}else{
+			location.href="/#/mesh/apps";
+		}
 	}else{
 		router.go(-1);
 	}
@@ -45,6 +51,7 @@ onMounted(()=>{
 </script>
 
 <template>
+	<div v-if="isMobile" class="empty-header"/>
 	<Toolbar class="nopd-header">
 			<template #start>
 				<slot v-if="hasStartSlot" name="start"/>
