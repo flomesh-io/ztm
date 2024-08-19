@@ -52,6 +52,7 @@ const MyPreset = definePreset(Aura, {
 						border: '#ececec',
 						card: "#ffffff",
 						ground: "#f3f6f7",
+						html: "#ffffff",
 						tip: "{gray.600}"
 					}
 				},
@@ -66,6 +67,7 @@ const MyPreset = definePreset(Aura, {
 						border: '{gray-600}',
 						ground: "#222222",
 						card: "{gray-900}",
+						html: "#18181B",
 						tip: "{gray.400}"
 					},
 					gray: {

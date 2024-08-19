@@ -30,7 +30,7 @@ $gutter: 1rem; //for primeflex grid system
 	left: 0;
 	right: 0;
 	// overflow: hidden;
-	background: #1e1e1e;
+	background: var(--surface-html);
 	color: rgba(255, 255, 255, 0.87);
 	border: 0px solid rgba(255, 255, 255, 0.12);
 	border-radius: 0px;
@@ -127,10 +127,16 @@ $gutter: 1rem; //for primeflex grid system
 .app-top-bar .logo{
 	margin-top: 4px;
 }
-.app-top-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived,
-.app-bottom-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived{
+.app-top-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived{
 	background: var(--primary-color) !important;
 	color: var(--primary-color-text) !important;
+	font-weight: bold;
+}
+.app-bottom-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .p-menubar-item-link{
+	color: var(--text-color) !important;
+}
+.app-bottom-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived{
+	color: var(--primary-color) !important;
 	font-weight: bold;
 }
 .app-top-bar.p-menubar>.p-menubar-root-list>.p-menubar-item .actived{
@@ -760,25 +766,19 @@ pre.app-code code{
 	 min-height: calc(100vh - 80px);
 }
 .ios{
-	.nopd-header{
-		height: 4.5rem;
-		padding-top: 1rem !important;
-		top: -1rem;
-	}
 	.p-scrollpanel-content{
 		height: calc(100% + calc(2 * var(--scrollpanel-bar-size)) - 80px);
 	}
 	.layout-main-container,.min-h-screen{
 		 min-height: calc(100vh - 80px) !important;
 	}
-	
 	.empty-bottom{
 		height: 145px;
 	}
 	.app-bottom-bar.p-menubar{
 		bottom: unset;
 		top:calc(100vh - 145px);
-		background: #1e1e1e;
+		// background: #1e1e1e;
 		height: 100px !important;
 	}
 }
