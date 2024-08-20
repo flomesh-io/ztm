@@ -705,7 +705,7 @@ pre.app-code code{
 	}
 }
 
-.p-button{
+.p-button:not(.p-button-icon-only){
 	min-width: 3.5rem;
 }
 @media screen and (max-width: 768px){
@@ -1223,4 +1223,9 @@ fieldset{
 		// margin-left: -60px;
 		font-size: 14px !important;
 	}
+}
+
+.p-datatable-frozen-column{
+	background-color: var(--surface-ground) !important;
+	z-index: 1;
 }

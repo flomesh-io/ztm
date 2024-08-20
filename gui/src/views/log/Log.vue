@@ -45,12 +45,14 @@ const filters = ref({
 });
 
 const logs = computed(() => props.d || []);
+
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
-	<div class="grid text-left px-3 py-3" >
-		<DataTable v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]"  :value="logs" tableStyle="min-width: 50rem">
-			<Column style="width: 160px;" header="Time" sortable field="time">
+		<DataTable scrollable :size="isMobile?'small':''" v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]"  :value="logs" tableStyle="min-width: 50rem">
+			<Column frozen style="width: 160px;" header="Time" sortable field="time">
 				<template #body="slotProps">
 					{{timeago(slotProps.data.time)}}
 				</template>
@@ -68,7 +70,7 @@ const logs = computed(() => props.d || []);
 						</Select>
 				</template>
 			</Column>
-			<Column header="Endpoint" v-if="!!props.endpoints && props.endpoints.length>0">
+			<Column header="Endpoint"  v-if="!!props.endpoints && props.endpoints.length>0">
 				<template #body="slotProps">
 					{{props.endpoints.find((n)=>n.id == slotProps.data.ep)?.name}}
 				</template>
@@ -80,7 +82,6 @@ const logs = computed(() => props.d || []);
 				</template>
 			</Column>
 		</DataTable>
-	</div>
 </template>
 
 <style scoped lang="scss">
