@@ -92,7 +92,7 @@ defineExpose({ setPjs })
 
 <template>
 	<div  class="relative h-full min-h-screen w-full" >
-		<AppHeader>
+		<AppHeader >
 				<template #start>
 					<Button v-if="showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 					<Button v-tooltip="'Show Favorites'" v-if="props.scriptsHide || props.isMobile" icon="pi pi-list-check" aria-haspopup="true" aria-controls="op" @click="show"/>

@@ -82,7 +82,7 @@ const loadproxys = () => {
 <template>
 	<div class="flex flex-row min-h-screen" >
 		<div class="relative h-full" :class="{'w-22rem':!!selectedEp,'w-full':!selectedEp,'mobile-hidden':!!selectedEp}">
-			<AppHeader>
+			<AppHeader :child="true">
 					<template #center>
 						<b>Proxy ({{endpoints.length}} Endpoints)</b>
 					</template>

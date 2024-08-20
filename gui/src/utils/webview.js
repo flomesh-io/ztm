@@ -9,9 +9,8 @@ const openWebview = (app)=>{
 	try{
 		const platform = store.getters['account/platform'];
 		if(!window.__TAURI_INTERNALS__ || platform=='android' || platform=='ios' ){
-			if(app.url.indexOf('/#/') == 0){
-				// location.href=app.url;
-			// }else{
+			// if(app.url.indexOf('/#/') == 0){
+			if(!!app.url){	
 				store.commit('notice/setApp', app);
 			}
 			// window.open(app.url);

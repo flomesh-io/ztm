@@ -71,7 +71,7 @@ const edit = (d) => {
 <template>
 	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':false}">
 		<div  class="relative h-full w-full" >
-			<AppHeader >
+			<AppHeader :child="true">
 					<template #center>
 						<b>Tunnels</b>
 					</template>
