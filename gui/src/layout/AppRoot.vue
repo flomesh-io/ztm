@@ -370,7 +370,7 @@ onMounted(() => {
 					<i class="pi pi-th-large text-3xl"  />
 				</Button>
 			</div>
-			<div class="flex-item">
+			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button v-tooltip.left="'Start'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
 					<i class="pi pi-play " />
 				</Button>

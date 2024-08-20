@@ -705,6 +705,9 @@ pre.app-code code{
 	}
 }
 
+.p-button{
+	min-width: 3.5rem;
+}
 @media screen and (max-width: 768px){
 	.mobile-transform-layout .layout-main-container{
 		transform: translateX(80%);overflow: hidden;

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted,computed } from "vue";
+import { ref, onMounted,computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
 import MeshJoin from './MeshJoin.vue';
@@ -91,6 +91,15 @@ const select = (mesh) => {
 const loaddata = () => {
 	store.dispatch('account/meshes');
 }
+watch(()=> meshes, ()=>{
+	if(selectedMesh.value && !meshes.value.find((mesh)=> mesh?.name == selectedMesh.value?.name)){
+		store.commit('account/setSelectedMesh', null);
+	} else if(!selectedMesh.value && meshes.value.length>0){
+		store.commit('account/setSelectedMesh', meshes.value[0]);
+	}
+},{
+	deep:true
+})
 onMounted(() => {
 	if(platform.value=='android'){
 		loading.value = true;
