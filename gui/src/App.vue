@@ -18,6 +18,5 @@ setAuthorization({
 store.commit('account/setUser', {id:''});
 store.commit('notice/setToast', toast);
 store.commit('notice/setConfirm', confirm);
-fetch('https://flomesh.io/').then(()=>{})
 </script>
 <style scoped></style>

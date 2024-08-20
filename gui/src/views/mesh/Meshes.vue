@@ -128,9 +128,9 @@ onMounted(() => {
 			</AppHeader>
 			<Loading v-if="loading"/>
 			<ScrollPanel class="absolute-scroll-panel" v-else-if="meshes.length >0">
-			<div class="text-center px-3">
-				<div class="grid mt-1 text-left" >
-						<div :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
+			<div class="text-center p-2">
+				<div class="grid text-left p-0 m-0" >
+						<div class="p-2" :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
 							 <div :class="selectedMesh?.name == mesh.name?'surface-card-selected':''" class="surface-card surface-card-hover shadow-2 p-3 border-round relative" @click="select(mesh)">
 									 <div class="flex justify-content-between mb-3">
 											 <div>
