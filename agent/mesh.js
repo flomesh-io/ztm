@@ -1043,6 +1043,7 @@ export default function (rootDir, config) {
       var hash = meta.hash
       var st = fs.stat(pathname)
       if (st?.hash === hash) return fs.raw(hash)
+      if (st?.time > meta.time) return fs.raw(hash)
 
       var sources = [...meta.sources]
       return pickOne()
@@ -1205,6 +1206,7 @@ export default function (rootDir, config) {
           advertiseFilesystem()
         }
       }
+      return Promise.resolve()
     }
 
     function erase(pathname) {
@@ -1219,6 +1221,30 @@ export default function (rootDir, config) {
       }
     }
 
+    function stat(pathname) {
+      var path = os.path.normalize(pathname)
+      if (path.startsWith(pathLocal)) {
+        return Promise.resolve(null)
+      } else {
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          return findFile(globalPath).then(
+            stat => {
+              if (!stat) return null
+              return {
+                size: stat.size,
+                time: stat.time,
+                hash: stat.hash,
+                sources: stat.sources,
+              }
+            }
+          )
+        } else {
+          return Promise.resolve(null)
+        }
+      }
+    }
+
     function watch(prefix) {
       if (!prefix.endsWith('/')) prefix += '/'
       var globalPath = pathToGlobal(prefix)
@@ -1229,7 +1255,7 @@ export default function (rootDir, config) {
       }
     }
 
-    return { dir, read, write, erase, watch }
+    return { dir, read, write, erase, stat, watch }
   }
 
   function remoteQueryLog(ep) {
