@@ -382,7 +382,8 @@ function main(listen) {
             var path = evt.head.path
             if (path.startsWith('/api/')) {
               if ($params = appApiMatch(path) || appPreMatch(path)) {
-                evt.head.path = '/' + ($params['*'] || '')
+                var url = new URL(path)
+                evt.head.path = '/' + ($params['*'] || '') + url.search
                 return 'app'
               } else {
                 return 'api'
