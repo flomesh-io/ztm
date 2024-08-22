@@ -107,7 +107,8 @@ export default function ({ app, mesh }) {
     return applyConfig()
   }
 
-  var matchPathCloud = new http.Match('/users/{username}/*')
+  var matchPathUser = new http.Match('/users/{username}')
+  var matchPathUserFile = new http.Match('/users/{username}/*')
   var matchPathChunk = new http.Match('/api/chunks/*')
 
   var downloadQueue = []
@@ -123,13 +124,12 @@ export default function ({ app, mesh }) {
         var chunk = file.chunks.shift()
         if (file.chunks.length === 0) {
           downloadQueue.shift()
-          delete downloadFiles[file.path]
         }
         if (chunk) {
           downloadLanes.push(chunk)
           var path = chunk[0]
           var hash = chunk[1]
-          var params = matchPathCloud(path)
+          var params = matchPathUserFile(path)
           var username = params.username
           var filename = params['*']
           var pathname = os.path.join('/shared', username, 'hash', filename)
@@ -191,35 +191,135 @@ export default function ({ app, mesh }) {
   }
 
   function finalizeChunk(path) {
-    downloadLanes = downloadLanes.filter(([p]) => p !== path)
-    return continueDownloading()
+    var i = path.lastIndexOf('.')
+    var filename = path.substring(0, i)
+    var f = downloadFiles[filename]
+    if (f && f.chunks.length === 0) {
+      return finalizeDownload(filename).then(() => {
+        clearDownload(filename)
+        delete downloadFiles[filename]
+        next()
+      })
+    }
+    function next() {
+      downloadLanes = downloadLanes.filter(([p]) => p !== path)
+      continueDownloading()
+    }
+    next()
+    return Promise.resolve()
+  }
+
+  function finalizeDownload(filename) {
+    var i = 0
+    var outputFilename = os.path.join(localDir, filename)
+    var inputFilename = os.path.join(localDir, 'download', filename + '.0')
+    if (!os.stat(inputFilename)?.isFile?.()) return Promise.resolve()
+    return pipeline($=>$
+      .onStart(new Data)
+      .repeat(() => {
+        inputFilename = os.path.join(localDir, 'download', `${filename}.${++i}`)
+        return os.stat(inputFilename)?.isFile?.()
+      }).to($=>$
+        .read(() => inputFilename)
+        .replaceStreamStart(evt => [new MessageStart, evt])
+        .replaceStreamEnd(new MessageEnd)
+        .mux().to($=>$
+          .tee(outputFilename)
+        )
+        .replaceMessageEnd(new StreamEnd)
+      )
+    ).spawn()
+  }
+
+  function clearDownload(filename) {
+    var basename = os.path.basename(filename)
+    var dirname = os.path.dirname(filename)
+    var dir = os.path.join(localDir, 'download', dirname)
+    os.readDir(dir).forEach(
+      name => {
+        var i = name.lastIndexOf('.')
+        if (name.substring(0, i) === basename) {
+          os.rm(os.path.join(dir, name))
+        }
+      }
+    )
   }
 
   function getFileStat(pathname) {
     pathname = os.path.normalize(pathname)
-    var params = matchPathCloud(pathname)
-    if (!params) return Promise.resolve(null)
-    var username = params.username
-    var filename = params['*']
+    if (pathname === '/') return Promise.resolve(['users/'])
+    if (pathname === '/users') return getUserList()
+    var params = matchPathUser(pathname)
+    if (params) return getFileListByUser(params.username)
+    var params = matchPathUserFile(pathname)
+    if (params) return getFileStatByUser(params.username, params['*'])
+    return Promise.resolve(null)
+  }
+
+  function getUserList() {
+    return mesh.dir('/shared').then(
+      meshNames => {
+        var s = new Set
+        var list = []
+        os.readDir(os.path.join(localDir, 'users')).concat(meshNames).forEach(
+          name => {
+            var k = name.endsWith('/') ? name.substring(0, name.length - 1) : name
+            if (!s.has(k)) {
+              s.add(k)
+              list.push(name)
+            }
+          }
+        )
+        return list.sort()
+      }
+    )
+  }
+
+  function getFileListByUser(username) {
+    return mesh.dir(os.path.join('/shared', username, 'stat')).then(
+      meshNames => {
+        var s = new Set
+        var list = []
+        os.readDir(os.path.join(localDir, 'users', username)).concat(meshNames).forEach(
+          name => {
+            var k = name.endsWith('/') ? name.substring(0, name.length - 1) : name
+            if (!s.has(k)) {
+              s.add(k)
+              list.push(name)
+            }
+          }
+        )
+        return list.sort()
+      }
+    )
+  }
+
+  function getFileStatByUser(username, filename) {
     return Promise.all([
       getLocalStat(username, filename),
       mesh.read(os.path.join('/shared', username, 'stat', filename)).then(data => data ? JSON.decode(data) : getMeshDir(username, filename)),
       mesh.stat(os.path.join('/shared', username, 'hash', filename + '.all')),
     ]).then(
       ([statEndp, statMesh, statHash]) => {
-        if (!statEndp && !statMesh) return null
         if (statEndp instanceof Array) {
           if (statMesh instanceof Array) {
-            statMesh.forEach(name => {
-              if (!statEndp.includes(name)) {
-                statEndp.push(name)
+            var s = new Set
+            var l = []
+            statEndp.concat(statMesh).forEach(
+              name => {
+                var k = name.endsWith('/') ? name.substring(0, name.length - 1) : name
+                if (!s.has(k)) {
+                  s.add(k)
+                  l.push(name)
+                }
               }
-            })
+            )
           }
-          return { state: 'dir', filenames: statEndp }
+          return { state: 'dir', filenames: l }
         } else if (statMesh instanceof Array) {
           statMesh = null
         }
+        if (!statEndp && !statMesh) return null
         var timeEndp = statEndp?.time || 0
         var timeMesh = statMesh?.time || 0
         var time = 0
@@ -242,6 +342,9 @@ export default function ({ app, mesh }) {
           statEndp.hash.some((h, i) => (h !== statMesh.hash?.[i]))
         ) {
           state = 'corrupt'
+        } else {
+          time = timeMesh
+          size = statEndp.size
           hash = statEndp.hash
         }
         return {
@@ -257,13 +360,15 @@ export default function ({ app, mesh }) {
 
   function setFileStat(pathname, stat) {
     pathname = os.path.normalize(pathname)
-    var params = matchPathCloud(pathname)
+    var params = matchPathUserFile(pathname)
     if (!params) return Promise.resolve(null)
-    var username = params.username
-    var filename = params['*']
+    return setFileStatByUser(params.username, params['*'], stat)
+  }
+
+  function setFileStatByUser(username, filename, stat) {
     var meshStatPath = os.path.join('/shared', username, 'stat', filename)
     var meshHashPath = os.path.join('/shared', username, 'hash', filename)
-    return getFileStat(pathname).then(
+    return getFileStatByUser(username, filename).then(
       statLocal => {
         if (stat?.state === 'synced') {
           if (!statLocal) return null
@@ -284,12 +389,9 @@ export default function ({ app, mesh }) {
                 () => writeHash(i + 1)
               )
             } else {
-              return getFileStat(pathname)
+              return getFileStatByUser(username, filename)
             }
           }
-          // stat.hash.forEach(
-          //   (hash, i) => mesh.write(`${meshHashPath}.${i}`, hash)
-          // )
           return writeHash(0)
         } else {
           return Promise.resolve(statLocal)
@@ -300,17 +402,13 @@ export default function ({ app, mesh }) {
 
   function listDownloads() {
     return Promise.resolve(
-      downloadQueue.map(
-        file => ({
-          filename: file.path
-        })
-      )
+      Object.keys(downloadFiles)
     )
   }
 
   function downloadFile(pathname) {
     pathname = os.path.normalize(pathname)
-    var params = matchPathCloud(pathname)
+    var params = matchPathUserFile(pathname)
     if (!params) return Promise.resolve(null)
     var username = params.username
     var filename = params['*']
@@ -386,17 +484,7 @@ export default function ({ app, mesh }) {
 
   function getMeshDir(username, filename) {
     var pathname = os.path.join('/shared', username, 'stat', filename)
-    return mesh.dir(pathname).then(filenames => {
-      if (filenames.length === 0) return null
-      var names = {}
-      filenames.forEach(path => {
-        var name = path.substring(pathname.length + 1)
-        var i = name.indexOf('/')
-        if (i < 0) i = name.length; else i++
-        names[name.substring(0, i)] = true
-      })
-      return Object.values(names)
-    })
+    return mesh.dir(pathname)
   }
 
   var $ctx
@@ -412,7 +500,7 @@ export default function ({ app, mesh }) {
           var chunkNum = url.searchParams.get('chunk')
           if (!chunkNum) return serveChunkReject
           var filename = '/' + params['*']
-          if (!matchPathCloud(filename)) return serveChunkReject
+          if (!matchPathUserFile(filename)) return serveChunkReject
           var path = os.path.join(localDir, filename)
           var seek = Number.parseInt(chunkNum) * CHUNK_SIZE
           return pipeline($=>$
