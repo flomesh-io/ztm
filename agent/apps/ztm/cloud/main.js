@@ -71,13 +71,11 @@ export default function ({ app, mesh, utils }) {
     '/api/files/*': {
       'GET': responder((params) => {
         return api.getFileStat(params['*']).then(
-          ret => ret ? response(200, ret) : response(404)
-        )
-      }),
-
-      'POST': responder((params, req) => {
-        return api.setFileStat(params['*'], JSON.decode(req.body)).then(
-          ret => ret ? response(201, ret) : response(404)
+          stat => {
+            if (!stat) return response(404)
+            stat.hash = undefined
+            return response(200, stat)
+          }
         )
       }),
     },
@@ -90,9 +88,23 @@ export default function ({ app, mesh, utils }) {
       ),
 
       'POST': responder((_, req) => {
-        api.downloadFile(JSON.decode(req.body).filename)
+        api.downloadFile(JSON.decode(req.body).path)
         return Promise.resolve(response(201))
       }),
+    },
+
+    '/api/uploads': {
+      'GET': responder(
+        () => api.listUploads().then(
+          ret => response(200, ret)
+        )
+      ),
+
+      'POST': responder(
+        (_, req) => api.uploadFile(JSON.decode(req.body).path).then(
+          ret => response(ret ? 201 : 404)
+        )
+      ),
     },
 
     '*': {
