@@ -115,6 +115,7 @@ export default function ({ app, mesh }) {
   var downloadFiles = {}
   var downloadLanes = []
   var downloadError = {}
+  var uploadFiles = {}
 
   function continueDownloading() {
     var vacantLanes = DOWNLOAD_CONCURRENCY - downloadLanes.length
@@ -198,6 +199,7 @@ export default function ({ app, mesh }) {
       return finalizeDownload(filename).then(() => {
         clearDownload(filename)
         delete downloadFiles[filename]
+        delete downloadError[filename]
         next()
       })
     }
@@ -315,7 +317,7 @@ export default function ({ app, mesh }) {
               }
             )
           }
-          return { state: 'dir', filenames: l }
+          return l.sort()
         } else if (statMesh instanceof Array) {
           statMesh = null
         }
@@ -326,76 +328,42 @@ export default function ({ app, mesh }) {
         var size = 0
         var hash = null
         var state = 'synced'
-        if (timeEndp < timeMesh) {
-          time = timeMesh
-          size = statMesh.size
-          hash = statMesh.hash
-          state = statEndp ? 'outdated' : 'missing'
-        } else if (timeEndp > timeMesh) {
-          time = timeEndp
-          size = statEndp.size
-          hash = statEndp.hash
-          state = statMesh ? 'changed' : 'new'
-        } else if (
-          statEndp.size !== statMesh.size ||
-          statEndp.hash.length !== statMesh.hash?.length ||
-          statEndp.hash.some((h, i) => (h !== statMesh.hash?.[i]))
+        if (
+          statEndp?.size !== statMesh?.size ||
+          statEndp?.hash?.length !== statMesh?.hash?.length ||
+          statEndp?.hash?.some?.((h, i) => (h !== statMesh?.hash?.[i]))
         ) {
-          state = 'corrupt'
+          if (timeEndp < timeMesh) {
+            time = timeMesh
+            size = statMesh.size
+            hash = statMesh.hash
+            state = statEndp ? 'outdated' : 'missing'
+          } else {
+            time = timeEndp
+            size = statEndp.size
+            hash = statEndp.hash
+            state = statMesh ? 'changed' : 'new'
+          }
         } else {
           time = timeMesh
           size = statEndp.size
           hash = statEndp.hash
         }
-        return {
+        var path = os.path.join('/users', username, filename)
+        var stat = {
+          path,
           state,
           size,
           time,
           hash,
           sources: statHash?.sources || [],
         }
-      }
-    )
-  }
-
-  function setFileStat(pathname, stat) {
-    pathname = os.path.normalize(pathname)
-    var params = matchPathUserFile(pathname)
-    if (!params) return Promise.resolve(null)
-    return setFileStatByUser(params.username, params['*'], stat)
-  }
-
-  function setFileStatByUser(username, filename, stat) {
-    var meshStatPath = os.path.join('/shared', username, 'stat', filename)
-    var meshHashPath = os.path.join('/shared', username, 'hash', filename)
-    return getFileStatByUser(username, filename).then(
-      statLocal => {
-        if (stat?.state === 'synced') {
-          if (!statLocal) return null
-          if (statLocal.state === 'dir') return null
-          if (statLocal.state === 'synced') return statLocal
-          if (statLocal.state !== 'changed' && statLocal.state !== 'new') return statLocal
-          stat = {
-            time: statLocal.time,
-            size: statLocal.size,
-            hash: statLocal.hash,
-          }
-          mesh.write(meshStatPath, JSON.encode(stat))
-          mesh.write(meshHashPath + '.all', stat.hash.join('\n'))
-          var queue = [...stat.hash]
-          function writeHash(i) {
-            if (queue.length > 0) {
-              return mesh.write(`${meshHashPath}.${i}`, queue.shift()).then(
-                () => writeHash(i + 1)
-              )
-            } else {
-              return getFileStatByUser(username, filename)
-            }
-          }
-          return writeHash(0)
-        } else {
-          return Promise.resolve(statLocal)
+        if (path in downloadFiles) {
+          var f = downloadFiles[path]
+          var n = Math.ceil(f.size / CHUNK_SIZE)
+          stat.downloading = (n - f.chunks.length) / n
         }
+        return stat
       }
     )
   }
@@ -406,25 +374,74 @@ export default function ({ app, mesh }) {
     )
   }
 
+  function listUploads() {
+    return Promise.resolve(
+      Object.keys(uploadFiles)
+    )
+  }
+
   function downloadFile(pathname) {
     pathname = os.path.normalize(pathname)
+    if (pathname in downloadFiles) return Promise.resolve(true)
+    if (pathname in uploadFiles) return Promise.resolve(false)
     var params = matchPathUserFile(pathname)
-    if (!params) return Promise.resolve(null)
+    if (!params) return Promise.resolve(false)
     var username = params.username
     var filename = params['*']
     return mesh.read(os.path.join('/shared', username, 'stat', filename)).then(
       data => {
         if (!data) return false
-        var statMesh = JSON.decode(data)
         if (pathname in downloadFiles) return true
+        var statMesh = JSON.decode(data)
         var file = {
           path: pathname,
+          size: statMesh.size,
           chunks: statMesh.hash.map((hash, i) => [`${pathname}.${i}`, hash])
         }
         downloadFiles[pathname] = file
         downloadQueue.push(file)
         continueDownloading()
         return true
+      }
+    )
+  }
+
+  function uploadFile(pathname) {
+    pathname = os.path.normalize(pathname)
+    if (pathname in uploadFiles) return Promise.resolve(true)
+    if (pathname in downloadFiles) return Promise.resolve(false)
+    var params = matchPathUserFile(pathname)
+    if (!params) return Promise.resolve(false)
+    var username = params.username
+    var filename = params['*']
+    var meshStatPath = os.path.join('/shared', username, 'stat', filename)
+    var meshHashPath = os.path.join('/shared', username, 'hash', filename)
+    return getFileStatByUser(username, filename).then(
+      statLocal => {
+        if (!statLocal) return false
+        if (statLocal instanceof Array) return false
+        if (statLocal.state === 'synced') return true
+        if (statLocal.state !== 'changed' && statLocal.state !== 'new') return false
+        var stat = {
+          time: statLocal.time,
+          size: statLocal.size,
+          hash: statLocal.hash,
+        }
+        uploadFiles[pathname] = stat
+        mesh.write(meshStatPath, JSON.encode(stat))
+        mesh.write(meshHashPath + '.all', stat.hash.join('\n'))
+        var queue = [...stat.hash]
+        function writeHash(i) {
+          if (queue.length > 0) {
+            return mesh.write(`${meshHashPath}.${i}`, queue.shift()).then(
+              () => writeHash(i + 1)
+            )
+          } else {
+            delete uploadFiles[pathname]
+            return true
+          }
+        }
+        return writeHash(0)
       }
     )
   }
@@ -523,9 +540,10 @@ export default function ({ app, mesh }) {
     getEndpointConfig,
     setEndpointConfig,
     getFileStat,
-    setFileStat,
     listDownloads,
+    listUploads,
     downloadFile,
+    uploadFile,
     serveChunk,
   }
 }
