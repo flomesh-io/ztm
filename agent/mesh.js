@@ -1164,15 +1164,11 @@ export default function (rootDir, config) {
           Object.keys(files).forEach(path => {
             var localPath = pathToLocal(path)
             if (localPath && localPath.startsWith(prefix)) {
-              list.push(localPath)
+              var path = localPath.substring(prefix.length)
+              var i = path.indexOf('/')
+              if (i) list.push(i > 0 ? path.substring(0, i + 1) : path)
             }
           })
-          db.allFiles(meshName, provider, app).forEach(
-            path => {
-              var fullPath = os.path.join(pathLocal, path)
-              if (fullPath.startsWith(prefix)) list.push(fullPath)
-            }
-          )
           return list.sort()
         }
       )

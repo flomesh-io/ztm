@@ -60,6 +60,14 @@ export default function ({ app, mesh, utils }) {
     // }
     //
 
+    '/api/files': {
+      'GET': responder(() => {
+        return api.getFileStat('/').then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      })
+    },
+
     '/api/files/*': {
       'GET': responder((params) => {
         return api.getFileStat(params['*']).then(
