@@ -73,7 +73,7 @@ export default function ({ app, mesh, utils }) {
         return api.getFileStat(params['*']).then(
           stat => {
             if (!stat) return response(404)
-            stat.hash = undefined
+            if (stat.chunks) stat.chunks = stat.chunks.length
             return response(200, stat)
           }
         )
