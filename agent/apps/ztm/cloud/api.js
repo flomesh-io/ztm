@@ -385,7 +385,17 @@ export default function ({ app, mesh }) {
 
   function listDownloads() {
     return Promise.resolve(
-      Object.keys(downloadFiles)
+      Object.values(downloadFiles).map(
+        f => {
+          var n = Math.ceil(f.size / CHUNK_SIZE)
+          return {
+            path: f.path,
+            size: f.size,
+            hash: f.hash,
+            downloading: (n - f.counter) / n,
+          }
+        }
+      )
     )
   }
 
