@@ -972,6 +972,28 @@ fieldset{
 
 .nopd-header {
 	
+	.p-datepicker{
+		padding: 0 !important;
+		border: none;
+		border-radius: 0;
+		box-shadow: none;
+		height: 100%;
+	}
+	
+	.p-breadcrumb{
+		padding: 0 10px !important;
+		border: none;
+		border-radius: 0;
+		box-shadow: none;
+		height: 100%;
+		.p-breadcrumb-list{
+			height: 100%;
+		}
+		.p-select{
+			background-color: transparent;
+			border-width: 0 !important;
+		}
+	}
 	.p-breadcrumb,.p-dataview-content{
 		background-color: var(--gray-50) !important;
 	}
