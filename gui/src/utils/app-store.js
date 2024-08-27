@@ -5,6 +5,7 @@ import scriptIcon from "@/assets/img/apps/script.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
 import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
+import cloudIcon from "@/assets/img/apps/cloud.png";
 import ztmlog from "@/assets/img/apps/ztmlog.png";
 import eplog from "@/assets/img/apps/eplog.png";
 import BrowserComponent from '@/views/apps/core/Browser.vue';
@@ -87,6 +88,12 @@ const appMapping = {
 	"ztm/script": {
 		icon: scriptIcon,
 		name: "Scripts",
+		width:1280,
+		height:860,
+	},
+	"ztm/cloud": {
+		icon: cloudIcon,
+		name: "Cloud",
 		width:1280,
 		height:860,
 	},

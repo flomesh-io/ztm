@@ -220,7 +220,7 @@ watch(()=>manage,()=>{
 							<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 							<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 									animationDuration="2s" aria-label="Progress" />
-							<div class="mt-1" v-tooltip="`${app.provider}/${app.name}`">
+							<div class="mt-1" v-tooltip="`${app.provider||'local'}/${app.name}`">
 								<!-- <Badge value="3" severity="danger"></Badge> -->
 								<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
 									<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
