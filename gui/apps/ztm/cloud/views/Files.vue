@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker } from '@/utils/file';
+import { checker, bitUnit } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
@@ -162,6 +162,14 @@ const actions = computed(()=>{
 				}
 		},
 		{
+				label: 'Sources',
+				badge: openFile.value?.sources?.length,
+				command: () => {
+				}
+		},
+		
+		
+		{
 				label: 'Path',
 				shortcut: openFile.value?.path,
 				command: () => {
@@ -175,13 +183,13 @@ const actions = computed(()=>{
 		},
 		{
 				label: 'Time',
-				shortcut: openFile.value?new Date(openFile.value.time).toISOString():'',
+				shortcut: openFile.value?new Date(openFile.value.time).toLocaleString():'',
 				command: () => {
 				}
 		},
 		{
 				label: 'Size',
-				shortcut: openFile.value?.size,
+				shortcut: bitUnit(openFile.value?.size),
 				command: () => {
 				}
 		},
@@ -194,7 +202,7 @@ const loadFileAttr = (item) => {
 			"sources": ["86540a10-576d-47d1-8d9f-e0184830f152"],
 			"path": "/users/root/89.mp4",
 			"state":"missing",
-			"size":1724328877486,
+			"size":1024*1024,
 			"time": 1724328877486,
 			"hash": "48effab79269626be8604ad98e394a4f2ed2850fce79abfa6e49975d147464f" ,
 			"downloading":0.931241211

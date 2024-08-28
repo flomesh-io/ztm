@@ -46,6 +46,18 @@ const checker = (name) => {
 		return ext.default;
 	}
 }
+
+const bitUnit = (value)=> {
+	if(value>(1024 * 1024 * 1024)){
+		return (value/(1024 * 1024 * 1024)).toFixed(0) + "GB";
+	} else if(value>(1024 * 1024)){
+		return (value/(1024 * 1024)).toFixed(0) + "MB";
+	} else if(value>1024){
+		return (value/1024).toFixed(0) + "KB";
+	} else {
+		return value*1 + "B";
+	}
+}
 export {
-	ext, checker
+	ext, checker, bitUnit
 };
