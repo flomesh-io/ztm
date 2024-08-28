@@ -6,6 +6,7 @@ import { checker } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
+import { copy } from '@/utils/clipboard';
 const store = useStore();
 const confirm = useConfirm();
 const router = useRouter();
@@ -50,24 +51,11 @@ const filesFilter = computed(() => {
 		return (typing.value == '' || file.name.indexOf(typing.value)>=0 ) 
 	})
 });
-
+const visible = ref(false);
 const typing = ref('');
 const actionMenu = ref();
-const actions = ref([
-    {
-        label: 'Actions',
-        items: [
-            {
-                label: 'Edit',
-                icon: 'pi pi-pencil',
-								command: () => {
-								}
-            },
-        ]
-    }
-]);
-const showAtionMenu = (event, file) => {
-	actionMenu.value.toggle(event);
+const showAtionMenu = (e) => {
+	visible.value = true;
 };
 const layout = ref('grid');
 const windowWidth = ref(window.innerWidth);
@@ -136,7 +124,8 @@ const changePath = (item) => {
 	currentPath.value = item.path;
 	load();
 }
-const selectFile = (item) => {
+const openFile = ref();
+const selectFile = (e, item) => {
 	if(item.ext == "/"){
 		const _name = item.name.split("/")[0];
 		currentPath.value = !!currentPath.value?`${currentPath.value}/${_name}`:_name;
@@ -147,15 +136,82 @@ const selectFile = (item) => {
 		});
 		
 		load();
-	} else {
-		item.selected = !item.selected;
+	} else if(!item.selected) {
+		item.selected = { time:new Date(),value:true };
+		openFile.value = null;
+	} else if(!!item.selected) {
+		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
+		if(diff <= 600){
+			item.selected.time = new Date();
+			loadFileAttr(item);
+			showAtionMenu(e);
+		} else {
+			item.selected.value = !item.selected.value;
+			item.selected.time = new Date();
+			openFile.value = null;
+		}
 	}
 }
 
+const actions = computed(()=>{
+	return [
+		{
+				label: 'State',
+				shortcut: openFile.value?.state,
+				command: () => {
+				}
+		},
+		{
+				label: 'Path',
+				shortcut: openFile.value?.path,
+				command: () => {
+				}
+		},
+		{
+				label: 'Hash',
+				shortcut: openFile.value?.hash,
+				command: () => {
+				}
+		},
+		{
+				label: 'Time',
+				shortcut: openFile.value?new Date(openFile.value.time).toISOString():'',
+				command: () => {
+				}
+		},
+		{
+				label: 'Size',
+				shortcut: openFile.value?.size,
+				command: () => {
+				}
+		},
+	]
+})
+const loadFileAttr = (item) => {
+	setTimeout(()=> {
+		openFile.value = {
+			...item,
+			"sources": ["86540a10-576d-47d1-8d9f-e0184830f152"],
+			"path": "/users/root/89.mp4",
+			"state":"missing",
+			"size":1724328877486,
+			"time": 1724328877486,
+			"hash": "48effab79269626be8604ad98e394a4f2ed2850fce79abfa6e49975d147464f" ,
+			"downloading":0.931241211
+		}
+	},300)
+}
+const copyFile = () => {
+	copy(JSON.stringify(openFile.value))
+}
+const closeFile = () => {
+	openFile.value = null;
+	visible.value = false;
+}
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen h-full"  :class="{'embed-ep-header':false}">
+	<div class="flex flex-row min-h-screen h-full" :class="{'embed-ep-header':false}" @click="closeFile">
 		<div  class="relative h-full w-full" >
 			<AppHeader :child="true">
 			
@@ -187,11 +243,11 @@ const selectFile = (item) => {
 			</Card>
 			<Loading v-if="props.loading"/>
 			<ScrollPanel class="absolute-scroll-panel"  :style="{'top':'50px'}" v-else-if="filesFilter && filesFilter.length >0">
-			<div class="text-center">
+			<div class="text-center" >
 				<TreeTable v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column field="name" header="Name" expander style="min-width: 12rem">
 								<template  #body="slotProps">
-									<div class="selector pointer "   @click="selectFile(slotProps.node)" :class="{'active':slotProps.node.selected,'px-2':slotProps.node.selected,'py-1':slotProps.node.selected}" >
+									<div class="selector pointer "   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
 										<img :src="checker(slotProps.node.name)" class="relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 										<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
 									</div>
@@ -200,7 +256,7 @@ const selectFile = (item) => {
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0" v-if="filesFilter && filesFilter.length >0">
 						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector py-3" @click="selectFile(file)" :class="{'active':file.selected}" >
+							<div class="selector py-3" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
 								<img :src="checker(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
@@ -213,7 +269,47 @@ const selectFile = (item) => {
 							</div>
 					 </div>
 				</div>
-				<Menu ref="actionMenu" :model="actions" :popup="true" />
+				<Dialog class="nopd noheader" v-model:visible="visible" :dismissableMask="true" :draggable="true" >
+					 <Menu v-show="visible" :model="actions" class="w-60">
+					     <template #start>
+					 			<div v-if="openFile" class="text-center pt-4 relative">
+					 				<img :src="checker(openFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+					 				<div class="px-2 ">
+					 					<Button @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="openFile.name" text />
+					 				</div>
+					 			</div>
+					 			
+					     </template>
+					     <template #submenulabel="{ item }">
+					         <span class="text-primary font-bold">{{ item.label }}</span>
+					     </template>
+					     <template #item="{ item, props }">
+					         <a v-ripple class="flex items-center" v-bind="props.action">
+					             <span :class="item.icon" />
+					             <span>{{ item.label }}</span>
+					             <Badge v-if="item.badge" class="ml-auto" :value="item.badge" />
+					             <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-12rem text-right" style="word-break: break-all;">
+					 							<Tag v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
+					 							<span v-else>{{ item.shortcut }}</span>
+					 						</span>
+					         </a>
+					     </template>
+					     <template #end v-if="openFile?.downloading">
+					 			
+					 			<div class="px-4 pt-2 pb-1">
+					 					<ProgressBar :value="openFile.downloading*100"></ProgressBar>
+					 			</div>
+					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
+					 				<div  class="flex-item px-2">
+					 					<Button class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+					 				</div>
+					 				<div  class="flex-item px-2">
+					 					<Button class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
+					 				</div>
+					 			</div>
+					     </template>
+					 </Menu>
+				</Dialog>
 			</div>
 			</ScrollPanel>
 			<Empty v-else :title="emptyMsg" :error="props.error"/>
