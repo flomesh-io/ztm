@@ -1259,3 +1259,7 @@ fieldset{
 .p-tree{
 	background-color: transparent !important;
 }
+
+.p-treetable .p-treetable-thead > tr > th,.p-treetable .p-treetable-tbody > tr{
+	background-color: transparent !important;
+}
