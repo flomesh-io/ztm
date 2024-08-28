@@ -188,14 +188,16 @@ const selectFile = (item) => {
 			<Loading v-if="props.loading"/>
 			<ScrollPanel class="absolute-scroll-panel"  :style="{'top':'50px'}" v-else-if="filesFilter && filesFilter.length >0">
 			<div class="text-center">
-				<Tree v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
-				    <template #default="slotProps">
-							<div class="selector"   @click="selectFile(slotProps.node)" :class="{'active':slotProps.node.selected,'px-2':slotProps.node.selected,'py-1':slotProps.node.selected}" >
-								<img :src="checker(slotProps.node.name)" class="pointer relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
-								<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
-							</div>
-				    </template>
-				</Tree>
+				<TreeTable v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
+						<Column field="name" header="Name" expander style="min-width: 12rem">
+								<template  #body="slotProps">
+									<div class="selector pointer "   @click="selectFile(slotProps.node)" :class="{'active':slotProps.node.selected,'px-2':slotProps.node.selected,'py-1':slotProps.node.selected}" >
+										<img :src="checker(slotProps.node.name)" class="relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+										<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
+									</div>
+								</template>
+						</Column>
+				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0" v-if="filesFilter && filesFilter.length >0">
 						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector py-3" @click="selectFile(file)" :class="{'active':file.selected}" >
