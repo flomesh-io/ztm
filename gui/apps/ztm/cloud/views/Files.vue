@@ -5,6 +5,7 @@ import FileService from '../service/FileService';
 import { checker } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
+import { platform } from '@/utils/platform';
 const store = useStore();
 const confirm = useConfirm();
 const router = useRouter();
@@ -69,10 +70,6 @@ const showAtionMenu = (event, file) => {
 	actionMenu.value.toggle(event);
 };
 const layout = ref('grid');
-const back = () => {
-	router.go(-1)
-}
-
 const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 
@@ -80,7 +77,7 @@ const emptyMsg = computed(()=>{
 	return 'No file.'
 });
 const load = () => {
-	emits('load')
+	emits('load',currentPath.value)
 }
 const create = () => {
 	emits('create')
@@ -112,6 +109,48 @@ const onNodeExpand = (node) => {
     }
 };
 
+const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
+const currentPath = ref('');
+const itemsBreadcrumb = ref([
+	{
+		name: 'root',
+		path: '',
+		index:0,
+	}
+]);
+
+const back = () => {
+	if(window.parent){
+		window.parent.location.href="/#/mesh/apps";
+	}else{
+		location.href="/#/mesh/apps";
+	}
+}
+const showBack = computed(()=>{
+	return platform() == 'ios' || platform() == 'android' || platform() == 'web'
+})
+const changePath = (item) => {
+	if(item.index+1 < itemsBreadcrumb.value.length){
+		itemsBreadcrumb.value.splice(item.index+1,itemsBreadcrumb.value.length-1-item.index)
+	}
+	currentPath.value = item.path;
+	load();
+}
+const selectFile = (item) => {
+	if(item.ext == "/"){
+		const _name = item.name.split("/")[0];
+		currentPath.value = !!currentPath.value?`${currentPath.value}/${_name}`:_name;
+		itemsBreadcrumb.value.push({
+			name:_name,
+			path:currentPath.value,
+			index:itemsBreadcrumb.value.length
+		});
+		
+		load();
+	} else {
+		item.selected = !item.selected;
+	}
+}
 
 </script>
 
@@ -119,8 +158,18 @@ const onNodeExpand = (node) => {
 	<div class="flex flex-row min-h-screen h-full"  :class="{'embed-ep-header':false}">
 		<div  class="relative h-full w-full" >
 			<AppHeader :child="true">
+			
+					<template #start>
+						 <Breadcrumb v-if="props.mode != 'device'" :home="home" :model="itemsBreadcrumb">
+								<template #item="{ item }">
+									<Button  v-if="item.type=='home' && showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
+									<Button v-else @click="changePath(item)" :label="item.name" severity="secondary" text />
+								</template>
+								<template #separator> / </template>
+						</Breadcrumb>
+					</template>
 					<template #center>
-						<b>Files</b>
+						<!-- <b>Files</b> -->
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
@@ -141,7 +190,7 @@ const onNodeExpand = (node) => {
 			<div class="text-center">
 				<Tree v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 				    <template #default="slotProps">
-							<div class="selector"  @click="()=>{ slotProps.node.selected = !slotProps.node.selected }" :class="{'active':slotProps.node.selected,'px-2':slotProps.node.selected,'py-1':slotProps.node.selected}" >
+							<div class="selector"   @click="selectFile(slotProps.node)" :class="{'active':slotProps.node.selected,'px-2':slotProps.node.selected,'py-1':slotProps.node.selected}" >
 								<img :src="checker(slotProps.node.name)" class="pointer relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 								<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
 							</div>
@@ -149,7 +198,7 @@ const onNodeExpand = (node) => {
 				</Tree>
 				<div v-else class="grid text-left px-3 m-0" v-if="filesFilter && filesFilter.length >0">
 						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector py-3"  @click="()=>{ file.selected = !file.selected }" :class="{'active':file.selected}" >
+							<div class="selector py-3" @click="selectFile(file)" :class="{'active':file.selected}" >
 								<img :src="checker(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
