@@ -20,11 +20,34 @@ const selectedFile = ref();
 const loading = ref(false);
 const loader = ref(false);
 const error = ref();
-const files = ref([]);
+const files = ref([
+	'users/',
+	'root/',
+	'video.mp4',
+	'readme.txt',
+	'readme.md',
+	'aaa.xls',
+	'bbb.xlsx',
+	'bbb.xlsx',
+	'ccc.doc',
+	'ddd.docx',
+	'eee.zip',
+	'fff.tar',
+	'ggg.rar',
+	'hhh.ppt',
+	'iii.pdf',
+	'jjj.mp3',
+	'kkk.xxx',
+	'p1.jpg',
+	'p2.jpeg',
+	'p3.png',
+	'p4.bmp',
+	'p5.gif',
+]);
 const getFiles = (file) => {
-	loading.value = true;
-	loader.value = true;
-	endpointMap.value = {};
+	// loading.value = true;
+	// loader.value = true;
+	// endpointMap.value = {};
 	// tunnelService.getTunnels((_tunnels,_eps)=>{
 	// 	console.log("tunnels:")
 	// 	console.log(_tunnels)

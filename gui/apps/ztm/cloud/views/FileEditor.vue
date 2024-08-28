@@ -86,11 +86,11 @@ watch(()=>props.d,()=>{
 				</template>
 		</AppHeader>
 		<div class="md:m-3 h-full relative">
-		<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
-			<Empty v-if="error" :error="error"/>
-			<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
-				<Loading v-if="loading" />
-				<div v-else class="surface-ground surface-section h-full p-4" >
+			<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
+				<Empty v-if="error" :error="error"/>
+				<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
+					<Loading v-if="loading" />
+					<div v-else class="surface-ground surface-section h-full p-4" >
 						<div class="mb-4" v-if="!props.d">
 							<h6>
 								<Tag>File</Tag>
@@ -125,49 +125,6 @@ watch(()=>props.d,()=>{
 									</FormItem>
 								</div>
 							</div>
-						</div>
-						<div class="grid " >
-							<div class="col-12 md:col-6">
-								<h6 class="flex">
-									<div>
-										<Tag >Inbound
-											<Badge v-if="!!props.d" :value="inbounds.length" />
-										</Tag> 
-									</div>
-									<div class="flex-item text-right">
-										<Button 
-											v-if="!loading && !inboundEditor" 
-											@click="() => inboundEditor = true" 
-											v-tooltip.left="'Add Inbound'" 
-											size="small" 
-											icon="pi pi-plus" ></Button>
-										<div v-else-if="!loading" >
-											<Button class="mr-2" @click="() => inboundEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!addInEnabled" @click="commitIn()" v-tooltip="'Save Inbound'"  size="small" icon="pi pi-check" ></Button>
-										</div>
-									</div>
-								</h6>
-							</div>
-							<div class="col-12 md:col-6">
-								<h6 class="flex">
-									<div>
-										<Tag >Outbound
-											<Badge v-if="!!props.d" :value="outbounds.length" />
-										</Tag> 
-									</div>
-									<div class="flex-item text-right">
-										<Button 
-											v-if="!loading && !outboundEditor" 
-											@click="() => outboundEditor = true" 
-											v-tooltip.left="'Add Outbound'" 
-											size="small" 
-											icon="pi pi-plus" ></Button>
-										<div v-else-if="!loading" >
-											<Button class="mr-2" @click="() => outboundEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!addOutEnabled" @click="commitOut(true,false)" v-tooltip="'Save Outbound'"  size="small" icon="pi pi-check" ></Button>
-										</div>
-									</div>
-								</h6>
 						</div>
 					</div>
 				</BlockViewer>

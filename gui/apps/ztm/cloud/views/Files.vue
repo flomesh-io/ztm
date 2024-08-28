@@ -2,10 +2,10 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
+import { checker } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 const store = useStore();
-
 const confirm = useConfirm();
 const router = useRouter();
 const fileService = new FileService();
@@ -64,10 +64,12 @@ const edit = (d) => {
 	emits('edit',d)
 }
 
+const fileLoading = ref({})
+
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':false}">
+	<div class="flex flex-row min-h-screen h-full"  :class="{'embed-ep-header':false}">
 		<div  class="relative h-full w-full" >
 			<AppHeader :child="true">
 					<template #center>
@@ -114,27 +116,17 @@ const edit = (d) => {
 							</template>
 						</Column>
 				</DataTable>
-				<div v-else class="grid text-left mt-1 px-3" v-if="filesFilter && filesFilter.length >0">
-						<div  :class="(!props.small)?'col-12 md:col-6 lg:col-4':'col-12'" v-for="(file,hid) in filesFilter" :key="hid">
-							 <div class="surface-card shadow-2 p-3 border-round">
-									 <div class="flex justify-content-between">
-											 <div>
-													<span class="block text-tip font-medium mb-3"><Tag severity="contrast" class="mr-1">{{file.proto.toUpperCase()}}</Tag> {{file.name}}</span>
-													<div class="text-left w-full" >
-														<Tag severity="secondary" value="Secondary">Inbounds: <Badge :value="file.inbounds.length"/></Tag> 
-														<Tag class="ml-2" severity="secondary" value="Secondary">Outbounds: <Badge :value="file.outbounds.length"/></Tag> 
-													</div>
-											 </div>
-											 <div class="flex">
-												 <div @click="edit(file)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2rem; height: 2rem'">
-														 <i class="pi pi-pencil text-xl"></i>
-												 </div><!-- 
-												 <div  @click="showAtionMenu($event, file)" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">
-													<i class="pi pi-ellipsis-v text-tip text-xl"></i>
-												 </div> -->
-											 </div>
-									 </div>
-							 </div>
+				<div v-else class="grid text-left px-3" v-if="filesFilter && filesFilter.length >0">
+						<div  class="col-4 md:col-2 lg:col-1 py-3 relative text-center " v-for="(file,hid) in filesFilter" :key="hid">
+							<img :src="checker(file)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+							<ProgressSpinner v-if="fileLoading[file]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
+									animationDuration="2s" aria-label="Progress" />
+							<div class="mt-1" v-tooltip="file">
+								<b class="white-space-nowrap">
+									<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
+									{{ file }}
+								</b>
+							</div>
 					 </div>
 				</div>
 				<Menu ref="actionMenu" :model="actions" :popup="true" />
