@@ -1,7 +1,7 @@
 import excel from "@/assets/img/files/excel.png";
 import word from "@/assets/img/files/word.png";
 import file from "@/assets/img/files/file.png";
-import folder from "@/assets/img/files/folder1.png";
+import folder from "@/assets/img/files/folder.png";
 import img from "@/assets/img/files/img2.png";
 import mp3 from "@/assets/img/files/mp3.png";
 import mp4 from "@/assets/img/files/mp4.png";
@@ -35,9 +35,9 @@ const ext = {
 	"7z": zip,
 };
 const checker = (name) => {
-	if(name.charAt(name.length-1) == "/"){
+	if(!!name && name.charAt(name.length-1) == "/"){
 		return ext.folder
-	} else if(name.indexOf(".")>-1) {
+	} else if(!!name && name.indexOf(".")>-1) {
 		const nameAry = name.split("/");
 		const _name = nameAry[nameAry.length -1];
 		const _ext = _name.split(".")[_name.split(".").length-1]
