@@ -1251,3 +1251,11 @@ fieldset{
 	background-color: var(--surface-ground) !important;
 	z-index: 1;
 }
+.file-block .selector.active{
+	background-color: rgba(0, 0, 255, 0.2);
+	border:1px solid var(--blue-500);
+	border-radius: 10px;
+}
+.p-tree{
+	background-color: transparent !important;
+}

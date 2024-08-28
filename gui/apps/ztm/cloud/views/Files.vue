@@ -12,14 +12,40 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-onMounted(()=>{
-})
 const props = defineProps(['small','files','error','loading','loader'])
 const emits = defineEmits(['create', 'edit','load'])
 
 
+const fileData = ref([]);
+const formatFile = (ary, pre) => {
+		props.files.forEach((file,idx)=>{
+			const _file = {
+				key:`${pre}${idx}`,
+				name:file,
+				loading:false,
+				selected: false,
+				ext:file.charAt(file.length-1) == "/"?"/":file.split(".")[file.split(".").length-1]
+			}
+			if(_file.ext == "/"){
+				_file.children = [];
+				_file.leaf = false;
+			}
+			ary.push(_file);
+		})
+}
+
+watch(()=>props.files,()=>{
+	fileData.value = [];
+	if(!!props.files && props.files.length>0){
+		formatFile(fileData.value,'');
+	}
+},{
+	deep:true,
+	immediate:true,
+});
+
 const filesFilter = computed(() => {
-	return props.files.filter((file)=>{
+	return fileData.value.filter((file)=>{
 		return (typing.value == '' || file.name.indexOf(typing.value)>=0 ) 
 	})
 });
@@ -66,6 +92,27 @@ const edit = (d) => {
 
 const fileLoading = ref({})
 
+
+const onNodeExpand = (node) => {
+    if (node.ext == "/") {
+        node.loading = true;
+
+        setTimeout(() => {
+
+            node.children = [];
+
+						formatFile(node.children,`${node.key}-`);
+						node.loading = false;
+      //       let _nodes = { ...nodes2.value };
+						
+      //       _nodes[parseInt(node.key, 10)] = { ..._node, loading: false };
+
+      //       nodes2.value = _nodes;
+        }, 500);
+    }
+};
+
+
 </script>
 
 <template>
@@ -83,49 +130,35 @@ const fileLoading = ref({})
 			<Card class="nopd" v-if="!props.error">
 				<template #content>
 					<InputGroup class="search-bar" >
-						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
+						<DataViewLayoutOptions v-model="layout" style="z-index: 2;"/>
 						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type file name" rows="1" cols="30" />
 						<Button :disabled="!typing" icon="pi pi-search"  :label="null"/>
 					</InputGroup>
 				</template>
 			</Card>
 			<Loading v-if="props.loading"/>
-			<ScrollPanel class="absolute-scroll-panel" :style="{'top':'75px'}" v-else-if="filesFilter && filesFilter.length >0">
+			<ScrollPanel class="absolute-scroll-panel"  :style="{'top':'50px'}" v-else-if="filesFilter && filesFilter.length >0">
 			<div class="text-center">
-				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="filesFilter" dataKey="id" tableStyle="min-width: 50rem">
-						<Column header="File">
-							<template #body="slotProps">
-								<span class="block text-tip font-medium"><i class="pi pi-arrow-right-arrow-left text-tip mr-2"></i> {{slotProps.data.name}}</span>
-							</template>
-						</Column>
-						<Column header="Inbound">
-							<template #body="slotProps">
-								<Badge v-if="slotProps.data.inbounds" :value="slotProps.data.inbounds.length"/>
-							</template>
-						</Column>
-						<Column header="Outbound">
-							<template #body="slotProps">
-								<Badge v-if="slotProps.data.outbounds" :value="slotProps.data.outbounds.length"/>
-							</template>
-						</Column>
-						<Column header="Action"  style="width: 110px;">
-							<template #body="slotProps">
-								 <div @click="edit(slotProps.data)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2rem; height: 2rem'">
-										 <i class="pi pi-pencil text-xl"></i>
-								 </div>
-							</template>
-						</Column>
-				</DataTable>
-				<div v-else class="grid text-left px-3" v-if="filesFilter && filesFilter.length >0">
-						<div  class="col-4 md:col-2 lg:col-1 py-3 relative text-center " v-for="(file,hid) in filesFilter" :key="hid">
-							<img :src="checker(file)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-							<ProgressSpinner v-if="fileLoading[file]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
-									animationDuration="2s" aria-label="Progress" />
-							<div class="mt-1" v-tooltip="file">
-								<b class="white-space-nowrap">
-									<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
-									{{ file }}
-								</b>
+				<Tree v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
+				    <template #default="slotProps">
+							<div class="selector"  @click="()=>{ slotProps.node.selected = !slotProps.node.selected }" :class="{'active':slotProps.node.selected,'px-2':slotProps.node.selected,'py-1':slotProps.node.selected}" >
+								<img :src="checker(slotProps.node.name)" class="pointer relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+								<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
+							</div>
+				    </template>
+				</Tree>
+				<div v-else class="grid text-left px-3 m-0" v-if="filesFilter && filesFilter.length >0">
+						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
+							<div class="selector py-3"  @click="()=>{ file.selected = !file.selected }" :class="{'active':file.selected}" >
+								<img :src="checker(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
+										animationDuration="2s" aria-label="Progress" />
+								<div class="mt-1" v-tooltip="file">
+									<b class="white-space-nowrap">
+										<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
+										{{ file.name }}
+									</b>
+								</div>
 							</div>
 					 </div>
 				</div>
