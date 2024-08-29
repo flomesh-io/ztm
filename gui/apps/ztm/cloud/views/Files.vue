@@ -7,6 +7,9 @@ import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
+import { merge } from '@/service/common/request';
+import { useToast } from "primevue/usetoast";
+const toast = useToast();
 const store = useStore();
 const confirm = useConfirm();
 const router = useRouter();
@@ -14,9 +17,11 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-const props = defineProps(['small','files','error','loading','loader','downloadSize'])
-const emits = defineEmits(['create', 'edit','load'])
-
+const props = defineProps(['small','files','error','loading','loader','queueSize'])
+const emits = defineEmits(['download','upload','load'])
+const info = computed(() => {
+	return store.getters['app/info']
+});
 
 const fileData = ref([]);
 const formatFile = (ary, pre) => {
@@ -67,13 +72,6 @@ const emptyMsg = computed(()=>{
 const load = () => {
 	emits('load',currentPath.value)
 }
-const create = () => {
-	emits('create')
-}
-
-const edit = (d) => {
-	emits('edit',d)
-}
 
 const fileLoading = ref({})
 
@@ -88,11 +86,6 @@ const onNodeExpand = (node) => {
 
 						formatFile(node.children,`${node.key}-`);
 						node.loading = false;
-      //       let _nodes = { ...nodes2.value };
-						
-      //       _nodes[parseInt(node.key, 10)] = { ..._node, loading: false };
-
-      //       nodes2.value = _nodes;
         }, 500);
     }
 };
@@ -104,7 +97,7 @@ const itemsBreadcrumb = ref([
 		name: 'Setting',
 		icon: 'pi pi-cog',
 		path: '',
-		index:1,
+		index:0,
 	},
 	{
 		name: 'Root',
@@ -202,19 +195,22 @@ const actions = computed(()=>{
 		},
 	]
 })
+const attrLoading = ref(false);
 const loadFileAttr = (item) => {
-	setTimeout(()=> {
+	attrLoading.value = true;
+	const _joinPath = [];
+	const _pre = itemsBreadcrumb.value[itemsBreadcrumb.value.length-1].path;
+	if(!!_pre){
+		_joinPath.push(_pre)
+	}
+	_joinPath.push(item.name);
+	fileService.getFiles(_joinPath.join("/")).then((res)=>{
+		attrLoading.value = false;
 		openFile.value = {
 			...item,
-			"sources": ["86540a10-576d-47d1-8d9f-e0184830f152"],
-			"path": "/users/root/89.mp4",
-			"state":"missing",
-			"size":1024*1024,
-			"time": 1724328877486,
-			"hash": "48effab79269626be8604ad98e394a4f2ed2850fce79abfa6e49975d147464f" ,
-			"downloading":0.931241211
+			...res,
 		}
-	},300)
+	})
 }
 const copyFile = () => {
 	copy(JSON.stringify(openFile.value))
@@ -222,12 +218,6 @@ const copyFile = () => {
 const closeFile = () => {
 	openFile.value = null;
 	visible.value = false;
-}
-const upload = () => {
-	
-}
-const download = () => {
-	
 }
 const getSelectFiles = (list) => {
 	let ary = []
@@ -249,11 +239,14 @@ const openSetting = () => {
 	op.value.toggle(event);
 }
 const config = ref({
-	localDir: "~/ztmCloud",
+	localDir: "",
 	mirrors: []
 })
 const saveConfig = () => {
-	
+	fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
+		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+		getConfig();
+	})
 }
 const openDir = (dir) => {
 	config.value.localDir = dir;
@@ -263,6 +256,70 @@ const copyDir = () => {
 }
 
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const getConfig = () => {
+	fileService.getConfig(info.value?.endpoint?.id).then((res)=>{
+		config.value = res;
+	})
+}
+const openQueue = () => {
+	emits('download',{})
+	emits('upload',{})
+}
+const doDownload = (item) => {
+	if(item.path){
+		fileService.download(item.path).then((res)=>{
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
+			emits('download',item)
+		})
+	}
+}
+const doDownloads = () => {
+	if(selectedFiles.value.length>0){
+		const reqs = [];
+		selectedFiles.value.forEach((item)=>{
+			if(item.state == "outdated" || item.state == "missing"){
+				reqs.push(fileService.download(item.path));
+			}
+		})
+	}
+	if(reqs.length>0){
+		merge(reqs).then((allRes) => {
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `${selectedFiles.value.length} files in the download queue.`, life: 3000 });
+			emits('download',selectedFiles.value)
+		})
+	}
+}
+
+const doUpload = (item) => {
+	if(item.path){
+		fileService.upload(item.path).then((res)=>{
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the upload queue.`, life: 3000 });
+			emits('upload',item)
+		})
+	}
+}
+const doUploads = () => {
+	if(selectedFiles.value.length>0){
+		const reqs = [];
+		selectedFiles.value.forEach((item)=>{
+			if(item.state == "new" || item.state == "changed"){
+				reqs.push(fileService.upload(item.path));
+			}
+		})
+	}
+	if(reqs.length>0){
+		merge(reqs).then((allRes) => {
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `${selectedFiles.value.length} files in the upload queue.`, life: 3000 });
+			emits('upload',selectedFiles.value)
+		})
+	}
+}
+const fileIcon = computed(()=>(name)=>{
+	return checker(name, itemsBreadcrumb.value[itemsBreadcrumb.value.length-1].path)
+})
+onMounted(()=>{
+	getConfig();
+})
 </script>
 
 <template>
@@ -274,6 +331,7 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 								<template #item="{ item }">
 									<Button v-if="item.type=='home' && showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 									<Button v-else-if="item.name == 'Setting'" @click="openSetting()" v-tooltip="item.name" :icon="item.icon" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
+									<Button v-else-if="item.name == 'Root'" @click="changePath(item)" v-tooltip="`${item.name}:${config.localDir}`" :icon="item.icon" severity="secondary" text />
 									<Button v-else-if="item.icon" @click="changePath(item)" v-tooltip="item.name" :icon="item.icon" severity="secondary" text />
 									<Button v-else @click="changePath(item)" :label="item.name" severity="secondary" text />
 								</template>
@@ -285,11 +343,11 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
-						<Button v-if="selectedFiles.length>0" label="Upload" text @click="upload" />
-						<Button v-if="selectedFiles.length>0" severity="secondary" label="Download" @click="download" />
-						<Button @click="create">
-							<i class="pi pi-cloud-download"/>
-							<Badge v-if="!!props.downloadSize" :value="props.downloadSize" size="small"></Badge>
+						<Button v-if="selectedFiles.length>0" label="Upload" text @click="doUploads" />
+						<Button v-if="selectedFiles.length>0" severity="secondary" label="Download" @click="doDownloads" />
+						<Button @click="openQueue">
+							<i class="pi pi-inbox"/>
+							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
 						</Button>
 					</template>
 			</AppHeader>
@@ -317,7 +375,7 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 						<Column field="name" header="Name" expander style="min-width: 12rem">
 								<template  #body="slotProps">
 									<div class="selector pointer "   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
-										<img :src="checker(slotProps.node.name)" class="relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+										<img :src="fileIcon(slotProps.node.name)" class="relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 										<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
 									</div>
 								</template>
@@ -325,8 +383,8 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector py-2" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
-								<img :src="checker(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+							<div class="selector p-2" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
+								<img :src="fileIcon(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">
@@ -339,10 +397,11 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 					 </div>
 				</div>
 				<Dialog class="nopd noheader" v-model:visible="visible" :dismissableMask="true" :draggable="true" >
-					 <Menu v-show="visible" :model="actions" class="w-60">
+					 <Loading v-if="attrLoading" />
+					 <Menu v-else :model="actions" class="w-60">
 					     <template #start>
 					 			<div v-if="openFile" class="text-center pt-4 relative">
-					 				<img :src="checker(openFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+					 				<img :src="fileIcon(openFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 					 				<div class="px-2 ">
 					 					<Button @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="openFile.name" text />
 					 				</div>
@@ -356,24 +415,26 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 					         <a v-ripple class="flex items-center" v-bind="props.action">
 					             <span :class="item.icon" />
 					             <span>{{ item.label }}</span>
-					             <Badge v-if="item.badge" class="ml-auto" :value="item.badge" />
+					             <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 					             <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-12rem text-right" style="word-break: break-all;">
 					 							<Tag v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
 					 							<span v-else>{{ item.shortcut }}</span>
 					 						</span>
 					         </a>
 					     </template>
-					     <template #end v-if="openFile?.downloading">
-					 			
-					 			<div class="px-4 pt-2 pb-1">
+					     <template #end v-if="openFile.state != 'synced'">
+					 			<div class="px-4 pt-2 pb-1" v-if="openFile?.uploading">
+					 					<ProgressBar :value="openFile.uploading*100"></ProgressBar>
+					 			</div>
+					 			<div class="px-4 pt-2 pb-1" v-if="openFile?.downloading">
 					 					<ProgressBar :value="openFile.downloading*100"></ProgressBar>
 					 			</div>
 					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
-					 				<div  class="flex-item px-2">
-					 					<Button @click="download" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+					 				<div  class="flex-item px-2" v-if="openFile.state == 'outdated' || openFile.state == 'missing'">
+					 					<Button :disabled="!openFile?.path" @click="doDownload(openFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
-					 				<div  class="flex-item px-2">
-					 					<Button @click="upload" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
+					 				<div  class="flex-item px-2" v-if="openFile.state == 'new' || openFile.state == 'changed'">
+					 					<Button :disabled="!openFile?.path" @click="doUpload(openFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 					 				</div>
 					 			</div>
 					     </template>
