@@ -15,8 +15,9 @@ const props = defineProps({
 		default: ''
 	},
 	accept: {
+		//json/*,image/*,application/pdf,audio/*,video/*,text/plain,text/csv,text/html
 		type: String,
-		default: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+		default: 'application/json,text/plain,text/csv,text/html'
 	},
 	placeholder: {
 		type: String,
@@ -133,6 +134,7 @@ const uploading = ref(false);
 		:chooseLabel="null"
 		mode="basic" 
 		name="demo[]" 
+		:accept="props.accept"
 		:multiple="props.multiple" 
 		:maxFileSize="props.maxFileSize" 
 		@select="onSelectedFiles"  

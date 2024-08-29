@@ -708,6 +708,12 @@ pre.app-code code{
 .p-button:not(.p-button-icon-only){
 	min-width: 3.5rem;
 }
+.small-icon.p-fileupload-choose-button{
+	min-width: 0 !important;
+	font-size: 0.875rem;
+	width: 2.2rem;
+	height: 2.2rem;
+}
 @media screen and (max-width: 768px){
 	.mobile-transform-layout .layout-main-container{
 		transform: translateX(80%);overflow: hidden;

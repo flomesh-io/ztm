@@ -277,6 +277,8 @@
     "deep-link:allow-get-current",
     "deep-link:allow-is-registered",
     "deep-link:allow-register",
-    "deep-link:allow-unregister"
+    "deep-link:allow-unregister",
+		"dialog:default",
+		"dialog:allow-open"
   ]
 }
