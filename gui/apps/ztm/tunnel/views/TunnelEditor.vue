@@ -253,7 +253,7 @@ watch(()=>props.d,()=>{
 
 <template>
 
-	<div class="surface-ground h-full min-h-screen">
+	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
 					 <Button icon="pi pi-arrow-right-arrow-left" text /> <b>{{props.d?`${props.d?.proto}/${props.d?.name}`:'New Tunnel'}}</b>
@@ -263,8 +263,7 @@ watch(()=>props.d,()=>{
 					<Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/>
 				</template>
 		</AppHeader>
-		<div class="md:m-3 h-full relative">
-		<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
+		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
 			<Empty v-if="error" :error="error"/>
 			<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
 				<Loading v-if="loading" />
@@ -528,7 +527,6 @@ watch(()=>props.d,()=>{
 					</div>
 				</BlockViewer>
 			</ScrollPanel>
-		</div>
 	</div>
 </template>
 

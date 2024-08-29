@@ -749,8 +749,11 @@ pre.app-code code{
 	}
 		
 	.absolute-scroll-panel{
-		padding-top: 3.5rem !important;
+		margin-top: 3.5rem !important;
 		bottom: 60px;
+	}
+	.absolute-scroll-panel.bar{
+		margin-top: 6rem !important;
 	}
 	.empty-header{
 		width: 100px;
@@ -762,9 +765,11 @@ pre.app-code code{
 	width: 100%;
 	position: absolute;
 	top:0px;bottom: 0;
-	padding-top: 35px;
+	margin-top: 35px;
 }
-
+.absolute-scroll-panel.bar{
+	margin-top: 75px;
+}
 .ios.layout-wrapper{
 	 min-height: calc(100vh - 80px);
 }
@@ -995,13 +1000,13 @@ fieldset{
 		}
 	}
 	.p-breadcrumb,.p-dataview-content{
-		background-color: var(--gray-50) !important;
+		// background-color: var(--gray-50) !important;
 	}
 	.surface-card,.list{
 		background-color: #fff !important;
 	}
 	.p-dataview-footer{
-		background-color: var(--gray-50);
+		// background-color: var(--gray-50);
 	}
 	.p-paginator{
 		background-color: transparent;

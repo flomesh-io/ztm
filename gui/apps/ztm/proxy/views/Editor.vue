@@ -51,7 +51,7 @@ onMounted(() => {
 
 <template>
 
-	<div class="surface-ground h-full min-h-screen">
+	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
 					<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag v-if="props.ep.id == info.endpoint?.id" severity="contrast" >Local</Tag></span>
@@ -62,40 +62,38 @@ onMounted(() => {
 					<Button :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="create"/>
 				</template>
 		</AppHeader>
-		<div class="md:m-3 h-full relative">
-		<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
+		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
 			<Empty v-if="error" :error="error"/>
-			<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
+			<BlockViewer v-else containerClass="surface-section py-2" >
 				<Loading v-if="loading" />
 				<div v-else class="surface-ground surface-section h-full p-4" >
-						<div class="mb-4" v-if="!props.d">
-							<div class="grid" >
-								<div class="col-12 p-0">
-									<FormItem label="Listen" :border="false">
-										<Chip class="pl-0 pr-3 mr-2">
-												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<i class="pi pi-sort"/>
-												</span>
-												<span class="ml-2 font-medium">
-													<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  placeholder="Listen (HOST:PORT)" />
-												</span>
-										</Chip>
-									</FormItem>
-								</div>
-								<div class="col-12 p-0">
-									<FormItem label="Targets" :border="false">
-										<ChipList direction="v" icon="pi pi-link" :id="`outbound-targets-${index}`" placeholder="Add" v-model:list="config.targets" />
-										<div class="absolute mt-2 opacity-60">
-											egs: '*', '0.0.0.0/0'
-										</div>
-									</FormItem>
-								</div>
+					<div class="mb-4" v-if="!props.d">
+						<div class="grid" >
+							<div class="col-12 p-0">
+								<FormItem label="Listen" :border="false">
+									<Chip class="pl-0 pr-3 mr-2">
+											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+												<i class="pi pi-sort"/>
+											</span>
+											<span class="ml-2 font-medium">
+												<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  placeholder="Listen (HOST:PORT)" />
+											</span>
+									</Chip>
+								</FormItem>
+							</div>
+							<div class="col-12 p-0">
+								<FormItem label="Targets" :border="false">
+									<ChipList direction="v" icon="pi pi-link" :id="`outbound-targets-${index}`" placeholder="Add" v-model:list="config.targets" />
+									<div class="absolute mt-2 opacity-60">
+										egs: '*', '0.0.0.0/0'
+									</div>
+								</FormItem>
 							</div>
 						</div>
 					</div>
-				</BlockViewer>
-			</ScrollPanel>
-		</div>
+				</div>
+			</BlockViewer>
+		</ScrollPanel>
 	</div>
 </template>
 
