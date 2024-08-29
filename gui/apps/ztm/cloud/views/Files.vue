@@ -382,7 +382,7 @@ onMounted(()=>{
 						</Column>
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
-						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
+						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
 								<img :src="fileIcon(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
@@ -416,7 +416,7 @@ onMounted(()=>{
 					             <span :class="item.icon" />
 					             <span>{{ item.label }}</span>
 					             <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
-					             <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-12rem text-right" style="word-break: break-all;">
+					             <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
 					 							<Tag v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
 					 							<span v-else>{{ item.shortcut }}</span>
 					 						</span>

@@ -46,8 +46,8 @@ const active = ref(0)
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					 <Button icon="pi pi-inbox" text />
-					 <!-- <b>Download</b> -->
+					 <Button icon="pi pi-inbox" text /> 
+					 <b>Queue</b>
 				</template>
 				<template #end> 
 					<!-- <Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/> -->
@@ -55,7 +55,6 @@ const active = ref(0)
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel" style="bottom: 0;">
 			<Loading v-if="loading" />
-			<Empty v-else-if="error" :error="error"/>
 			<TabView v-else v-model:activeIndex="active">
 				<TabPanel>
 					<template #header>
@@ -63,7 +62,7 @@ const active = ref(0)
 							Download <Badge v-if="!props.downloads" :value="props.downloads.length"/>
 						</div>
 					</template>
-					<div class="px-4 py-2">
+					<div v-if="props.downloads.length>0" class="px-4 py-2">
 						<div v-for="(item, index) in props.downloads" :key="index" class="flex p-2" >
 							<div class="pr-3">
 								<img class="relative" :src="checker(item.name)" width="30" height="30" style="top: 5px;"/>
@@ -81,6 +80,7 @@ const active = ref(0)
 							</div>
 						</div>
 					</div>
+					<Empty v-else :error="error"/>
 				</TabPanel>
 				<TabPanel>
 					<template #header>
@@ -88,7 +88,7 @@ const active = ref(0)
 							Upload <Badge v-if="!props.uploads" :value="props.uploads.length"/>
 						</div>
 					</template>
-					<div class="px-4 py-2">
+					<div v-if="props.downloads.length>0" class="px-4 py-2">
 						<div v-for="(item, index) in props.uploads" :key="index" class="flex p-2" >
 							<div class="pr-3">
 								<img class="relative" :src="checker(item.name)" width="30" height="30" style="top: 5px;"/>
@@ -106,6 +106,7 @@ const active = ref(0)
 							</div>
 						</div>
 					</div>
+					<Empty v-else :error="error"/>
 				</TabPanel>
 			</TabView>
 		</ScrollPanel>
@@ -113,4 +114,7 @@ const active = ref(0)
 </template>
 
 <style scoped lang="scss">
+	:deep(.p-tabview-panels){
+		background-color: transparent;
+	}
 </style>
