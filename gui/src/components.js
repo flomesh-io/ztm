@@ -105,6 +105,7 @@ import InputList from '@/components/common/InputList.vue';
 import AppHeader from '@/components/common/AppHeader.vue';
 import CertificateUploder from '@/components/common/CertificateUploder.vue';
 import FileUploderSmall from '@/components/common/FileUploderSmall.vue';
+import FileFolderSelector from '@/components/common/FileFolderSelector.vue';
 import MeshSelector from '@/components/mesh/MeshSelector.vue';
 
 import { Field, Form, ErrorMessage } from 'vee-validate';
@@ -218,6 +219,7 @@ export function useComponent(app){
 	app.component('HiddenField', HiddenField);
 	app.component('CertificateUploder', CertificateUploder);
 	app.component('FileUploderSmall', FileUploderSmall);
+	app.component('FileFolderSelector', FileFolderSelector);
 	app.component('MeshSelector', MeshSelector);
 	app.component('Empty', Empty);
 }

@@ -46,6 +46,7 @@
     "@tauri-apps/plugin-os": "2.0.0-rc.0",
     "@tauri-apps/plugin-process": "2.0.0-rc.0",
     "@tauri-apps/plugin-shell": "2.0.0-rc.0",
+    "@tauri-apps/plugin-dialog": "2.0.0-rc.0",
     "@vee-validate/rules": "4.12.7",
     "axios": "^0.28.0",
     "chart.js": "3.3.2",

@@ -342,7 +342,6 @@ onMounted(() => {
 				</Select>
 				
 			</div>
-	
 			<div class="name mt-3 opacity-60">
 				<Tag v-if="!!ztmVersion" :value="ztmVersion" />
 			</div>

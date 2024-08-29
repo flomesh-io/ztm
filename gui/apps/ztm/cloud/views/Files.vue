@@ -255,13 +255,20 @@ const config = ref({
 const saveConfig = () => {
 	
 }
+const openDir = (dir) => {
+	config.value.localDir = dir;
+}
+const copyDir = () => {
+	copy(config.value.localDir)
+}
+
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 </script>
 
 <template>
 	<div class="flex flex-row min-h-screen h-full" :class="{'embed-ep-header':false}" @click="closeFile">
 		<div  class="relative h-full w-full" >
 			<AppHeader :child="true">
-			
 					<template #start>
 						 <Breadcrumb v-if="props.mode != 'device'" :home="home" :model="itemsBreadcrumb">
 								<template #item="{ item }">
@@ -289,7 +296,9 @@ const saveConfig = () => {
 			<Popover ref="op" >
 				<div class="flex w-full">
 					<InputText size="small" placeholder="Local Dir" v-model="config.localDir"  class="flex-item"></InputText>
-					<Button size="small" :disabled="!config.localDir" icon="pi pi-check" class="ml-2"  @click="saveConfig"></Button>
+					<Button v-tooltip="'Save'" size="small" :disabled="!config.localDir" icon="pi pi-check" class="ml-2"  @click="saveConfig"></Button>
+					<Button v-tooltip="'Copy'" size="small" :disabled="!config.localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
+					<FileFolderSelector v-if="hasTauri" :path="config.localDir" class="pointer ml-2" placeholder="Open" @select="openDir"></FileFolderSelector>
 				</div>
 			</Popover>
 			<Card class="nopd" v-if="!props.error">
