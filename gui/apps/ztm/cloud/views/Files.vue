@@ -14,7 +14,7 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-const props = defineProps(['small','files','error','loading','loader'])
+const props = defineProps(['small','files','error','loading','loader','downloadSize'])
 const emits = defineEmits(['create', 'edit','load'])
 
 
@@ -216,6 +216,27 @@ const closeFile = () => {
 	openFile.value = null;
 	visible.value = false;
 }
+const upload = () => {
+	
+}
+const download = () => {
+	
+}
+const getSelectFiles = (list) => {
+	let ary = []
+	list.forEach((item)=>{
+		if(!!item.selected?.value){
+			ary.push(item)
+		}
+		if(item.children){
+			ary = ary.concat(getSelectFiles(item.children)||[])
+		}
+	});
+	return ary;
+}
+const selectedFiles = computed(()=>{
+	return getSelectFiles(fileData.value);
+})
 </script>
 
 <template>
@@ -237,7 +258,12 @@ const closeFile = () => {
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
-						<Button icon="pi pi-plus"   @click="create"/>
+						<Button v-if="selectedFiles.length>0" label="Upload" text @click="upload" />
+						<Button v-if="selectedFiles.length>0" severity="secondary" label="Download" @click="download" />
+						<Button @click="create">
+							<i class="pi pi-cloud-download"/>
+							<Badge v-if="!!props.downloadSize" :value="props.downloadSize" size="small"></Badge>
+						</Button>
 					</template>
 			</AppHeader>
 			<Card class="nopd" v-if="!props.error">
@@ -250,7 +276,7 @@ const closeFile = () => {
 				</template>
 			</Card>
 			<Loading v-if="props.loading"/>
-			<ScrollPanel class="absolute-scroll-panel"  :style="{'top':'50px'}" v-else-if="filesFilter && filesFilter.length >0">
+			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="filesFilter && filesFilter.length >0">
 			<div class="text-center" >
 				<TreeTable v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column field="name" header="Name" expander style="min-width: 12rem">
@@ -262,14 +288,14 @@ const closeFile = () => {
 								</template>
 						</Column>
 				</TreeTable>
-				<div v-else class="grid text-left px-3 m-0" v-if="filesFilter && filesFilter.length >0">
+				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div class="col-4 md:col-2 xl:col-1 relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector py-3" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
+							<div class="selector py-2" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
 								<img :src="checker(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">
-									<b class="white-space-nowrap">
+									<b style="word-break: break-all;">
 										<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
 										{{ file.name }}
 									</b>
@@ -309,10 +335,10 @@ const closeFile = () => {
 					 			</div>
 					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
 					 				<div  class="flex-item px-2">
-					 					<Button class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+					 					<Button @click="download" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
 					 				<div  class="flex-item px-2">
-					 					<Button class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
+					 					<Button @click="upload" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 					 				</div>
 					 			</div>
 					     </template>

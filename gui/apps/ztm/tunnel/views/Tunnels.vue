@@ -88,7 +88,7 @@ const edit = (d) => {
 				</template>
 			</Card>
 			<Loading v-if="props.loading"/>
-			<ScrollPanel class="absolute-scroll-panel" :style="{'top':'75px'}" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
+			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
 			<div class="text-center">
 				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="tunnelsFilter" dataKey="id" tableStyle="min-width: 50rem">
 						<Column header="Tunnel">
