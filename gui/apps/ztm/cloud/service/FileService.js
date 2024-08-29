@@ -34,7 +34,11 @@ export default class FileService {
 		return request(`/api/endpoints/${ep}/config`,"POST", body)
 	}
 	getFiles(path) {
-		return request(`/api/files${path||''}`)
+		if(!!path){
+			return request(`/api/files/${path}`)
+		}else{
+			return request(`/api/files`)
+		}
 	}
 	getUploads() {
 		return request(`/api/uploads`);

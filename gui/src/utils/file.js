@@ -10,32 +10,36 @@ import ppt from "@/assets/img/files/ppt.png";
 import share from "@/assets/img/files/share.png";
 import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
-
+import userfolder from "@/assets/img/files/userfolder.png";
 const ext = {
 	default: file,
-	folder: folder,
-	share: share,
+	folder,
+	userfolder,
+	share,
 	xls: excel,
 	xlsx: excel,
 	doc: word,
 	docx: word,
-	pdf: pdf,
+	pdf,
 	pdfx: pdf,
+	png: img,
 	jpeg: img,
 	jpg: img,
-	mp3: mp3,
+	mp3,
 	wav: mp3,
 	mp4: mp4,
-	ppt: ppt,
-	txt: txt,
+	ppt,
+	txt,
 	md: txt,
-	zip: zip,
+	zip,
 	tar: zip,
 	rar: zip,
 	"7z": zip,
 };
-const checker = (name) => {
-	if(!!name && name.charAt(name.length-1) == "/"){
+const checker = (name, path) => {
+	if((path=="" || path== 'users') && name.indexOf(".")==-1){
+		return ext.userfolder;
+	} else if(!!name && name.charAt(name.length-1) == "/"){
 		return ext.folder
 	} else if(!!name && name.indexOf(".")>-1) {
 		const nameAry = name.split("/");
