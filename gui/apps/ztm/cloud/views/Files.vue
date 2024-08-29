@@ -101,9 +101,16 @@ const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
 const currentPath = ref('');
 const itemsBreadcrumb = ref([
 	{
-		name: 'root',
+		name: 'Setting',
+		icon: 'pi pi-cog',
 		path: '',
-		index:0,
+		index:1,
+	},
+	{
+		name: 'Root',
+		icon: 'pi pi-warehouse',
+		path: '',
+		index:1,
 	}
 ]);
 
@@ -237,6 +244,17 @@ const getSelectFiles = (list) => {
 const selectedFiles = computed(()=>{
 	return getSelectFiles(fileData.value);
 })
+const op = ref();
+const openSetting = () => {
+	op.value.toggle(event);
+}
+const config = ref({
+	localDir: "~/ztmCloud",
+	mirrors: []
+})
+const saveConfig = () => {
+	
+}
 </script>
 
 <template>
@@ -247,7 +265,9 @@ const selectedFiles = computed(()=>{
 					<template #start>
 						 <Breadcrumb v-if="props.mode != 'device'" :home="home" :model="itemsBreadcrumb">
 								<template #item="{ item }">
-									<Button  v-if="item.type=='home' && showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
+									<Button v-if="item.type=='home' && showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
+									<Button v-else-if="item.name == 'Setting'" @click="openSetting()" v-tooltip="item.name" :icon="item.icon" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
+									<Button v-else-if="item.icon" @click="changePath(item)" v-tooltip="item.name" :icon="item.icon" severity="secondary" text />
 									<Button v-else @click="changePath(item)" :label="item.name" severity="secondary" text />
 								</template>
 								<template #separator> / </template>
@@ -266,6 +286,12 @@ const selectedFiles = computed(()=>{
 						</Button>
 					</template>
 			</AppHeader>
+			<Popover ref="op" >
+				<div class="flex w-full">
+					<InputText size="small" placeholder="Local Dir" v-model="config.localDir"  class="flex-item"></InputText>
+					<Button size="small" :disabled="!config.localDir" icon="pi pi-check" class="ml-2"  @click="saveConfig"></Button>
+				</div>
+			</Popover>
 			<Card class="nopd" v-if="!props.error">
 				<template #content>
 					<InputGroup class="search-bar" >
