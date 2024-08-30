@@ -128,6 +128,7 @@ async function request(url, method, params, config) {
 				});
 		  case METHOD.POST:
 		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+					debugger
 					toastMessage(e);
 				});
 		  case METHOD.DELETE:
