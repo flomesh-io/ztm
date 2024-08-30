@@ -40,13 +40,16 @@ var DOWNLOAD_CONCURRENCY = 5
 
 export default function ({ app, mesh }) {
   var localDir
+  var mirrorPaths
 
   applyConfig()
+  watchMirrors()
 
   function applyConfig() {
     return getLocalConfig().then(
       config => {
         localDir = config.localDir
+        mirrorPaths = config.mirrorPaths
         if (localDir.startsWith('~/')) {
           localDir = os.home() + localDir.substring(1)
         }
@@ -57,6 +60,32 @@ export default function ({ app, mesh }) {
         }
       }
     )
+  }
+
+  function watchMirrors() {
+    if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
+      mesh.watch('/shared/').then(
+        pathnames => {
+          if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
+            var mirrors = mirrorPaths.map(path => path.endsWith('/') ? path : path + '/')
+            var match = new http.Match('/shared/{username}/stat/*')
+            pathnames.forEach(pathname => {
+              var params = match(pathname)
+              if (!params) return
+              var username = params.username
+              var filename = params['*']
+              var path = os.path.join('/users', username, filename)
+              if (mirrors.some(p => path.startsWith(p))) {
+                downloadFile(path)
+              }
+            })
+          }
+          watchMirrors()
+        }
+      )
+    } else {
+      new Timeout(5).wait().then(watchMirrors)
+    }
   }
 
   function allEndpoints() {
@@ -102,7 +131,7 @@ export default function ({ app, mesh }) {
           var config = {}
         }
         config.localDir ??= '~/ztmCloud'
-        config.mirrors ??= []
+        config.mirrorPaths ??= []
         return config
       }
     )

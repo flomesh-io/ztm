@@ -41,20 +41,20 @@ export default function ({ api, utils }) {
               }
 
               if ('--add-mirror' in args) {
-                if (!(config.mirrors instanceof Array)) config.mirrors = []
+                if (!(config.mirrorPaths instanceof Array)) config.mirrorPaths = []
                 args['--add-mirror'].forEach(path => {
                   path = os.path.normalize(path)
-                  if (!config.mirrors.includes(path)) {
-                    config.mirrors.push(path)
+                  if (!config.mirrorPaths.includes(path)) {
+                    config.mirrorPaths.push(path)
                   }
                 })
                 changed = true
               }
 
-              if ('--remove-mirror' in args && config.mirrors instanceof Array) {
+              if ('--remove-mirror' in args && config.mirrorPaths instanceof Array) {
                 args['--remove-mirror'].forEach(path => {
                   path = os.path.normalize(path)
-                  config.mirrors = config.mirrors.filter(p => p !== path)
+                  config.mirrorPaths = config.mirrorPaths.filter(p => p !== path)
                 })
                 changed = true
               }
@@ -70,11 +70,11 @@ export default function ({ api, utils }) {
               function printConfig(config) {
                 output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
                 output(`Local Directory: ${config.localDir}\n`)
-                if (config.mirrors instanceof Array && config.mirrors.length > 0) {
-                  output('Auto Mirrors:\n')
-                  config.mirrors.forEach(path => output(`  ${path}\n`))
+                if (config.mirrorPaths instanceof Array && config.mirrorPaths.length > 0) {
+                  output('Auto Mirror Paths:\n')
+                  config.mirrorPaths.forEach(path => output(`  ${path}\n`))
                 } else {
-                  output('Auto Mirrors: (none)\n')
+                  output('Auto Mirror Paths: (none)\n')
                 }
               }
             })
