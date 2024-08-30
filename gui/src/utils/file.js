@@ -68,6 +68,9 @@ const openFile = (path) => {
 	//{ read: true, write: false, baseDir: BaseDirectory.Home }
 	open(path);
 }
+const saveFile = () => {
+	
+}
 export {
 	ext, checker, bitUnit, openFile
 };

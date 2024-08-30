@@ -281,6 +281,7 @@
 		"fs:allow-home-read-recursive", 
 		"fs:allow-home-write", 
 		"fs:allow-home-write-recursive", 
+		"fs:allow-copy-file",
     "deep-link:default",
     "deep-link:allow-get-current",
     "deep-link:allow-is-registered",

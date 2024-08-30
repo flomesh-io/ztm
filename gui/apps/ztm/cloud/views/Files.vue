@@ -212,6 +212,11 @@ const loadFileAttr = (item, unload) => {
 			...item,
 			...res,
 		}
+		if(!!res.downloading || !!res.uploading){
+			setTimeout(()=>{
+				loadFileAttr(item, true);
+			},1000)
+		}
 	})
 }
 const copyFile = () => {
@@ -357,6 +362,8 @@ onMounted(()=>{
 						</Breadcrumb>
 						<span class="text-black-alpha-40 mx-2">/</span>
 						<Button @click="openFile(`${config.localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
+						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
+						<FileImportSelector icon="pi pi-download" v-if="hasTauri" :path="`${config.localDir}/${currentPath}`" class="pointer ml-2" placeholder="Import" @saved="()=>{}"></FileImportSelector>
 					</template>
 					<template #center>
 						<!-- <b>Files</b> -->
