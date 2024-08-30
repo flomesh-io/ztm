@@ -70,7 +70,8 @@ export default function ({ app, mesh, utils }) {
 
     '/api/files/*': {
       'GET': responder((params) => {
-        return api.getFileStat(params['*']).then(
+        var pathname = URL.decode(params['*'])
+        return api.getFileStat(pathname).then(
           stat => {
             if (!stat) return response(404)
             if (stat.chunks) stat.chunks = stat.chunks.length
