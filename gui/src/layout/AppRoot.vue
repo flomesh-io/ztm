@@ -302,7 +302,6 @@ onMounted(() => {
 				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" />
 			</div>
 			<div>
-				
 			</div>
 			<div class="mt-4">
 				<Button v-if="!user" class="w-20rem" @click="goLogin">Login</Button>
