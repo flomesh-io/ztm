@@ -18,8 +18,8 @@ import { isAdmin } from "@/service/common/authority-utils";
 import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
-import { resourceDir } from '@tauri-apps/api/path';
 import { openWebview } from '@/utils/webview';
+import { openFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 import exportFromJSON from 'export-from-json';
 import toast from "@/utils/toast";
@@ -281,7 +281,7 @@ const toggleLeft = () => {
 onMounted(() => {
 	pipyInit();
 	timmer();
-	
+	//github-recovery-codes.txt
 });
 </script>
 

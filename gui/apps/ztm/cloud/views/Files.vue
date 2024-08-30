@@ -2,13 +2,14 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit } from '@/utils/file';
+import { checker, bitUnit, openFile } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
+import { homeDir } from '@tauri-apps/api/path';
 const toast = useToast();
 const store = useStore();
 const confirm = useConfirm();
@@ -106,7 +107,6 @@ const itemsBreadcrumb = ref([
 		index:1,
 	}
 ]);
-
 const back = () => {
 	if(window.parent){
 		window.parent.location.href="/#/mesh/apps";
@@ -124,7 +124,7 @@ const changePath = (item) => {
 	currentPath.value = item.path;
 	load();
 }
-const openFile = ref();
+const selectedFile = ref();
 const selectFile = (e, item) => {
 	if(item.ext == "/"){
 		const _name = item.name.split("/")[0];
@@ -138,7 +138,7 @@ const selectFile = (e, item) => {
 		load();
 	} else if(!item.selected) {
 		item.selected = { time:new Date(),value:true };
-		openFile.value = null;
+		selectedFile.value = null;
 	} else if(!!item.selected) {
 		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
 		if(diff <= 600){
@@ -148,7 +148,7 @@ const selectFile = (e, item) => {
 		} else {
 			item.selected.value = !item.selected.value;
 			item.selected.time = new Date();
-			openFile.value = null;
+			selectedFile.value = null;
 		}
 	}
 }
@@ -157,13 +157,13 @@ const actions = computed(()=>{
 	return [
 		{
 				label: 'State',
-				shortcut: openFile.value?.state,
+				shortcut: selectedFile.value?.state,
 				command: () => {
 				}
 		},
 		{
 				label: 'Sources',
-				badge: openFile.value?.sources?.length,
+				badge: selectedFile.value?.sources?.length,
 				command: () => {
 				}
 		},
@@ -171,25 +171,25 @@ const actions = computed(()=>{
 		
 		{
 				label: 'Path',
-				shortcut: openFile.value?.path,
+				shortcut: selectedFile.value?.path,
 				command: () => {
 				}
 		},
 		{
 				label: 'Hash',
-				shortcut: openFile.value?.hash,
+				shortcut: selectedFile.value?.hash,
 				command: () => {
 				}
 		},
 		{
 				label: 'Time',
-				shortcut: openFile.value?new Date(openFile.value.time).toLocaleString():'',
+				shortcut: selectedFile.value?new Date(selectedFile.value.time).toLocaleString():'',
 				command: () => {
 				}
 		},
 		{
 				label: 'Size',
-				shortcut: bitUnit(openFile.value?.size),
+				shortcut: bitUnit(selectedFile.value?.size),
 				command: () => {
 				}
 		},
@@ -199,24 +199,24 @@ const attrLoading = ref(false);
 const loadFileAttr = (item) => {
 	attrLoading.value = true;
 	const _joinPath = [];
-	const _pre = itemsBreadcrumb.value[itemsBreadcrumb.value.length-1].path;
+	const _pre = currentPath.value;
 	if(!!_pre){
 		_joinPath.push(_pre)
 	}
 	_joinPath.push(item.name);
 	fileService.getFiles(_joinPath.join("/")).then((res)=>{
 		attrLoading.value = false;
-		openFile.value = {
+		selectedFile.value = {
 			...item,
 			...res,
 		}
 	})
 }
 const copyFile = () => {
-	copy(JSON.stringify(openFile.value))
+	copy(JSON.stringify(selectedFile.value))
 }
 const closeFile = () => {
-	openFile.value = null;
+	selectedFile.value = null;
 	visible.value = false;
 }
 const getSelectFiles = (list) => {
@@ -248,7 +248,7 @@ const saveConfig = () => {
 		getConfig();
 	})
 }
-const openDir = (dir) => {
+const selectDir = (dir) => {
 	config.value.localDir = dir;
 }
 const copyDir = () => {
@@ -259,8 +259,17 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const getConfig = () => {
 	fileService.getConfig(info.value?.endpoint?.id).then((res)=>{
 		config.value = res;
+		if(config.value.localDir == '~/ztmCloud' && !!hasTauri.value){
+			homeDir().then((dir)=>{
+				config.value.localDir = dir;
+				fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
+					getConfig();
+				})
+			})
+		}
 	})
 }
+
 const openQueue = () => {
 	emits('download',{})
 	emits('upload',{})
@@ -315,7 +324,7 @@ const doUploads = () => {
 	}
 }
 const fileIcon = computed(()=>(name)=>{
-	return checker(name, itemsBreadcrumb.value[itemsBreadcrumb.value.length-1].path)
+	return checker(name, currentPath.value)
 })
 onMounted(()=>{
 	getConfig();
@@ -337,6 +346,8 @@ onMounted(()=>{
 								</template>
 								<template #separator> / </template>
 						</Breadcrumb>
+						<span class="text-black-alpha-40 mx-2">/</span>
+						<Button @click="openFile(`${config.localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
 					</template>
 					<template #center>
 						<!-- <b>Files</b> -->
@@ -356,7 +367,7 @@ onMounted(()=>{
 					<InputText size="small" placeholder="Local Dir" v-model="config.localDir"  class="flex-item"></InputText>
 					<Button v-tooltip="'Save'" size="small" :disabled="!config.localDir" icon="pi pi-check" class="ml-2"  @click="saveConfig"></Button>
 					<Button v-tooltip="'Copy'" size="small" :disabled="!config.localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
-					<FileFolderSelector v-if="hasTauri" :path="config.localDir" class="pointer ml-2" placeholder="Open" @select="openDir"></FileFolderSelector>
+					<FileFolderSelector v-if="hasTauri" :path="config.localDir" class="pointer ml-2" placeholder="Open" @select="selectDir"></FileFolderSelector>
 				</div>
 			</Popover>
 			<Card class="nopd" v-if="!props.error">
@@ -400,10 +411,10 @@ onMounted(()=>{
 					 <Loading v-if="attrLoading" />
 					 <Menu v-else :model="actions" class="w-60">
 					     <template #start>
-					 			<div v-if="openFile" class="text-center pt-4 relative">
-					 				<img :src="fileIcon(openFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+					 			<div v-if="selectedFile" class="text-center pt-4 relative">
+					 				<img :src="fileIcon(selectedFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 					 				<div class="px-2 ">
-					 					<Button @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="openFile.name" text />
+					 					<Button @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
 					 				</div>
 					 			</div>
 					 			
@@ -422,20 +433,24 @@ onMounted(()=>{
 					 						</span>
 					         </a>
 					     </template>
-					     <template #end v-if="openFile.state != 'synced'">
-					 			<div class="px-4 pt-2 pb-1" v-if="openFile?.uploading">
-					 					<ProgressBar :value="openFile.uploading*100"></ProgressBar>
+					     <template #end v-if="selectedFile.state != 'synced'">
+					 			<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
+					 					<ProgressBar :value="selectedFile.uploading*100"></ProgressBar>
 					 			</div>
-					 			<div class="px-4 pt-2 pb-1" v-if="openFile?.downloading">
-					 					<ProgressBar :value="openFile.downloading*100"></ProgressBar>
+					 			<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading">
+					 					<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
 					 			</div>
 					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
-					 				<div  class="flex-item px-2" v-if="openFile.state == 'outdated' || openFile.state == 'missing'">
-					 					<Button :disabled="!openFile?.path" @click="doDownload(openFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+					 				<div  class="flex-item px-2" v-if="selectedFile.state == 'new' || selectedFile.state == 'changed'">
+					 					<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 					 				</div>
-					 				<div  class="flex-item px-2" v-if="openFile.state == 'new' || openFile.state == 'changed'">
-					 					<Button :disabled="!openFile?.path" @click="doUpload(openFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
+					 				<div  class="flex-item px-2" v-if="selectedFile.state == 'outdated' || selectedFile.state == 'missing'">
+					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
+					 				<div  class="flex-item px-2" v-if="selectedFile.state != 'missing'">
+					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+					 				</div>
+									
 					 			</div>
 					     </template>
 					 </Menu>
