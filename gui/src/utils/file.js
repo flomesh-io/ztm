@@ -11,6 +11,8 @@ import share from "@/assets/img/files/share.png";
 import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
+import { open } from '@tauri-apps/plugin-shell';
+
 const ext = {
 	default: file,
 	folder,
@@ -62,6 +64,10 @@ const bitUnit = (value)=> {
 		return value*1 + "B";
 	}
 }
+const openFile = (path) => {
+	//{ read: true, write: false, baseDir: BaseDirectory.Home }
+	open(path);
+}
 export {
-	ext, checker, bitUnit
+	ext, checker, bitUnit, openFile
 };
