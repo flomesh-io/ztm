@@ -50,6 +50,11 @@ export default function ({ app, mesh }) {
         if (localDir.startsWith('~/')) {
           localDir = os.home() + localDir.substring(1)
         }
+        try {
+          os.mkdir(os.path.join(localDir, 'users', app.username), { recursive: true })
+        } catch (e) {
+          app.log(e.message || e.toString())
+        }
       }
     )
   }
@@ -271,9 +276,7 @@ export default function ({ app, mesh }) {
         var list = []
         os.readDir(os.path.join(localDir, 'users')).concat(meshNames).forEach(
           name => {
-            var k = name.endsWith('/') ? name.substring(0, name.length - 1) : name
-            if (!s.has(k)) {
-              s.add(k)
+            if (name.endsWith('/') && !s.has(name)) {
               list.push(name)
             }
           }
