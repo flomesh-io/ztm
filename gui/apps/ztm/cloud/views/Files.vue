@@ -183,7 +183,7 @@ const actions = computed(()=>{
 		},
 		{
 				label: 'Time',
-				shortcut: selectedFile.value?new Date(selectedFile.value.time).toLocaleString():'',
+				shortcut: !!selectedFile.value?.time?new Date(selectedFile.value.time).toLocaleString():'-',
 				command: () => {
 				}
 		},
@@ -196,8 +196,10 @@ const actions = computed(()=>{
 	]
 })
 const attrLoading = ref(false);
-const loadFileAttr = (item) => {
-	attrLoading.value = true;
+const loadFileAttr = (item, unload) => {
+	if(!unload){
+		attrLoading.value = true;
+	}
 	const _joinPath = [];
 	const _pre = currentPath.value;
 	if(!!_pre){
@@ -271,30 +273,33 @@ const getConfig = () => {
 }
 
 const openQueue = () => {
-	emits('download',{})
-	emits('upload',{})
+	emits('download',[])
+	emits('upload',[])
 }
 const doDownload = (item) => {
 	if(item.path){
 		fileService.download(item.path).then((res)=>{
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
-			emits('download',item)
+			emits('download',[item]);
+			loadFileAttr(item, true);
 		})
 	}
 }
 const doDownloads = () => {
 	if(selectedFiles.value.length>0){
 		const reqs = [];
+		const downloadFiles = []
 		selectedFiles.value.forEach((item)=>{
-			if(item.state == "outdated" || item.state == "missing"){
+			if(item.state != "new"){
+				downloadFiles.push(item);
 				reqs.push(fileService.download(item.path));
 			}
 		})
 	}
 	if(reqs.length>0){
 		merge(reqs).then((allRes) => {
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `${selectedFiles.value.length} files in the download queue.`, life: 3000 });
-			emits('download',selectedFiles.value)
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `${downloadFiles.length} files in the download queue.`, life: 3000 });
+			emits('download',downloadFiles)
 		})
 	}
 }
@@ -303,23 +308,26 @@ const doUpload = (item) => {
 	if(item.path){
 		fileService.upload(item.path).then((res)=>{
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the upload queue.`, life: 3000 });
-			emits('upload',item)
+			emits('upload',[item]);
+			loadFileAttr(item, true);
 		})
 	}
 }
 const doUploads = () => {
 	if(selectedFiles.value.length>0){
 		const reqs = [];
+		const uploadFiles = [];
 		selectedFiles.value.forEach((item)=>{
 			if(item.state == "new" || item.state == "changed"){
+				uploadFiles.push(item);
 				reqs.push(fileService.upload(item.path));
 			}
 		})
 	}
 	if(reqs.length>0){
 		merge(reqs).then((allRes) => {
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `${selectedFiles.value.length} files in the upload queue.`, life: 3000 });
-			emits('upload',selectedFiles.value)
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `${uploadFiles.length} files in the upload queue.`, life: 3000 });
+			emits('upload',uploadFiles)
 		})
 	}
 }
@@ -328,6 +336,7 @@ const fileIcon = computed(()=>(name)=>{
 })
 onMounted(()=>{
 	getConfig();
+	
 })
 </script>
 
@@ -354,10 +363,10 @@ onMounted(()=>{
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
-						<Button v-if="selectedFiles.length>0" label="Upload" text @click="doUploads" />
-						<Button v-if="selectedFiles.length>0" severity="secondary" label="Download" @click="doDownloads" />
-						<Button @click="openQueue">
-							<i class="pi pi-inbox"/>
+						<Button v-if="selectedFiles.length>1" label="Upload" text @click="doUploads" />
+						<Button v-if="selectedFiles.length>1" text label="Download" @click="doDownloads" />
+						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
+							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-sync pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
 						</Button>
 					</template>
@@ -433,7 +442,7 @@ onMounted(()=>{
 					 						</span>
 					         </a>
 					     </template>
-					     <template #end v-if="selectedFile.state != 'synced'">
+					     <template #end >
 					 			<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
 					 					<ProgressBar :value="selectedFile.uploading*100"></ProgressBar>
 					 			</div>
@@ -441,13 +450,13 @@ onMounted(()=>{
 					 					<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
 					 			</div>
 					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
-					 				<div  class="flex-item px-2" v-if="selectedFile.state == 'new' || selectedFile.state == 'changed'">
+					 				<div  class="flex-item px-2" v-if="selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced'">
 					 					<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 					 				</div>
-					 				<div  class="flex-item px-2" v-if="selectedFile.state == 'outdated' || selectedFile.state == 'missing'">
+					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'new'">
 					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
-					 				<div  class="flex-item px-2" v-if="selectedFile.state != 'missing'">
+					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
 					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
 					 				</div>
 									

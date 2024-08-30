@@ -28,12 +28,12 @@ const uploads = ref([]);
 const downloads = ref([]);
 const getDownloads = () => {
 	fileService.getDownloads().then((res)=>{
-		downloads.value = res;
+		downloads.value = res || [];
 	})
 }
 const getUploads = () => {
 	fileService.getUploads().then((res)=>{
-		uploads.value = res;
+		uploads.value = res || [];
 	})
 }
 const getFiles = () => {
@@ -61,16 +61,39 @@ const changePath = (p) => {
 const save = () => {
 	loaddata();
 }
-const downloadChange = () => {
+const downloadChange = (downloadFiles) => {
 	visibleEditor.value = true;
-	getDownloads();
+	downloads.value = downloads.value.concat(downloadFiles);
+	setTimeout(()=>{
+		getDownloads();
+	},1000)
+	
 }
-const uploadChange = () => {
+const uploadChange = (uploadFiles) => {
 	visibleEditor.value = true;
-	getUploads();
+	uploads.value = uploads.value.concat(uploadFiles);
+	setTimeout(()=>{
+		getUploads();
+	},1000)
+}
+const queueSize = computed(()=> downloads.value.length + uploads.value.length);
+
+const timmer = () => {
+	setTimeout(()=>{
+		if(uploads.value.length>0){
+			getUploads();
+		}
+		if(downloads.value.length>0){
+			getDownloads();
+		}
+		if(uploads.value.length>0 || downloads.value.length>0){
+			timmer();
+		}
+	},3000)
 }
 onMounted(()=>{
-	loaddata()
+	loaddata();
+	timmer();
 })
 </script>
 
@@ -78,7 +101,7 @@ onMounted(()=>{
 	<div class="flex flex-row min-h-screen" >
 		<div class="h-full" style="flex:2" :class="{'flex-item':(!!visibleEditor),'flex-item':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
 			<Files 
-				:cloudSize="downloads.length + uploads.length"
+				:queueSize="queueSize"
 				:files="files" 
 				:error="error" 
 				:loading="loading"
