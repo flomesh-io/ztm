@@ -383,26 +383,33 @@ onMounted(()=>{
 					</template>
 			</AppHeader>
 			<Popover ref="op" >
-				<div class="flex w-full">
-					<InputText size="small" placeholder="Local Dir" v-model="config.localDir"  class="flex-item"></InputText>
+				<div class="flex w-full pt-4">
+					<FloatLabel>
+						<label>Local Dir</label>
+						<InputText  id="LocalDir" size="small" v-model="config.localDir"  class="flex-item"></InputText>
+					</FloatLabel>
 					<Button v-tooltip="'Copy'" size="small" :disabled="!localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
-					<FileFolderSelector v-if="hasTauri" :path="localDir" class="pointer ml-2" placeholder="Open" @select="selectDir"></FileFolderSelector>
+					<FileFolderSelector v-if="hasTauri" :path="localDir" class="pointer ml-2" placeholder="Choose" @select="selectDir"></FileFolderSelector>
 				</div>
 				<div class="flex w-full">
 					<InputList
-						class="w-full mt-2"
+						class="w-full mt-5"
 						itemClass="input_pannel"
 						:d="config.mirrorPaths"
 						:min="1"
 						:attrs="''"
 					>
 						<template #default="{ item, listIndex }">
-							<InputText size="small" :placeholder="`Mirror Path ${listIndex+1}`" v-model="config.mirrorPaths[listIndex]"  class="flex-item"></InputText>
+							
+								<FloatLabel :class="listIndex != (config.mirrorPaths.length-1) ?'mb-4':''">
+									<label>{{`Mirror Path ${listIndex+1}`}}</label>
+									<InputText size="small" v-model="config.mirrorPaths[listIndex]"  class="flex-item"></InputText>
+								</FloatLabel>
 						</template>
 					</InputList>
 				</div>
-				<div class="flex w-full mt-2">
-					<Button class="w-full" label="Save" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
+				<div class="flex w-full mt-3">
+					<Button class="w-full" label="Apply" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
 				</div>
 			</Popover>
 			<Card class="nopd" v-if="!props.error">
