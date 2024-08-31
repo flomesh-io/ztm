@@ -7,6 +7,7 @@ import mp3 from "@/assets/img/files/mp3.png";
 import mp4 from "@/assets/img/files/mp4.png";
 import pdf from "@/assets/img/files/pdf.png";
 import ppt from "@/assets/img/files/ppt.png";
+import mirror from "@/assets/img/files/mirror.png";
 import share from "@/assets/img/files/share.png";
 import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
@@ -22,6 +23,7 @@ const ext = {
 	xlsx: excel,
 	doc: word,
 	docx: word,
+	mirror,
 	pdf,
 	pdfx: pdf,
 	png: img,
@@ -38,11 +40,21 @@ const ext = {
 	rar: zip,
 	"7z": zip,
 };
-const checker = (name, path) => {
-	if((path=="" || path== 'users') && name.indexOf(".")==-1){
+const checker = (name, path, mirrorPaths) => {
+	const _mirrorPaths = [];
+	if(!!mirrorPaths){
+		mirrorPaths.forEach((mirrorPath)=>{
+			if(!!mirrorPath){
+				_mirrorPaths.push(mirrorPath.replace(/^\//, ''))
+			}
+		})
+	}
+	if(!!name && name.charAt(name.length-1) == "/" && !!_mirrorPaths && _mirrorPaths.find((_mirrorPath)=>_mirrorPath==`${path}/${name.split('/')[0]}`)){
+		return ext.mirror;
+	}else if((path=="" || path== 'users') && name.indexOf(".")==-1){
 		return ext.userfolder;
 	} else if(!!name && name.charAt(name.length-1) == "/"){
-		return ext.folder
+		return ext.folder;
 	} else if(!!name && name.indexOf(".")>-1) {
 		const nameAry = name.split("/");
 		const _name = nameAry[nameAry.length -1];

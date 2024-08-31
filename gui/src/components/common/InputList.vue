@@ -27,7 +27,8 @@
 						:listIndex="index"
 					/>
           <div
-            class="font-left w-8rem pl-1"
+            class="font-left pl-1"
+						style="width: 73px;"
             v-if="!readonly"
           >
             <Button
@@ -95,7 +96,11 @@ export default {
     add() {
 			let newD = {};
 			if(!this.customAdd){
-				newD = JSON.parse(JSON.stringify(this.attrs)) || {};
+				if(typeof(this.attrs) == 'string'){
+					newD = this.attrs;
+				}else{
+					newD = JSON.parse(JSON.stringify(this.attrs)) || {};
+				}
 				this.d.push(newD);
 			}
 			this.$emit('add', newD)

@@ -245,9 +245,11 @@ const op = ref();
 const openSetting = () => {
 	op.value.toggle(event);
 }
+const localDir = ref("");
+const mirrorPaths = ref([])
 const config = ref({
 	localDir: "",
-	mirrors: []
+	mirrorPaths: []
 })
 const saveConfig = () => {
 	fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
@@ -259,13 +261,15 @@ const selectDir = (dir) => {
 	config.value.localDir = dir;
 }
 const copyDir = () => {
-	copy(config.value.localDir)
+	copy(localDir.value)
 }
 
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const getConfig = () => {
 	fileService.getConfig(info.value?.endpoint?.id).then((res)=>{
 		config.value = res;
+		localDir.value = config.value.localDir;
+		mirrorPaths.value = config.value.mirrorPaths;
 		if(config.value.localDir == '~/ztmCloud' && !!hasTauri.value){
 			homeDir().then((dir)=>{
 				config.value.localDir = `${dir}/ztmCloud`;
@@ -337,7 +341,7 @@ const doUploads = () => {
 	}
 }
 const fileIcon = computed(()=>(name)=>{
-	return checker(name, currentPath.value)
+	return checker(name, currentPath.value, mirrorPaths.value)
 })
 onMounted(()=>{
 	getConfig();
@@ -354,16 +358,16 @@ onMounted(()=>{
 								<template #item="{ item }">
 									<Button v-if="item.type=='home' && showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 									<Button v-else-if="item.name == 'Setting'" @click="openSetting()" v-tooltip="item.name" :icon="item.icon" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
-									<Button v-else-if="item.name == 'Root'" @click="changePath(item)" v-tooltip="`${item.name}:${config.localDir}`" :icon="item.icon" severity="secondary" text />
+									<Button v-else-if="item.name == 'Root'" @click="changePath(item)" v-tooltip="`${item.name}:${localDir}`" :icon="item.icon" severity="secondary" text />
 									<Button v-else-if="item.icon" @click="changePath(item)" v-tooltip="item.name" :icon="item.icon" severity="secondary" text />
 									<Button v-else @click="changePath(item)" :label="item.name" severity="secondary" text />
 								</template>
 								<template #separator> / </template>
 						</Breadcrumb>
 						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
-						<Button v-if="hasTauri" @click="openFile(`${config.localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
+						<Button v-if="hasTauri" @click="openFile(`${localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
 						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
-						<FileImportSelector icon="pi pi-download" v-if="hasTauri && currentPath!='' && currentPath!='users'" :path="`${config.localDir}/${currentPath}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
+						<FileImportSelector icon="pi pi-download" v-if="hasTauri && currentPath!='' && currentPath!='users'" :path="`${localDir}/${currentPath}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 					</template>
 					<template #center>
 						<!-- <b>Files</b> -->
@@ -381,9 +385,24 @@ onMounted(()=>{
 			<Popover ref="op" >
 				<div class="flex w-full">
 					<InputText size="small" placeholder="Local Dir" v-model="config.localDir"  class="flex-item"></InputText>
-					<Button v-tooltip="'Save'" size="small" :disabled="!config.localDir" icon="pi pi-check" class="ml-2"  @click="saveConfig"></Button>
-					<Button v-tooltip="'Copy'" size="small" :disabled="!config.localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
-					<FileFolderSelector v-if="hasTauri" :path="config.localDir" class="pointer ml-2" placeholder="Open" @select="selectDir"></FileFolderSelector>
+					<Button v-tooltip="'Copy'" size="small" :disabled="!localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
+					<FileFolderSelector v-if="hasTauri" :path="localDir" class="pointer ml-2" placeholder="Open" @select="selectDir"></FileFolderSelector>
+				</div>
+				<div class="flex w-full">
+					<InputList
+						class="w-full mt-2"
+						itemClass="input_pannel"
+						:d="config.mirrorPaths"
+						:min="1"
+						:attrs="''"
+					>
+						<template #default="{ item, listIndex }">
+							<InputText size="small" :placeholder="`Mirror Path ${listIndex+1}`" v-model="config.mirrorPaths[listIndex]"  class="flex-item"></InputText>
+						</template>
+					</InputList>
+				</div>
+				<div class="flex w-full mt-2">
+					<Button class="w-full" label="Save" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
 				</div>
 			</Popover>
 			<Card class="nopd" v-if="!props.error">
@@ -464,7 +483,7 @@ onMounted(()=>{
 					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
 					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
-					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
 					 				</div>
 									
 					 			</div>
