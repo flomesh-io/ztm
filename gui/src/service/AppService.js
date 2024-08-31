@@ -191,8 +191,7 @@ export default class AppService {
 	getAppUrl({
 		mesh, provider, app
 	}) {
-		// return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
-		return `/api/meshes/${mesh}/apps/${provider}/${app}`;
+		return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
 	}
 	getApp({
 		mesh, ep, provider, app

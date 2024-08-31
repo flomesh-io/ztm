@@ -464,7 +464,7 @@ onMounted(()=>{
 					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
 					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
-					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Select" severity="secondary"  />
+					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
 					 				</div>
 									
 					 			</div>

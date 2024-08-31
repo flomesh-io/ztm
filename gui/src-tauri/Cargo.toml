@@ -12,22 +12,22 @@ name = "ztm_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
-tauri-build = { version = "=2.0.0-rc.0", features = [] }
+tauri-build = { version = "=2.0.0-rc.7", features = [] }
 
 # tauri = { version = "=2.0.0-rc.0", features = ["devtools"] }
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri = { version = "=2.0.0-rc.0", features = ["macos-proxy", "unstable"] }
-tauri-utils = "=2.0.0-rc.0"
-tauri-runtime = "=2.0.0-rc.0"
-tauri-plugin-shell = "=2.0.0-rc.0"
-tauri-plugin-process = "=2.0.0-rc.0"
-tauri-plugin-http = "=2.0.0-rc.0"
-tauri-plugin-os = "=2.0.0-rc.0"
-tauri-plugin-fs = "=2.0.0-rc.0"
-tauri-plugin-dialog = "=2.0.0-rc.0"
-tauri-plugin-deep-link = "=2.0.0-rc.0"
-tauri-plugin-clipboard-manager = "=2.0.0-rc.0"
+tauri = { version = "=2.0.0-rc.8", features = ["macos-proxy", "unstable"] }
+tauri-utils = "=2.0.0-rc.7"
+tauri-runtime = "=2.0.0-rc.7"
+tauri-plugin-shell = "=2.0.0-rc.3"
+tauri-plugin-process = "=2.0.0-rc.1"
+tauri-plugin-http = "=2.0.0-rc.1"
+tauri-plugin-os = "=2.0.0-rc.1"
+tauri-plugin-fs = "=2.0.0-rc.1"
+tauri-plugin-dialog = "=2.0.0-rc.3"
+tauri-plugin-deep-link = "=2.0.0-rc.2"
+tauri-plugin-clipboard-manager = "=2.0.0-rc.3"
 lazy_static = "1.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -40,7 +40,7 @@ wry = "0.41.0"
 # log = "0.4.22"
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
-tauri-plugin-cli = "=2.0.0-rc.0"
+tauri-plugin-cli = "=2.0.0-rc.1"
 
 [target.'cfg(any(target_os = "android"))']
 linker = "~/Library/Android/sdk/ndk/27.0.11718014/toolchains/llvm/prebuilt/darwin-x86_64/bin"
