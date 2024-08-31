@@ -3,11 +3,8 @@
   "identifier": "main-capability",
   "description": "Capability for the main window",
   "windows": [
-    "Cloud","Cloud-webview","*"
+    "*"
   ],
-	"webviews": [
-		"Cloud","Cloud-webview","*"
-	],
 	"remote": {
 		"urls": ["http://*","https://*","ipc://*","socks5://*","*://*"]
 	},
