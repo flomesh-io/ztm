@@ -3,14 +3,16 @@
   "identifier": "main-capability",
   "description": "Capability for the main window",
   "windows": [
-    "*"
+    "Cloud","Cloud-webview","*"
   ],
+	"webviews": [
+		"Cloud","Cloud-webview","*"
+	],
 	"remote": {
 		"urls": ["http://*","https://*","ipc://*","socks5://*","*://*"]
 	},
   "permissions": [
 		"clipboard-manager:allow-write-text",
-    "core:path:default",
     "core:path:default",
     "core:path:allow-basename",
     "core:path:allow-dirname",
@@ -19,6 +21,7 @@
     "core:path:allow-join",
     "core:path:allow-normalize",
     "core:path:allow-resolve",
+    "core:path:allow-resolve-directory",
     "core:event:default",
     "core:event:allow-emit",
     "core:event:allow-emit-to",

@@ -268,7 +268,7 @@ const getConfig = () => {
 		config.value = res;
 		if(config.value.localDir == '~/ztmCloud' && !!hasTauri.value){
 			homeDir().then((dir)=>{
-				config.value.localDir = dir;
+				config.value.localDir = `${dir}/ztmCloud`;
 				fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
 					getConfig();
 				})
@@ -360,8 +360,8 @@ onMounted(()=>{
 								</template>
 								<template #separator> / </template>
 						</Breadcrumb>
-						<span class="text-black-alpha-40 mx-2">/</span>
-						<Button @click="openFile(`${config.localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
+						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
+						<Button v-if="hasTauri" @click="openFile(`${config.localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
 						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
 						<FileImportSelector icon="pi pi-download" v-if="hasTauri" :path="`${config.localDir}/${currentPath}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 					</template>

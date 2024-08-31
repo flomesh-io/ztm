@@ -16,6 +16,7 @@
     "core:path:allow-join",
     "core:path:allow-normalize",
     "core:path:allow-resolve",
+    "core:path:allow-resolve-directory",
     "core:event:default",
     "core:event:allow-emit",
     "core:event:allow-emit-to",

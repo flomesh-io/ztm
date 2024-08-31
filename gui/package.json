@@ -17,7 +17,7 @@
     "build:tunnel": "vite build apps/ztm/tunnel --emptyOutDir --outDir ../../../../agent/apps/ztm/tunnel/gui",
     "build:script": "vite build apps/ztm/script --emptyOutDir --outDir ../../../../agent/apps/ztm/script/gui",
     "build:proxy": "vite build apps/ztm/proxy --emptyOutDir --outDir ../../../../agent/apps/ztm/proxy/gui",
-		"build:cloud": "vite build apps/ztm/cloud --emptyOutDir --outDir ../../../../agent/apps/ztm/cloud/gui",
+    "build:cloud": "vite build apps/ztm/cloud --emptyOutDir --outDir ../../../../agent/apps/ztm/cloud/gui",
     "build:apps": "yarn build:tunnel && yarn build:script && yarn build:proxy && yarn build:cloud",
     "android-init": "tauri android init && cp -rf ./src-android/app ./src-tauri/gen/android",
     "android-dev": "cp -rf ./src-android/app ./src-tauri/gen/android && tauri android dev",
