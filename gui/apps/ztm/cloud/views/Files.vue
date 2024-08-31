@@ -291,8 +291,8 @@ const doDownload = (item) => {
 	}
 }
 const doDownloads = () => {
+	const reqs = [];
 	if(selectedFiles.value.length>0){
-		const reqs = [];
 		const downloadFiles = []
 		selectedFiles.value.forEach((item)=>{
 			if(item.state != "new"){
@@ -319,8 +319,8 @@ const doUpload = (item) => {
 	}
 }
 const doUploads = () => {
+	const reqs = [];
 	if(selectedFiles.value.length>0){
-		const reqs = [];
 		const uploadFiles = [];
 		selectedFiles.value.forEach((item)=>{
 			if(item.state == "new" || item.state == "changed"){
@@ -464,7 +464,7 @@ onMounted(()=>{
 					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
 					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
-					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${config.localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Select" severity="secondary"  />
 					 				</div>
 									
 					 			</div>
