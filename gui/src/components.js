@@ -108,6 +108,7 @@ import FileUploderSmall from '@/components/common/FileUploderSmall.vue';
 import FileFolderSelector from '@/components/common/FileFolderSelector.vue';
 import FileImportSelector from '@/components/common/FileImportSelector.vue';
 import MeshSelector from '@/components/mesh/MeshSelector.vue';
+import FloatLabel from 'primevue/floatlabel';
 
 import { Field, Form, ErrorMessage } from 'vee-validate';
 
@@ -216,6 +217,7 @@ export function useComponent(app){
 	app.component('AppHeader', AppHeader);
 	app.component('FormItem', FormItem);
 	app.component('FloatField', FloatField);
+	app.component('FloatLabel', FloatLabel);
 	app.component('InputList', InputList);
 	app.component('HiddenField', HiddenField);
 	app.component('CertificateUploder', CertificateUploder);
