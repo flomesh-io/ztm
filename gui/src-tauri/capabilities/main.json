@@ -6,7 +6,7 @@
     "*"
   ],
 	"remote": {
-		"urls": ["http://*","https://*","ipc://*","socks5://*","*://*"]
+		"urls": ["http://127.0.0.1:*/","http://*","https://*","ipc://*","socks5://*","*://*"]
 	},
   "permissions": [
 		"clipboard-manager:allow-write-text",
