@@ -65,9 +65,9 @@ const choose = () => {
 			  // user selected multiple files
 				let saved = 0;
 				selected.forEach((file)=>{
-					debugger
-					const _name = file.name;
-					copyFile(file.path, `${props.path}/${_name}`, { fromPathBaseDir: BaseDirectory.Home, toPathBaseDir: BaseDirectory.Home }).then(()=>{
+					const _file_ary = file.split("/");
+					const _name = _file_ary[_file_ary.length-1];
+					copyFile(file, `${props.path}/${_name}`, { fromPathBaseDir: BaseDirectory.Home, toPathBaseDir: BaseDirectory.Home }).then(()=>{
 						saved++;
 						if(saved == selected.length){
 							emits('saved', {});
