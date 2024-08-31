@@ -8,7 +8,9 @@ var DOWNLOAD_CONCURRENCY = 5
 //       ...
 //
 // In the local directory:
-//   /users/<username>/...  <-- Identical to the cloud view
+//   /users  <-- Identical to the cloud view
+//     /<username>
+//       ...
 //   /cache/<username>/
 //     /<filename>
 //       {
@@ -36,6 +38,14 @@ var DOWNLOAD_CONCURRENCY = 5
 //   /shared/<username>/hash/
 //     /<hash>
 //       content is the filename
+//   /users/<username>/acl/
+//     /<dirname>
+//       {
+//         all: "readonly|block",
+//         users: {
+//           [username]: "readonly|block",
+//         },
+//       }
 //
 
 export default function ({ app, mesh }) {
@@ -306,6 +316,7 @@ export default function ({ app, mesh }) {
         os.readDir(os.path.join(localDir, 'users')).concat(meshNames).forEach(
           name => {
             if (name.endsWith('/') && !s.has(name)) {
+              s.add(name)
               list.push(name)
             }
           }
