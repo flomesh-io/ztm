@@ -92,7 +92,7 @@ const openWebview = (app)=>{
 			const webview = new WebviewWindow(`${app.name}-webview`, options);
 			webview.once('tauri://created', function (d) {
 				console.log('WebviewWindow://created')
-				console.log(d)
+				console.log(options)
 			// webview successfully created
 			});
 			webview.once('tauri://error', function (e) {

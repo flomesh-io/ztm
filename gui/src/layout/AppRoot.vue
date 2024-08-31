@@ -302,6 +302,7 @@ onMounted(() => {
 				<img :class="{'spiner': playing,'bling2':!playing}" class="logo pointer" :src="playing?HoverXeyeSvg:XeyeSvg" />
 			</div>
 			<div>
+				<!-- <FileImportSelector icon="pi pi-download" :path="``" class="pointer ml-2" placeholder="Import" @saved="()=>{}"></FileImportSelector> -->
 			</div>
 			<div class="mt-4">
 				<Button v-if="!user" class="w-20rem" @click="goLogin">Login</Button>
