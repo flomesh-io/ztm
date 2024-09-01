@@ -534,7 +534,7 @@ onMounted(()=>{
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">
-									<b style="word-break: break-all;">
+									<b v-tooltip="file.name" class="multiline-ellipsis">
 										<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
 										{{ file.name }}
 									</b>
@@ -549,7 +549,7 @@ onMounted(()=>{
 					 			<div v-if="selectedFile" class="text-center pt-4 relative">
 					 				<img :src="fileIcon(selectedFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 					 				<div class="px-2 ">
-					 					<Button @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
+					 					<Button style="word-break: break-all;" class="max-w-16rem" @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
 					 				</div>
 					 			</div>
 					 			
