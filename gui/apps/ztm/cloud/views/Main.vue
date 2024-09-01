@@ -8,8 +8,8 @@ const visibleEditor = ref(false);
 const fileService = new FileService();
 const path = ref('');
 const selectedFile = ref();
-const loading = ref(false);
-const loader = ref(false);
+const loading = ref(true);
+const loader = ref(true);
 const error = ref();
 const files = ref([]);
 // [
@@ -92,7 +92,6 @@ const timmer = () => {
 	},3000)
 }
 onMounted(()=>{
-	loaddata();
 	timmer();
 })
 </script>
