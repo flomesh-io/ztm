@@ -272,7 +272,9 @@ const saveConfig = () => {
 	})
 }
 const selectDir = (dir) => {
-	config.value.localDir = dir;
+	if(!!dir){
+		config.value.localDir = dir;
+	}
 }
 const copyDir = () => {
 	copy(localDir.value)
@@ -456,7 +458,7 @@ onMounted(()=>{
 						<span v-if="hasTauri && !isMobile" class="opacity-40 mx-2">/</span>
 						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}/${current.path}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
 						<span v-if="hasTauri" class="opacity-40 mx-2">/</span>
-						<FileImportSelector icon="pi pi-download" v-if="hasTauri && current.path!='' && current.path!='users'" :path="`${localDir}/${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
+						<FileImportSelector icon="pi pi-plus" v-if="hasTauri && current.path!='' && current.path!='users'" :path="`${localDir}/${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 					</template>
 					<template #center>
 						<!-- <b>Files</b> -->
