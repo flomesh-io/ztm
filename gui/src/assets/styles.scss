@@ -838,6 +838,14 @@ pre.app-code code{
 	white-space: nowrap;
 	display: inline-block;
 }
+.multiline-ellipsis {
+	word-break: break-all;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 fieldset{
 	min-inline-size:auto;
 }
