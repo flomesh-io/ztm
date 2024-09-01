@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit, openFile } from '@/utils/file';
+import { checker, bitUnit, openFile, isMirror } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
@@ -25,11 +25,12 @@ const info = computed(() => {
 });
 
 const fileData = ref([]);
-const formatFile = (ary, pre) => {
-		props.files.forEach((file,idx)=>{
+const formatFile = (path, d, ary, pre) => {
+		d.forEach((file,idx)=>{
 			const _file = {
 				key:`${pre}${idx}`,
 				name:file,
+				path:`${path}`,
 				loading:false,
 				selected: false,
 				ext:file.charAt(file.length-1) == "/"?"/":file.split(".")[file.split(".").length-1]
@@ -45,7 +46,7 @@ const formatFile = (ary, pre) => {
 watch(()=>props.files,()=>{
 	fileData.value = [];
 	if(!!props.files && props.files.length>0){
-		formatFile(fileData.value,'');
+		formatFile(current.value.path, props.files, fileData.value,'');
 	}
 },{
 	deep:true,
@@ -68,45 +69,36 @@ const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 
 const emptyMsg = computed(()=>{
-	return 'No file.'
+	return 'Empty.'
 });
-const load = () => {
-	emits('load',currentPath.value)
-}
 
 const fileLoading = ref({})
-
-
 const onNodeExpand = (node) => {
-    if (node.ext == "/") {
-        node.loading = true;
-
-        setTimeout(() => {
-
-            node.children = [];
-
-						formatFile(node.children,`${node.key}-`);
-						node.loading = false;
-        }, 500);
-    }
+	if (node.ext == "/") {
+		node.loading = true;
+		node.children = []
+		let nextPath = '';
+		if(!!node.path){
+			nextPath = `${node.path}/${node.name.split("/")[0]}`
+		} else {
+			nextPath = node.name.split("/")[0];
+		}
+		fileService.getFiles(nextPath).then((res)=>{
+			formatFile(nextPath,res,node.children,`${node.key}-`);
+			node.loading = false;
+		})
+	}
 };
 
 const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
-const currentPath = ref('');
-const itemsBreadcrumb = ref([
-	{
-		name: 'Setting',
-		icon: 'pi pi-cog',
-		path: '',
-		index:0,
-	},
-	{
-		name: 'Root',
-		icon: 'pi pi-warehouse',
-		path: '',
-		index:1,
-	}
-]);
+const current = ref({
+	path:'',
+	name:''
+});
+const itemsBreadcrumb = ref([]);
+const load = () => {
+	emits('load',current.value?.path)
+}
 const back = () => {
 	if(window.parent){
 		window.parent.location.href="/#/mesh/apps";
@@ -118,22 +110,44 @@ const showBack = computed(()=>{
 	return platform() == 'ios' || platform() == 'android' || platform() == 'web'
 })
 const changePath = (item) => {
-	if(item.index+1 < itemsBreadcrumb.value.length){
-		itemsBreadcrumb.value.splice(item.index+1,itemsBreadcrumb.value.length-1-item.index)
+	if(item == 0){
+		current.value = {
+			path:'',
+			name:''
+		}
+		itemsBreadcrumb.value = [];
+	} else if(item == -1){
+		current.value = {
+			...itemsBreadcrumb.value[itemsBreadcrumb.value.length -1]
+		}
+		itemsBreadcrumb.value.splice(itemsBreadcrumb.value.length-1,1);
+	} else if(item.index+1 < itemsBreadcrumb.value.length){
+		current.value = {
+			...item
+		}
+		itemsBreadcrumb.value.splice(item.index,itemsBreadcrumb.value.length-item.index);
 	}
-	currentPath.value = item.path;
 	load();
 }
 const selectedFile = ref();
 const selectFile = (e, item) => {
 	if(item.ext == "/"){
 		const _name = item.name.split("/")[0];
-		currentPath.value = !!currentPath.value?`${currentPath.value}/${_name}`:_name;
-		itemsBreadcrumb.value.push({
-			name:_name,
-			path:currentPath.value,
-			index:itemsBreadcrumb.value.length
-		});
+		if(!!current.value?.path){
+			itemsBreadcrumb.value.push({
+				...current.value,
+				index:itemsBreadcrumb.value.length-1
+			});
+			current.value = {
+				path:`${current.value.path}/${_name}`,
+				name:_name
+			}
+		}else {
+			current.value = {
+				path:`${_name}`,
+				name:_name
+			}
+		}
 		
 		load();
 	} else if(!item.selected) {
@@ -201,7 +215,7 @@ const loadFileAttr = (item, unload) => {
 		attrLoading.value = true;
 	}
 	const _joinPath = [];
-	const _pre = currentPath.value;
+	const _pre = current.value?.path;
 	if(!!_pre){
 		_joinPath.push(_pre)
 	}
@@ -277,6 +291,8 @@ const getConfig = () => {
 					getConfig();
 				})
 			})
+		}else{
+			load();
 		}
 	})
 }
@@ -340,9 +356,72 @@ const doUploads = () => {
 		})
 	}
 }
-const fileIcon = computed(()=>(name)=>{
-	return checker(name, currentPath.value, mirrorPaths.value)
+const fileIcon = computed(()=>(name, path)=>{
+	return checker(name, path, mirrorPaths.value)
 })
+const toggleMirror = () => {
+	const _index = isMirror(current.value.path, mirrorPaths.value);
+	if(_index>-1){
+		mirrorPaths.value.splice(_index,1);
+	} else {
+		mirrorPaths.value.push(`/${current.value.path}`)
+	}
+	saveConfig();
+}
+const moreMenu = ref();
+const moreItems = computed(()=>{
+	
+	const actions = [
+		{
+				label: 'Back Root',
+				command(){
+					changePath(0)
+				}
+		}
+	];
+	if(isMirror(current.value.path, mirrorPaths.value)>-1){
+		actions.push({
+				label: 'Remove Mirror',
+				command(){
+					toggleMirror()
+				}
+		})
+	}else{
+		actions.push({
+				label: 'Set Mirror',
+				command(){
+					toggleMirror()
+				}
+		})
+	}
+	if(!!hasTauri.value){
+		actions.push({
+				label: 'Open Folder',
+				command(){
+					openFile(`${localDir.value}/${current.value.path}`)
+				}
+		})
+	}
+	if(selectedFiles.value.length>1){
+		actions.push({
+			label: 'Download',
+			command(){
+				doDownloads()
+			}
+		});
+		actions.push({
+			label: 'Upload',
+			command(){
+				doUploads()
+			}
+		});
+	}
+	return actions
+});
+
+const moreToggle = (event) => {
+    moreMenu.value.toggle(event);
+};
 onMounted(()=>{
 	getConfig();
 	
@@ -354,34 +433,46 @@ onMounted(()=>{
 		<div  class="relative h-full w-full" >
 			<AppHeader :child="true">
 					<template #start>
-						 <Breadcrumb v-if="props.mode != 'device'" :home="home" :model="itemsBreadcrumb">
+						
+						<Button v-if="showBack" @click="back" icon="pi pi-times" severity="secondary" text />
+						<span v-if="showBack" class="opacity-40 mx-2">/</span>
+						<Button @click="openSetting()" v-tooltip="'Setting'" icon="pi pi-cog" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
+						<span v-if="!isMobile" class="opacity-40 mx-2">/</span>
+						<Button v-if="!isMobile" @click="changePath(0)" v-tooltip="`Root:${localDir}`" icon="pi pi-warehouse" severity="secondary" text />
+						<span v-if="!!current.name" class="opacity-40 mx-2">/</span>
+						<Button v-if="!!current.name" @click="changePath(-1)" v-tooltip="`../`" icon="pi pi-arrow-left" severity="secondary" text />
+						<span class="opacity-40 mx-2" v-if="itemsBreadcrumb.length>0 && !isMobile">/</span>
+						<Breadcrumb v-if="itemsBreadcrumb.length>0 && !isMobile" :model="itemsBreadcrumb">
 								<template #item="{ item }">
-									<Button v-if="item.type=='home' && showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
-									<Button v-else-if="item.name == 'Setting'" @click="openSetting()" v-tooltip="item.name" :icon="item.icon" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
-									<Button v-else-if="item.name == 'Root'" @click="changePath(item)" v-tooltip="`${item.name}:${localDir}`" :icon="item.icon" severity="secondary" text />
-									<Button v-else-if="item.icon" @click="changePath(item)" v-tooltip="item.name" :icon="item.icon" severity="secondary" text />
+									<Button v-if="item.icon" @click="changePath(item)" v-tooltip="item.name" :icon="item.icon" severity="secondary" text />
 									<Button v-else @click="changePath(item)" :label="item.name" severity="secondary" text />
 								</template>
 								<template #separator> / </template>
 						</Breadcrumb>
-						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
-						<Button v-if="hasTauri" @click="openFile(`${localDir}/${currentPath}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
-						<span v-if="hasTauri" class="text-black-alpha-40 mx-2">/</span>
-						<FileImportSelector icon="pi pi-download" v-if="hasTauri && currentPath!='' && currentPath!='users'" :path="`${localDir}/${currentPath}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
+						<span v-if="!!current.name && !isMobile" class="opacity-40 mx-2">/</span>
+						<Button v-if="!!current.name && !isMobile" class="font-bold" @click="load" v-tooltip="current.path" :label="current.name" severity="primary" text />
+						<span v-if="!isMobile" class="opacity-40 mx-2">/</span>
+						<Button v-if="!isMobile" @click="toggleMirror()" v-tooltip="isMirror(current.path, mirrorPaths)>-1?'Remove Mirror':'Set Mirror'" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" severity="secondary" text />
+						<span v-if="hasTauri && !isMobile" class="opacity-40 mx-2">/</span>
+						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}/${current.path}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
+						<span v-if="hasTauri" class="opacity-40 mx-2">/</span>
+						<FileImportSelector icon="pi pi-download" v-if="hasTauri && current.path!='' && current.path!='users'" :path="`${localDir}/${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 					</template>
 					<template #center>
 						<!-- <b>Files</b> -->
 					</template>
 					<template #end> 
-						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
-						<Button v-if="selectedFiles.length>1" label="Upload" text @click="doUploads" />
-						<Button v-if="selectedFiles.length>1" text label="Download" @click="doDownloads" />
+						<Button v-if="!isMobile" icon="pi pi-refresh" text @click="load"  :loading="loader"/>
 						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
-							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-sync pi-spin'"/>
+							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
+						</Button>
+						<Button @click="moreToggle" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
+							<i class="pi pi-ellipsis-v"/>
 						</Button>
 					</template>
 			</AppHeader>
+			<Menu ref="moreMenu" id="more_menu" :model="moreItems" :popup="true" />
 			<Popover ref="op" >
 				<div class="flex w-full pt-4">
 					<FloatLabel>
@@ -427,8 +518,8 @@ onMounted(()=>{
 				<TreeTable v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column field="name" header="Name" expander style="min-width: 12rem">
 								<template  #body="slotProps">
-									<div class="selector pointer "   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
-										<img :src="fileIcon(slotProps.node.name)" class="relative vertical-align-middle" width="20" height="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+									<div class="selector pointer"   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
+										<img :src="fileIcon(slotProps.node.name,slotProps.node.path)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 										<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
 									</div>
 								</template>
@@ -437,7 +528,7 @@ onMounted(()=>{
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
-								<img :src="fileIcon(file.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<img :src="fileIcon(file.name,current.path)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">

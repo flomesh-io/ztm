@@ -41,17 +41,9 @@ const ext = {
 	"7z": zip,
 };
 const checker = (name, path, mirrorPaths) => {
-	const _mirrorPaths = [];
-	if(!!mirrorPaths){
-		mirrorPaths.forEach((mirrorPath)=>{
-			if(!!mirrorPath){
-				_mirrorPaths.push(mirrorPath.replace(/^\//, ''))
-			}
-		})
-	}
-	if(!!name && name.charAt(name.length-1) == "/" && !!_mirrorPaths && _mirrorPaths.find((_mirrorPath)=>_mirrorPath==`${path}/${name.split('/')[0]}`)){
+	if(!!name && name.charAt(name.length-1) == "/" && isMirror(`${path}/${name.split('/')[0]}`,mirrorPaths)>-1){
 		return ext.mirror;
-	}else if((path=="" || path== 'users') && name.indexOf(".")==-1){
+	}else if((name=="users/" || path== 'users') && name.indexOf(".")==-1){
 		return ext.userfolder;
 	} else if(!!name && name.charAt(name.length-1) == "/"){
 		return ext.folder;
@@ -64,7 +56,21 @@ const checker = (name, path, mirrorPaths) => {
 		return ext.default;
 	}
 }
-
+const isMirror = (path, mirrorPaths) => {
+	const _mirrorPaths = [];
+	if(!!mirrorPaths){
+		mirrorPaths.forEach((mirrorPath)=>{
+			if(!!mirrorPath){
+				_mirrorPaths.push(mirrorPath.replace(/^\//, ''))
+			}
+		})
+	};
+	if(!!_mirrorPaths){
+		return _mirrorPaths.findIndex((_mirrorPath)=>_mirrorPath==path)
+	} else {
+		return -1
+	}
+}
 const bitUnit = (value)=> {
 	if(value>(1024 * 1024 * 1024)){
 		return (value/(1024 * 1024 * 1024)).toFixed(0) + "GB";
@@ -84,5 +90,5 @@ const saveFile = () => {
 	
 }
 export {
-	ext, checker, bitUnit, openFile
+	ext, checker, bitUnit, openFile, isMirror
 };
