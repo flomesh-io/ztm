@@ -462,7 +462,7 @@ onMounted(()=>{
 						<!-- <b>Files</b> -->
 					</template>
 					<template #end> 
-						<Button v-if="!isMobile" icon="pi pi-refresh" text @click="load"  :loading="loader"/>
+						<!-- <Button v-if="!isMobile" icon="pi pi-refresh" text @click="load"  :loading="loader"/> -->
 						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
 							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
