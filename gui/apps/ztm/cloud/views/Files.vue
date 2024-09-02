@@ -38,8 +38,11 @@ const formatFile = (path, d, ary, pre) => {
 			if(_file.ext == "/"){
 				_file.children = [];
 				_file.leaf = false;
+				ary.push(_file);
+			} else {
+				ary.push(_file);
+				loadFileAttr(_file, true, true);
 			}
-			ary.push(_file);
 		})
 }
 
@@ -54,9 +57,31 @@ watch(()=>props.files,()=>{
 });
 
 const filesFilter = computed(() => {
-	return fileData.value.filter((file)=>{
+	let rtn = fileData.value.filter((file)=>{
 		return (typing.value == '' || file.name.indexOf(typing.value)>=0 ) 
-	})
+	});
+	if(!!sortField.value && (sortOrder.value ==1 || sortOrder.value==-1)){
+		if(['state'].includes(sortField.value)){
+			rtn.sort((a,b)=>{
+				const va = detailData.value[`/${a.path}/${a.name}`]?detailData.value[`/${a.path}/${a.name}`][sortField.value]:'';
+				const vb = detailData.value[`/${b.path}/${b.name}`]?detailData.value[`/${b.path}/${b.name}`][sortField.value]:'';
+				return vb.localeCompare(va) * sortOrder.value
+			})
+		} else if(['time','size'].includes(sortField.value)){
+			rtn.sort((a,b)=>{
+				const va = detailData.value[`/${a.path}/${a.name}`]?detailData.value[`/${a.path}/${a.name}`][sortField.value]:0;
+				const vb = detailData.value[`/${b.path}/${b.name}`]?detailData.value[`/${b.path}/${b.name}`][sortField.value]:0;
+				return (va-vb) * sortOrder.value
+			})
+		} else {
+			rtn.sort((a,b)=>{
+				const va = a[sortField.value]||'';
+				const vb = b[sortField.value]||'';
+				return vb.localeCompare(va) * sortOrder.value
+			})
+		}
+	}
+	return rtn
 });
 const visible = ref(false);
 const typing = ref('');
@@ -210,21 +235,29 @@ const actions = computed(()=>{
 	]
 })
 const attrLoading = ref(false);
-const loadFileAttr = (item, unload) => {
+const detailData = ref({});
+const loadFileAttr = (item, unload, detailload) => {
 	if(!unload){
 		attrLoading.value = true;
 	}
 	const _joinPath = [];
-	const _pre = current.value?.path;
+	const _pre = item?.path || current.value?.path;
 	if(!!_pre){
 		_joinPath.push(_pre)
 	}
 	_joinPath.push(item.name);
 	fileService.getFiles(_joinPath.join("/")).then((res)=>{
 		attrLoading.value = false;
-		selectedFile.value = {
-			...item,
-			...res,
+		if(detailload){
+			detailData.value[res.path] = {
+				...item,
+				...res,
+			}
+		} else {
+			selectedFile.value = {
+				...item,
+				...res,
+			}
 		}
 		if(!!res.downloading || !!res.uploading){
 			setTimeout(()=>{
@@ -280,7 +313,7 @@ const copyDir = () => {
 	copy(localDir.value)
 }
 
-const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const hasTauri = ref(!!window.__TAURI_INTERNALS__ || true);
 const getConfig = () => {
 	fileService.getConfig(info.value?.endpoint?.id).then((res)=>{
 		config.value = res;
@@ -362,6 +395,7 @@ const fileIcon = computed(()=>(name, path)=>{
 	return checker(name, path, mirrorPaths.value)
 })
 const toggleMirror = () => {
+	
 	const _index = isMirror(current.value.path, mirrorPaths.value);
 	if(_index>-1){
 		mirrorPaths.value.splice(_index,1);
@@ -424,6 +458,21 @@ const moreItems = computed(()=>{
 const moreToggle = (event) => {
     moreMenu.value.toggle(event);
 };
+const stateColor = ref({
+	new:'warn',
+	changed:'warn',
+	synced:'success',
+	missing: 'secondary',
+	outdated: 'secondary'
+})
+const sortField = ref();
+const sortOrder = ref();
+const searchSort = (e)=>{
+	if(e){
+		sortField.value = e.sortField;
+		sortOrder.value = e.sortOrder;
+	}
+}
 onMounted(()=>{
 	getConfig();
 	
@@ -453,24 +502,21 @@ onMounted(()=>{
 						</Breadcrumb>
 						<span v-if="!!current.name && !isMobile" class="opacity-40 mx-2">/</span>
 						<Button v-if="!!current.name && !isMobile" class="font-bold" @click="load" v-tooltip="current.path" :label="current.name" severity="primary" text />
-						<span v-if="!isMobile" class="opacity-40 mx-2">/</span>
-						<Button v-if="!isMobile" @click="toggleMirror()" v-tooltip="isMirror(current.path, mirrorPaths)>-1?'Remove Mirror':'Set Mirror'" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" severity="secondary" text />
-						<span v-if="hasTauri && !isMobile" class="opacity-40 mx-2">/</span>
-						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}/${current.path}`)" v-tooltip="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
-						<span v-if="hasTauri" class="opacity-40 mx-2">/</span>
-						<FileImportSelector icon="pi pi-plus" v-if="hasTauri && current.path!='' && current.path!='users'" :path="`${localDir}/${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
+						
 					</template>
 					<template #center>
 						<!-- <b>Files</b> -->
 					</template>
 					<template #end> 
+						<Button v-if="!isMobile" @click="toggleMirror()" v-tooltip.bottom="isMirror(current.path, mirrorPaths)>-1?'Remove Mirror':'Set Mirror'" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" :severity="isMirror(current.path, mirrorPaths)>-1?'primary':'secondary'" text />
+						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}/${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
+						<FileImportSelector icon="pi pi-plus" v-if="hasTauri && current.path!='' && current.path!='users'" :path="`${localDir}/${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 						<!-- <Button v-if="!isMobile" icon="pi pi-refresh" text @click="load"  :loading="loader"/> -->
 						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
 							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
 						</Button>
-						<Button @click="moreToggle" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
-							<i class="pi pi-ellipsis-v"/>
+						<Button icon="pi pi-ellipsis-v" @click="moreToggle" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
 						</Button>
 					</template>
 			</AppHeader>
@@ -484,7 +530,7 @@ onMounted(()=>{
 					<Button v-tooltip="'Copy'" size="small" :disabled="!localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
 					<FileFolderSelector v-if="hasTauri" :path="localDir" class="pointer ml-2" placeholder="Choose" @select="selectDir"></FileFolderSelector>
 				</div>
-				<div class="flex w-full">
+				<!-- <div class="flex w-full">
 					<InputList
 						class="w-full mt-5"
 						itemClass="input_pannel"
@@ -500,7 +546,7 @@ onMounted(()=>{
 								</FloatLabel>
 						</template>
 					</InputList>
-				</div>
+				</div> -->
 				<div class="flex w-full mt-3">
 					<Button class="w-full" label="Apply" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
 				</div>
@@ -517,8 +563,8 @@ onMounted(()=>{
 			<Loading v-if="props.loading"/>
 			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="filesFilter && filesFilter.length >0">
 			<div class="text-center" >
-				<TreeTable v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
-						<Column field="name" header="Name" expander style="min-width: 12rem">
+				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
+						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
 									<div class="selector pointer"   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
 										<img :src="fileIcon(slotProps.node.name,slotProps.node.path)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
@@ -526,6 +572,24 @@ onMounted(()=>{
 									</div>
 								</template>
 						</Column>
+						<Column field="state" header="State"  sortable>
+								<template  #body="slotProps">
+									<Tag :severity="stateColor[detailData[`/${slotProps.node.path}/${slotProps.node.name}`].state]" class="py-0 px-1" v-if="!!detailData[`/${slotProps.node.path}/${slotProps.node.name}`]">{{ detailData[`/${slotProps.node.path}/${slotProps.node.name}`].state }}</Tag>
+								</template>
+						</Column>
+						<Column field="size" header="Size"  sortable>
+							<template  #body="slotProps">
+								<div class="text-sm opacity-60" v-if="detailData[`/${slotProps.node.path}/${slotProps.node.name}`]?.size">{{bitUnit(detailData[`/${slotProps.node.path}/${slotProps.node.name}`].size)}}</div>
+							</template>
+						</Column>
+						<Column v-if="!isMobile" field="time" header="Time" style="min-width: 12rem" sortable>
+							<template  #body="slotProps">
+								<div class="text-sm opacity-60" v-if="detailData[`/${slotProps.node.path}/${slotProps.node.name}`]?.time">
+									{{new Date(detailData[`/${slotProps.node.path}/${slotProps.node.name}`].time).toLocaleString()}}
+								</div>
+							</template>
+						</Column>
+						
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
@@ -539,6 +603,9 @@ onMounted(()=>{
 										{{ file.name }}
 									</b>
 								</div>
+								<Tag :severity="stateColor[detailData[`/${file.path}/${file.name}`].state]" class="py-0 px-1 mt-2" v-if="!!detailData[`/${file.path}/${file.name}`]">{{ detailData[`/${file.path}/${file.name}`].state }}</Tag>
+								<div class="text-sm opacity-60 mt-1" v-if="detailData[`/${file.path}/${file.name}`]">{{bitUnit(detailData[`/${file.path}/${file.name}`].size)}}</div>
+								
 							</div>
 					 </div>
 				</div>
@@ -563,7 +630,7 @@ onMounted(()=>{
 					             <span>{{ item.label }}</span>
 					             <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 					             <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-					 							<Tag v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
+					 							<Tag :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
 					 							<span v-else>{{ item.shortcut }}</span>
 					 						</span>
 					         </a>
