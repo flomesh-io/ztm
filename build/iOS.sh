@@ -62,6 +62,15 @@ if [ ! -d $ZTM_DIR/usr/local/lib ]; then
   mkdir -p $ZTM_DIR/usr/local/lib
 fi
 
-cp Release-iphoneos/libpipy.a $ZTM_DIR/usr/local/lib/ && \
-  echo "The libpipy.a is ready at $ZTM_DIR/usr/local/lib/libpipy.a"
-popd
+# copy all dependencies
+echo "Copy deps"
+find deps -name 'lib*.a' | xargs -I{} cp -v {} $ZTM_DIR/usr/local/lib
+echo "Copy libpipy.a"
+cp -v Release-iphoneos/libpipy.a $ZTM_DIR/usr/local/lib/
+popd # to $ZTM_DIR/pipy
+
+echo "Copy libssl"
+find "${LIBSSL_PATH}" -name 'lib*.a' | xargs -I{} cp -v {} $ZTM_DIR/usr/local/lib
+
+echo "The libs are ready at $ZTM_DIR/usr/local/lib"
+ls -l $ZTM_DIR/usr/local/lib
