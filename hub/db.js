@@ -26,6 +26,14 @@ function open(pathname) {
       since REAL NOT NULL
     )
   `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS acl (
+      path TEXT PRIMARY KEY,
+      access TEXT NOT NULL,
+      since REAL NOT NULL
+    )
+  `)
 }
 
 function getCert(name) {
@@ -129,6 +137,53 @@ function setFile(pathname, file) {
   }
 }
 
+function recordToACL(rec) {
+  try {
+    var access = JSON.parse(rec.access)
+  } catch {
+    var access = {}
+  }
+  return {
+    pathname: rec.path,
+    access,
+    since: rec.since,
+  }
+}
+
+function allACL() {
+  return (
+    db.sql('SELECT * FROM acl')
+      .exec()
+      .map(recordToACL)
+  )
+}
+
+function getACL(pathname) {
+  return (
+    db.sql('SELECT * FROM acl WHERE path = ?')
+      .bind(1, pathname)
+      .exec()
+      .map(recordToACL)[0]
+  )
+}
+
+function setACL(pathname, access, since) {
+  var obj = getACL(pathname)
+  if (obj) {
+    db.sql('UPDATE acl SET access = ?, since = ? WHERE path = ?')
+      .bind(1, JSON.stringify(access))
+      .bind(2, since)
+      .bind(3, pathname)
+      .exec()
+  } else {
+    db.sql('INSERT INTO acl(path, access, since) VALUES(?, ?, ?)')
+      .bind(1, pathname)
+      .bind(2, JSON.stringify(access))
+      .bind(3, since)
+      .exec()
+  }
+}
+
 export default {
   open,
   getCert,
@@ -140,4 +195,7 @@ export default {
   allFiles,
   getFile,
   setFile,
+  allACL,
+  getACL,
+  setACL,
 }
