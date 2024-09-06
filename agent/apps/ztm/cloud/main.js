@@ -81,6 +81,20 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/acl/*': {
+      'GET': responder(
+        params => api.getACL(params['*']).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      ),
+
+      'POST': responder(
+        (params, req) => api.setACL(params['*'], JSON.decode(req.body)).then(
+          ret => response(ret ? 201 : 404)
+        )
+      ),
+    },
+
     '/api/downloads': {
       'GET': responder(
         () => api.listDownloads().then(

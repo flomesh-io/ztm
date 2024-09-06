@@ -44,6 +44,14 @@ var routes = Object.entries({
     'GET': () => getFileInfo,
   },
 
+  '/api/acl': {
+    'POST': () => findCurrentEndpointSession() ? postACL : noSession,
+  },
+
+  '/api/acl/*': {
+    'GET': () => checkACL,
+  },
+
   '/api/forward/{ep}/*': {
     'GET': () => forwardRequest,
     'POST': () => forwardRequest,
@@ -90,6 +98,22 @@ var sessions = {}
 //
 
 var files = {}
+
+//
+// acl[username] = [
+//   {
+//     pathname: '/apps/x/y/shared/z/a/b/c',
+//     prefix: '/apps/x/y/shared/z/a/b/c/',
+//     all: null | 'readonly' | 'block',
+//     users: {
+//       [username]: 'readonly' | 'block',
+//     },
+//     since: 1789012345678,
+//   }
+// ]
+//
+
+var acl = {}
 
 var caCert = null
 var myCert = null
@@ -188,6 +212,30 @@ function start(listen) {
   db.allFiles().forEach(f => {
     files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.since)
   })
+
+  var matchAppShared1 = new http.Match('/apps/{provider}/{appname}/shared/{username}')
+  var matchAppShared2 = new http.Match('/apps/{provider}/{appname}/shared/{username}/*')
+
+  db.allACL().forEach(a => {
+    var pathname = a.pathname
+    var params = matchAppShared1(pathname) || matchAppShared2(pathname)
+    if (params) {
+      var username = params.username
+      var access = makeACL(pathname, a.access, a.since)
+      if (access) {
+        (acl[username] ??= {})[pathname] = access
+      }
+    }
+  })
+
+  acl = Object.fromEntries(
+    Object.entries(acl).map(
+      ([username, accessByPath]) => [
+        username,
+        Object.keys(accessByPath).sort().map(k => accessByPath[k])
+      ]
+    )
+  )
 
   pipy.listen(listen, $=>$
     .onStart(
@@ -327,6 +375,7 @@ var getFilesystem = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function (req) {
+      var isAccessible = makeAccessChecker($ctx.username)
       var url = new URL(req.head.path)
       var since = url.searchParams.get('since')
       if (since) {
@@ -335,9 +384,9 @@ var getFilesystem = pipeline($=>$
         return new Timeout(1.5).wait().then(
           () => response(200, Object.fromEntries(
             Object.entries(files).filter(
-              ([_, v]) => {
+              ([k, v]) => {
                 var t = v['+']
-                return since < t && t <= until
+                return since < t && t <= until && isAccessible(k)
               }
             ).map(
               ([k, v]) => [
@@ -354,7 +403,7 @@ var getFilesystem = pipeline($=>$
       } else {
         return response(200, Object.fromEntries(
           Object.entries(files).filter(
-            ([_, v]) => (v['$'] >= 0)
+            ([k, v]) => (v['$'] >= 0 && isAccessible(k))
           ).map(
             ([k, v]) => [
               k, {
@@ -375,20 +424,60 @@ var postFilesystem = pipeline($=>$
     function (req) {
       var body = JSON.decode(req.body)
       var username = $endpoint.username
-      var prefixUser = `/users/${username}/`
-      var prefixShared = `/shared/${username}`
-      var matchAppUser = new http.Match(`/apps/{provider}/{appname}/users/${username}/*`)
-      var matchAppShared = new http.Match(`/apps/{provider}/{appname}/shared/${username}/*`)
-      var canUpdate = (path) => (
-        path.startsWith(prefixUser) ||
-        path.startsWith(prefixShared) ||
-        matchAppUser(path) ||
-        matchAppShared(path)
-      )
-      Object.entries(body).map(
-        ([k, v]) => updateFileInfo(k, v, $endpoint.id, canUpdate(k))
+      var isOwned = makeOwnerChecker(username)
+      var isAccessible = makeAccessChecker(username)
+      Object.entries(body).forEach(
+        ([path, info]) => {
+          if (isAccessible(path)) {
+            updateFileInfo(path, info, $endpoint.id, isOwned(path))
+          }
+        }
       )
       return new Message({ status: 201 })
+    }
+  )
+)
+
+var postACL = pipeline($=>$
+  .replaceMessage(
+    function (req) {
+      var body = JSON.decode(req.body)
+      var username = $endpoint.username
+      var matchAppSharedRoot = new http.Match(`/apps/{provider}/{appname}/shared/${username}`)
+      var matchAppSharedPath = new http.Match(`/apps/{provider}/{appname}/shared/${username}/*`)
+      var accessByPath = Object.fromEntries((acl[username] || []).map(
+        data => [data.pathname, data]
+      ))
+      Object.entries(body).forEach(
+        ([k, v]) => {
+          if (!k.startsWith('/apps/')) return
+          if (!matchAppSharedRoot(k) && !matchAppSharedPath(k)) return
+          if (typeof v !== 'object') return
+          var access = { all: v.all, users: v.users }
+          var since = v.since
+          var data = makeACL(k, access, since)
+          if (data) {
+            var last = accessByPath[k]
+            if (!last || last.since < since) {
+              accessByPath[k] = data
+              db.setACL(k, access, since)
+            }
+          }
+        }
+      )
+      acl[username] = Object.keys(accessByPath).sort().map(k => accessByPath[k])
+      return new Message({ status: 201 })
+    }
+  )
+)
+
+var checkACL = pipeline($=>$
+  .replaceMessage(
+    function (req) {
+      var url = new URL(req.head.path)
+      var username = url.searchParams.get('username') || $ctx.username
+      username = username ? URL.decodeComponent(username) : $ctx.username
+      return response(makeAccessChecker(username)('/' + $params['*']) ? 200 : 403)
     }
   )
 )
@@ -398,6 +487,7 @@ var getFileInfo = pipeline($=>$
   .replaceMessage(
     function () {
       var pathname = '/' + $params['*']
+      if (!makeAccessChecker($ctx.username)(pathname)) return response(404)
       var info = files[pathname]
       if (!info || info['$'] < 0) return response(404)
       var sources = info['@']
@@ -587,6 +677,20 @@ function findCurrentEndpointSession() {
   return true
 }
 
+function makeACL(pathname, access, since) {
+  if (typeof access !== 'object') return
+  if (typeof access.all !== 'string' && access.all !== null) return
+  if (typeof access.users !== 'object') return
+  if (typeof since !== 'number') return
+  return {
+    pathname,
+    prefix: pathname + '/',
+    since,
+    all: access.all,
+    users: access.users,
+  }
+}
+
 function makeFileInfo(hash, size, time, since) {
   return {
     '#': hash,
@@ -630,6 +734,46 @@ function updateFileInfo(pathname, f, ep, update) {
 
 function canOperate(username, ep) {
   return (username === ep.username)
+}
+
+function makeOwnerChecker(username) {
+  var prefixUser = `/users/${username}/`
+  var prefixShared = `/shared/${username}/`
+  var matchAppUser = new http.Match(`/apps/{provider}/{appname}/users/${username}/*`)
+  var matchAppShared = new http.Match(`/apps/{provider}/{appname}/shared/${username}/*`)
+  return (path) => (
+    path.startsWith(prefixUser) ||
+    path.startsWith(prefixShared) ||
+    matchAppUser(path) ||
+    matchAppShared(path)
+  )
+}
+
+function makeAccessChecker(username) {
+  var prefixUser = `/users/${username}/`
+  var prefixShared = `/shared/`
+  var matchAppUser = new http.Match(`/apps/{provider}/{appname}/users/${username}/*`)
+  var matchAppShared = new http.Match(`/apps/{provider}/{appname}/shared/{username}/*`)
+  return (path) => {
+    if (path.startsWith(prefixUser)) return true
+    if (path.startsWith(prefixShared)) return true
+    if (matchAppUser(path)) return true
+    var params = matchAppShared(path)
+    if (!params) return false
+    var owner = params.username
+    if (owner === username) return true
+    var accessible = true
+    acl[owner]?.forEach?.(access => {
+      if (!access.all && !access.users) return
+      if (path === access.pathname || path.startsWith(access.prefix)) {
+        switch (access.users?.[username] || access.all) {
+          case 'block': accessible = false; break
+          case 'readonly': accessible = true; break
+        }
+      }
+    })
+    return accessible
+  }
 }
 
 function response(status, body) {

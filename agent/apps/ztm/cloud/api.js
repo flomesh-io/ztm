@@ -37,13 +37,13 @@ var DOWNLOAD_CONCURRENCY = 5
 //       }
 //   /shared/<username>/hash/
 //     /<hash>
-//       content is the filename
+//       content is the hash too
 //   /users/<username>/acl/
 //     /<dirname>
 //       {
-//         all: "readonly|block",
+//         all: null | "readonly" | "block",
 //         users: {
-//           [username]: "readonly|block",
+//           [username]: "readonly" | "block",
 //         },
 //       }
 //
@@ -54,6 +54,8 @@ export default function ({ app, mesh }) {
 
   applyConfig()
   watchMirrors()
+
+  mesh.acl(`/shared/${app.username}/stat`, { all: 'block' })
 
   function applyConfig() {
     return getLocalConfig().then(
@@ -154,7 +156,7 @@ export default function ({ app, mesh }) {
 
   var matchPathUser = new http.Match('/users/{username}')
   var matchPathUserFile = new http.Match('/users/{username}/*')
-  var matchPathChunk = new http.Match('/api/chunks/*')
+  var matchPathChunk = new http.Match('/api/chunks/users/{username}/*')
 
   var downloadQueue = []
   var downloadFiles = {}
@@ -218,7 +220,7 @@ export default function ({ app, mesh }) {
         return new StreamEnd
       })
     ).spawn().then(() => {
-      if (!downloaded) return
+      if (!downloaded) return '' // no hash
       os.write(outputPath, downloaded)
       var hasher = new crypto.Hash('sha256')
       return pipy.read(outputPath, $=>$
@@ -247,7 +249,7 @@ export default function ({ app, mesh }) {
         return getFileStatByUser(params.username, params['*'])
       }).then(stat => {
         if (stat.hash === f.hash) {
-          mesh.write(os.path.join('/shared', params.username, 'hash', stat.hash), filename)
+          mesh.write(os.path.join('/shared', params.username, 'hash', stat.hash), stat.hash)
         }
         next()
       })
@@ -350,9 +352,10 @@ export default function ({ app, mesh }) {
       getLocalStat(username, filename),
       mesh.read(os.path.join('/shared', username, 'stat', filename)).then(
         data => data ? JSON.decode(data) : getMeshDir(username, filename)
-      )
+      ),
+      getACL(os.path.join('/users', username, filename))
     ]).then(
-      ([statEndp, statMesh]) => {
+      ([statEndp, statMesh, access]) => {
         if (statEndp instanceof Array) {
           if (statMesh instanceof Array) {
             var s = new Set
@@ -420,10 +423,46 @@ export default function ({ app, mesh }) {
           stat.downloading = (n - f.counter) / n
         }
         return mesh.stat(os.path.join('/shared', username, 'hash', hash)).then(
-          s => ({ ...stat, sources: s?.sources || [] })
+          s => ({ ...stat, sources: s?.sources || [], access })
         )
       }
     )
+  }
+
+  function getACL(pathname) {
+    pathname = os.path.normalize(pathname)
+    var params = matchPathUserFile(pathname)
+    if (!params) return Promise.resolve(null)
+    var username = params.username
+    var filename = params['*']
+    if (username !== app.username) return null
+    return mesh.read(`/users/${username}/acl/${filename}`).then(
+      data => {
+        try {
+          return JSON.decode(data)
+        } catch {
+          return null
+        }
+      }
+    )
+  }
+
+  function setACL(pathname, acl) {
+    pathname = os.path.normalize(pathname)
+    var params = matchPathUserFile(pathname)
+    if (!params) return Promise.resolve(false)
+    var username = params.username
+    var filename = params['*']
+    if (username !== app.username) return false
+    var data = {
+      all: acl.all || null,
+      users: acl.users || null,
+    }
+    return mesh.write(
+      `/users/${username}/acl/${filename}`, JSON.encode(data)
+    ).then(
+      () => mesh.acl(`/shared/${username}/stat/${filename}`, data)
+    ).then(data)
   }
 
   function listDownloads() {
@@ -500,7 +539,7 @@ export default function ({ app, mesh }) {
         var statData = JSON.encode(stat)
         Promise.all([
           mesh.write(os.path.join('/shared', username, 'stat', filename), statData),
-          mesh.write(os.path.join('/shared', username, 'hash', stat.hash), pathname),
+          mesh.write(os.path.join('/shared', username, 'hash', stat.hash), stat.hash),
         ]).then(() => {
           delete uploadFiles[pathname]
           return true
@@ -571,20 +610,34 @@ export default function ({ app, mesh }) {
   }
 
   var $ctx
+  var $filename
 
   var serveChunk = pipeline($=>$
     .onStart(c => { $ctx = c })
+    .handleMessageStart(
+      function (req) {
+        var params = matchPathChunk(req.head.path)
+        if (!params) return
+        var username = params.username
+        var filename = params['*']
+        return mesh.access(os.path.join('/shared', username, 'stat', filename), $ctx.peer.username).then(
+          ret => {
+            if (ret) {
+              $filename = os.path.join('/users', username, filename)
+            }
+          }
+        )
+      }
+    )
     .pipe(
       function (req) {
         if (req instanceof MessageStart) {
-          var params = matchPathChunk(req.head.path)
-          if (!params) return serveChunkReject
+          if (!$filename) return serveChunkReject
           var url = new URL(req.head.path)
           var chunkNum = url.searchParams.get('chunk')
           if (!chunkNum) return serveChunkReject
-          var filename = '/' + params['*']
-          if (!matchPathUserFile(filename)) return serveChunkReject
-          var path = os.path.join(localDir, filename)
+          if (!matchPathUserFile($filename)) return serveChunkReject
+          var path = os.path.join(localDir, $filename)
           var seek = Number.parseInt(chunkNum) * CHUNK_SIZE
           return pipeline($=>$
             .read(path, { seek, size: CHUNK_SIZE })
@@ -606,6 +659,8 @@ export default function ({ app, mesh }) {
     getEndpointConfig,
     setEndpointConfig,
     getFileStat,
+    getACL,
+    setACL,
     listDownloads,
     listUploads,
     downloadFile,

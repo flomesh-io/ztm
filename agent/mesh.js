@@ -13,6 +13,7 @@ export default function (rootDir, config) {
   var fs = null
   var fsWatchers = []
   var fsLastChangeTime = Date.now()
+  var acl = {}
   var apps = null
   var exited = false
 
@@ -124,6 +125,7 @@ export default function (rootDir, config) {
                 meshErrors.length = 0
                 connections.add(conn)
                 advertiseFilesystem(filesystemLatest)
+                advertiseACL(aclLatest)
               } else if (conn.state === 'closed') {
                 logInfo(`Connection to hub ${address} closed`)
                 connections.delete(conn)
@@ -205,6 +207,45 @@ export default function (rootDir, config) {
       })
     }
 
+    // Start advertising ACL
+    var aclLatest = null
+    var aclUpdate = null
+    var aclSending = null
+    sendACLUpdate()
+
+    function sendACLUpdate() {
+      if (closed) return
+      new Timeout(1).wait().then(() => {
+        if (aclUpdate) {
+          aclSending = aclUpdate
+          aclUpdate = null
+        }
+        if (aclSending) {
+          var size = Object.keys(aclSending).length
+          logInfo(`Sending ACL to ${address} (size = ${size})...`)
+          requestHub.spawn(
+            new Message(
+              {
+                method: 'POST',
+                path: '/api/acl',
+              },
+              JSON.encode(aclSending)
+            )
+          ).then(res => {
+            if (res && res.head.status === 201) {
+              logInfo(`Sent ACL to ${address} (size = ${size})`)
+              aclSending = null
+            } else {
+              logError(`Unable to send ACL to ${address} (status = ${res?.head?.status})`)
+            }
+            sendACLUpdate()
+          })
+        } else {
+          sendACLUpdate()
+        }
+      })
+    }
+
     function heartbeat() {
       if (closed) return
       requestHub.spawn(
@@ -218,6 +259,20 @@ export default function (rootDir, config) {
     function advertiseFilesystem(files) {
       filesystemLatest = files
       filesystemUpdate = files
+    }
+
+    function advertiseACL(acl) {
+      aclLatest = acl
+      aclUpdate = acl
+    }
+
+    function checkACL(pathname, user) {
+      user = URL.encodeComponent(user)
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: os.path.join('/api/acl', pathname) + `?username=${user}` })
+      ).then(
+        res => (res?.head?.status === 200)
+      )
     }
 
     function discoverEndpoints() {
@@ -334,6 +389,8 @@ export default function (rootDir, config) {
       address,
       heartbeat,
       advertiseFilesystem,
+      advertiseACL,
+      checkACL,
       discoverEndpoints,
       discoverFiles,
       issuePermit,
@@ -998,6 +1055,19 @@ export default function (rootDir, config) {
     }
   }
 
+  function setACL(pathname, access) {
+    acl[pathname] = {
+      all: access.all || '',
+      users: access.users || null,
+      since: Date.now(),
+    }
+    hubs[0].advertiseACL(acl)
+  }
+
+  function checkACL(pathname, username) {
+    return hubs[0].checkACL(pathname, username)
+  }
+
   function downloadFile(ep, hash) {
     return selectHubWithThrow(ep).then(
       (hub) => httpAgents.get(hub).request(
@@ -1241,6 +1311,35 @@ export default function (rootDir, config) {
       }
     }
 
+    function acl(pathname, access) {
+      var path = os.path.normalize(pathname)
+      if (path.startsWith(pathLocal)) {
+        return Promise.resolve(false)
+      } else {
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          setACL(globalPath, access)
+          return Promise.resolve(true)
+        } else {
+          return Promise.resolve(false)
+        }
+      }
+    }
+
+    function access(pathname, user) {
+      var path = os.path.normalize(pathname)
+      if (path.startsWith(pathLocal)) {
+        return Promise.resolve(true)
+      } else {
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          return checkACL(globalPath, user || username)
+        } else {
+          return Promise.resolve(false)
+        }
+      }
+    }
+
     function watch(prefix) {
       if (!prefix.endsWith('/')) prefix += '/'
       var globalPath = pathToGlobal(prefix)
@@ -1251,7 +1350,7 @@ export default function (rootDir, config) {
       }
     }
 
-    return { dir, read, write, erase, stat, watch }
+    return { dir, read, write, erase, stat, acl, access, watch }
   }
 
   function remoteQueryLog(ep) {
@@ -1360,6 +1459,8 @@ export default function (rootDir, config) {
     stopApp,
     dumpAppLog,
     connectApp,
+    setACL,
+    checkACL,
     downloadFile,
     publishFile,
     unpublishFile,
