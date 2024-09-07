@@ -25,6 +25,39 @@ const info = computed(() => {
 });
 
 const fileData = ref([]);
+
+const attrLoading = ref(false);
+const detailData = ref({});
+const loadFileAttr = (item, unload, detailload) => {
+	if(!unload){
+		attrLoading.value = true;
+	}
+	const _joinPath = [];
+	const _pre = item?.path || current.value?.path;
+	if(!!_pre){
+		_joinPath.push(_pre)
+	}
+	_joinPath.push(item.name);
+	fileService.getFiles(_joinPath.join("/")).then((res)=>{
+		attrLoading.value = false;
+		if(detailload){
+			detailData.value[res.path] = {
+				...item,
+				...res,
+			}
+		} else {
+			selectedFile.value = {
+				...item,
+				...res,
+			}
+		}
+		if(!!res.downloading || !!res.uploading){
+			setTimeout(()=>{
+				loadFileAttr(item, true);
+			},1000)
+		}
+	})
+}
 const formatFile = (path, d, ary, pre) => {
 		d.forEach((file,idx)=>{
 			const _file = {
@@ -45,6 +78,11 @@ const formatFile = (path, d, ary, pre) => {
 			}
 		})
 }
+
+const current = ref({
+	path:'',
+	name:''
+});
 
 watch(()=>props.files,()=>{
 	fileData.value = [];
@@ -116,10 +154,6 @@ const onNodeExpand = (node) => {
 };
 
 const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
-const current = ref({
-	path:'',
-	name:''
-});
 const itemsBreadcrumb = ref([]);
 const load = () => {
 	emits('load',current.value?.path)
@@ -176,96 +210,73 @@ const selectFile = (e, item) => {
 		
 		load();
 	} else if(!item.selected) {
-		item.selected = { time:new Date(),value:true };
+		item.selected = true;
 		selectedFile.value = null;
 	} else if(!!item.selected) {
-		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
-		if(diff <= 600){
-			item.selected.time = new Date();
-			loadFileAttr(item);
-			showAtionMenu(e);
-		} else {
-			item.selected.value = !item.selected.value;
-			item.selected.time = new Date();
-			selectedFile.value = null;
-		}
+		item.selected = !item.selected;
+		selectedFile.value = null;
 	}
 }
 
-const actions = computed(()=>{
-	return [
-		{
-				label: 'State',
-				shortcut: selectedFile.value?.state,
-				command: () => {
-				}
-		},
-		{
-				label: 'Sources',
-				badge: selectedFile.value?.sources?.length,
-				command: () => {
-				}
-		},
-		
-		
-		{
-				label: 'Path',
-				shortcut: selectedFile.value?.path,
-				command: () => {
-				}
-		},
-		{
-				label: 'Hash',
-				shortcut: selectedFile.value?.hash,
-				command: () => {
-				}
-		},
-		{
-				label: 'Time',
-				shortcut: !!selectedFile.value?.time?new Date(selectedFile.value.time).toLocaleString():'-',
-				command: () => {
-				}
-		},
-		{
-				label: 'Size',
-				shortcut: bitUnit(selectedFile.value?.size),
-				command: () => {
-				}
-		},
-	]
-})
-const attrLoading = ref(false);
-const detailData = ref({});
-const loadFileAttr = (item, unload, detailload) => {
-	if(!unload){
-		attrLoading.value = true;
-	}
-	const _joinPath = [];
-	const _pre = item?.path || current.value?.path;
-	if(!!_pre){
-		_joinPath.push(_pre)
-	}
-	_joinPath.push(item.name);
-	fileService.getFiles(_joinPath.join("/")).then((res)=>{
-		attrLoading.value = false;
-		if(detailload){
-			detailData.value[res.path] = {
-				...item,
-				...res,
-			}
-		} else {
-			selectedFile.value = {
-				...item,
-				...res,
-			}
-		}
-		if(!!res.downloading || !!res.uploading){
-			setTimeout(()=>{
-				loadFileAttr(item, true);
-			},1000)
-		}
-	})
+const handleLongTap = (item) => () => {
+	loadFileAttr(item);
+	showAtionMenu();
 }
+const actions = computed(()=>{
+	 
+	if(selectedFile.value?.ext == "/"){
+		return [
+			{
+					label: 'Path',
+					shortcut: selectedFile.value?.path,
+					command: () => {
+					}
+			}
+		]
+		
+	}else{
+		return [
+			{
+					label: 'State',
+					shortcut: selectedFile.value?.state,
+					command: () => {
+					}
+			},
+			{
+					label: 'Sources',
+					badge: selectedFile.value?.sources?.length,
+					command: () => {
+					}
+			},
+			
+			
+			{
+					label: 'Path',
+					shortcut: selectedFile.value?.path,
+					command: () => {
+					}
+			},
+			{
+					label: 'Hash',
+					shortcut: selectedFile.value?.hash,
+					command: () => {
+					}
+			},
+			{
+					label: 'Time',
+					shortcut: !!selectedFile.value?.time?new Date(selectedFile.value.time).toLocaleString():'-',
+					command: () => {
+					}
+			},
+			{
+					label: 'Size',
+					shortcut: bitUnit(selectedFile.value?.size),
+					command: () => {
+					}
+			},
+		]
+	}
+})
 const copyFile = () => {
 	copy(JSON.stringify(selectedFile.value))
 }
@@ -276,7 +287,7 @@ const closeFile = () => {
 const getSelectFiles = (list) => {
 	let ary = []
 	list.forEach((item)=>{
-		if(!!item.selected?.value){
+		if(!!item.selected){
 			ary.push(item)
 		}
 		if(item.children){
@@ -480,7 +491,7 @@ onMounted(()=>{
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen h-full" :class="{'embed-ep-header':false}" @click="closeFile">
+	<div class="flex flex-row min-h-screen h-full" :class="{'embed-ep-header':false}">
 		<div  class="relative h-full w-full" >
 			<AppHeader :child="true">
 					<template #start>
@@ -566,7 +577,7 @@ onMounted(()=>{
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
-									<div class="selector pointer"   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
+									<div class="selector pointer"   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected,'px-2':!!slotProps.node.selected,'py-1':!!slotProps.node.selected}" >
 										<img :src="fileIcon(slotProps.node.name,slotProps.node.path)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 										<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
 									</div>
@@ -593,7 +604,7 @@ onMounted(()=>{
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector p-2" @click.stop="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
+							<div class="selector p-2" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected}" >
 								<img :src="fileIcon(file.name,current.path)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
@@ -609,7 +620,7 @@ onMounted(()=>{
 							</div>
 					 </div>
 				</div>
-				<Dialog class="nopd noheader" v-model:visible="visible" :dismissableMask="true" :draggable="true" >
+				<Dialog class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
 					 <Loading v-if="attrLoading" />
 					 <Menu v-else :model="actions" class="w-60">
 					     <template #start>
@@ -643,10 +654,10 @@ onMounted(()=>{
 					 					<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
 					 			</div>
 					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
-					 				<div  class="flex-item px-2" v-if="selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced'">
+					 				<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
 					 					<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 					 				</div>
-					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'new'">
+					 				<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
 					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 					 				</div>
 					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">

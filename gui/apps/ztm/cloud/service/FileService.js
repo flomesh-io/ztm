@@ -40,6 +40,12 @@ export default class FileService {
 			return request(`/api/files`)
 		}
 	}
+	getAcl(path) {
+		return request(`/api/acl/${path}`)
+	}
+	setAcl(path, body) {
+		return request(`/api/acl/${path}`,"POST", body)
+	}
 	getUploads() {
 		return request(`/api/uploads`);
 	}
