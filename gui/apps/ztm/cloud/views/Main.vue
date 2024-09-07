@@ -24,6 +24,7 @@ const files = ref([]);
 // 		"downloading":0.931241211
 // 	},
 // ]
+const endpoints = ref([]);
 const uploads = ref([]);
 const downloads = ref([]);
 const getDownloads = () => {
@@ -53,6 +54,12 @@ const loaddata = () => {
 	getFiles();
 	getDownloads();
 	getUploads();
+}
+
+const getEndpoints = (endpoint) => {
+	fileService.getEndpoints().then((res)=>{
+		endpoints.value = res || [];
+	})
 }
 const changePath = (p) => {
 	path.value = p;
@@ -93,6 +100,10 @@ const timmer = () => {
 }
 onMounted(()=>{
 	timmer();
+	getEndpoints();
+})
+onActivated(()=>{
+	getEndpoints();
 })
 </script>
 
@@ -102,6 +113,7 @@ onMounted(()=>{
 			<Files 
 				:queueSize="queueSize"
 				:files="files" 
+				:endpoints="endpoints"
 				:error="error" 
 				:loading="loading"
 				:loader="loader"

@@ -10,6 +10,7 @@ import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
 import { homeDir } from '@tauri-apps/api/path';
+import _ from "lodash";
 const toast = useToast();
 const store = useStore();
 const confirm = useConfirm();
@@ -18,7 +19,7 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-const props = defineProps(['small','files','error','loading','loader','queueSize'])
+const props = defineProps(['small','files','error','loading','loader','queueSize','endpoints'])
 const emits = defineEmits(['download','upload','load'])
 const info = computed(() => {
 	return store.getters['app/info']
@@ -39,16 +40,26 @@ const loadFileAttr = (item, unload, detailload) => {
 	}
 	_joinPath.push(item.name);
 	fileService.getFiles(_joinPath.join("/")).then((res)=>{
+		const _res = res;
+		if(!_res.access){
+			_res.access = {
+				all: null,
+				users:{}
+			}
+			if(!_res.access.users){
+				_res.access.users = {};
+			}
+		}
 		attrLoading.value = false;
 		if(detailload){
 			detailData.value[res.path] = {
 				...item,
-				...res,
+				..._res,
 			}
 		} else {
 			selectedFile.value = {
 				...item,
-				...res,
+				..._res,
 			}
 		}
 		if(!!res.downloading || !!res.uploading){
@@ -210,11 +221,22 @@ const selectFile = (e, item) => {
 		
 		load();
 	} else if(!item.selected) {
-		item.selected = true;
+		item.selected = { time:new Date(),value:true };
 		selectedFile.value = null;
 	} else if(!!item.selected) {
-		item.selected = !item.selected;
-		selectedFile.value = null;
+		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
+			if(diff <= 600){
+				item.selected.time = new Date();
+				if(!!hasTauri.value){
+					openFile(`${localDir.value}/${selectedFile.value?.path}`)
+				}
+			} else {
+				item.selected.value = !item.selected.value;
+				item.selected.time = new Date();
+				selectedFile.value = null;
+			}
+		
+		//openFile(`${localDir.value}/${current.value.path}`)
 	}
 }
 
@@ -287,7 +309,7 @@ const closeFile = () => {
 const getSelectFiles = (list) => {
 	let ary = []
 	list.forEach((item)=>{
-		if(!!item.selected){
+		if(!!item.selected?.value){
 			ary.push(item)
 		}
 		if(item.children){
@@ -484,6 +506,43 @@ const searchSort = (e)=>{
 		sortOrder.value = e.sortOrder;
 	}
 }
+const filterEps = computed(()=>(users)=>{
+	const usernames = Object.keys(users);
+	usernames.push(info.endpoint?.username);
+	return _.filter(props.endpoints, (item) => !_.includes(usernames, item.username));
+})
+const acl = ref({
+	user:'',
+	permission: 'readonly'
+})
+const addUser = () => {
+	selectedFile.value.access.users[acl.value.user] = acl.value.permission;
+	acl.value = {
+		user:'',
+		permission: 'readonly'
+	};
+}
+const delUser = (key) => {
+	delete selectedFile.value.access.users[key];
+}
+const active = ref(0);
+const aclLoading = ref(false);
+const saveAcl = () => {
+	aclLoading.value = true;
+	fileService.setAcl(selectFile.value?.access || {}).then((res)=>{
+		aclLoading.value = false;
+	})
+}
+const isReadonly = computed(()=>(_file)=>{
+	const usernames = _file?.access?.users || {};
+	if(usernames[info.value?.endpoint?.username] == 'readonly'){
+		return true;
+	} else if(_file?.access?.all == 'readonly' && usernames[info.value?.endpoint?.username] != 'writable'){
+		return true;
+	} else {
+		return false;
+	}
+})
 onMounted(()=>{
 	getConfig();
 	
@@ -577,9 +636,9 @@ onMounted(()=>{
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
-									<div class="selector pointer"   @click.stop="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected,'px-2':!!slotProps.node.selected,'py-1':!!slotProps.node.selected}" >
+									<div class="selector pointer"  v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
 										<img :src="fileIcon(slotProps.node.name,slotProps.node.path)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
-										<b class="px-2 vertical-align-middle">{{ slotProps.node.name }}</b>
+										<b class="px-2 vertical-align-middle"><i v-if="isReadonly(slotProps.node)" class="pi pi-lock opacity-70" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
 									</div>
 								</template>
 						</Column>
@@ -604,14 +663,15 @@ onMounted(()=>{
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector p-2" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected}" >
+							<div class="selector p-2 relative" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
 								<img :src="fileIcon(file.name,current.path)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">
 									<b v-tooltip="file.name" class="multiline-ellipsis">
 										<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
-										{{ file.name }}
+										<i v-if="isReadonly(file)" class="pi pi-lock opacity-70" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
 								<Tag :severity="stateColor[detailData[`/${file.path}/${file.name}`].state]" class="py-0 px-1 mt-2" v-if="!!detailData[`/${file.path}/${file.name}`]">{{ detailData[`/${file.path}/${file.name}`].state }}</Tag>
@@ -621,52 +681,110 @@ onMounted(()=>{
 					 </div>
 				</div>
 				<Dialog class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
-					 <Loading v-if="attrLoading" />
-					 <Menu v-else :model="actions" class="w-60">
-					     <template #start>
-					 			<div v-if="selectedFile" class="text-center pt-4 relative">
-					 				<img :src="fileIcon(selectedFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-					 				<div class="px-2 ">
-					 					<Button style="word-break: break-all;" class="max-w-16rem" @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
-					 				</div>
-					 			</div>
-					 			
-					     </template>
-					     <template #submenulabel="{ item }">
-					         <span class="text-primary font-bold">{{ item.label }}</span>
-					     </template>
-					     <template #item="{ item, props }">
-					         <a v-ripple class="flex items-center" v-bind="props.action">
-					             <span :class="item.icon" />
-					             <span>{{ item.label }}</span>
-					             <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
-					             <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-					 							<Tag :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
-					 							<span v-else>{{ item.shortcut }}</span>
-					 						</span>
-					         </a>
-					     </template>
-					     <template #end >
-					 			<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
-					 					<ProgressBar :value="selectedFile.uploading*100"></ProgressBar>
-					 			</div>
-					 			<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading">
-					 					<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
-					 			</div>
-					 			<div class="px-3 pt-2 pb-3 flex justify-content-between">
-					 				<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
-					 					<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
-					 				</div>
-					 				<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
-					 					<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
-					 				</div>
-					 				<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
-					 					<Button :disabled="!selectedFile?.path" @click="openFile(`${localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
-					 				</div>
-									
-					 			</div>
-					     </template>
-					 </Menu>
+					<Button v-if="active == 1" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
+					<Loading v-if="attrLoading" />
+					<TabView v-else v-model:activeIndex="active">
+						<TabPanel>
+							<template #header>
+								<div>
+									<i class="pi pi-info-circle mr-2" />Info
+								</div>
+							</template>
+							<Menu :model="actions" class="w-60">
+							    <template #start>
+										<div v-if="selectedFile" class="text-center pt-4 relative">
+											<img :src="fileIcon(selectedFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+											<div class="px-2 ">
+												<Button style="word-break: break-all;" class="max-w-16rem" @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
+											</div>
+										</div>
+										
+							    </template>
+							    <template #submenulabel="{ item }">
+							        <span class="text-primary font-bold">{{ item.label }}</span>
+							    </template>
+							    <template #item="{ item, props }">
+							        <a v-ripple class="flex items-center" v-bind="props.action">
+							            <span :class="item.icon" />
+							            <span>{{ item.label }}</span>
+							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
+							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
+														<Tag :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
+														<span v-else>{{ item.shortcut }}</span>
+													</span>
+							        </a>
+							    </template>
+							    <template #end >
+										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
+												<ProgressBar :value="selectedFile.uploading*100"></ProgressBar>
+										</div>
+										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading">
+												<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
+										</div>
+										<div class="px-3 pt-2 pb-3 flex justify-content-between">
+											<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
+												<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
+											</div>
+											<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
+												<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+											</div>
+											<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
+												<Button :disabled="!selectedFile?.path" @click="openFile(`${localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+											</div>
+																
+										</div>
+							    </template>
+							</Menu>
+						</TabPanel>
+						<TabPanel v-if="selectedFile?.access && selectedFile?.state != 'new'">
+							<template #header>
+								<div>
+									<i class="pi pi-shield mr-2" />ACL
+								</div>
+							</template>
+							<div class="p-3">
+								<div class="py-2">
+									<b>All permission:</b>
+								</div>
+								<SelectButton class="w-full" v-model="selectedFile.access.all" :options="[{name:'Inherit',id:null},{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" aria-labelledby="basic" />
+								<div class="pt-4 pb-2">
+									<b>Users permission:</b>
+								</div>
+								<Listbox v-if="selectedFile.access?.users" :options="Object.keys(selectedFile.access.users)" class="w-full md:w-56" listStyle="max-height:250px">
+									<template #option="slotProps">
+											<div class="flex w-full">
+												<div class="flex-item pt-1">
+													<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
+													<span class="ml-2">{{slotProps.option}}</span>
+												</div>
+												<div>
+													<Select size="small" class="w-full small"  v-model="selectedFile.access.users[slotProps.option]" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
+												</div>
+											<div class="pl-1">
+												<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary" />
+											</div>
+											</div>
+									</template>
+									<template #empty>
+										---
+									</template>
+									<template #footer>
+										<div class="flex items-center pt-1 pb-2 px-3">
+											<div class="flex-item pr-1">
+												<Select size="small" class="w-full"  v-model="acl.user" :options="filterEps(selectedFile.access.users)" optionLabel="username" optionValue="username" :filter="filterEps(selectedFile.access.users).length>8" placeholder="Endpoint"/>
+											</div>
+											<div class="flex-item">
+												<Select size="small" class="w-full"  v-model="acl.permission" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
+											</div>
+											<div class="pl-1">
+												<Button :disabled="!acl.user" @click="addUser" icon="pi pi-plus" severity="secondary" />
+											</div>
+										</div>
+									</template>
+								</Listbox>
+							</div>
+						</TabPanel>
+					</TabView>
 				</Dialog>
 			</div>
 			</ScrollPanel>
