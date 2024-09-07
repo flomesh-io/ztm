@@ -7,7 +7,6 @@ export default {
         timer = setTimeout(() => {
 					event.preventDefault();
           binding.value(event);
-					actived = true;
         }, duration);
       }
     };
