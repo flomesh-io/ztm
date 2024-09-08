@@ -23,12 +23,12 @@ else
 fi
 pushd openssl-apple
 CURL_OPTIONS="-L" ./build-libssl.sh --version=3.2.0 --targets="ios64-cross" --deprecated
-if [ ! -f bin/iPhoneOS17.5-arm64.sdk/lib/libssl.a ]; then
+if [ ! -f bin/iPhoneOS17.5-cross.sdk/lib/libssl.a ]; then
   echo "Build libssl for iOS failed."
   exit 1
 fi
 
-LIBSSL_PATH=$(realpath $PWD/bin/iPhoneOS${IOS_SDK_VERSION}-arm64.sdk)
+LIBSSL_PATH=$(realpath $PWD/bin/iPhoneOS${IOS_SDK_VERSION}-cross.sdk)
 popd
 
 # config pipy
