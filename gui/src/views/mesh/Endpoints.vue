@@ -120,6 +120,7 @@ const copy = () => {
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
 	});
 }
+const visibleImport = ref(false)
 </script>
 
 <template>
@@ -133,12 +134,12 @@ const copy = () => {
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
-						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invite'" aria-haspopup="true" aria-controls="op" @click="toggle"/>
+						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invite'"  @click="()=>{visibleImport=true}"/>
 					</template>
 			</AppHeader>
 			
-			<Popover ref="op" >
-				<div  v-if="!permit">
+			<Dialog class="noheader" v-model:visible="visibleImport" modal :dismissableMask="true">
+				<div class="p-2" v-if="!permit">
 					<div class="w-full">
 						<CertificateUploder placeholder="Identity" v-model="identity" label="Identity"/>
 					</div>
@@ -147,14 +148,14 @@ const copy = () => {
 						<Button size="small" :disabled="!username || username == 'root'" label="Invite" class="ml-2"  @click="inviteEp"></Button>
 					</div>
 				</div>
-				<div v-else>
+				<div class="p-2" v-else>
 					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="JSON.stringify(permit)"/>
 					<div class="flex mt-1">
 						<Button size="small"  label="Copy" class="flex-item mr-1"  @click="copy"></Button>
 						<Button size="small"  label="Download" class="flex-item"  @click="download"></Button>
 					</div>
 				</div>
-			</Popover>
+			</Dialog>
 			<Loading v-if="loading"/>
 			<ScrollPanel class="absolute-scroll-panel" v-else-if="endpoints && endpoints.length >0">
 			<DataView class="message-list" :value="endpoints">
