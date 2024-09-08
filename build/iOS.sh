@@ -22,7 +22,7 @@ else
   git clone --branch v11 https://github.com/passepartoutvpn/openssl-apple.git
 fi
 pushd openssl-apple
-./build-libssl.sh --version=3.2.0 --targets="ios64-cross-arm64" --deprecated
+CURL_OPTIONS="-L" ./build-libssl.sh --version=3.2.0 --targets="ios64-cross" --deprecated
 if [ ! -f bin/iPhoneOS17.5-arm64.sdk/lib/libssl.a ]; then
   echo "Build libssl for iOS failed."
   exit 1
