@@ -1230,13 +1230,20 @@ export default function (rootDir, config) {
 
       return discoverFiles().then(
         files => {
+          var set = new Set
           var list = []
           Object.keys(files).forEach(path => {
             var localPath = pathToLocal(path)
             if (localPath && localPath.startsWith(prefix)) {
               var path = localPath.substring(prefix.length)
               var i = path.indexOf('/')
-              if (i) list.push(i > 0 ? path.substring(0, i + 1) : path)
+              if (i) {
+                var name = (i > 0 ? path.substring(0, i + 1) : path)
+                if (!set.has(name)) {
+                  set.add(name)
+                  list.push(name)
+                }
+              }
             }
           })
           return list.sort()
