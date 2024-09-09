@@ -15,6 +15,7 @@ jobs:
         cd gui
         yarn install
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:apps
+        git fetch --tags
         yarn build-ztm-macos
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
     - uses: actions/upload-artifact@v2
