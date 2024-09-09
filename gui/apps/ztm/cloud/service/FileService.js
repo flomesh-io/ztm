@@ -1,6 +1,8 @@
 import { request, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
+import { platform } from '@/utils/platform';
+import { homeDir, documentDir } from '@tauri-apps/api/path';
 export default class FileService {
 	/*
 
@@ -26,6 +28,14 @@ export default class FileService {
 	}
 	getEndpoints() {
 		return request(`/api/endpoints`);
+	}
+	getDir() {
+		const pm = platform();
+		if(pm == 'ios' || pm == 'android'){
+			return documentDir();
+		} else {
+			return homeDir();
+		}
 	}
 	getConfig(ep) {
 		return request(`/api/endpoints/${ep}/config`)

@@ -59,6 +59,14 @@ onMounted(()=>{
 </script>
 
 <template>
+	<AppHeader >
+			<template #center>
+				<b>{{params?.app}} Logs</b>
+			</template>
+			<template #end> 
+				<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loading"/>
+			</template>
+	</AppHeader>
 	<Card class="nopd">
 		<template #content>
 			<InputGroup class="search-bar" >
