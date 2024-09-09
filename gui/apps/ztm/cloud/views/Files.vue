@@ -9,7 +9,6 @@ import { platform } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
-import { homeDir } from '@tauri-apps/api/path';
 import _ from "lodash";
 const toast = useToast();
 const store = useStore();
@@ -353,7 +352,7 @@ const getConfig = () => {
 		localDir.value = config.value.localDir;
 		mirrorPaths.value = config.value.mirrorPaths;
 		if(config.value.localDir == '~/ztmCloud' && !!hasTauri.value){
-			homeDir().then((dir)=>{
+			fileService.getDir().then((dir)=>{
 				config.value.localDir = `${dir}/ztmCloud`;
 				fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
 					getConfig();
