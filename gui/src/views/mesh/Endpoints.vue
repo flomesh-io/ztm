@@ -99,6 +99,15 @@ const toggle = (event) => {
 	op.value.toggle(event);
 }
 const permit = ref(null)
+const permitStr = computed(()=>{
+	if(typeof(permit.value) == 'object'){
+		return JSON.stringify(permit.value);
+	} else if(typeof(permit.value) == 'string'){
+		return permit.value;
+	} else {
+		return permit.value;
+	}
+})
 const inviteEp = () => {
 	ztmService.inviteEp(selectedMesh.value?.name, username.value, identity.value)
 		.then(data => {
@@ -110,13 +119,13 @@ const inviteEp = () => {
 const download = () => {
 	
 	exportFromJSON({ 
-		data: JSON.stringify(permit.value),
+		data: permitStr.value,
 		fileName:`${username.value}-permit`,
 		exportType: exportFromJSON.types.txt
 	})
 }
 const copy = () => {
-	clipboard.write(JSON.stringify(permit.value)).then(()=>{
+	clipboard.write(permitStr.value).then(()=>{
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
 	});
 }
@@ -149,7 +158,7 @@ const visibleImport = ref(false)
 					</div>
 				</div>
 				<div class="p-2" v-else>
-					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="JSON.stringify(permit)"/>
+					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="permitStr"/>
 					<div class="flex mt-1">
 						<Button size="small"  label="Copy" class="flex-item mr-1"  @click="copy"></Button>
 						<Button size="small"  label="Download" class="flex-item"  @click="download"></Button>
