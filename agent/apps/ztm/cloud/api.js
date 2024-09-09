@@ -21,7 +21,7 @@ var DOWNLOAD_CONCURRENCY = 5
 //           '0123456789abcdef',
 //         ]
 //       }
-//   /download/<username>/
+//   /downloads/users/<username>/
 //     <filename>.<num>
 //
 // On the mesh:
@@ -52,8 +52,10 @@ export default function ({ app, mesh }) {
   var localDir
   var mirrorPaths
 
-  applyConfig()
-  watchMirrors()
+  applyConfig().then(() => {
+    resumeDownloads()
+    watchMirrors()
+  })
 
   mesh.acl(`/shared/${app.username}/stat`, { all: 'block' })
 
@@ -72,6 +74,57 @@ export default function ({ app, mesh }) {
         }
       }
     )
+  }
+
+  function resumeDownloads() {
+    var rootDir = os.path.join(localDir, 'downloads')
+    var downloads = {}
+    findDownloads('/')
+    function findDownloads(dirname) {
+      var names = os.readDir(os.path.join(rootDir, dirname))
+      names.forEach(name => {
+        if (name.endsWith('/')) {
+          findDownloads(os.path.join(dirname, name))
+        } else {
+          var i = name.lastIndexOf('.')
+          var n = Number.parseInt(name.substring(i + 1))
+          name = name.substring(0, i)
+          if (!name || Number.isNaN(n)) return
+          var path = os.path.join(dirname, name)
+          downloads[path] = true
+        }
+      })
+    }
+    return Promise.all(Object.keys(downloads).map(pathname => {
+      var params = matchPathUserFile(pathname)
+      if (!params) return Promise.resolve()
+      var username = params.username
+      var filename = params['*']
+      return mesh.read(os.path.join('/shared', username, 'stat', filename)).then(
+        data => {
+          if (!data) return
+          try {
+            var stat = JSON.decode(data)
+            var chunks = stat.chunks.map((hash, i) => {
+              var filename = `${pathname}.${i}`
+              try {
+                var hasher = new crypto.Hash('sha256')
+                hasher.update(os.read(os.path.join(rootDir, filename)))
+                if (hasher.digest('hex') === hash) return null
+              } catch {}
+              return [filename, hash]
+            }).filter(s=>s)
+            if (chunks.length === 0) {
+              finalizeDownload(pathname, stat.hash)
+              clearDownload(pathname)
+            } else {
+              appendDownload(pathname, stat, chunks.filter(s=>s))
+              continueDownloading()
+            }
+          } catch {}
+        }
+      )
+    }))
   }
 
   function watchMirrors() {
@@ -164,6 +217,19 @@ export default function ({ app, mesh }) {
   var downloadError = {}
   var uploadFiles = {}
 
+  function appendDownload(pathname, stat, chunks) {
+    chunks = chunks || stat.chunks.map((hash, i) => [`${pathname}.${i}`, hash])
+    var download = {
+      path: pathname,
+      size: stat.size,
+      hash: stat.hash,
+      chunks,
+      counter: chunks.length,
+    }
+    downloadFiles[pathname] = download
+    downloadQueue.push(download)
+  }
+
   function continueDownloading() {
     var vacantLanes = DOWNLOAD_CONCURRENCY - downloadLanes.length
     new Array(vacantLanes).fill().forEach(() => {
@@ -195,7 +261,7 @@ export default function ({ app, mesh }) {
     var i = path.lastIndexOf('.')
     var filename = path.substring(0,i)
     var chunkNum = path.substring(i+1)
-    var outputPath = os.path.join(localDir, 'download', path)
+    var outputPath = os.path.join(localDir, 'downloads', path)
     os.mkdir(os.path.dirname(outputPath), { recursive: true })
     var ep = sources.splice(Math.floor(Math.random() * sources.length), 1)[0]
     var downloaded = null
@@ -231,7 +297,7 @@ export default function ({ app, mesh }) {
         return finalizeChunk(path)
       } else {
         app.log(`Chunk ${path} from ep ${ep} was corrupt`)
-        return downloadChunkFrom(path, hash, sources)
+        return downloadChunk(path, hash, sources)
       }
     })
   }
@@ -241,16 +307,10 @@ export default function ({ app, mesh }) {
     var filename = path.substring(0, i)
     var f = downloadFiles[filename]
     if (f && f.counter === 1) {
-      var params = matchPathUserFile(filename)
-      return finalizeDownload(filename).then(() => {
+      return finalizeDownload(filename, f.hash).then(() => {
         clearDownload(filename)
         delete downloadFiles[filename]
         delete downloadError[filename]
-        return getFileStatByUser(params.username, params['*'])
-      }).then(stat => {
-        if (stat.hash === f.hash) {
-          mesh.write(os.path.join('/shared', params.username, 'hash', stat.hash), stat.hash)
-        }
         next()
       })
     }
@@ -263,15 +323,16 @@ export default function ({ app, mesh }) {
     return Promise.resolve()
   }
 
-  function finalizeDownload(filename) {
-    var i = 0
+  function finalizeDownload(filename, hash) {
+    var params = matchPathUserFile(filename)
     var outputFilename = os.path.join(localDir, filename)
-    var inputFilename = os.path.join(localDir, 'download', filename + '.0')
+    var inputFilename = os.path.join(localDir, 'downloads', filename + '.0')
+    var i = 0
     if (!os.stat(inputFilename)?.isFile?.()) return Promise.resolve()
     return pipeline($=>$
       .onStart(new Data)
       .repeat(() => {
-        inputFilename = os.path.join(localDir, 'download', `${filename}.${++i}`)
+        inputFilename = os.path.join(localDir, 'downloads', `${filename}.${++i}`)
         return os.stat(inputFilename)?.isFile?.()
       }).to($=>$
         .read(() => inputFilename)
@@ -282,13 +343,19 @@ export default function ({ app, mesh }) {
         )
         .replaceMessageEnd(new StreamEnd)
       )
-    ).spawn()
+    ).spawn().then(
+      () => getFileStatByUser(params.username, params['*'])
+    ).then(stat => {
+      if (stat.hash === hash) {
+        mesh.write(os.path.join('/shared', params.username, 'hash', hash), hash)
+      }
+    })
   }
 
   function clearDownload(filename) {
     var basename = os.path.basename(filename)
     var dirname = os.path.dirname(filename)
-    var dir = os.path.join(localDir, 'download', dirname)
+    var dir = os.path.join(localDir, 'downloads', dirname)
     os.readDir(dir).forEach(
       name => {
         var i = name.lastIndexOf('.')
@@ -499,16 +566,8 @@ export default function ({ app, mesh }) {
       data => {
         if (!data) return false
         if (pathname in downloadFiles) return true
-        var statMesh = JSON.decode(data)
-        var file = {
-          path: pathname,
-          size: statMesh.size,
-          hash: statMesh.hash,
-          chunks: statMesh.chunks.map((hash, i) => [`${pathname}.${i}`, hash]),
-          counter: statMesh.chunks.length,
-        }
-        downloadFiles[pathname] = file
-        downloadQueue.push(file)
+        var stat = JSON.decode(data)
+        appendDownload(pathname, stat)
         continueDownloading()
         return true
       }
