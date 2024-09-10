@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.4",
-    "@tauri-apps/cli": "2.0.0-rc.8",
+    "@tauri-apps/cli": "2.0.0-rc.12",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vue/eslint-config-prettier": "^7.0.0",
     "eslint": "^8.22.0",
