@@ -1,4 +1,4 @@
-import { request, merge, spread } from '@/service/common/request';
+import { request,getUrl, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { platform } from '@/utils/platform';
@@ -42,6 +42,12 @@ export default class FileService {
 	}
 	setConfig(ep, body) {
 		return request(`/api/endpoints/${ep}/config`,"POST", body)
+	}
+	getFileUrl(path) {
+		return request(`/api/file-data${path}`)
+	}
+	getFileData(path) {
+		return getUrl(`/api/file-data${path}`)
 	}
 	getFiles(path) {
 		if(!!path){

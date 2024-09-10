@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit, openFile, isMirror } from '@/utils/file';
+import { checker, bitUnit, openFile, isMirror, isImg } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
@@ -85,6 +85,7 @@ const formatFile = (path, d, ary, pre) => {
 				key:`${pre}${idx}`,
 				name:file,
 				path:`${path}/${file}`,
+				fileUrl: fileService.getFileUrl(`${path}/${file}`),
 				loading:false,
 				selected: false,
 				ext:file.charAt(file.length-1) == "/"?"/":file.split(".")[file.split(".").length-1]
@@ -166,6 +167,28 @@ const onNodeExpand = (node) => {
 	}
 };
 
+const preview = ref({
+	visible:false,
+	url:''
+});
+
+const openPreview = (item) => {
+	preview.value = {
+		visible:true,
+		url:item?.fileUrl
+	}
+}
+const isPC = computed(()=>{
+	const pm = platform();
+	return pm != 'ios' && pm != 'android' && pm != 'web';
+})
+const openPreviewFile = (item) => {
+	if(isPC.value && item?.state != 'missing'){
+		openFile(`${localDir.value}${item?.path}`);
+	} else {
+		openPreview(item);
+	}
+}
 const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
 const itemsBreadcrumb = ref([]);
 const load = () => {
@@ -179,7 +202,7 @@ const back = () => {
 	}
 }
 const showBack = computed(()=>{
-	return platform() == 'ios' || platform() == 'android' || platform() == 'web'
+	return !isPC.value;
 })
 const changePath = (item) => {
 	if(item == 0){
@@ -220,7 +243,6 @@ const selectFile = (e, item) => {
 				name:_name
 			}
 		}
-		
 		load();
 	} else if(!item.selected) {
 		item.selected = { time:new Date(),value:true };
@@ -229,9 +251,7 @@ const selectFile = (e, item) => {
 		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
 			if(diff <= 600){
 				item.selected.time = new Date();
-				if(!!hasTauri.value){
-					openFile(`${localDir.value}${selectedFile.value?.path}`)
-				}
+				openPreviewFile(selectedFile.value);
 			} else {
 				item.selected.value = !item.selected.value;
 				item.selected.time = new Date();
@@ -441,7 +461,11 @@ const doUploads = () => {
 	}
 }
 const fileIcon = computed(()=>(item)=>{
-	return checker(item, mirrorPaths.value)
+	if(!!item.ext && isImg(item.ext) && item.fileUrl){
+		return item.fileUrl;
+	} else {
+		return checker(item, mirrorPaths.value);
+	}
 })
 const toggleMirror = () => {
 	const _index = isMirror(current.value.path, mirrorPaths.value);
@@ -568,6 +592,17 @@ const perIcon = computed(()=>(_file)=>{
 		return false;
 	}
 })
+const saving = ref(false);
+const saveAs = (item) => {
+	if(item.fileUrl){
+		saveFile(item.fileUrl,()=>{
+			saving.value = true;
+		},()=>{
+			saving.value = false;
+			toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
+		})
+	}
+}
 onMounted(()=>{
 	getConfig();
 	
@@ -745,17 +780,20 @@ onMounted(()=>{
 										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading">
 												<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
 										</div>
-										<div class="px-3 pt-2 pb-3 flex justify-content-between">
-											<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
+										<div class="px-3 pt-2 pb-3 grid m-0 justify-content-between">
+											<div  class="col-6 px-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
 												<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 											</div>
-											<div  class="flex-item px-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
+											<div  class="col-6 px-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
 												<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 											</div>
-											<div  class="flex-item px-2" v-if="selectedFile?.state != 'missing'">
-												<Button :disabled="!selectedFile?.path" @click="openFile(`${localDir}${selectedFile?.path}`)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+											<div  class="col-6 px-2" >
+												<Button :disabled="!selectedFile?.fileUrl" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save As" severity="secondary"  />
 											</div>
-																
+											<div  class="col-6 px-2" >
+												<Button v-if="isPC && selectedFile?.state != 'missing'" :disabled="!selectedFile?.path" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+												<Button v-else :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
+											</div>
 										</div>
 							    </template>
 							</Menu>
@@ -809,6 +847,9 @@ onMounted(()=>{
 							</div>
 						</TabPanel>
 					</TabView>
+				</Dialog>
+				<Dialog class="nopd noheader" v-model:visible="preview.visible" modal :dismissableMask="true" :draggable="true" >
+					<FilePreview v-if="preview.visible && preview.url" class="w-full" :src="preview.url" />
 				</Dialog>
 			</div>
 			</ScrollPanel>

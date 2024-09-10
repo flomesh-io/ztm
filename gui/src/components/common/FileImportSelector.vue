@@ -5,7 +5,7 @@ import { copyFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { platform } from '@/utils/platform';
 import { homeDir, documentDir } from '@tauri-apps/api/path';
 import { usePrimeVue } from 'primevue/config';
-import { importFile } from '@/utils/file';
+import { writeFile } from '@/utils/file';
 import toast from "@/utils/toast";
 
 const props = defineProps({
@@ -142,10 +142,9 @@ const customUploader = async (event) => {
 		if(event.files.length>0) {
 			documentDir().then((dir)=>{
 				event.files.forEach((_file)=>{
-					debugger
 					const _target = `${props?.path || dir}/${_file?.name}`;
 					importTargets.value.push(_target);
-					importFile(_file,_target,()=>{
+					writeFile(_file,_target,()=>{
 						saved++;
 						if(saved == event.files.length){
 							emits('saved', {});
@@ -157,13 +156,15 @@ const customUploader = async (event) => {
 		}
 };
 const hasTauri = ref(!!window.__TAURI_INTERNALS__ || true);
+
+//&& pm != 'ios' && pm != 'android'
 </script>
 
 <template>
 	
-	<Button v-if="!!hasTauri && pm != 'ios' && pm != 'android'" text severity="secondary" v-tooltip="props.placeholder" size="small" :icon="props.icon" :class="props.class"  @click="choose"></Button>
+	<Button v-if="!!hasTauri " severity="secondary" v-tooltip="props.placeholder" size="small" :icon="props.icon" :class="props.class"  @click="choose"></Button>
 	<FileUpload 
-		v-else-if="!!hasTauri"
+		v-else
 		:class="props.class" 
 		severity="secondary"
 		v-tooltip="uploading?'Importing':props.placeholder"
