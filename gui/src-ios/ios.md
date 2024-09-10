@@ -31,3 +31,8 @@ xcrun simctl get_app_container "1A5866F6-4B3B-4526-BEB9-D23066CE74B0" "com.flome
 find /Users/lindongchen/Library/Developer/CoreSimulator/Devices/4C41487E-105E-4EC2-B072-2D83F5F5E71B/data/Containers/Data/Application/0647839B-70A2-48CD-943F-234DFC732FE3 -name "libpipy.dylib"
 
 /Users/lindongchen/Library/Developer/CoreSimulator/Devices/4C41487E-105E-4EC2-B072-2D83F5F5E71B/data/Containers/Data/Application/0647839B-70A2-48CD-943F-234DFC732FE3/Documents/libpipy.dylib
+
+yarn tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
+
+Application supports iTunes file sharing YES
+Supports opening documents in place YES

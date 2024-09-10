@@ -106,7 +106,7 @@ export default class ShellService {
 			// 	console.log(`[pipyioslib]Result: ${res}`);
 			// });
 		} else if(pm == "android" ){
-			let resourceDirPath = await appLocalDataDir();
+			let resourceDirPath = await documentDir();//appLocalDataDir();
 			console.log(resourceDirPath)
 			const args = [
 				"./main",
@@ -134,7 +134,7 @@ export default class ShellService {
 				console.log(`[pipylib]Result: ${res}`);
 			});
 		} else {
-			let resourceDirPath = await resourceDir();
+			let resourceDirPath = await documentDir();//resourceDir();
 			// const args = [
 			// 	"run",
 			// 	"agent",

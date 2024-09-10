@@ -13,7 +13,33 @@ import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
 import { open } from '@tauri-apps/plugin-shell';
+import { platform } from '@/utils/platform';
+import { create, writeFile, BaseDirectory } from "@tauri-apps/plugin-fs";
+import { documentDir } from '@tauri-apps/api/path';
+import toast from "@/utils/toast";
 
+const initWorkspace = () => {
+	if(platform() == 'ios' || platform() == 'android'){
+		create("Readme.txt", { baseDir: BaseDirectory.Document }).then((file)=>{
+			file.write(new TextEncoder().encode("Welcome ZTM!")).then(()=>{
+				file.close();
+			});
+		})
+	}
+}
+
+const importFile = (file, target, callback) => {
+	const reader = new FileReader();
+	reader.onload = function(event) {
+		const arrayBuffer = event.target.result; 
+		const data = new Uint8Array(arrayBuffer);
+		writeFile(target, data, { baseDir: BaseDirectory.Document }).then(()=>{
+			if(!!callback)
+			callback()
+		});
+	};
+	reader.readAsArrayBuffer(file);
+}
 const ext = {
 	default: file,
 	folder,
@@ -40,10 +66,13 @@ const ext = {
 	rar: zip,
 	"7z": zip,
 };
-const checker = (name, path, mirrorPaths) => {
+const checker = (item, mirrorPaths) => {
+	const name = item?.name;
+	const path = item?.path || '';
+	const pathAry = path.split("/");
 	if(!!name && name.charAt(name.length-1) == "/" && isMirror(`${path}/${name.split('/')[0]}`,mirrorPaths)>-1){
 		return ext.mirror;
-	}else if((name=="users/" || path== 'users') && name.indexOf(".")==-1){
+	}else if((name=="users/" || (pathAry.length == 3 && pathAry[1] == "users")) && name.indexOf(".")==-1){
 		return ext.userfolder;
 	} else if(!!name && name.charAt(name.length-1) == "/"){
 		return ext.folder;
@@ -61,7 +90,7 @@ const isMirror = (path, mirrorPaths) => {
 	if(!!mirrorPaths){
 		mirrorPaths.forEach((mirrorPath)=>{
 			if(!!mirrorPath){
-				_mirrorPaths.push(mirrorPath.replace(/^\//, ''))
+				_mirrorPaths.push(mirrorPath)
 			}
 		})
 	};
@@ -84,11 +113,14 @@ const bitUnit = (value)=> {
 }
 const openFile = (path) => {
 	//{ read: true, write: false, baseDir: BaseDirectory.Home }
-	open(path);
-}
-const saveFile = () => {
-	
+	if(platform() == 'ios' || platform() == 'android'){
+		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to the Files App: /ztm/ztmCloud folder to open it.`, life: 3000 });
+	} else if(platform() == 'web'){
+		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
+	} else {
+		open(path);
+	}
 }
 export {
-	ext, checker, bitUnit, openFile, isMirror
+	ext, checker, bitUnit, openFile, isMirror, initWorkspace, importFile
 };
