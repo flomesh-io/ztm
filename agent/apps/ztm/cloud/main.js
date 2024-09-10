@@ -81,12 +81,17 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/file-data/*': {
+      'GET': api.streamFile,
+    },
+
     '/api/acl/*': {
-      'GET': responder(
-        params => api.getACL(params['*']).then(
+      'GET': responder((params) => {
+        var pathname = URL.decode(params['*'])
+        return api.getACL(pathname).then(
           ret => ret ? response(200, ret) : response(404)
         )
-      ),
+      }),
 
       'POST': responder(
         (params, req) => api.setACL(params['*'], JSON.decode(req.body)).then(
