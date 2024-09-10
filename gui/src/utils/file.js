@@ -15,7 +15,7 @@ import userfolder from "@/assets/img/files/userfolder.png";
 import { open } from '@tauri-apps/plugin-shell';
 import { platform } from '@/utils/platform';
 import { save } from '@tauri-apps/plugin-dialog';
-import { create, writeFile, BaseDirectory } from "@tauri-apps/plugin-fs";
+import { create, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 
@@ -34,7 +34,7 @@ const writeFile = (file, target, callback) => {
 	reader.onload = function(event) {
 		const arrayBuffer = event.target.result; 
 		const data = new Uint8Array(arrayBuffer);
-		writeFile(target, data, { baseDir: BaseDirectory.Document }).then(()=>{
+		fsWriteFile(target, data, { baseDir: BaseDirectory.Document }).then(()=>{
 			if(!!callback)
 			callback()
 		});
@@ -155,12 +155,10 @@ const saveFile = (fileUrl, before, after) => {
 		before
 		fetchFileAsUint8Array(fileUrl)
 		  .then(uint8Array => {
-		    // 这里的 `uint8Array` 包含了文件数据，类型为 Uint8Array
 				writeFile(uint8Array,targetUrl,()=>{
 					if(!!after)
 					after
 				});
-		    // 你可以使用这个 `uint8Array` 来写入文件或进一步处理
 		  });
 	})
 	
