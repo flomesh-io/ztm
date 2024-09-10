@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { open } from '@tauri-apps/plugin-dialog';
+import { platform } from '@/utils/platform';
+import toast from "@/utils/toast";
 
 const props = defineProps({
 	class: {
@@ -51,18 +53,22 @@ const props = defineProps({
 });
 
 const emits = defineEmits(['select']);
-
+const pm = computed(() => platform())
 const choose = () => {
-	const options = {
-	  directory: true,
-	  multiple: false,
+	if(pm.value == 'ios' || pm.value == 'android'){
+		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Cannot be modified, fixed in the Files App: /ztm folder.`, life: 3000 });
+	} else {
+		const options = {
+			directory: true,
+			multiple: false,
+		}
+		if(props.path){
+			options.defaultPath = props.path;
+		}
+		open(options).then((selected)=>{
+			emits('select', selected);
+		})
 	}
-	if(props.path){
-		options.defaultPath = props.path;
-	}
-	open(options).then((selected)=>{
-		emits('select', selected);
-	})
 }
 </script>
 
