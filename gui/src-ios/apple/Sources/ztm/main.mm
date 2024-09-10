@@ -87,10 +87,10 @@ int main(int argc, char * argv[]) {
 			// copyLibrary(@"assets/libpipy", @"dylib", @"libpipy.dylib");
 			// 准备参数
 			
-			NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
-			NSString *libraryDirectory = [paths objectAtIndex:0];
-			NSLog(@"libpipy libraryDirectory is %@", libraryDirectory);
-			NSString *ztmdbPath = [libraryDirectory stringByAppendingPathComponent:@"ztmdb"];
+			NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+			NSString *documentDirectory = [paths objectAtIndex:0];
+			NSLog(@"libpipy documentDirectory is %@", documentDirectory);
+			NSString *ztmdbPath = [documentDirectory stringByAppendingPathComponent:@"ztmdb"];
 			const char *args[] = {"--pipy", "repo://ztm/agent", "--args", "--data", [ztmdbPath UTF8String], "--listen", "7777", "--pipy-options", "--log-local-only"};
 			int argCount = sizeof(args) / sizeof(args[0]);
 			startPipyInNewThread(argCount, (char **)args);
