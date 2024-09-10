@@ -107,6 +107,7 @@ import CertificateUploder from '@/components/common/CertificateUploder.vue';
 import FileUploderSmall from '@/components/common/FileUploderSmall.vue';
 import FileFolderSelector from '@/components/common/FileFolderSelector.vue';
 import FileImportSelector from '@/components/common/FileImportSelector.vue';
+import FilePreview from '@/components/common/FilePreview.vue';
 import MeshSelector from '@/components/mesh/MeshSelector.vue';
 import FloatLabel from 'primevue/floatlabel';
 
@@ -224,6 +225,7 @@ export function useComponent(app){
 	app.component('FileUploderSmall', FileUploderSmall);
 	app.component('FileFolderSelector', FileFolderSelector);
 	app.component('FileImportSelector', FileImportSelector);
+	app.component('FilePreview', FilePreview);
 	app.component('MeshSelector', MeshSelector);
 	app.component('Empty', Empty);
 }
