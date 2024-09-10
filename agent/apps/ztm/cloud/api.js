@@ -1,3 +1,5 @@
+import MIME from './mime.js'
+
 var CHUNK_SIZE = 2*1024*1024
 var DOWNLOAD_CONCURRENCY = 5
 
@@ -701,7 +703,89 @@ export default function ({ app, mesh }) {
   }
 
   var $ctx
+  var $params
   var $filename
+  var $contentType
+  var $chunks
+  var $sources
+  var $sourcesLB
+
+  var streamFile = pipeline($=>$
+    .onStart(p => { $params = p })
+    .handleMessageStart(
+      function (evt) {
+        if (evt instanceof MessageStart)
+        var params = matchPathUserFile('/' + $params['*'])
+        if (!params) return
+        var username = params.username
+        var filename = params['*']
+        return getFileStatByUser(username, filename).then(stat => {
+          if (stat) {
+            if (stat.state === 'new') return
+            $filename = os.path.join('/users', username, filename)
+            var i = $filename.lastIndexOf('.')
+            if (i > 0) {
+              $contentType = MIME[$filename.substring(i)]
+            }
+            if (stat.state !== 'synced') {
+              $chunks = stat.chunks
+              $sources = new Set(stat.sources)
+              $sourcesLB = new algo.LoadBalancer(stat.sources)
+            }
+          }
+        })
+      }
+    )
+    .pipe(
+      () => {
+        if ($sourcesLB) return 'remote'
+        if ($filename) return 'local'
+        return 'reject'
+      }, {
+        'local': ($=>$
+          .read(() => os.path.join(localDir, $filename))
+          .replaceStreamStart(data => [new MessageStart({ headers: { 'content-type': $contentType }}), data])
+          .replaceStreamEnd(new MessageEnd)
+        ),
+        'remote': ($=>$
+          .replaceMessage(
+            () => [
+              ...$chunks.map((hash, index) => new Message({ index, hash })),
+              new StreamEnd
+            ]
+          )
+          .replaceMessage(
+            function (msg) {
+              var tryNextSource = () => {
+                var ep = $sourcesLB.allocate(undefined, ep => $sources.has(ep))?.target
+                if (!ep) return Promise.resolve(new StreamEnd)
+                return mesh.request(
+                  ep, new Message({
+                    method: 'GET',
+                    path: os.path.join('/api/chunks', $filename) + '?chunk=' + msg.head.index,
+                  })
+                ).then(res => {
+                  if (res?.head?.status === 200 && res.body) {
+                    var hasher = new crypto.Hash('sha256')
+                    hasher.update(res.body)
+                    if (hasher.digest('hex') === msg.head.hash) {
+                      return res.body
+                    }
+                  }
+                  $sources.delete(ep)
+                  return tryNextSource()
+                })
+              }
+              return tryNextSource()
+            }
+          )
+          .replaceStreamStart(data => [new MessageStart({ headers: { 'content-type': $contentType }}), data])
+          .replaceStreamEnd(new MessageEnd)
+        ),
+        'reject': $=>$.pipe(response404),
+      }
+    )
+  )
 
   var serveChunk = pipeline($=>$
     .onStart(c => { $ctx = c })
@@ -723,11 +807,11 @@ export default function ({ app, mesh }) {
     .pipe(
       function (req) {
         if (req instanceof MessageStart) {
-          if (!$filename) return serveChunkReject
+          if (!$filename) return response404
           var url = new URL(req.head.path)
           var chunkNum = url.searchParams.get('chunk')
-          if (!chunkNum) return serveChunkReject
-          if (!matchPathUserFile($filename)) return serveChunkReject
+          if (!chunkNum) return response404
+          if (!matchPathUserFile($filename)) return response404
           var path = os.path.join(localDir, $filename)
           var seek = Number.parseInt(chunkNum) * CHUNK_SIZE
           return pipeline($=>$
@@ -740,7 +824,7 @@ export default function ({ app, mesh }) {
     )
   )
 
-  var serveChunkReject = pipeline($=>$
+  var response404 = pipeline($=>$
     .replaceData()
     .replaceMessage(new Message({ status: 404 }))
   )
@@ -756,6 +840,7 @@ export default function ({ app, mesh }) {
     listUploads,
     downloadFile,
     uploadFile,
+    streamFile,
     serveChunk,
   }
 }
