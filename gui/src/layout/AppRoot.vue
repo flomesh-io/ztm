@@ -19,11 +19,10 @@ import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { openWebview } from '@/utils/webview';
-import { openFile } from '@/utils/file';
+import { openFile, initWorkspace } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 import exportFromJSON from 'export-from-json';
 import toast from "@/utils/toast";
-
 const store = useStore();
 const playing = ref(false);
 const loading = ref(false);
@@ -281,6 +280,7 @@ const toggleLeft = () => {
 onMounted(() => {
 	pipyInit();
 	timmer();
+	initWorkspace();
 	//github-recovery-codes.txt
 });
 </script>

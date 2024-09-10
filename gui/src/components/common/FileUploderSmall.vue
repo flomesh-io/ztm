@@ -51,6 +51,7 @@ const props = defineProps({
 
 const emits = defineEmits(['upload']);
 const $primevue = usePrimeVue();
+const uploading = ref(false);
 
 const uploadedLength = computed(() => {
 	if(!props.modelValue){
@@ -122,7 +123,6 @@ const customUploader = async (event) => {
 			},1000)
 		}
 };
-const uploading = ref(false);
 </script>
 
 <template>

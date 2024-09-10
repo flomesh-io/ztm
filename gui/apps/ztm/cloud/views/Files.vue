@@ -25,20 +25,31 @@ const info = computed(() => {
 });
 
 const fileData = ref([]);
+const current = ref({
+	path:'/',
+	name:''
+});
 
 const attrLoading = ref(false);
 const detailData = ref({});
+const fullPath = computed(()=>(item)=>{
+	if(item?.path){
+		return item.path;
+	} else {
+		const _joinPath = [];
+		const _pre = current.value?.path;
+		if(!!_pre){
+			_joinPath.push(_pre)
+		}
+		_joinPath.push(item.name);
+		return _joinPath.join("/");
+	}
+})
 const loadFileAttr = (item, unload, detailload) => {
 	if(!unload){
 		attrLoading.value = true;
 	}
-	const _joinPath = [];
-	const _pre = item?.path || current.value?.path;
-	if(!!_pre){
-		_joinPath.push(_pre)
-	}
-	_joinPath.push(item.name);
-	fileService.getFiles(_joinPath.join("/")).then((res)=>{
+	fileService.getFiles(fullPath.value(item)).then((res)=>{
 		const _res = res;
 		if(!_res.access){
 			_res.access = {
@@ -73,7 +84,7 @@ const formatFile = (path, d, ary, pre) => {
 			const _file = {
 				key:`${pre}${idx}`,
 				name:file,
-				path:`${path}`,
+				path:`${path}/${file}`,
 				loading:false,
 				selected: false,
 				ext:file.charAt(file.length-1) == "/"?"/":file.split(".")[file.split(".").length-1]
@@ -88,11 +99,6 @@ const formatFile = (path, d, ary, pre) => {
 			}
 		})
 }
-
-const current = ref({
-	path:'',
-	name:''
-});
 
 watch(()=>props.files,()=>{
 	fileData.value = [];
@@ -109,16 +115,18 @@ const filesFilter = computed(() => {
 		return (typing.value == '' || file.name.indexOf(typing.value)>=0 ) 
 	});
 	if(!!sortField.value && (sortOrder.value ==1 || sortOrder.value==-1)){
+		
+		//`/${a.path}/${a.name}`
 		if(['state'].includes(sortField.value)){
 			rtn.sort((a,b)=>{
-				const va = detailData.value[`/${a.path}/${a.name}`]?detailData.value[`/${a.path}/${a.name}`][sortField.value]:'';
-				const vb = detailData.value[`/${b.path}/${b.name}`]?detailData.value[`/${b.path}/${b.name}`][sortField.value]:'';
+				const va = detailData.value[a.path]?detailData.value[a.path][sortField.value]:'';
+				const vb = detailData.value[b.path]?detailData.value[b.path][sortField.value]:'';
 				return vb.localeCompare(va) * sortOrder.value
 			})
 		} else if(['time','size'].includes(sortField.value)){
 			rtn.sort((a,b)=>{
-				const va = detailData.value[`/${a.path}/${a.name}`]?detailData.value[`/${a.path}/${a.name}`][sortField.value]:0;
-				const vb = detailData.value[`/${b.path}/${b.name}`]?detailData.value[`/${b.path}/${b.name}`][sortField.value]:0;
+				const va = detailData.value[a.path]?detailData.value[a.path][sortField.value]:0;
+				const vb = detailData.value[b.path]?detailData.value[b.path][sortField.value]:0;
 				return (va-vb) * sortOrder.value
 			})
 		} else {
@@ -150,12 +158,7 @@ const onNodeExpand = (node) => {
 	if (node.ext == "/") {
 		node.loading = true;
 		node.children = []
-		let nextPath = '';
-		if(!!node.path){
-			nextPath = `${node.path}/${node.name.split("/")[0]}`
-		} else {
-			nextPath = node.name.split("/")[0];
-		}
+		let nextPath = `${node?.path||''}/${node.name.split("/")[0]}`
 		fileService.getFiles(nextPath).then((res)=>{
 			formatFile(nextPath,res,node.children,`${node.key}-`);
 			node.loading = false;
@@ -202,7 +205,7 @@ const selectedFile = ref();
 const selectFile = (e, item) => {
 	if(item.ext == "/"){
 		const _name = item.name.split("/")[0];
-		if(!!current.value?.path){
+		if(!!current.value?.path && current.value?.path!='/'){
 			itemsBreadcrumb.value.push({
 				...current.value,
 				index:itemsBreadcrumb.value.length-1
@@ -213,7 +216,7 @@ const selectFile = (e, item) => {
 			}
 		}else {
 			current.value = {
-				path:`${_name}`,
+				path:`/${_name}`,
 				name:_name
 			}
 		}
@@ -227,7 +230,7 @@ const selectFile = (e, item) => {
 			if(diff <= 600){
 				item.selected.time = new Date();
 				if(!!hasTauri.value){
-					openFile(`${localDir.value}/${selectedFile.value?.path}`)
+					openFile(`${localDir.value}${selectedFile.value?.path}`)
 				}
 			} else {
 				item.selected.value = !item.selected.value;
@@ -235,7 +238,7 @@ const selectFile = (e, item) => {
 				selectedFile.value = null;
 			}
 		
-		//openFile(`${localDir.value}/${current.value.path}`)
+		//openFile(`${localDir.value}${current.value.path}`)
 	}
 }
 
@@ -375,6 +378,10 @@ const doDownload = (item) => {
 			emits('download',[item]);
 			loadFileAttr(item, true);
 		})
+		.catch(err => {
+			emits('download',[item]);
+			loadFileAttr(item, true);
+		}); 
 	}
 }
 const doDownloads = () => {
@@ -393,6 +400,9 @@ const doDownloads = () => {
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${downloadFiles.length} files in the download queue.`, life: 3000 });
 			emits('download',downloadFiles)
 		})
+		.catch(err => {
+			emits('download',downloadFiles);
+		}); 
 	}
 }
 
@@ -403,6 +413,10 @@ const doUpload = (item) => {
 			emits('upload',[item]);
 			loadFileAttr(item, true);
 		})
+		.catch(err => {
+			emits('upload',[item]);
+			loadFileAttr(item, true);
+		}); 
 	}
 }
 const doUploads = () => {
@@ -421,18 +435,20 @@ const doUploads = () => {
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${uploadFiles.length} files in the upload queue.`, life: 3000 });
 			emits('upload',uploadFiles)
 		})
+		.catch(err => {
+			emits('upload',uploadFiles);
+		}); 
 	}
 }
-const fileIcon = computed(()=>(name, path)=>{
-	return checker(name, path, mirrorPaths.value)
+const fileIcon = computed(()=>(item)=>{
+	return checker(item, mirrorPaths.value)
 })
 const toggleMirror = () => {
-	
 	const _index = isMirror(current.value.path, mirrorPaths.value);
 	if(_index>-1){
 		mirrorPaths.value.splice(_index,1);
 	} else {
-		mirrorPaths.value.push(`/${current.value.path}`)
+		mirrorPaths.value.push(current.value.path)
 	}
 	saveConfig();
 }
@@ -466,7 +482,7 @@ const moreItems = computed(()=>{
 		actions.push({
 				label: 'Open Folder',
 				command(){
-					openFile(`${localDir.value}/${current.value.path}`)
+					openFile(`${localDir.value}${current.value.path}`)
 				}
 		})
 	}
@@ -484,6 +500,12 @@ const moreItems = computed(()=>{
 			}
 		});
 	}
+	actions.push({
+		label: 'Reload',
+		command(){
+			load()
+		}
+	});
 	return actions
 });
 
@@ -528,16 +550,20 @@ const active = ref(0);
 const aclLoading = ref(false);
 const saveAcl = () => {
 	aclLoading.value = true;
-	fileService.setAcl(selectFile.value?.access || {}).then((res)=>{
+	fileService.setAcl(fullPath.value(selectedFile.value), selectedFile.value?.access || {}).then((res)=>{
 		aclLoading.value = false;
+		toast.add({ severity: 'success', summary:'Tips', detail: 'ACL Save successfully.', life: 3000 });
 	})
 }
-const isReadonly = computed(()=>(_file)=>{
-	const usernames = _file?.access?.users || {};
+const perIcon = computed(()=>(_file)=>{
+	const detailFile = detailData.value[_file.path];
+	const usernames = detailFile?.access?.users || {};
 	if(usernames[info.value?.endpoint?.username] == 'readonly'){
-		return true;
-	} else if(_file?.access?.all == 'readonly' && usernames[info.value?.endpoint?.username] != 'writable'){
-		return true;
+		return 'pi pi-eye opacity-70';
+	} else if(detailFile?.access?.all == 'readonly'){
+		return 'pi pi-eye opacity-70';
+	} else if(detailFile?.access?.all == 'block'){
+		return 'pi pi-lock opacity-70';
 	} else {
 		return false;
 	}
@@ -578,8 +604,8 @@ onMounted(()=>{
 					</template>
 					<template #end> 
 						<Button v-if="!isMobile" @click="toggleMirror()" v-tooltip.bottom="isMirror(current.path, mirrorPaths)>-1?'Remove Mirror':'Set Mirror'" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" :severity="isMirror(current.path, mirrorPaths)>-1?'primary':'secondary'" text />
-						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}/${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
-						<FileImportSelector icon="pi pi-plus" v-if="hasTauri && current.path!='' && current.path!='users'" :path="`${localDir}/${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
+						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
+						<FileImportSelector icon="pi pi-plus" v-if="hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 						<!-- <Button v-if="!isMobile" icon="pi pi-refresh" text @click="load"  :loading="loader"/> -->
 						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
 							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
@@ -636,25 +662,25 @@ onMounted(()=>{
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
 									<div class="selector pointer"  v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
-										<img :src="fileIcon(slotProps.node.name,slotProps.node.path)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
-										<b class="px-2 vertical-align-middle"><i v-if="isReadonly(slotProps.node)" class="pi pi-lock opacity-70" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
+										<img :src="fileIcon(slotProps.node)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+										<b class="px-2 vertical-align-middle"><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
 									</div>
 								</template>
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag :severity="stateColor[detailData[`/${slotProps.node.path}/${slotProps.node.name}`].state]" class="py-0 px-1" v-if="!!detailData[`/${slotProps.node.path}/${slotProps.node.name}`]">{{ detailData[`/${slotProps.node.path}/${slotProps.node.name}`].state }}</Tag>
+									<Tag :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="!!detailData[slotProps.node.path]">{{ detailData[slotProps.node.path].state }}</Tag>
 								</template>
 						</Column>
 						<Column field="size" header="Size"  sortable>
 							<template  #body="slotProps">
-								<div class="text-sm opacity-60" v-if="detailData[`/${slotProps.node.path}/${slotProps.node.name}`]?.size">{{bitUnit(detailData[`/${slotProps.node.path}/${slotProps.node.name}`].size)}}</div>
+								<div class="text-sm opacity-60" v-if="detailData[slotProps.node.path]?.size">{{bitUnit(detailData[slotProps.node.path].size)}}</div>
 							</template>
 						</Column>
 						<Column v-if="!isMobile" field="time" header="Time" style="min-width: 12rem" sortable>
 							<template  #body="slotProps">
-								<div class="text-sm opacity-60" v-if="detailData[`/${slotProps.node.path}/${slotProps.node.name}`]?.time">
-									{{new Date(detailData[`/${slotProps.node.path}/${slotProps.node.name}`].time).toLocaleString()}}
+								<div class="text-sm opacity-60" v-if="detailData[slotProps.node.path]?.time">
+									{{new Date(detailData[slotProps.node.path].time).toLocaleString()}}
 								</div>
 							</template>
 						</Column>
@@ -663,19 +689,18 @@ onMounted(()=>{
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2 relative" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
-								<img :src="fileIcon(file.name,current.path)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<img :src="fileIcon(file)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">
 									<b v-tooltip="file.name" class="multiline-ellipsis">
 										<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
-										<i v-if="isReadonly(file)" class="pi pi-lock opacity-70" style="font-size: 8pt;"  /> {{ file.name }}
+										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag :severity="stateColor[detailData[`/${file.path}/${file.name}`].state]" class="py-0 px-1 mt-2" v-if="!!detailData[`/${file.path}/${file.name}`]">{{ detailData[`/${file.path}/${file.name}`].state }}</Tag>
-								<div class="text-sm opacity-60 mt-1" v-if="detailData[`/${file.path}/${file.name}`]">{{bitUnit(detailData[`/${file.path}/${file.name}`].size)}}</div>
-								
+								<Tag :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" v-if="!!detailData[file.path]">{{ detailData[file.path].state }}</Tag>
+								<div class="text-sm opacity-60 mt-1" v-if="detailData[file.path]">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
 					 </div>
 				</div>
@@ -692,7 +717,7 @@ onMounted(()=>{
 							<Menu :model="actions" class="w-60">
 							    <template #start>
 										<div v-if="selectedFile" class="text-center pt-4 relative">
-											<img :src="fileIcon(selectedFile.name)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+											<img :src="fileIcon(selectedFile)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<div class="px-2 ">
 												<Button style="word-break: break-all;" class="max-w-16rem" @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
 											</div>

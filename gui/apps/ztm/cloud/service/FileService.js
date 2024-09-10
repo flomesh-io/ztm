@@ -34,7 +34,7 @@ export default class FileService {
 		if(pm == 'ios' || pm == 'android'){
 			return documentDir();
 		} else {
-			return homeDir();
+			return documentDir();
 		}
 	}
 	getConfig(ep) {
@@ -45,16 +45,16 @@ export default class FileService {
 	}
 	getFiles(path) {
 		if(!!path){
-			return request(`/api/files/${path}`)
+			return request(`/api/files${path}`)
 		}else{
 			return request(`/api/files`)
 		}
 	}
 	getAcl(path) {
-		return request(`/api/acl/${path}`)
+		return request(`/api/acl${path}`)
 	}
 	setAcl(path, body) {
-		return request(`/api/acl/${path}`,"POST", body)
+		return request(`/api/acl${path}`,"POST", body)
 	}
 	getUploads() {
 		return request(`/api/uploads`);
