@@ -48,14 +48,22 @@ var DOWNLOAD_CONCURRENCY = 5
 //       }
 //
 
+var matchPathUser = new http.Match('/users/{username}')
+var matchPathUserFile = new http.Match('/users/{username}/*')
+var matchPathSharedFile = new http.Match('/shared/{username}/stat/*')
+var matchPathChunk = new http.Match('/api/chunks/users/{username}/*')
+
 export default function ({ app, mesh }) {
   var localDir
   var mirrorPaths
 
-  applyConfig().then(() => {
-    resumeDownloads()
-    watchMirrors()
-  })
+  applyConfig().then(
+    () => resumeDownloads()
+  ).then(
+    () => initMirrors()
+  ).then(
+    () => watchMirrors()
+  )
 
   mesh.acl(`/shared/${app.username}/stat`, { all: 'block' })
 
@@ -127,27 +135,53 @@ export default function ({ app, mesh }) {
     }))
   }
 
+  function initMirrors() {
+    if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
+      return mesh.list('/shared').then(files => {
+        var mirrors = mirrorPaths.map(path => path.endsWith('/') ? path : path + '/')
+        Object.keys(files).forEach(
+          pathname => {
+            var params = matchPathSharedFile(pathname)
+            if (!params) return
+            var username = params.username
+            var filename = params['*']
+            var path = os.path.join('/users', username, filename)
+            if (!mirrors.some(p => path.startsWith(p))) return
+            return getFileStatByUser(username, filename).then(
+              stat => {
+                if (stat.state !== 'synced' && stat.state !== 'updated') {
+                  downloadFile(path)
+                }
+              }
+            )
+          }
+        )}
+      )
+    } else {
+      return Promise.resolve()
+    }
+  }
+
   function watchMirrors() {
     if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
-      mesh.watch('/shared/').then(
-        pathnames => {
-          if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
-            var mirrors = mirrorPaths.map(path => path.endsWith('/') ? path : path + '/')
-            var match = new http.Match('/shared/{username}/stat/*')
-            pathnames.forEach(pathname => {
-              var params = match(pathname)
-              if (!params) return
-              var username = params.username
-              var filename = params['*']
-              var path = os.path.join('/users', username, filename)
-              if (mirrors.some(p => path.startsWith(p))) {
-                downloadFile(path)
-              }
-            })
-          }
-          watchMirrors()
+      mesh.watch('/shared/').then(pathnames => {
+        try {
+          var mirrors = mirrorPaths.map(path => path.endsWith('/') ? path : path + '/')
+          pathnames.forEach(pathname => {
+            var params = matchPathSharedFile(pathname)
+            if (!params) return
+            var username = params.username
+            var filename = params['*']
+            var path = os.path.join('/users', username, filename)
+            if (mirrors.some(p => path.startsWith(p))) {
+              downloadFile(path)
+            }
+          })
+        } catch (e) {
+          app.log(`Cannot update mirrors: ${e.message || e}`)
         }
-      )
+        watchMirrors()
+      })
     } else {
       new Timeout(5).wait().then(watchMirrors)
     }
@@ -204,12 +238,10 @@ export default function ({ app, mesh }) {
 
   function setLocalConfig(config) {
     mesh.write('/local/config.json', JSON.encode(config))
-    return applyConfig()
+    return applyConfig().then(
+      () => initMirrors()
+    )
   }
-
-  var matchPathUser = new http.Match('/users/{username}')
-  var matchPathUserFile = new http.Match('/users/{username}/*')
-  var matchPathChunk = new http.Match('/api/chunks/users/{username}/*')
 
   var downloadQueue = []
   var downloadFiles = {}

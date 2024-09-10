@@ -1224,10 +1224,26 @@ export default function (rootDir, config) {
       }
     }
 
+    function list(prefix) {
+      prefix = os.path.normalize(prefix || '')
+      if (!prefix.endsWith('/')) prefix += '/'
+      return discoverFiles().then(
+        files => {
+          var list = {}
+          Object.entries(files).forEach(([path, stat]) => {
+            var localPath = pathToLocal(path)
+            if (localPath && localPath.startsWith(prefix)) {
+              list[localPath] = stat
+            }
+          })
+          return list
+        }
+      )
+    }
+
     function dir(prefix) {
       prefix = os.path.normalize(prefix || '')
       if (!prefix.endsWith('/')) prefix += '/'
-
       return discoverFiles().then(
         files => {
           var set = new Set
@@ -1357,7 +1373,7 @@ export default function (rootDir, config) {
       }
     }
 
-    return { dir, read, write, erase, stat, acl, access, watch }
+    return { list, dir, read, write, erase, stat, acl, access, watch }
   }
 
   function remoteQueryLog(ep) {
