@@ -14,8 +14,8 @@ import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
 import { open } from '@tauri-apps/plugin-shell';
 import { platform } from '@/utils/platform';
-import { save } from '@tauri-apps/plugin-dialog';
-import { create, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
+import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
+import { create, copyFile, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
@@ -48,14 +48,18 @@ const initWorkspace = () => {
 	}
 }
 
-const writeFile = (file, target, callback) => {
+const writeFile = (file, target, after) => {
 	const reader = new FileReader();
 	reader.onload = function(event) {
-		const data = convertToUint8Array(event.target.result);
-		fsWriteFile(target, data, { baseDir: BaseDirectory.Document }).then(()=>{
-			if(!!callback)
-			callback()
-		});
+		const uint8Array = convertToUint8Array(event.target.result);
+		create(target, { baseDir: BaseDirectory.Document }).then((file)=>{
+			file.write(uint8Array).then(()=>{
+				file.close();
+				if(!!after){
+					after()
+				}
+			});
+		})
 	};
 	reader.readAsArrayBuffer(file);
 }
@@ -85,9 +89,24 @@ const ext = {
 	rar: zip,
 	"7z": zip,
 };
-const isImg = (val) => {
-  return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(val);
-}
+
+
+const FileTypes = {
+  image: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'],
+  video: ['mp4', 'webm', 'ogg'],
+  audio: ['mp3', 'wav', 'ogg'],
+	text: ['txt', 'html', 'js', 'css', 'json', 'xml', 'md'],
+  pdf: ['pdf']
+  // Add more supported formats as needed
+};
+
+const isImage = (val) => FileTypes.image.includes(val);
+const isVideo = (val) => FileTypes.video.includes(val);
+const isAudio = (val) => FileTypes.audio.includes(val);
+const isPdf = (val) => FileTypes.pdf.includes(val);
+const isText = (val) => FileTypes.text.includes(val);
+
+
 const checker = (item, mirrorPaths) => {
 	const name = item?.name;
 	const path = item?.path || '';
@@ -174,14 +193,25 @@ const saveFile = (fileUrl, before, after) => {
 				extensions: ext?[ext]:[]
 			}]
 		}).then((targetUrl)=>{
-			if(!!before)
-			before
+			if(!!before){
+				before()
+			}
+			
 			fetchFileAsUint8Array(fileUrl)
 				.then(uint8Array => {
-					fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
-						if(!!after)
-						after()
-					});
+					create(targetUrl, { baseDir: BaseDirectory.Document }).then((file)=>{
+						file.write(uint8Array).then(()=>{
+							file.close();
+							if(!!after){
+								after()
+							}
+						});
+					})
+					// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
+					// 	if(!!after){
+					// 		after()
+					// 	}
+					// });
 				});
 		})
 	});
@@ -209,15 +239,76 @@ const downloadFile = ({
 				}]
 			}).then((targetUrl)=>{
 				let uint8Array = convertToUint8Array(data);
-				fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
-					if(!!after)
-					after()
-				});
+				create(targetUrl, { baseDir: BaseDirectory.Document }).then((file)=>{
+					file.write(uint8Array).then(()=>{
+						file.close();
+						if(after){
+							after()
+						}
+					});
+				})
+				// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
+				// 	if(!!after)
+				// 	after()
+				// });
 			})
 		})
 	}
 }
-
+const importFiles = ({
+	path, multiple, before, after
+}) => {
+	const options = {
+		multiple: multiple,
+	}
+	documentDir().then((dir)=>{
+		options.defaultPath = dir;
+		openDialog(options).then((selected)=>{
+			if (selected === null) {
+				if(after){
+					after([])
+				}
+			} else {
+				const selecteds = Array.isArray(selected)?selected:[selected];
+				// user selected multiple files
+				let saved = 0;
+				if(before){
+					before()
+				}
+				const _targets = [];
+				selecteds.forEach((file)=>{
+					const _file_ary = file.split("/");
+					const _name = _file_ary[_file_ary.length-1];
+					const _target = `${path || dir}/${_name}`;
+					_targets.push(_target);
+					copyFile(file, _target, { fromPathBaseDir: BaseDirectory.Document, toPathBaseDir: BaseDirectory.Document }).then(()=>{
+						saved++;
+						if(saved == selecteds.length){
+							if(after){
+								after(_targets)
+							}
+						}
+					});
+				})
+			}
+		})
+	
+	})
+}
 export {
-	ext, checker, bitUnit, openFile, isMirror, initWorkspace, writeFile, saveFile, downloadFile, isImg
+	ext, 
+	checker, 
+	bitUnit, 
+	openFile, 
+	isMirror, 
+	initWorkspace, 
+	writeFile, 
+	saveFile, 
+	downloadFile, 
+	importFiles,
+	isImage,
+	isVideo,
+	isAudio,
+	isPdf,
+	isText
 };
