@@ -61,16 +61,16 @@ const loadFileAttr = (item, unload, detailload) => {
 			}
 		}
 		attrLoading.value = false;
-		if(detailload){
-			detailData.value[res.path] = {
-				...item,
-				..._res,
-			}
-		} else {
+		if(!detailload){
 			selectedFile.value = {
 				...item,
 				..._res,
 			}
+		} 
+		
+		detailData.value[res.path] = {
+			...item,
+			..._res,
 		}
 		if(!!res.downloading || !!res.uploading){
 			setTimeout(()=>{
@@ -81,11 +81,12 @@ const loadFileAttr = (item, unload, detailload) => {
 }
 const formatFile = (path, d, ary, pre) => {
 		d.forEach((file,idx)=>{
+			const fileName = file.charAt(file.length-1) == "/"?file.substring(0,file.length-1):file;
 			const _file = {
 				key:`${pre}${idx}`,
 				name:file,
-				path:`${path}/${file}`,
-				fileUrl: fileService.getFileUrl(`${path}/${file}`),
+				path:`${path}/${fileName}`,
+				fileUrl: file.charAt(file.length-1) == "/"?'':fileService.getFileUrl(`${path}/${file}`),
 				loading:false,
 				selected: false,
 				ext:file.charAt(file.length-1) == "/"?"/":file.split(".")[file.split(".").length-1]
@@ -104,7 +105,7 @@ const formatFile = (path, d, ary, pre) => {
 watch(()=>props.files,()=>{
 	fileData.value = [];
 	if(!!props.files && props.files.length>0){
-		formatFile(current.value.path, props.files, fileData.value,'');
+		formatFile(current.value.path=="/"?"":current.value.path, props.files, fileData.value,'');
 	}
 },{
 	deep:true,
@@ -161,7 +162,7 @@ const onNodeExpand = (node) => {
 		node.children = []
 		let nextPath = `${node?.path||''}/${node.name.split("/")[0]}`
 		fileService.getFiles(nextPath).then((res)=>{
-			formatFile(nextPath,res,node.children,`${node.key}-`);
+			formatFile(nextPath,res?.list||[],node.children,`${node.key}-`);
 			node.loading = false;
 		})
 	}
@@ -183,9 +184,10 @@ const isPC = computed(()=>{
 	return pm != 'ios' && pm != 'android' && pm != 'web';
 })
 const openPreviewFile = (item) => {
-	if(isPC.value && item?.state != 'missing'){
+	
+	if(isPC.value && detailData.value[item.path]?.state != 'missing'){
 		openFile(`${localDir.value}${item?.path}`);
-	} else {
+	} else if(detailData.value[item.path]?.state != 'new') {
 		openPreview(item);
 	}
 }
@@ -207,7 +209,7 @@ const showBack = computed(()=>{
 const changePath = (item) => {
 	if(item == 0){
 		current.value = {
-			path:'',
+			path:'/',
 			name:''
 		}
 		itemsBreadcrumb.value = [];
@@ -251,7 +253,7 @@ const selectFile = (e, item) => {
 		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
 			if(diff <= 600){
 				item.selected.time = new Date();
-				openPreviewFile(selectedFile.value);
+				openPreviewFile(item);
 			} else {
 				item.selected.value = !item.selected.value;
 				item.selected.time = new Date();
@@ -409,7 +411,7 @@ const doDownloads = () => {
 	if(selectedFiles.value.length>0){
 		const downloadFiles = []
 		selectedFiles.value.forEach((item)=>{
-			if(item.state != "new"){
+			if(detailData.value[item.path].state != "new"){
 				downloadFiles.push(item);
 				reqs.push(fileService.download(item.path));
 			}
@@ -429,11 +431,13 @@ const doDownloads = () => {
 const doUpload = (item) => {
 	if(item.path){
 		fileService.upload(item.path).then((res)=>{
+			debugger;
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the upload queue.`, life: 3000 });
 			emits('upload',[item]);
 			loadFileAttr(item, true);
 		})
 		.catch(err => {
+			debugger;
 			emits('upload',[item]);
 			loadFileAttr(item, true);
 		}); 
@@ -444,7 +448,7 @@ const doUploads = () => {
 	if(selectedFiles.value.length>0){
 		const uploadFiles = [];
 		selectedFiles.value.forEach((item)=>{
-			if(item.state == "new" || item.state == "changed"){
+			if(detailData.value[item.path].state == "new" || detailData.value[item.path].state == "changed"){
 				uploadFiles.push(item);
 				reqs.push(fileService.upload(item.path));
 			}
@@ -461,7 +465,8 @@ const doUploads = () => {
 	}
 }
 const fileIcon = computed(()=>(item)=>{
-	if(!!item.ext && isImage(item.ext) && item.fileUrl){
+	
+	if(!!item.ext && detailData.value[item.path] && detailData.value[item.path].state != "new" && isImage(item.ext) && item.fileUrl){
 		return item.fileUrl;
 	} else {
 		return checker(item, mirrorPaths.value);
@@ -617,9 +622,9 @@ onMounted(()=>{
 						
 						<Button v-if="showBack" @click="back" icon="pi pi-times" severity="secondary" text />
 						<span v-if="showBack" class="opacity-40 mx-2">/</span>
-						<Button @click="openSetting()" v-tooltip="'Setting'" icon="pi pi-cog" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
+						<Button v-if="!isMobile" @click="openSetting()" v-tooltip="'Setting'" icon="pi pi-cog" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
 						<span v-if="!isMobile" class="opacity-40 mx-2">/</span>
-						<Button v-if="!isMobile" @click="changePath(0)" v-tooltip="`Root:${localDir}`" icon="pi pi-warehouse" severity="secondary" text />
+						<Button @click="changePath(0)" v-tooltip="`Root:${localDir}`" icon="pi pi-warehouse" severity="secondary" text />
 						<span v-if="!!current.name" class="opacity-40 mx-2">/</span>
 						<Button v-if="!!current.name" @click="changePath(-1)" v-tooltip="`../`" icon="pi pi-arrow-left" severity="secondary" text />
 						<span class="opacity-40 mx-2" v-if="itemsBreadcrumb.length>0 && !isMobile">/</span>
@@ -739,7 +744,7 @@ onMounted(()=>{
 							</div>
 					 </div>
 				</div>
-				<Dialog class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
+				<Dialog style="max-width: 400px;" class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
 					<Button v-if="active == 1" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
 					<Loading v-if="attrLoading" />
 					<TabView v-else v-model:activeIndex="active">
@@ -781,18 +786,20 @@ onMounted(()=>{
 												<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
 										</div>
 										<div class="px-3 pt-2 pb-3 grid m-0 justify-content-between">
-											<div  class="col-6 px-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
 												<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 											</div>
-											<div  class="col-6 px-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
 												<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2" >
-												<Button :loading="saving" :disabled="!selectedFile?.fileUrl" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save As" severity="secondary"  />
+											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl">
+												<Button :loading="saving" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2" >
-												<Button v-if="isPC && selectedFile?.state != 'missing'" :disabled="!selectedFile?.path" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
-												<Button v-else :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing'">
+												<Button :disabled="!selectedFile?.path" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+											</div>
+											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
+												<Button :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
 											</div>
 										</div>
 							    </template>
@@ -848,7 +855,7 @@ onMounted(()=>{
 						</TabPanel>
 					</TabView>
 				</Dialog>
-				<Dialog class="nopd noheader" v-model:visible="preview.visible" modal :dismissableMask="true" :draggable="true" >
+				<Dialog class="nopd noheader" style="max-width: 100%;" v-model:visible="preview.visible" modal :dismissableMask="true" :draggable="true" >
 					<FilePreview v-if="preview.visible && preview.url" class="w-full" :src="preview.url" />
 				</Dialog>
 			</div>

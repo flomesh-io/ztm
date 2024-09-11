@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { isImage, isVideo,isAudio,isPdf,isText } from '@/utils/file';
 
 const props = defineProps({
@@ -30,7 +30,7 @@ const fileType = computed(() => {
 });
 onMounted(()=>{
 	if (isText(ext.value)) {
-		fetch(props.fileUrl)
+		fetch(props.src.replace('http://127.0.0.1:7777',''))
 			.then(response => response.text())
 			.then(text => {
 				fileContent.value = text;
@@ -49,7 +49,7 @@ onMounted(()=>{
       <img :src="props.src" alt="Image Preview" class="preview-image" width="100%"/>
     </template>
     <template v-else-if="isVideo(ext)">
-      <video controls class="preview-video" width="100%">
+      <video controls class="preview-video w-full" width="100%">
         <source :src="props.src" :type="fileType" />
       </video>
     </template>
@@ -59,7 +59,7 @@ onMounted(()=>{
       </audio>
     </template>
 		<template v-else-if="isText(ext)">
-			<pre class="preview-text w-full">{{ fileContent }}</pre>
+			<pre class="preview-text w-full mx-2">{{ fileContent }}</pre>
 		</template>
     <template v-else-if="isPdf(ext)">
       <iframe :src="props.src" class="preview-pdf" width="100%" frameborder="0" :height="viewHeight" :class="class"></iframe>
@@ -73,6 +73,7 @@ onMounted(()=>{
 <style scoped>
 .preview-container {
   display: flex;
+	width: 100%;
   justify-content: center;
   align-items: center;
 }
@@ -88,8 +89,9 @@ onMounted(()=>{
 .preview-text {
   width: 100%;
   height: 100%;
-  white-space: pre-wrap;
-  word-wrap:break-word;
+	overflow-wrap: break-word;
+	white-space: break-spaces;
+  word-wrap:break-all;
   background-color: #f5f5f5;
   padding: 10px;
   border: 1px solid #ccc;

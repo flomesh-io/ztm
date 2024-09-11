@@ -38,6 +38,25 @@ function getUrl(url){
 		return `http://127.0.0.1:${getPort()}${path}${url}`
 	}
 }
+
+function getMetaUrl(url){
+	let path = "";
+	if(location.pathname){
+		let params = location.pathname.split('/');
+		if(params.length >= 8){
+			params.splice(params.length-1,1)
+			path = params.join("/")
+		}
+	}
+	const devPath = localStorage.getItem("DEV_BASE")
+	if(!!devPath){
+		return `http://127.0.0.1:${getPort()}${devPath}${url}`
+	}else if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
+		return `${path}${url}`
+	} else {
+		return `http://127.0.0.1:${getPort()}${path}${url}`
+	}
+}
 function getLocalUrl(url){
 	let path = "";
 	if(location.pathname){
@@ -340,6 +359,7 @@ export {
   METHOD,
   AUTH_TYPE,
 	getUrl,
+	getMetaUrl,
   request,
 	requestNM,
 	localRequest,
