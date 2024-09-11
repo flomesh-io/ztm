@@ -18,7 +18,7 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-const props = defineProps(['small','files','error','loading','loader','queueSize','endpoints'])
+const props = defineProps(['small','files','error','loading','queueSize','endpoints'])
 const emits = defineEmits(['download','upload','load'])
 const info = computed(() => {
 	return store.getters['app/info']
@@ -29,7 +29,10 @@ const current = ref({
 	path:'/',
 	name:''
 });
-
+const isMyFolder = computed(()=>{
+	const pathAry = current.value.path.split("/");
+	return pathAry[2] == info.value?.username
+})
 const attrLoading = ref(false);
 const detailData = ref({});
 const fullPath = computed(()=>(item)=>{
@@ -102,15 +105,6 @@ const formatFile = (path, d, ary, pre) => {
 		})
 }
 
-watch(()=>props.files,()=>{
-	fileData.value = [];
-	if(!!props.files && props.files.length>0){
-		formatFile(current.value.path=="/"?"":current.value.path, props.files, fileData.value,'');
-	}
-},{
-	deep:true,
-	immediate:true,
-});
 
 const filesFilter = computed(() => {
 	let rtn = fileData.value.filter((file)=>{
@@ -431,13 +425,11 @@ const doDownloads = () => {
 const doUpload = (item) => {
 	if(item.path){
 		fileService.upload(item.path).then((res)=>{
-			debugger;
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the upload queue.`, life: 3000 });
 			emits('upload',[item]);
 			loadFileAttr(item, true);
 		})
 		.catch(err => {
-			debugger;
 			emits('upload',[item]);
 			loadFileAttr(item, true);
 		}); 
@@ -558,7 +550,7 @@ const searchSort = (e)=>{
 }
 const filterEps = computed(()=>(users)=>{
 	const usernames = Object.keys(users);
-	usernames.push(info.endpoint?.username);
+	usernames.push(info.value?.username);
 	return _.filter(props.endpoints, (item) => !_.includes(usernames, item.username));
 })
 const acl = ref({
@@ -587,7 +579,7 @@ const saveAcl = () => {
 const perIcon = computed(()=>(_file)=>{
 	const detailFile = detailData.value[_file.path];
 	const usernames = detailFile?.access?.users || {};
-	if(usernames[info.value?.endpoint?.username] == 'readonly'){
+	if(usernames[info.value?.username] == 'readonly'){
 		return 'pi pi-eye opacity-70';
 	} else if(detailFile?.access?.all == 'readonly'){
 		return 'pi pi-eye opacity-70';
@@ -608,6 +600,17 @@ const saveAs = (item) => {
 		})
 	}
 }
+
+watch(()=>props.files,()=>{
+	fileData.value = [];
+	if(!!props.files && props.files.length>0){
+		formatFile(current.value.path=="/"?"":current.value.path, props.files, fileData.value,'');
+	}
+},{
+	deep:true,
+	immediate:true,
+});
+
 onMounted(()=>{
 	getConfig();
 	
@@ -645,8 +648,7 @@ onMounted(()=>{
 					<template #end> 
 						<Button v-if="!isMobile" @click="toggleMirror()" v-tooltip.bottom="isMirror(current.path, mirrorPaths)>-1?'Remove Mirror':'Set Mirror'" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" :severity="isMirror(current.path, mirrorPaths)>-1?'primary':'secondary'" text />
 						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
-						<FileImportSelector icon="pi pi-plus" v-if="hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
-						<!-- <Button v-if="!isMobile" icon="pi pi-refresh" text @click="load"  :loading="loader"/> -->
+						<FileImportSelector icon="pi pi-plus" v-if="isMyFolder && hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
 							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
@@ -701,9 +703,9 @@ onMounted(()=>{
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
-									<div class="selector pointer"  v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" >
-										<img :src="fileIcon(slotProps.node)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
-										<b class="px-2 vertical-align-middle"><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
+									<div class="selector pointer"  v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
+										<img oncontextmenu="return false;" ontouchstart="event.preventDefault();"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+										<b class="px-2 vertical-align-middle" ><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
 									</div>
 								</template>
 						</Column>
@@ -729,7 +731,7 @@ onMounted(()=>{
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2 relative" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
-								<img :src="fileIcon(file)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<img  oncontextmenu="return false;" ontouchstart="event.preventDefault();"  :src="fileIcon(file)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
@@ -805,7 +807,7 @@ onMounted(()=>{
 							    </template>
 							</Menu>
 						</TabPanel>
-						<TabPanel v-if="selectedFile?.access && selectedFile?.state != 'new'">
+						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new'">
 							<template #header>
 								<div>
 									<i class="pi pi-shield mr-2" />ACL

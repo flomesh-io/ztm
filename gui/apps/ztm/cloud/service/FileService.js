@@ -30,12 +30,7 @@ export default class FileService {
 		return request(`/api/endpoints`);
 	}
 	getDir() {
-		const pm = platform();
-		if(pm == 'ios' || pm == 'android'){
-			return documentDir();
-		} else {
-			return documentDir();
-		}
+		return documentDir();
 	}
 	getConfig(ep) {
 		return request(`/api/endpoints/${ep}/config`)
@@ -50,7 +45,7 @@ export default class FileService {
 		return request(`/api/file-data${path}`)
 	}
 	getFiles(path) {
-		if(!!path){
+		if(!!path && path != "/"){
 			return request(`/api/files${path}`)
 		}else{
 			return request(`/api/files`)

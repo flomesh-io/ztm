@@ -128,7 +128,11 @@ const copy = () => {
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
 	});
 }
-const visibleImport = ref(false)
+const visibleImport = ref(false);
+const newInvite = () => {
+	visibleImport.value = true;
+	permit.value = null;
+}
 </script>
 
 <template>
@@ -142,7 +146,7 @@ const visibleImport = ref(false)
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
-						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invite'"  @click="()=>{visibleImport=true}"/>
+						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invite'"  @click="newInvite"/>
 					</template>
 			</AppHeader>
 			
