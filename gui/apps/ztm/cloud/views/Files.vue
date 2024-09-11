@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit, openFile, isMirror, isImg, saveFile } from '@/utils/file';
+import { checker, bitUnit, openFile, isMirror, isImage, saveFile } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
@@ -461,7 +461,7 @@ const doUploads = () => {
 	}
 }
 const fileIcon = computed(()=>(item)=>{
-	if(!!item.ext && isImg(item.ext) && item.fileUrl){
+	if(!!item.ext && isImage(item.ext) && item.fileUrl){
 		return item.fileUrl;
 	} else {
 		return checker(item, mirrorPaths.value);

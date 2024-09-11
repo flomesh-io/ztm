@@ -1,11 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { open } from '@tauri-apps/plugin-dialog';
-import { copyFile, BaseDirectory } from '@tauri-apps/plugin-fs';
-import { platform } from '@/utils/platform';
-import { homeDir, documentDir } from '@tauri-apps/api/path';
+import { documentDir } from '@tauri-apps/api/path';
 import { usePrimeVue } from 'primevue/config';
-import { writeFile } from '@/utils/file';
+import { writeFile, importFiles } from '@/utils/file';
 import toast from "@/utils/toast";
 
 const props = defineProps({
@@ -57,53 +54,20 @@ const props = defineProps({
 });
 
 const emits = defineEmits(['select']);
-const pm = computed(() => platform());
 const importTargets = ref([]);
 const choose = () => {
-
-	const options = {
-		multiple: props.multiple,
-	}
-	if(pm.value == 'ios' || pm.value == 'android'){
-		documentDir().then((dir)=>{
-			options.defaultPath = dir;
-			openDialog(options, dir)
-		})
-	} else if(!!pm.value){
-		documentDir().then((dir)=>{
-			options.defaultPath = dir;
-			openDialog(options, dir)
-		})
-	} else {
-		openDialog(options);
-	}
-}
-const openDialog = (options, dir) => {
-	open(options).then((selected)=>{
-		if (Array.isArray(selected)) {
-			// user selected multiple files
-			let saved = 0;
+	importFiles({
+		multiple: true,
+		path: props.path,
+		before: ()=>{
 			uploading.value = true;
 			toast.add({ severity: 'contrast', summary: 'Copying', group: 'import' });
-			selected.forEach((file)=>{
-				const _file_ary = file.split("/");
-				const _name = _file_ary[_file_ary.length-1];
-				const _target = `${props?.path || dir}/${_name}`;
-				importTargets.value.push(_target);
-				//BaseDirectory.Home
-				copyFile(file, _target, { fromPathBaseDir: BaseDirectory.Document, toPathBaseDir: BaseDirectory.Document }).then(()=>{
-					saved++;
-					if(saved == selected.length){
-						emits('saved', {});
-						uploading.value = false;
-					}
-				});
-			})
-		} else if (selected === null) {
-			// user cancelled the selection
-		} else {
-			// user selected a single file
-		}
+		},
+		after: (targets)=>{
+			importTargets.value = targets;
+			emits('saved', {});
+			uploading.value = false;
+		},
 	})
 }
 // web file
@@ -157,7 +121,6 @@ const customUploader = async (event) => {
 };
 const hasTauri = ref(!!window.__TAURI_INTERNALS__ || true);
 
-//&& pm != 'ios' && pm != 'android'
 </script>
 
 <template>
