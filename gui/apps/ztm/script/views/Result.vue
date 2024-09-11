@@ -24,7 +24,7 @@ const exportCsv = () => {
 	}
 	downloadFile({
 		data: exportData,
-		fileName:`result.csv`,
+		fileName:`result`,
 		ext: "csv"
 	});
 }

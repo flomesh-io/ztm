@@ -42,7 +42,7 @@ const getFiles = () => {
 	loading.value = true;
 	loader.value = true;
 	fileService.getFiles(path.value).then((res)=>{
-		files.value = res;
+		files.value = res?.list|| [];
 		loading.value = false;
 		setTimeout(() => {
 			loader.value = false;

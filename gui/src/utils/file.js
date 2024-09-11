@@ -21,26 +21,46 @@ import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
 
 function convertToUint8Array(input) {
-  let buffer;
-
   if (typeof input === 'string') {
-    buffer = new TextEncoder().encode(input).buffer;
+		//.buffer
+    return new TextEncoder().encode(input);
   } else if (typeof input === 'object' && input !== null) {
     const jsonString = JSON.stringify(input);
-    buffer = new TextEncoder().encode(jsonString).buffer;
+    return new TextEncoder().encode(jsonString);
   } else if (input instanceof ArrayBuffer) {
-    buffer = input;
+    return new Uint8Array(input);
   } else if (input instanceof Uint8Array) {
-    return input;
+    new Uint8Array(input);
   } else {
     throw new Error('Unsupported input type for conversion to Uint8Array');
   }
-  return new Uint8Array(buffer);
+}
+const isMobile = () => {
+	return platform() == 'ios' || platform() == 'android';
 }
 
+const getSavePath = (target, oldName) => {
+	if(isMobile()){
+		const newName = target.split("/")[target.split("/").length-1];
+		// if(target.toLowerCase().indexOf('library/cache')>-1 || target.toLowerCase().indexOf('libraries/cache')>-1){
+		// 	return decodeURI(target)
+		// }else 
+		if(newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
+			return oldName;
+		}else{
+			return decodeURI(newName);
+		}
+	} else {
+		return target;
+	}
+}
 const initWorkspace = () => {
-	if(platform() == 'ios' || platform() == 'android'){
-		create("Readme.txt", { baseDir: BaseDirectory.Document }).then((file)=>{
+	if(isMobile()){
+		create("Readme.txt", { 
+			write:true, 
+			create:true, 
+			baseDir: BaseDirectory.Document ,
+		}).then((file)=>{
 			file.write(new TextEncoder().encode("Welcome ZTM!")).then(()=>{
 				file.close();
 			});
@@ -52,7 +72,11 @@ const writeFile = (file, target, after) => {
 	const reader = new FileReader();
 	reader.onload = function(event) {
 		const uint8Array = convertToUint8Array(event.target.result);
-		create(target, { baseDir: BaseDirectory.Document }).then((file)=>{
+		create(getSavePath(target), {
+			write:true, 
+			create:true, 
+			baseDir: BaseDirectory.Document ,
+		}).then((file)=>{
 			file.write(uint8Array).then(()=>{
 				file.close();
 				if(!!after){
@@ -81,6 +105,7 @@ const ext = {
 	mp3,
 	wav: mp3,
 	mp4: mp4,
+	mov: mp4,
 	ppt,
 	txt,
 	md: txt,
@@ -93,8 +118,8 @@ const ext = {
 
 const FileTypes = {
   image: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'],
-  video: ['mp4', 'webm', 'ogg'],
-  audio: ['mp3', 'wav', 'ogg'],
+  video: ['mp4', 'webm', 'ogg', 'mov'],
+  audio: ['mp3', 'wav'],
 	text: ['txt', 'html', 'js', 'css', 'json', 'xml', 'md'],
   pdf: ['pdf']
   // Add more supported formats as needed
@@ -154,7 +179,7 @@ const bitUnit = (value)=> {
 }
 const openFile = (path) => {
 	//{ read: true, write: false, baseDir: BaseDirectory.Home }
-	if(platform() == 'ios' || platform() == 'android'){
+	if(isMobile()){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to the Files App: /ztm/ztmCloud folder to open it.`, life: 3000 });
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
@@ -199,14 +224,20 @@ const saveFile = (fileUrl, before, after) => {
 			
 			fetchFileAsUint8Array(fileUrl)
 				.then(uint8Array => {
-					create(targetUrl, { baseDir: BaseDirectory.Document }).then((file)=>{
-						file.write(uint8Array).then(()=>{
-							file.close();
-							if(!!after){
-								after()
-							}
-						});
-					})
+					setTimeout(()=>{
+						create(getSavePath(targetUrl), {
+							write:true, 
+							create:true, 
+							baseDir: BaseDirectory.Document ,
+						}).then((file)=>{
+							file.write(uint8Array).then(()=>{
+								file.close();
+								if(!!after){
+									after()
+								}
+							});
+						})
+					},300)
 					// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
 					// 	if(!!after){
 					// 		after()
@@ -216,21 +247,21 @@ const saveFile = (fileUrl, before, after) => {
 		})
 	});
 }
-
 const downloadFile = ({
 	ext, data, fileName, after
 }) => {
+	const newFileName = ext?`${fileName}.${ext}`:fileName;
 	if(platform() == 'web'){
 		let exportType = exportFromJSON.types[ext];
 		exportFromJSON({ 
 			data,
-			fileName,
+			fileName:newFileName,
 			exportType
 		})
 	} else {
-		documentDir().then((defaultPath)=>{
+		documentDir().then((dir)=>{
 			save({
-				defaultPath:`${defaultPath}/${fileName}`,
+				defaultPath:`${dir}/${newFileName}`,
 				title: fileName,
 				canCreateDirectories: true,
 				filters: [{
@@ -239,14 +270,21 @@ const downloadFile = ({
 				}]
 			}).then((targetUrl)=>{
 				let uint8Array = convertToUint8Array(data);
-				create(targetUrl, { baseDir: BaseDirectory.Document }).then((file)=>{
-					file.write(uint8Array).then(()=>{
-						file.close();
-						if(after){
-							after()
-						}
-					});
-				})
+				setTimeout(()=>{
+					create(getSavePath(targetUrl, newFileName), { 
+						write:true, 
+						create:true, 
+						baseDir: BaseDirectory.Document ,
+					}).then((file)=>{
+						
+						file.write(uint8Array).then(()=>{
+							file.close();
+							if(after){
+								after()
+							}
+						});
+					})
+				},300)
 				// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
 				// 	if(!!after)
 				// 	after()
