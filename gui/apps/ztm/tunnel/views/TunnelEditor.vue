@@ -151,7 +151,7 @@ const commitOut = () => {
 			...outbound.value,
 			proto: tunnel.value.proto, 
 			name: tunnel.value.name,
-			ep:endpoints.value.find((_ep)=>_ep?.id == inbound.value.ep)
+			ep:endpoints.value.find((_ep)=>_ep?.id == outbound.value.ep)
 		});
 		outboundEditor.value = false;
 		outbound.value = _.cloneDeep(newOutbound);

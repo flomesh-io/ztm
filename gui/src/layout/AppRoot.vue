@@ -19,9 +19,8 @@ import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { openWebview } from '@/utils/webview';
-import { openFile, initWorkspace } from '@/utils/file';
+import { openFile, initWorkspace, downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
-import exportFromJSON from 'export-from-json';
 import toast from "@/utils/toast";
 const store = useStore();
 const playing = ref(false);
@@ -251,15 +250,11 @@ const usermenuitems = computed(()=>[{
 					ztmService.identity()
 						.then(res => {
 							if(!!res){
-								if(!window.__TAURI_INTERNALS__){
-									exportFromJSON({ 
-										data: res,
-										fileName:`identity`,
-										exportType: exportFromJSON.types.txt
-									})
-								} else {
-									copy(res)
-								}
+								downloadFile({
+									data: res,
+									fileName:`identity`,
+									ext: "txt"
+								});
 							}
 						})
 						.catch(err => {

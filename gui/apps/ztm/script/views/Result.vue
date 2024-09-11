@@ -2,7 +2,7 @@
 import { ref,onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex';
-import exportFromJSON from 'export-from-json';
+import { downloadFile } from '@/utils/file';
 const props = defineProps(['response','loading'])
 const emits = defineEmits(['back'])
 const back = () => {
@@ -22,12 +22,11 @@ const exportCsv = () => {
 		});
 		exportData.push(_data)
 	}
-
-	exportFromJSON({ 
+	downloadFile({
 		data: exportData,
 		fileName:`result.csv`,
-		exportType: exportFromJSON.types.csv 
-	})
+		ext: "csv"
+	});
 }
 </script>
 

@@ -788,7 +788,7 @@ onMounted(()=>{
 												<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 											</div>
 											<div  class="col-6 px-2" >
-												<Button :disabled="!selectedFile?.fileUrl" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save As" severity="secondary"  />
+												<Button :loading="saving" :disabled="!selectedFile?.fileUrl" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save As" severity="secondary"  />
 											</div>
 											<div  class="col-6 px-2" >
 												<Button v-if="isPC && selectedFile?.state != 'missing'" :disabled="!selectedFile?.path" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />

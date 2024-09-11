@@ -8,7 +8,7 @@ import { useConfirm } from "primevue/useconfirm";
 import dayjs from 'dayjs';
 import { useToast } from "primevue/usetoast";
 import relativeTime from 'dayjs/plugin/relativeTime';
-import exportFromJSON from 'export-from-json';
+import { downloadFile } from '@/utils/file';
 import clipboard from 'clipboardy';
 dayjs.extend(relativeTime)
 
@@ -117,11 +117,10 @@ const inviteEp = () => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 const download = () => {
-	
-	exportFromJSON({ 
+	downloadFile({
 		data: permitStr.value,
 		fileName:`${username.value}-permit`,
-		exportType: exportFromJSON.types.txt
+		ext: 'txt'
 	})
 }
 const copy = () => {
