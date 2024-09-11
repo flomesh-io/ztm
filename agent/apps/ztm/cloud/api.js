@@ -151,7 +151,7 @@ export default function ({ app, mesh }) {
             if (!mirrors.some(p => path.startsWith(p))) return
             return getFileStatByUser(username, filename).then(
               stat => {
-                if (stat.state !== 'synced' && stat.state !== 'updated') {
+                if (stat && !stat.list && stat.state !== 'synced' && stat.state !== 'updated') {
                   downloadFile(path)
                 }
               }
@@ -380,7 +380,7 @@ export default function ({ app, mesh }) {
     ).spawn().then(
       () => getFileStatByUser(params.username, params['*'])
     ).then(stat => {
-      if (stat.hash === hash) {
+      if (stat && !stat.list && stat.hash === hash) {
         mesh.write(os.path.join('/shared', params.username, 'hash', hash), hash)
       }
     })
@@ -402,7 +402,7 @@ export default function ({ app, mesh }) {
 
   function getFileStat(pathname) {
     pathname = os.path.normalize(pathname)
-    if (pathname === '/') return Promise.resolve(['users/'])
+    if (pathname === '/') return Promise.resolve({ path: '/', list: ['users/']})
     if (pathname === '/users') return getUserList()
     var params = matchPathUser(pathname)
     if (params) return getFileListByUser(params.username)
@@ -424,7 +424,7 @@ export default function ({ app, mesh }) {
             }
           }
         )
-        return list.sort()
+        return { path: '/users', list: list.sort() }
       }
     )
   }
@@ -443,12 +443,13 @@ export default function ({ app, mesh }) {
             }
           }
         )
-        return list.sort()
+        return { path: os.path.join('/users', username), list: list.sort() }
       }
     )
   }
 
   function getFileStatByUser(username, filename) {
+    var path = os.path.join('/users', username, filename)
     return Promise.all([
       getLocalStat(username, filename),
       mesh.read(os.path.join('/shared', username, 'stat', filename)).then(
@@ -471,11 +472,21 @@ export default function ({ app, mesh }) {
               }
             )
           }
-          return l.sort()
+          return {
+            path,
+            list: l.sort(),
+            access,
+          }
         } else if (statMesh instanceof Array) {
           statMesh = null
         }
-        if (!statEndp && !statMesh) return null
+        if (!statEndp && !statMesh) {
+          if (access) {
+            return { path, list: [], access }
+          } else {
+            return null
+          }
+        }
         var time = 0
         var size = 0
         var hash = ''
@@ -509,7 +520,6 @@ export default function ({ app, mesh }) {
           chunks = statEndp.chunks
           state = 'synced'
         }
-        var path = os.path.join('/users', username, filename)
         var stat = {
           path,
           state,
@@ -601,8 +611,14 @@ export default function ({ app, mesh }) {
         if (!data) return false
         if (pathname in downloadFiles) return true
         var stat = JSON.decode(data)
-        appendDownload(pathname, stat)
-        continueDownloading()
+        if (stat.size === 0 || !stat.chunks?.length) {
+          pathname = os.path.join(localDir, pathname)
+          os.mkdir(os.path.dirname(pathname), { recursive: true })
+          os.write(pathname, new Data)
+        } else {
+          appendDownload(pathname, stat)
+          continueDownloading()
+        }
         return true
       }
     )
@@ -619,7 +635,7 @@ export default function ({ app, mesh }) {
     return getFileStatByUser(username, filename).then(
       statLocal => {
         if (!statLocal) return false
-        if (statLocal instanceof Array) return false
+        if (statLocal.list) return false
         if (statLocal.state === 'synced') return true
         if (statLocal.state !== 'changed' && statLocal.state !== 'new') return false
         var stat = {
@@ -630,7 +646,7 @@ export default function ({ app, mesh }) {
         }
         uploadFiles[pathname] = stat
         var statData = JSON.encode(stat)
-        Promise.all([
+        return Promise.all([
           mesh.write(os.path.join('/shared', username, 'stat', filename), statData),
           mesh.write(os.path.join('/shared', username, 'hash', stat.hash), stat.hash),
         ]).then(() => {
@@ -713,14 +729,13 @@ export default function ({ app, mesh }) {
   var streamFile = pipeline($=>$
     .onStart(p => { $params = p })
     .handleMessageStart(
-      function (evt) {
-        if (evt instanceof MessageStart)
+      function () {
         var params = matchPathUserFile('/' + $params['*'])
         if (!params) return
         var username = params.username
         var filename = params['*']
         return getFileStatByUser(username, filename).then(stat => {
-          if (stat) {
+          if (stat && !stat.list) {
             if (stat.state === 'new') return
             $filename = os.path.join('/users', username, filename)
             var i = $filename.lastIndexOf('.')
@@ -740,11 +755,11 @@ export default function ({ app, mesh }) {
       () => {
         if ($sourcesLB) return 'remote'
         if ($filename) return 'local'
-        return 'reject'
+        return response404
       }, {
         'local': ($=>$
           .read(() => os.path.join(localDir, $filename))
-          .replaceStreamStart(data => [new MessageStart({ headers: { 'content-type': $contentType }}), data])
+          .replaceStreamStart(data => [new MessageStart({ status: 200, headers: { 'content-type': $contentType }}), data])
           .replaceStreamEnd(new MessageEnd)
         ),
         'remote': ($=>$
@@ -779,10 +794,9 @@ export default function ({ app, mesh }) {
               return tryNextSource()
             }
           )
-          .replaceStreamStart(data => [new MessageStart({ headers: { 'content-type': $contentType }}), data])
+          .replaceStreamStart(data => [new MessageStart({ status: 200, headers: { 'content-type': $contentType }}), data])
           .replaceStreamEnd(new MessageEnd)
         ),
-        'reject': $=>$.pipe(response404),
       }
     )
   )
