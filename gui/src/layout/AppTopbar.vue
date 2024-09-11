@@ -9,7 +9,7 @@ import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
 import { copy } from '@/utils/clipboard';
-import exportFromJSON from 'export-from-json';
+import { downloadFile } from '@/utils/file';
 import toast from "@/utils/toast";
 import ZtmService from '@/service/ZtmService';
 
@@ -172,15 +172,11 @@ const usermenuitems = computed(()=>[{
 					ztmService.identity()
 						.then(res => {
 							if(!!res){
-								if(!window.__TAURI_INTERNALS__){
-									exportFromJSON({ 
-										data: res,
-										fileName:`identity`,
-										exportType: exportFromJSON.types.txt
-									})
-								} else {
-									copy(res)
-								}
+								downloadFile({
+									data: res,
+									fileName:`identity`,
+									ext: 'txt'
+								})
 							}
 						})
 						.catch(err => {

@@ -6,7 +6,7 @@ import { useToast } from "primevue/usetoast";
 import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
 import _ from "lodash"
-import exportFromJSON from 'export-from-json';
+import { downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 const store = useStore();
 const props = defineProps(['pid','title']);
@@ -141,15 +141,11 @@ const usermenuitems = ref([
 				ztmService.identity()
 					.then(res => {
 						if(!!res){
-							if(!window.__TAURI_INTERNALS__){
-								exportFromJSON({ 
-									data: res,
-									fileName:`identity`,
-									exportType: exportFromJSON.types.txt
-								})
-							} else {
-								copy(res)
-							}
+							downloadFile({
+								data: res,
+								fileName:`identity`,
+								ext: 'txt'
+							});
 						}
 					})
 					.catch(err => {

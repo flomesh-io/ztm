@@ -18,6 +18,25 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { create, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
+import exportFromJSON from 'export-from-json';
+
+function convertToUint8Array(input) {
+  let buffer;
+
+  if (typeof input === 'string') {
+    buffer = new TextEncoder().encode(input).buffer;
+  } else if (typeof input === 'object' && input !== null) {
+    const jsonString = JSON.stringify(input);
+    buffer = new TextEncoder().encode(jsonString).buffer;
+  } else if (input instanceof ArrayBuffer) {
+    buffer = input;
+  } else if (input instanceof Uint8Array) {
+    return input;
+  } else {
+    throw new Error('Unsupported input type for conversion to Uint8Array');
+  }
+  return new Uint8Array(buffer);
+}
 
 const initWorkspace = () => {
 	if(platform() == 'ios' || platform() == 'android'){
@@ -32,8 +51,7 @@ const initWorkspace = () => {
 const writeFile = (file, target, callback) => {
 	const reader = new FileReader();
 	reader.onload = function(event) {
-		const arrayBuffer = event.target.result; 
-		const data = new Uint8Array(arrayBuffer);
+		const data = convertToUint8Array(event.target.result);
 		fsWriteFile(target, data, { baseDir: BaseDirectory.Document }).then(()=>{
 			if(!!callback)
 			callback()
@@ -134,7 +152,7 @@ function fetchFileAsUint8Array(fileUrl) {
       return response.arrayBuffer();
     })
     .then(arrayBuffer => {
-      return new Uint8Array(arrayBuffer);
+      return convertToUint8Array(arrayBuffer);
     })
     .catch(error => {
       console.error('Error fetching or processing the file:', error);
@@ -145,24 +163,61 @@ const saveFile = (fileUrl, before, after) => {
 	const filePathAry = fileUrl.split("/");
 	const name = filePathAry[filePathAry.length-1];
 	const ext = name.split(".")[1];
-	save({
-	  filters: [{
-	    name,
-	    extensions: ext?[ext]:[]
-	  }]
-	}).then((targetUrl)=>{
-		if(!!before)
-		before
-		fetchFileAsUint8Array(fileUrl)
-		  .then(uint8Array => {
-				writeFile(uint8Array,targetUrl,()=>{
-					if(!!after)
-					after
-				});
-		  });
-	})
 	
+	documentDir().then((defaultPath)=>{
+		save({
+			defaultPath:`${defaultPath}/${name}`,
+			title: name,
+			canCreateDirectories: true,
+			filters: [{
+				name,
+				extensions: ext?[ext]:[]
+			}]
+		}).then((targetUrl)=>{
+			if(!!before)
+			before
+			fetchFileAsUint8Array(fileUrl)
+				.then(uint8Array => {
+					fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
+						if(!!after)
+						after()
+					});
+				});
+		})
+	});
 }
+
+const downloadFile = ({
+	ext, data, fileName, after
+}) => {
+	if(platform() == 'web'){
+		let exportType = exportFromJSON.types[ext];
+		exportFromJSON({ 
+			data,
+			fileName,
+			exportType
+		})
+	} else {
+		documentDir().then((defaultPath)=>{
+			save({
+				defaultPath:`${defaultPath}/${fileName}`,
+				title: fileName,
+				canCreateDirectories: true,
+				filters: [{
+					name: fileName,
+					extensions: ext?[ext]:[]
+				}]
+			}).then((targetUrl)=>{
+				let uint8Array = convertToUint8Array(data);
+				fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
+					if(!!after)
+					after()
+				});
+			})
+		})
+	}
+}
+
 export {
-	ext, checker, bitUnit, openFile, isMirror, initWorkspace, writeFile,saveFile, isImg
+	ext, checker, bitUnit, openFile, isMirror, initWorkspace, writeFile, saveFile, downloadFile, isImg
 };
