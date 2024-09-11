@@ -9,7 +9,6 @@ const fileService = new FileService();
 const path = ref('');
 const selectedFile = ref();
 const loading = ref(true);
-const loader = ref(true);
 const error = ref();
 const files = ref([]);
 // [
@@ -40,12 +39,12 @@ const getUploads = () => {
 const getFiles = () => {
 	
 	loading.value = true;
-	loader.value = true;
 	fileService.getFiles(path.value).then((res)=>{
 		files.value = res?.list|| [];
 		loading.value = false;
-		setTimeout(() => {
-			loader.value = false;
+	}).catch(()=>{
+		setTimeout(()=>{
+			getFiles();
 		},1000)
 	})
 }
@@ -116,7 +115,6 @@ onActivated(()=>{
 				:endpoints="endpoints"
 				:error="error" 
 				:loading="loading"
-				:loader="loader"
 				:small="visibleEditor" 
 				@upload="uploadChange" 
 				@download="downloadChange" 
