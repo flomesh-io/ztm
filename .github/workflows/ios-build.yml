@@ -43,7 +43,7 @@ jobs:
         cd gui
         src-ios/sign.sh src-tauri/gen/apple/build/arm64/ztm.ipa $APPLE_ID $APPLE_PASSWORD
       timeout-minutes: 120
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: release
         path: ./gui/src-tauri/gen/apple/build/arm64/ztm.ipa
