@@ -244,3 +244,91 @@ ztm ep ep-2 script hello.js
 
 Hello, world
 ```
+
+## zt-cloud
+
+内置的零信任 Cloud 应用使得在设备和用户之间共享文件变得十分简单。与 *Apple iCloud* 等中心化云服务不同的是，用户文件被分布式存储于多个端点设备上，这些设备可以位于各种各样的私有本地网络中，用户仍然能够通过互联网远程的、安全的访问这些文件。
+
+使用 Cloud 应用之前，你需要一个 *本地目录* 作为整个 Mesh 文件系统的 *镜像*。每个端点可以拥有自己的本地目录位置，但里面的内容经过 *手动下载* 或者 *自动镜像* 以后将会是完全一致的。
+
+默认的本地目录位于 `~/ztmCloud`。你也可以为当前端点设置一个不同的本地目录：
+
+```sh
+ztm cloud config --local-dir /path/to/my/local/mirror
+```
+
+> 如果你希望配置一个远程端点，可以通过在 `cloud config` 之前插入 `ep my-remote-ep` 来指明。
+
+要查看已经存储于云上的文件，输入 `ztm cloud ls <path>`。例如：
+
+```sh
+ztm cloud ls /users/root
+NAME       STATE   SIZE        DATE  SOURCES  SHARED
+video.mp4  new     2055491257  -     0        -
+dummy.txt  synced  12          -     2        -
+shared/    -       -           -     -        All Users
+```
+
+其中，*STATE* 列显示了 *本地目录* 中的文件与 Mesh 所存储的文件相比较而言的状态，包括以下几种可能：
+
+- *Synced*: 本地文件跟 Mesh 上的完全一致
+- *New*: 本地文件对于 Mesh 来说是新的，换而言之，Mesh 上还不存在这个文件
+- *Changed*: Mesh 上有这个文件，但比本地文件旧
+- *Missing*: Mesh 上有这个文件，而本地没有
+- *Outdated*: Mesh 上有一个比本地目录中的文件更新的版本
+
+*SOURCES* 列告诉我们有多少个端点存储了这个文件。换句话说，在整个 Mesh 范围内，这个文件拥有多少个副本。
+
+要把一个本地文件放到 Mesh 上，也就是说，让一个文件对其他端点 *可见*，可以使用 `upload` 命令：
+
+```sh
+ztm cloud upload /users/root/video.mp4
+```
+
+如果这个文件对于 Mesh 来说是 *新的*，那么上传以后，这个文件的 *SOURCES* 列会变成 1，因为我们目前仅有一个端点存储了这个文件，也就是当前的本地端点。
+
+```sh
+ztm cloud ls /users/root/video.mp4
+NAME       STATE   SIZE        DATE  SOURCES  SHARED
+video.mp4  synced  2055491257  -     1        -
+```
+
+要在一个不同的端点上下载这个文件，可以在那个端点上使用 `download` 命令：
+
+```sh
+# On a second endpoint
+ztm cloud download /users/root/video.mp4
+```
+
+这样文件就从第一个端点下载到第二个端点的本地目录中，*SOURCES* 列也将增加到 2，因为现在有两个端点的本地目录中含有该文件。
+
+如果你希望第二个端点能够自动下载上传到 Mesh 的新文件，可以为 `/users/root` 目录设置一个 *自动镜像*：
+
+```sh
+# On the second endpoint
+ztm cloud config --add-mirror /users/root
+```
+
+这样设置以后，第二个端点就成为了 `/users/root` 目录的备份。
+
+虽然这样就可以很容易的在端点之间共享文件，但是默认情况下，文件只能被所有者访问。在前面的案例中，所有文件都位于 `/users/root` 目录下，属于 `root` 用户，所以其他用户无法访问。
+
+要把一个文件或者目录共享给其他用户，可以使用 `share` 命令：
+
+```sh
+ztm cloud share /users/root/shared --set-all readonly
+```
+
+要把一个文件或者目录共享给某个特定用户，可以使用 `share` 命令的 `--set-readonly` 选项：
+
+```sh
+ztm cloud share /users/root/video.mp4 --set-readonly guest
+```
+
+要查看关于 `share` 命令的更多选项，可以输入：
+
+```sh
+ztm cloud help share
+```
+
+你也可以通过输入 `ztm cloud help [command]` 来了解有关其他命令的详细信息。
