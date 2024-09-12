@@ -263,10 +263,10 @@ To see what files are already stored in the cloud, type `ztm cloud ls <path>`. F
 
 ```sh
 ztm cloud ls /users/root
-NAME       STATE   SIZE        DATE  SOURCES  SHARED
-video.mp4  new     2055491257  -     0        -
-dummy.txt  synced  12          -     2        -
-shared/    -       -           -     -        All Users
+NAME       STATE   SIZE        DATE                      SOURCES  SHARED
+video.mp4  new     2055491257  Thu Aug 22 20:14:37 2024  0        -
+dummy.txt  synced  12          Tue Sep 10 11:46:41 2024  2        -
+shared/    -       -           -                         -        All Users
 ```
 
 The *STATE* column shows the current status of a file in the *local directory* compared to what has been stored on the mesh. It can be one of:
@@ -289,8 +289,8 @@ If the file is *new* to the mesh, after uploading it, the *SOURCES* column of th
 
 ```sh
 ztm cloud ls /users/root/video.mp4
-NAME       STATE   SIZE        DATE  SOURCES  SHARED
-video.mp4  synced  2055491257  -     1        -
+NAME       STATE   SIZE        DATE                      SOURCES  SHARED
+video.mp4  synced  2055491257  Thu Aug 22 20:14:37 2024  1        -
 ```
 
 To download the file on a different endpoint, use `download` command on that endpoint:
