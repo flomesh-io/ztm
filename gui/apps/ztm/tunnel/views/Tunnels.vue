@@ -68,7 +68,7 @@ const edit = (d) => {
 
 <template>
 	<div class="flex flex-row min-h-screen"  :class="{'embed-ep-header':false}">
-		<div  class="relative h-full w-full" >
+		<div  class="relative h-full w-full min-h-screen" >
 			<AppHeader :child="true">
 					<template #center>
 						<b>Tunnels</b>
@@ -126,7 +126,7 @@ const edit = (d) => {
 													</div>
 											 </div>
 											 <div class="flex">
-												 <div @click="edit(tunnel)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2rem; height: 2rem'">
+												 <div @click="edit(tunnel)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-1" :style="'width: 2rem; height: 2rem'">
 														 <i class="pi pi-pencil text-xl"></i>
 												 </div><!-- 
 												 <div  @click="showAtionMenu($event, tunnel)" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">

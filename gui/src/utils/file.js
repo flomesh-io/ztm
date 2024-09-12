@@ -19,18 +19,19 @@ import { create, copyFile, writeFile as fsWriteFile, BaseDirectory } from "@taur
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
+import { requestMeta } from '@/service/common/request';
 
 function convertToUint8Array(input) {
   if (typeof input === 'string') {
 		//.buffer
     return new TextEncoder().encode(input);
-  } else if (typeof input === 'object' && input !== null) {
-    const jsonString = JSON.stringify(input);
-    return new TextEncoder().encode(jsonString);
   } else if (input instanceof ArrayBuffer) {
     return new Uint8Array(input);
   } else if (input instanceof Uint8Array) {
     new Uint8Array(input);
+	}else if (typeof input === 'object' && input !== null) {
+    const jsonString = JSON.stringify(input);
+    return new TextEncoder().encode(jsonString);
   } else {
     throw new Error('Unsupported input type for conversion to Uint8Array');
   }
@@ -40,12 +41,14 @@ const isMobile = () => {
 }
 
 const getSavePath = (target, oldName) => {
-	if(isMobile()){
+	if(!!target){
+		return oldName;
+	} else if(isMobile()){
 		const newName = target.split("/")[target.split("/").length-1];
 		// if(target.toLowerCase().indexOf('library/cache')>-1 || target.toLowerCase().indexOf('libraries/cache')>-1){
 		// 	return decodeURI(target)
 		// }else 
-		if(newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
+		if(!!oldName && newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
 			return oldName;
 		}else{
 			return decodeURI(newName);
@@ -54,14 +57,14 @@ const getSavePath = (target, oldName) => {
 		return target;
 	}
 }
-const initWorkspace = () => {
+const writeMobileFile = (name, append) => {
 	if(isMobile()){
-		create("Readme.txt", { 
+		create(name, { 
 			write:true, 
 			create:true, 
-			baseDir: BaseDirectory.Document ,
+			baseDir: BaseDirectory.Document,
 		}).then((file)=>{
-			file.write(new TextEncoder().encode("Welcome ZTM!")).then(()=>{
+			file.write(new TextEncoder().encode(append)).then(()=>{
 				file.close();
 			});
 		})
@@ -187,22 +190,6 @@ const openFile = (path) => {
 		open(path);
 	}
 }
-function fetchFileAsUint8Array(fileUrl) {
-  return fetch(fileUrl)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to fetch the file: ${response.statusText}`);
-      }
-      return response.arrayBuffer();
-    })
-    .then(arrayBuffer => {
-      return convertToUint8Array(arrayBuffer);
-    })
-    .catch(error => {
-      console.error('Error fetching or processing the file:', error);
-      throw error;
-    });
-}
 const saveFile = (fileUrl, before, after) => {
 	const filePathAry = fileUrl.split("/");
 	const name = filePathAry[filePathAry.length-1];
@@ -221,28 +208,37 @@ const saveFile = (fileUrl, before, after) => {
 			if(!!before){
 				before()
 			}
-			
-			fetchFileAsUint8Array(fileUrl)
-				.then(uint8Array => {
+			requestMeta(fileUrl)
+				.then(arrayBuffer => {
 					setTimeout(()=>{
-						create(getSavePath(targetUrl), {
+						create(getSavePath(targetUrl, name), {
 							write:true, 
 							create:true, 
 							baseDir: BaseDirectory.Document ,
 						}).then((file)=>{
-							file.write(uint8Array).then(()=>{
+							file.write(convertToUint8Array(arrayBuffer)).then(()=>{
 								file.close();
 								if(!!after){
 									after()
 								}
 							});
-						})
+						}).catch((e2)=>{
+							writeMobileFile('saveFileReqError2.txt',e2.toString());
+							if(!!after){
+								after()
+							}
+						});
 					},300)
 					// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
 					// 	if(!!after){
 					// 		after()
 					// 	}
 					// });
+				}).catch((e)=>{
+					writeMobileFile('saveFileReqError.txt',e.toString());
+					if(!!after){
+						after()
+					}
 				});
 		})
 	});
@@ -339,9 +335,11 @@ export {
 	bitUnit, 
 	openFile, 
 	isMirror, 
-	initWorkspace, 
+	writeMobileFile, 
+	convertToUint8Array,
 	writeFile, 
 	saveFile, 
+	getSavePath,
 	downloadFile, 
 	importFiles,
 	isImage,

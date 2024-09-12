@@ -32,16 +32,18 @@ const progressStart = (to, from, next) => {
 const infoGuard = (to, from, next, options) => {
   const { toast } = options;
 	const store = useStore();
-	const _info = store.getters['app/info']
+	const _info = store.getters['app/info'];
 	if(!!_info){
 		next();
 	} else {
 		fileService.getInfo()
 			.then(res => {
-				next();
 				store.commit('app/setInfo', res);
+				next();
 			})
-			.catch(err => console.log('Request Failed', err)); 
+			.catch(err => {
+				console.log('Request Failed', err);
+			}); 
 	}
 };
 

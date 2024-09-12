@@ -154,7 +154,7 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__ || true);
 							<div class="flex align-items-center gap-2">
 								<i v-if="!uploading" class="iconfont icon-check text-green-500 text-2xl" />
 								<i v-else class="pi pi-spin pi-spinner text-2xl" />
-								<span class="font-bold text-900 text-white">{{importTargets}} {{uploading?'Importing':'Import successful'}}</span>
+								<span class="font-bold">{{importTargets.join(",")}} {{uploading?'Importing':'Import successful'}}</span>
 							</div>
 							<ProgressBar v-if="uploading" class="w-full mt-1" mode="indeterminate" style="height: 6px; "></ProgressBar>
 					</div>

@@ -8,7 +8,8 @@ import { invoke } from '@tauri-apps/api/core';
 const openWebview = (app)=>{
 	try{
 		const platform = store.getters['account/platform'];
-		if(!window.__TAURI_INTERNALS__ || platform=='android' || platform=='ios' ){
+		if(!window.__TAURI_INTERNALS__  ){
+			//|| platform=='android' || platform=='ios'
 			// if(app.url.indexOf('/#/') == 0){
 			if(!!app.url){	
 				store.commit('notice/setApp', app);
@@ -40,7 +41,7 @@ const openWebview = (app)=>{
 			// 	proxyHost: (app?.port?.listen?.ip||'127.0.0.1'), 
 			// 	proxyPort: app?.port?.listen?.port
 			// });
-			// location.href=options.url;
+			location.href=app.url;
 			// getCurrentDL().then((urls)=>{
 			// 	console.log(urls)
 			// })
