@@ -11,11 +11,11 @@ export default function ({ app, mesh }) {
   }
 
   function checkResponse(res, f) {
-    var status = res.head.status
+    var status = res?.head?.status
     if (200 <= status && status <= 299) {
       return typeof f === 'function' ? f(res.body) : f
     }
-    throw res.head.statusText
+    throw res?.head?.statusText || 'No response from peer'
   }
 
   function allEndpoints() {
