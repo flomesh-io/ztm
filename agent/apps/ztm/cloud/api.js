@@ -514,7 +514,7 @@ export default function ({ app, mesh }) {
             state = statMesh ? 'changed' : 'new'
           }
         } else {
-          time = timeMesh
+          time = statMesh.time
           size = statEndp.size
           hash = statEndp.hash
           chunks = statEndp.chunks

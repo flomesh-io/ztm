@@ -263,10 +263,10 @@ ztm cloud config --local-dir /path/to/my/local/mirror
 
 ```sh
 ztm cloud ls /users/root
-NAME       STATE   SIZE        DATE  SOURCES  SHARED
-video.mp4  new     2055491257  -     0        -
-dummy.txt  synced  12          -     2        -
-shared/    -       -           -     -        All Users
+NAME       STATE   SIZE        DATE                      SOURCES  SHARED
+video.mp4  new     2055491257  Thu Aug 22 20:14:37 2024  0        -
+dummy.txt  synced  12          Tue Sep 10 11:46:41 2024  2        -
+shared/    -       -           -                         -        All Users
 ```
 
 其中，*STATE* 列显示了 *本地目录* 中的文件与 Mesh 所存储的文件相比较而言的状态，包括以下几种可能：
@@ -289,8 +289,8 @@ ztm cloud upload /users/root/video.mp4
 
 ```sh
 ztm cloud ls /users/root/video.mp4
-NAME       STATE   SIZE        DATE  SOURCES  SHARED
-video.mp4  synced  2055491257  -     1        -
+NAME       STATE   SIZE        DATE                      SOURCES  SHARED
+video.mp4  synced  2055491257  Thu Aug 22 20:14:37 2024  1        -
 ```
 
 要在一个不同的端点上下载这个文件，可以在那个端点上使用 `download` 命令：
