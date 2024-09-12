@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
         node-version: '21'
@@ -18,7 +18,7 @@ jobs:
         git fetch --tags
         yarn build-ztm-macos
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: release
         path: ./gui/src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64.dmg
