@@ -7,13 +7,13 @@ brew install cocoapods
 4.
 yarn tauri ios init
 
-5.安装pipylib
+5.pipylib
 chmod +x setup_lib.sh
 /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-ios/setup_lib.sh /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen/apple /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen/apple/Externals/arm64-sim/debug/libpipy.dylib
-并验证
+[valid]
 otool -L /Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/gen/apple/Runner.app/Runner
 
-输入 ~/Library/Developer/Xcode/DerivedData，然后删除该目录下的所有内容。
+~/Library/Developer/Xcode/DerivedData，(delete)。
 xcrun simctl list devices
 iPhone 15 (71ABD7E4-1734-4D89-8FFD-262A97845005) (Shutdown) 
 iPhone 15 Plus (1A5866F6-4B3B-4526-BEB9-D23066CE74B0) (Booted) 
@@ -36,3 +36,14 @@ yarn tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root 
 
 Application supports iTunes file sharing YES
 Supports opening documents in place YES
+
+[services]
+Background Modes
+- Location updates
+- Background fetch
+- Remote norifications
+- Background processing
+
+iCloud
+- iCloud Documents: iCloud.com.flomesh.ztm
+- 

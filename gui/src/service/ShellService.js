@@ -10,18 +10,17 @@ import store from "@/store";
 const ztmService = new ZtmService();
 export default class ShellService {
 	async getDB () {
-		const appDataDirPath = await resourceDir();
+		const appDataDirPath = await documentDir();
 		return `${appDataDirPath}/ztmdb`
 	}
 	async openFinder() {
-		const appDataDirPath = await resourceDir();
+		const appDataDirPath = await documentDir();
 		open(appDataDirPath)
 	}
 	async loadLog() {
 		const pm = platform();
 		if(true){
-			const resourceDirPath = await resourceDir();
-			const lines = await readTextFileLines('ztm.log', { baseDir: BaseDirectory.Resource });
+			const lines = await readTextFileLines('ztm.log', { baseDir: BaseDirectory.Document });
 			const logs = []
 			for await (const line of lines) {
 				if(line.indexOf("[INF]")>=0){
