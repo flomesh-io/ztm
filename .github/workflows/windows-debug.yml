@@ -34,7 +34,7 @@ jobs:
       run: |
         cd gui
         set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:debug
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: release
         path: ./gui/src-tauri/target/debug/bundle/nsis/ztm_${{ vars.APP_VERSION }}_x64-setup.exe
