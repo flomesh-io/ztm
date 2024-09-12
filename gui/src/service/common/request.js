@@ -204,7 +204,18 @@ async function request(url, method, params, config) {
 		}
 	}
 }
-
+async function requestMeta(url) {
+	return fetch(url, {
+		method: METHOD.GET,
+		header:{
+			"Content-Type": "application/json"
+		}
+	}).then((res) => {
+		return res.arrayBuffer();
+	}).catch((e)=>{
+		toastMessage(e);
+	});
+}
 async function requestNM(url, method, params, config) {
 	if(!window.__TAURI_INTERNALS__ || (!!location?.port && location.port>=2000)){
 		switch (method) {
@@ -362,6 +373,7 @@ export {
 	getMetaUrl,
   request,
 	requestNM,
+	requestMeta,
 	localRequest,
   merge,
   spread,

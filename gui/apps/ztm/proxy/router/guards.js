@@ -38,10 +38,12 @@ const infoGuard = (to, from, next, options) => {
 	} else {
 		proxyService.getInfo()
 			.then(res => {
-				next();
 				store.commit('app/setInfo', res);
+				next();
 			})
-			.catch(err => console.log('Request Failed', err)); 
+			.catch(err => {
+				console.log('Request Failed', err);
+			}); 
 	}
 };
 

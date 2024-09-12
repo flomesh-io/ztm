@@ -89,7 +89,7 @@ const formatFile = (path, d, ary, pre) => {
 				key:`${pre}${idx}`,
 				name:file,
 				path:`${path}/${fileName}`,
-				fileUrl: file.charAt(file.length-1) == "/"?'':fileService.getFileUrl(`${path}/${file}`),
+				fileUrl: file.charAt(file.length-1) == "/"?'':fileService.getFileMetaUrl(`${path}/${file}`),
 				loading:false,
 				selected: false,
 				ext:file.charAt(file.length-1) == "/"?"/":file.split(".")[file.split(".").length-1]
@@ -201,7 +201,7 @@ const showBack = computed(()=>{
 	return !isPC.value;
 })
 const changePath = (item) => {
-	if(item == 0){
+	if(item == 0 || (item == -1 && itemsBreadcrumb.value.length <= 0)){
 		current.value = {
 			path:'/',
 			name:''
@@ -703,25 +703,25 @@ onMounted(()=>{
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
-									<div class="selector pointer"  v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
-										<img oncontextmenu="return false;" ontouchstart="event.preventDefault();"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
-										<b class="px-2 vertical-align-middle" ><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
+									<div class="selector pointer noSelect"  v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
+										<img oncontextmenu="return false;"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle noEvent noSelect" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+										<b class="px-2 vertical-align-middle noSelect" ><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
 									</div>
 								</template>
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="!!detailData[slotProps.node.path]">{{ detailData[slotProps.node.path].state }}</Tag>
+									<Tag :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path]">{{ detailData[slotProps.node.path].state }}</Tag>
 								</template>
 						</Column>
 						<Column field="size" header="Size"  sortable>
 							<template  #body="slotProps">
-								<div class="text-sm opacity-60" v-if="detailData[slotProps.node.path]?.size">{{bitUnit(detailData[slotProps.node.path].size)}}</div>
+								<div class="text-sm opacity-60" v-if="slotProps.node.ext!='/' && detailData[slotProps.node.path]?.size">{{bitUnit(detailData[slotProps.node.path].size)}}</div>
 							</template>
 						</Column>
 						<Column v-if="!isMobile" field="time" header="Time" style="min-width: 12rem" sortable>
 							<template  #body="slotProps">
-								<div class="text-sm opacity-60" v-if="detailData[slotProps.node.path]?.time">
+								<div class="text-sm opacity-60" v-if="slotProps.node.ext!='/' && detailData[slotProps.node.path]?.time">
 									{{new Date(detailData[slotProps.node.path].time).toLocaleString()}}
 								</div>
 							</template>
@@ -730,19 +730,19 @@ onMounted(()=>{
 				</TreeTable>
 				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
 						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
-							<div class="selector p-2 relative" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
-								<img  oncontextmenu="return false;" ontouchstart="event.preventDefault();"  :src="fileIcon(file)" class="pointer" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+							<div class="selector p-2 relative noSelect" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
+								<img oncontextmenu="return false;"  :src="fileIcon(file)" class="pointer noEvent noSelect" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="file">
-									<b v-tooltip="file.name" class="multiline-ellipsis">
+									<b v-tooltip="file.name" class="multiline-ellipsis noSelect">
 										<!-- <i v-if="app.uninstall" class="pi pi-cloud-download mr-1" /> -->
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" v-if="!!detailData[file.path]">{{ detailData[file.path].state }}</Tag>
-								<div class="text-sm opacity-60 mt-1" v-if="detailData[file.path]">{{bitUnit(detailData[file.path].size)}}</div>
+								<Tag v-if="file.ext!='/' && !!detailData[file.path]" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >{{ detailData[file.path].state }}</Tag>
+								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
 					 </div>
 				</div>

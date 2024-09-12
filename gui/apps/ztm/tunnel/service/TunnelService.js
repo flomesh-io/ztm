@@ -83,18 +83,19 @@ export default class TunnelService {
 			(eps||[]).forEach((ep)=>{
 				const outboundReq = this.getOutbounds(ep?.id).then((res)=> {
 					return { data:res, ep, type:'outbound' }
-				})
+				}).catch((e)=>{})
 				reqs.push(outboundReq);
 				const inboundReq = this.getInbounds(ep?.id).then((res)=> {
 					return { data:res, ep, type:'inbound' }
-				})
+				}).catch((e)=>{})
 				reqs.push(inboundReq)
 			})
+			
 			return merge(reqs).then((allRes) => {
 				const tunnels = {};
 				// set tunnels
 				(allRes||[]).forEach((childres)=>{
-					if(!!childres.data ){
+					if(!!childres?.data ){
 						childres.data.forEach((res)=>{
 							if(!!res.protocol && !!res.name){
 								const _key = `${res.protocol}/${res.name}`

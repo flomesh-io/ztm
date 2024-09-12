@@ -256,7 +256,7 @@ watch(()=>props.d,()=>{
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					 <Button icon="pi pi-arrow-right-arrow-left" text /> <b>{{props.d?`${props.d?.proto}/${props.d?.name}`:'New Tunnel'}}</b>
+					 <b>{{props.d?`${props.d?.proto}/${props.d?.name}`:'New Tunnel'}}</b>
 				</template>
 		
 				<template #end> 
@@ -363,36 +363,34 @@ watch(()=>props.d,()=>{
 										</Chip>
 									</FormItem>
 								</ul>
-								<DataView v-else :value="inbounds">
+								<DataView class="transparent" v-else :value="inbounds">
 										<template #empty>
 											No inbound.
 										</template>
 									<template #list="slotProps">
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-														<div class="flex-item flex flex-col justify-between items-start gap-2">
-															<div>
-																<div class="text-lg font-medium mt-2">
-																	<Tag v-if="info.endpoint?.id == item.ep?.id" class="mr-2" severity="contrast" >Local</Tag> 
-																	{{ item.ep?.name }}
-																</div>
+														<div class="flex-item flex flex-col justify-between items-start gap-2 ">
+															<div class="text-lg font-medium align-items-start flex flex-col flex-column-reverse  md:flex-row" style="justify-content: start;">
+																<Tag v-if="info.endpoint?.id == item.ep?.id" class="mr-2" severity="contrast" >Local</Tag> 
+																{{ item.ep?.name }}
 															</div>
 														</div>
-														<div class="flex flex-col md:items-end gap-4">
-															<div>
-																<div  class="flex flex-col gap-4 mb-2">
+														<div class="flex flex-col md:items-end gap-4 align-items-start md:align-items-center">
+															<div class="flex md:flex-row flex-column">
+																<div  class="flex md:flex-row flex-column gap-4 ">
 																	
-																	<span class="font-semibold w-6rem ">Listens:</span>
+																	<span class="font-semibold w-6rem md:text-right text-sm">Listens:</span>
 																	<span class="text-xl font-semibold">
-																		<Tag class="block" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens" severity="secondary" >
+																		<Tag class="block" style="white-space: nowrap;" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens.filter((listen)=> !!listen?.value)" severity="secondary" >
 																			<Status v-if="listen?.open != null" :run="!!listen?.open" :errors="listen?.error" />
 																			{{ listen.value }}
 																		</Tag>
 																	</span>
 																</div>
-																<div class="flex flex-col gap-4">
-																	<span class="font-semibold w-6rem " v-if="item.exits && item.exits.length>0">Exits:</span>
-																	<span class="text-xl font-semibold" v-if="item.exits && item.exits.length>0"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" :value="props.endpointMap[exit]?.name || props.endpointMap[exit]?.username || props.endpointMap[exit]?.id" severity="secondary" /></span>
+																<div class="flex md:flex-row flex-column gap-4 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.exits && item.exits.length>0">
+																	<span class="font-semibold w-6rem md:text-right text-sm" >Exits:</span>
+																	<span class="text-xl font-semibold" ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" :value="props.endpointMap[exit]?.name || props.endpointMap[exit]?.username || props.endpointMap[exit]?.id" severity="secondary" /></span>
 																</div>
 															</div>	
 															<div class="flex flex-row-reverse md:flex-row gap-2 pl-4">
@@ -485,7 +483,7 @@ watch(()=>props.d,()=>{
 											</Chip>
 										</FormItem>
 									</ul>
-									<DataView v-else :value="outbounds">
+									<DataView  class="transparent" v-else :value="outbounds">
 										<template #empty>
 											No outbound.
 										</template>
@@ -493,24 +491,24 @@ watch(()=>props.d,()=>{
 										
 											<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 													<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-															<div class="flex-item flex flex-col justify-between items-start gap-2">
-																	<div>
-																			<div class="text-lg font-medium mt-2"><Tag v-if="info.endpoint?.id == item.ep?.id" class="mr-2" severity="contrast" >Local</Tag> {{ item.ep?.name }} </div>
+															<div class="flex-item flex flex-col justify-between items-start gap-2 ">
+																	<div class="text-lg font-medium align-items-start flex flex-col flex-column-reverse  md:flex-row" style="justify-content: start;">
+																			<Tag v-if="info.endpoint?.id == item.ep?.id" class="mr-2" severity="contrast" >Local</Tag> {{ item.ep?.name }} 
 																	</div>
 															</div>
-															<div class="flex flex-col md:items-end gap-4">
-																<div>
-																	<div  class="flex flex-col gap-4 mb-2">	
-																		<span class="font-semibold w-6rem text-right">Targets:</span>
-																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets" :value="target" severity="secondary" /></span>
+															<div class="flex flex-col md:items-end gap-4 align-items-start md:align-items-center">
+																<div class="flex md:flex-row flex-column">
+																	<div  class="flex md:flex-row flex-column gap-4 ">
+																		<span class="font-semibold w-6rem md:text-right text-sm">Targets:</span>
+																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets.filter((target)=> !!target)" :value="target" severity="secondary" /></span>
 																	</div>	
-																	<div  class="flex flex-col gap-4 mb-2">
-																		<span class="font-semibold w-6rem text-right" v-if="item.entrances && item.entrances.length>0">Entrances:</span>
-																		<span class="text-xl font-semibold" v-if="item.entrances && item.entrances.length>0"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></span>
+																	<div  class="flex md:flex-row flex-column gap-4 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.entrances && item.entrances.length>0">
+																		<span class="font-semibold w-6rem md:text-right text-sm" >Entrances:</span>
+																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></span>
 																	</div>
-																	<div class="flex flex-col gap-4">
-																		<span class="font-semibold w-6rem text-right" v-if="item.users && item.users.length>0">Users:</span>
-																		<span class="text-xl font-semibold" v-if="item.users && item.users.length>0"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></span>
+																	<div class="flex md:flex-row flex-column gap-4 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.users && item.users.length>0">
+																		<span class="font-semibold w-6rem md:text-right text-sm">Users:</span>
+																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></span>
 																	</div>
 																</div>	
 																	<div class="flex flex-row-reverse md:flex-row gap-2 pl-4">

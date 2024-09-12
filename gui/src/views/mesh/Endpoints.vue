@@ -132,6 +132,8 @@ const visibleImport = ref(false);
 const newInvite = () => {
 	visibleImport.value = true;
 	permit.value = null;
+	username.value = "";
+	identity.value = "";
 }
 </script>
 

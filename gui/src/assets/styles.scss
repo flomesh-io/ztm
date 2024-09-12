@@ -832,6 +832,9 @@ pre.app-code code{
 	background-color: transparent;
 	
 }
+.transparent>.p-dataview-content{
+	background-color: transparent;
+}
 .text-ellipsis{
 	text-overflow: ellipsis;
 	overflow: hidden;
@@ -1281,4 +1284,13 @@ fieldset{
 
 .p-treetable .p-treetable-thead > tr > th,.p-treetable .p-treetable-tbody > tr{
 	background-color: transparent !important;
+}
+.noEvent{
+	pointer-events: none;
+}
+.noSelect {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }

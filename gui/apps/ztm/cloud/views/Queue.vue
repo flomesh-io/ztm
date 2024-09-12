@@ -65,11 +65,11 @@ const active = ref(0)
 					<div v-if="props.downloads.length>0" class="px-4 py-2">
 						<div v-for="(item, index) in props.downloads" :key="index" class="flex p-2" >
 							<div class="pr-3">
-								<img v-tooltip="item.hash" class="relative" :src="checker(item.path.split('/')[item.path.split('/').length-1])" width="30" height="30" style="top: 5px;"/>
+								<img v-tooltip="item.hash" class="relative" :src="checker(item)" width="30" height="30" style="top: 5px;"/>
 							</div>
 							<div class="flex-item text-left">
 								<div>
-									<b class="mr-2">{{ item.path }}</b>
+									<b class="mr-2" style="word-break: break-all;">{{ item.path }}</b>
 								</div>
 								<div >
 									<ProgressBar :value="(item.downloading*100).toFixed(0)" style="height: 14px;">
@@ -90,11 +90,11 @@ const active = ref(0)
 					<div v-if="props.downloads.length>0" class="px-4 py-2">
 						<div v-for="(item, index) in props.uploads" :key="index" class="flex p-2" >
 							<div class="pr-3">
-								<img v-tooltip="item.hash" class="relative" :src="checker(item.path.split('/')[item.path.split('/').length-1])" width="30" height="30" style="top: 5px;"/>
+								<img v-tooltip="item.hash" class="relative" :src="checker(item)" width="30" height="30" style="top: 5px;"/>
 							</div>
 							<div class="flex-item text-left">
 								<div>
-									<b class="mr-2">{{ item.path }}</b>
+									<b class="mr-2" style="word-break: break-all;">{{ item.path }}</b>
 								</div>
 								<div >
 									<ProgressBar :value="(item.uploading*100).toFixed(0)" style="height: 14px;">

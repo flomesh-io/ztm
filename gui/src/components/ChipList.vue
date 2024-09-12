@@ -96,7 +96,7 @@ const typing = (e,idx) => {
 					<i class="pi" :class="icon"/>
 				</span>
 				<span class="ml-2 font-medium">
-					{{tag}}
+					<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
 					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 				</span>
 			</Chip>
