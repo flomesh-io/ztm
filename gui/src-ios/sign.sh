@@ -29,13 +29,21 @@ fi
 
 echo "挂载点: $MOUNT_POINT"
 
-# 复制内容到临时目录
+# 确保清空临时目录
+if [ -d "$TMP_DIR" ]; then
+  echo "清空临时目录..."
+  rm -rf "$TMP_DIR"
+fi
 mkdir -p "$TMP_DIR"
+
+# 复制内容到临时目录
+echo "复制内容到临时目录..."
 ditto "$MOUNT_POINT" "$TMP_DIR"
 
 echo "卸载 DMG 文件..."
 # 卸载 DMG 文件
 hdiutil detach "$MOUNT_POINT"
+
 # 对二进制文件进行签名
 codesign --deep --force --verify --verbose --options runtime --timestamp --sign "$MACOS_IDENTITY" "$TMP_DIR/ztm.app/Contents/MacOS/ztm"
 codesign --deep --force --verify --verbose --options runtime --timestamp --sign "$MACOS_IDENTITY" "$TMP_DIR/ztm.app/Contents/MacOS/ztmctl"
