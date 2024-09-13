@@ -11,18 +11,6 @@ const selectedFile = ref();
 const loading = ref(true);
 const error = ref();
 const files = ref([]);
-// [
-// 	{
-// 		"name": "file1.zip",
-// 		"sources": ["86540a10-576d-47d1-8d9f-e0184830f152"],
-// 		"path": "/users/root/89.mp4",
-// 		"state":"missing",
-// 		"size":1024*1024,
-// 		"time": 1724328877486,
-// 		"hash": "48effab79269626be8604ad98e394a4f2ed2850fce79abfa6e49975d147464f" ,
-// 		"downloading":0.931241211
-// 	},
-// ]
 const endpoints = ref([]);
 const uploads = ref([]);
 const downloads = ref([]);
@@ -52,7 +40,7 @@ const getFiles = () => {
 const loaddata = () => {
 	getFiles();
 	getDownloads();
-	getUploads();
+	// getUploads();
 }
 
 const getEndpoints = (endpoint) => {
@@ -75,20 +63,20 @@ const downloadChange = (downloadFiles) => {
 	},1000)
 	
 }
-const uploadChange = (uploadFiles) => {
-	visibleEditor.value = true;
-	uploads.value = uploads.value.concat(uploadFiles);
-	setTimeout(()=>{
-		getUploads();
-	},1000)
-}
-const queueSize = computed(()=> downloads.value.length + uploads.value.length);
+// const uploadChange = (uploadFiles) => {
+// 	visibleEditor.value = true;
+// 	uploads.value = uploads.value.concat(uploadFiles);
+// 	setTimeout(()=>{
+// 		getUploads();
+// 	},1000)
+// }
+const queueSize = computed(()=> downloads.value.length );
 
 const timmer = () => {
 	setTimeout(()=>{
-		if(uploads.value.length>0){
-			getUploads();
-		}
+		// if(uploads.value.length>0){
+		// 	getUploads();
+		// }
 		if(downloads.value.length>0){
 			getDownloads();
 		}
@@ -116,14 +104,13 @@ onActivated(()=>{
 				:error="error" 
 				:loading="loading"
 				:small="visibleEditor" 
-				@upload="uploadChange" 
+				@upload="()=>{}" 
 				@download="downloadChange" 
 				@load="changePath"/>
 		</div>
 		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
 			<div class="mobile-fixed h-full">
 				<Queue
-					:uploads="uploads"
 					:downloads="downloads"
 					@back="() => {selectedFile=null;visibleEditor=false;}"/>
 			</div>

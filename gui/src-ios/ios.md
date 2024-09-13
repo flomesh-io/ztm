@@ -46,7 +46,43 @@ Background Modes
 - Background fetch
 - Remote norifications
 - Background processing
-
+- Audio
+- Voice
+- 1.	AVFoundation.framework：
+	2.	MediaPlayer.framework：
 iCloud
 - iCloud Documents: iCloud.com.flomesh.ztm
-- 
+NSLiveActivityUsageDescription: ZTM will run in the background
+
+<key>NSUbiquitousContainers</key>
+<dict>
+    <key>com.flomesh.ztm</key>
+    <dict>
+        <key>NSUbiquitousContainerIsDocumentScopePublic</key>
+        <true/>
+        <key>NSUbiquitousContainerSupportedFolderLevels</key>
+        <string>Any</string>
+    </dict>
+</dict>
+
+<key>NSUbiquitousContainerIdentifier</key>
+<string>iCloud.com.flomesh.ztm</string>
+
+<key>NSFileProtectionComplete</key>
+<true/>
+
+<key>UIApplicationSceneManifest</key>
+<dict>
+    <key>UISceneConfigurations</key>
+    <dict>
+        <key>UIWindowSceneSessionRoleApplication</key>
+        <array>
+            <dict>
+                <key>UISceneDelegateClassName</key>
+                <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+                <key>UISceneStoryboardFile</key>
+                <string>Main</string>
+            </dict>
+        </array>
+    </dict>
+</dict>

@@ -492,7 +492,7 @@ const moreItems = computed(()=>{
 	
 	const actions = [
 		{
-				label: 'Back Root',
+				label: 'Home',
 				command(){
 					changePath(0)
 				}
@@ -726,7 +726,9 @@ onMounted(()=>{
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && detailData[slotProps.node.path]?.state!='synced'">{{ detailData[slotProps.node.path].state }}</Tag>
+									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || !!detailData[slotProps.node.path]?.downloading || !!detailData[slotProps.node.path]?.uploading)">
+									{{ !!detailData[slotProps.node.path]?.downloading?'downloading':(!!detailData[slotProps.node.path]?.uploading?'uploading':detailData[slotProps.node.path].state) }}
+									</Tag>
 								</template>
 						</Column>
 						<Column field="size" header="Size"  sortable>
@@ -756,7 +758,9 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && detailData[file.path]?.state!='synced'" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >{{ detailData[file.path].state }}</Tag>
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || !!detailData[file.path]?.downloading || !!detailData[file.path]?.uploading)" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >
+								{{ !!detailData[file.path]?.downloading?'downloading':(!!detailData[file.path]?.uploading?'uploading':detailData[file.path].state) }}
+								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
 					 </div>
@@ -790,17 +794,23 @@ onMounted(()=>{
 							            <span>{{ item.label }}</span>
 							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-														<Tag v-tooltip="item?.error?.message" :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
+														<Tag v-tooltip="item?.error?.message" :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">
+															{{ !!selectedFile?.downloading?'downloading':(!!selectedFile?.uploading?'uploading':item.shortcut) }}
+														</Tag>
 														<span v-else>{{ item.shortcut }}</span>
 													</span>
 							        </a>
 							    </template>
 							    <template #end >
 										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
-												<ProgressBar :value="selectedFile.uploading*100"></ProgressBar>
+												<ProgressBar :value="selectedFile.uploading*100<20?20:selectedFile.uploading*100">
+													{{(selectedFile.uploading*100).toFixed(0)}}
+												</ProgressBar>
 										</div>
 										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading">
-												<ProgressBar :value="selectedFile.downloading*100"></ProgressBar>
+												<ProgressBar :value="selectedFile.downloading*100<20?20:selectedFile.downloading*100">
+													{{(selectedFile.downloading*100).toFixed(0)}}
+												</ProgressBar>
 										</div>
 										<div class="px-3 pt-2 pb-3 grid m-0 justify-content-between">
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
