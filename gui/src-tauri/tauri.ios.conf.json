@@ -3,6 +3,9 @@
     "active": true,
     "targets": "all",
     "resources": [],
+		"iOS": {
+			"minimumSystemVersion": "16.1"
+		},
     "externalBin": [],
     "icon": [
       "icons/32x32.png",

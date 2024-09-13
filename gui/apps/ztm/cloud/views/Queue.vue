@@ -47,7 +47,7 @@ const active = ref(0)
 		<AppHeader :back="back">
 				<template #center>
 					 <Button icon="pi pi-inbox" text /> 
-					 <b>Queue</b>
+					 <b>Downloads</b> <Badge v-if="!props.downloads" :value="props.downloads.length"/>
 				</template>
 				<template #end> 
 					<!-- <Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/> -->
@@ -55,58 +55,24 @@ const active = ref(0)
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel" style="bottom: 0;">
 			<Loading v-if="loading" />
-			<TabView v-else v-model:activeIndex="active">
-				<TabPanel>
-					<template #header>
+			<div v-else-if="props.downloads.length>0" class="px-4 py-2">
+				<div v-for="(item, index) in props.downloads" :key="index" class="flex p-2" >
+					<div class="pr-3">
+						<img v-tooltip="item.hash" class="relative" :src="checker({...item,name:item.path})" width="30" height="30" style="top: 5px;"/>
+					</div>
+					<div class="flex-item text-left">
 						<div>
-							Download <Badge v-if="!props.downloads" :value="props.downloads.length"/>
+							<b class="mr-2" style="word-break: break-all;">{{ item.path }}</b>
 						</div>
-					</template>
-					<div v-if="props.downloads.length>0" class="px-4 py-2">
-						<div v-for="(item, index) in props.downloads" :key="index" class="flex p-2" >
-							<div class="pr-3">
-								<img v-tooltip="item.hash" class="relative" :src="checker(item)" width="30" height="30" style="top: 5px;"/>
-							</div>
-							<div class="flex-item text-left">
-								<div>
-									<b class="mr-2" style="word-break: break-all;">{{ item.path }}</b>
-								</div>
-								<div >
-									<ProgressBar :value="(item.downloading*100).toFixed(0)" style="height: 14px;">
-										{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}}
-									</ProgressBar>
-								</div>
-							</div>
-						</div>
-					</div>
-					<Empty v-else :error="error"/>
-				</TabPanel>
-				<TabPanel>
-					<template #header>
 						<div >
-							Upload <Badge v-if="!props.uploads" :value="props.uploads.length"/>
-						</div>
-					</template>
-					<div v-if="props.downloads.length>0" class="px-4 py-2">
-						<div v-for="(item, index) in props.uploads" :key="index" class="flex p-2" >
-							<div class="pr-3">
-								<img v-tooltip="item.hash" class="relative" :src="checker(item)" width="30" height="30" style="top: 5px;"/>
-							</div>
-							<div class="flex-item text-left">
-								<div>
-									<b class="mr-2" style="word-break: break-all;">{{ item.path }}</b>
-								</div>
-								<div >
-									<ProgressBar :value="(item.uploading*100).toFixed(0)" style="height: 14px;">
-										{{bitUnit(item.size*item.uploading)}}  / {{bitUnit(item.size)}}
-									</ProgressBar>
-								</div>
-							</div>
+							<ProgressBar :value="item.downloading*100<30?30:item.downloading*100" style="height: 14px;">
+								{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}}
+							</ProgressBar>
 						</div>
 					</div>
-					<Empty v-else :error="error"/>
-				</TabPanel>
-			</TabView>
+				</div>
+			</div>
+			<Empty v-else :error="error"/>
 		</ScrollPanel>
 	</div>
 </template>
