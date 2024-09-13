@@ -55,10 +55,6 @@ const loadFileAttr = (item, unload, detailload) => {
 	fileService.getFiles(fullPath.value(item)).then((res)=>{
 		const _res = res;
 		if(!_res.access){
-			_res.access = {
-				all: null,
-				users:{}
-			}
 			if(!_res.access.users){
 				_res.access.users = {};
 			}
@@ -80,6 +76,8 @@ const loadFileAttr = (item, unload, detailload) => {
 				loadFileAttr(item, true);
 			},1000)
 		}
+	}).catch((e)=>{
+		attrLoading.value = false;
 	})
 }
 const formatFile = (path, d, ary, pre) => {
