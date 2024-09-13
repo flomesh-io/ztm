@@ -23,7 +23,7 @@ const placeholder = ref({
 	c:`-----BEGIN CERTIFICATE-----`,
 	ca:`-----BEGIN CERTIFICATE-----`,
 	p:`-----BEGIN RSA PRIVATE KEY-----`,
-	json:`Paste JSON here.`
+	json:`Paste your permit here.`
 })
 
 const newConfig = {
@@ -221,7 +221,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 						</ul>
 						<div class="text-center" v-if="!permit">
 							<i class="pi pi-info-circle relative" style="top: 3px;"/>
-							Get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> to root user
+							For non-root users, get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> and send it to 'root' user to acquire a permit
 						</div>
 					</div>
 				</div>
