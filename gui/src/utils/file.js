@@ -102,6 +102,7 @@ const ext = {
 	mirror,
 	pdf,
 	pdfx: pdf,
+	svg: img,
 	png: img,
 	jpeg: img,
 	jpg: img,
@@ -120,7 +121,7 @@ const ext = {
 
 
 const FileTypes = {
-  image: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'],
+  image: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'],
   video: ['mp4', 'webm', 'ogg', 'mov'],
   audio: ['mp3', 'wav'],
 	text: ['txt', 'html', 'js', 'css', 'json', 'xml', 'md'],
@@ -170,7 +171,9 @@ const isMirror = (path, mirrorPaths) => {
 	}
 }
 const bitUnit = (value)=> {
-	if(value>(1024 * 1024 * 1024)){
+	if(typeof(value) != 'number'){
+		return value;
+	} else if(value>(1024 * 1024 * 1024)){
 		return (value/(1024 * 1024 * 1024)).toFixed(0) + "GB";
 	} else if(value>(1024 * 1024)){
 		return (value/(1024 * 1024)).toFixed(0) + "MB";
