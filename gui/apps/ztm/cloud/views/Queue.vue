@@ -46,10 +46,10 @@ const active = ref(0)
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					 <Button icon="pi pi-inbox" text /> 
 					 <b>Downloads</b> <Badge v-if="!props.downloads" :value="props.downloads.length"/>
 				</template>
 				<template #end> 
+					 <Button icon="pi pi-inbox" text /> 
 					<!-- <Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/> -->
 				</template>
 		</AppHeader>
