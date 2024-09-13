@@ -35,6 +35,19 @@ const isMyFolder = computed(()=>{
 })
 const attrLoading = ref(false);
 const detailData = ref({});
+const visible = ref(false);
+const typing = ref('');
+const actionMenu = ref();
+const showAtionMenu = (e) => {
+	visible.value = true;
+};
+const layout = ref('grid');
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
+
+const emptyMsg = computed(()=>{
+	return 'Empty.'
+});
 const fullPath = computed(()=>(item)=>{
 	if(item?.path){
 		return item.path;
@@ -54,7 +67,7 @@ const loadFileAttr = (item, unload, detailload) => {
 	}
 	fileService.getFiles(fullPath.value(item)).then((res)=>{
 		const _res = res;
-		if(!_res.access){
+		if(!!_res.access){
 			if(!_res.access.users){
 				_res.access.users = {};
 			}
@@ -78,6 +91,19 @@ const loadFileAttr = (item, unload, detailload) => {
 		}
 	}).catch((e)=>{
 		attrLoading.value = false;
+		if(!detailload){
+			selectedFile.value = {
+				...item,
+				state:'error',
+				error:e,
+			}
+		} 
+		
+		detailData.value[item.path] = {
+			...item,
+			state:'error',
+			error:e,
+		}
 	})
 }
 const formatFile = (path, d, ary, pre) => {
@@ -133,19 +159,6 @@ const filesFilter = computed(() => {
 	}
 	return rtn
 });
-const visible = ref(false);
-const typing = ref('');
-const actionMenu = ref();
-const showAtionMenu = (e) => {
-	visible.value = true;
-};
-const layout = ref('grid');
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
-
-const emptyMsg = computed(()=>{
-	return 'Empty.'
-});
 
 const fileLoading = ref({})
 const onNodeExpand = (node) => {
@@ -177,10 +190,12 @@ const isPC = computed(()=>{
 })
 const openPreviewFile = (item) => {
 	
-	if(isPC.value && detailData.value[item.path]?.state != 'missing'){
-		openFile(`${localDir.value}${item?.path}`);
-	} else if(detailData.value[item.path]?.state != 'new') {
-		openPreview(item);
+	if(detailData.value[item.path]?.state != 'error'){
+		if(isPC.value && detailData.value[item.path]?.state != 'missing'){
+			openFile(`${localDir.value}${item?.path}`);
+		} else if(detailData.value[item.path]?.state != 'new') {
+			openPreview(item);
+		}
 	}
 }
 const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
@@ -277,6 +292,7 @@ const actions = computed(()=>{
 			{
 					label: 'State',
 					shortcut: selectedFile.value?.state,
+					error: selectedFile.value?.error,
 					command: () => {
 					}
 			},
@@ -403,7 +419,7 @@ const doDownloads = () => {
 	if(selectedFiles.value.length>0){
 		const downloadFiles = []
 		selectedFiles.value.forEach((item)=>{
-			if(detailData.value[item.path].state != "new"){
+			if(detailData.value[item.path].state != "new" && detailData.value[item.path].state != "error"){
 				downloadFiles.push(item);
 				reqs.push(fileService.download(item.path));
 			}
@@ -456,7 +472,7 @@ const doUploads = () => {
 }
 const fileIcon = computed(()=>(item)=>{
 	
-	if(!!item.ext && detailData.value[item.path] && detailData.value[item.path].state != "new" && isImage(item.ext) && item.fileUrl){
+	if(!!item.ext && detailData.value[item.path] && detailData.value[item.path].state != "new" && detailData.value[item.path].state != "error" && isImage(item.ext) && item.fileUrl){
 		return item.fileUrl;
 	} else {
 		return checker(item, mirrorPaths.value);
@@ -535,6 +551,7 @@ const stateColor = ref({
 	new:'warn',
 	changed:'warn',
 	synced:'success',
+	error: 'danger',
 	missing: 'secondary',
 	outdated: 'secondary'
 })
@@ -709,7 +726,7 @@ onMounted(()=>{
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path]">{{ detailData[slotProps.node.path].state }}</Tag>
+									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && detailData[slotProps.node.path]?.state!='synced'">{{ detailData[slotProps.node.path].state }}</Tag>
 								</template>
 						</Column>
 						<Column field="size" header="Size"  sortable>
@@ -739,12 +756,12 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag v-if="file.ext!='/' && !!detailData[file.path]" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >{{ detailData[file.path].state }}</Tag>
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && detailData[file.path]?.state!='synced'" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >{{ detailData[file.path].state }}</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
 					 </div>
 				</div>
-				<Dialog style="max-width: 400px;" class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
+				<Dialog style="max-width: 400px;min-width: 300px;" class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
 					<Button v-if="active == 1" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
 					<Loading v-if="attrLoading" />
 					<TabView v-else v-model:activeIndex="active">
@@ -773,7 +790,7 @@ onMounted(()=>{
 							            <span>{{ item.label }}</span>
 							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-														<Tag :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
+														<Tag v-tooltip="item?.error?.message" :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">{{ item.shortcut }}</Tag>
 														<span v-else>{{ item.shortcut }}</span>
 													</span>
 							        </a>
@@ -789,23 +806,23 @@ onMounted(()=>{
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
 												<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 											</div>
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'  && selectedFile?.state != 'error'">
 												<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl">
+											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl && selectedFile?.state != 'error'">
 												<Button :loading="saving" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing'">
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing' && selectedFile?.state != 'error'">
 												<Button :disabled="!selectedFile?.path" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'">
+											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new' && selectedFile?.state != 'error'">
 												<Button :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
 											</div>
 										</div>
 							    </template>
 							</Menu>
 						</TabPanel>
-						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new'">
+						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new' && selectedFile?.state != 'error'">
 							<template #header>
 								<div>
 									<i class="pi pi-shield mr-2" />ACL
