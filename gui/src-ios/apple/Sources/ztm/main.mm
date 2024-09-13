@@ -110,6 +110,7 @@ void handleBackgroundTask(BGProcessingTask *task) {
 	 task.expirationHandler = ^{
 			 // 任务到期时调用
 			 [task setTaskCompletedWithSuccess:NO];
+			 scheduleBackgroundTask();  // 重新调度任务
 	 };
 
 	 // 启动 Pipy
@@ -133,7 +134,7 @@ void scheduleBackgroundTask() {
     BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"com.flomesh.ztm.pipy"];
     
     // 设置任务条件，例如要求网络连接等
-    request.requiresNetworkConnectivity = YES;  // 不需要网络
+    request.requiresNetworkConnectivity = NO;  // 不需要网络
     request.requiresExternalPower = NO;        // 不需要外部电源
     
     // 提交任务
@@ -149,7 +150,7 @@ void scheduleBackgroundTask() {
 // 注册应用程序后台任务
 bool applicationDidFinishLaunchingWithOptions(UIApplication *application, NSDictionary *launchOptions) {
     registerBackgroundTasks();
-		scheduleBackgroundTask();
+		// scheduleBackgroundTask();
     return true;
 }
 
@@ -158,7 +159,7 @@ int main(int argc, char * argv[]) {
 			// 注册后台任务
 			applicationDidFinishLaunchingWithOptions([UIApplication sharedApplication], nil);
 			// 启动 Pipy
-			startPipyInNewThread();
+			scheduleBackgroundTask();
 			ffi::start_app();
     }
     return 0;
