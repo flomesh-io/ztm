@@ -129,11 +129,11 @@ const FileTypes = {
   // Add more supported formats as needed
 };
 
-const isImage = (val) => FileTypes.image.includes(val);
-const isVideo = (val) => FileTypes.video.includes(val);
-const isAudio = (val) => FileTypes.audio.includes(val);
-const isPdf = (val) => FileTypes.pdf.includes(val);
-const isText = (val) => FileTypes.text.includes(val);
+const isImage = (val) => FileTypes.image.includes(val?.toLocaleLowerCase());
+const isVideo = (val) => FileTypes.video.includes(val?.toLocaleLowerCase());
+const isAudio = (val) => FileTypes.audio.includes(val?.toLocaleLowerCase());
+const isPdf = (val) => FileTypes.pdf.includes(val?.toLocaleLowerCase());
+const isText = (val) => FileTypes.text.includes(val?.toLocaleLowerCase());
 
 
 const checker = (item, mirrorPaths) => {
@@ -315,9 +315,9 @@ const importFiles = ({
 				const _targets = [];
 				selecteds.forEach((file)=>{
 					const _file_ary = file.split("/");
-					const _name = _file_ary[_file_ary.length-1];
+					const _name =  decodeURI( _file_ary[_file_ary.length-1]);
 					const _target = `${path || dir}/${_name}`;
-					_targets.push(_target);
+					_targets.push(_name);
 					copyFile(file, _target, { fromPathBaseDir: BaseDirectory.Document, toPathBaseDir: BaseDirectory.Document }).then(()=>{
 						saved++;
 						if(saved == selecteds.length){
