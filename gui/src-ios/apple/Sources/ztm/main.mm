@@ -104,6 +104,25 @@ void startPipyInNewThread() {
     });
 }
 
+// 提交后台任务
+void scheduleBackgroundTask() {
+    NSError *error = nil;
+    
+    BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"com.flomesh.ztm.pipy"];
+    
+    // 设置任务条件，例如要求网络连接等
+    request.requiresNetworkConnectivity = NO;  // 不需要网络
+    request.requiresExternalPower = NO;        // 不需要外部电源
+    
+    // 提交任务
+    BOOL success = [[BGTaskScheduler sharedScheduler] submitTaskRequest:request error:&error];
+    
+    if (!success) {
+        NSLog(@"提交后台任务失败: %@", error);
+    } else {
+        NSLog(@"后台任务提交成功");
+    }
+}
 // 处理后台任务
 void handleBackgroundTask(BGProcessingTask *task) {
 	 // 确保后台任务不会被立即挂起
@@ -127,25 +146,6 @@ void registerBackgroundTasks() {
     }];
 }
 
-// 提交后台任务
-void scheduleBackgroundTask() {
-    NSError *error = nil;
-    
-    BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"com.flomesh.ztm.pipy"];
-    
-    // 设置任务条件，例如要求网络连接等
-    request.requiresNetworkConnectivity = NO;  // 不需要网络
-    request.requiresExternalPower = NO;        // 不需要外部电源
-    
-    // 提交任务
-    BOOL success = [[BGTaskScheduler sharedScheduler] submitTaskRequest:request error:&error];
-    
-    if (!success) {
-        NSLog(@"提交后台任务失败: %@", error);
-    } else {
-        NSLog(@"后台任务提交成功");
-    }
-}
 
 // 注册应用程序后台任务
 bool applicationDidFinishLaunchingWithOptions(UIApplication *application, NSDictionary *launchOptions) {
