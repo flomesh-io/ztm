@@ -91,9 +91,9 @@ function doCommand(meshName, epName, argv, program) {
         usage: 'config',
         options: `
           --agent <host:port>   Set the access address and port to the agent
-                                Can be overriden by environment variable 'ZTM_AGENT'
+                                Can be overridden by environment variable 'ZTM_AGENT'
           --mesh  <name>        Set the default mesh to operate when not specified
-                                Can be overriden by environment variable 'ZTM_MESH'
+                                Can be overridden by environment variable 'ZTM_MESH'
         `,
         notes: `Print the current configuration when no options are specified`,
         action: config,
