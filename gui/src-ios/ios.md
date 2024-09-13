@@ -36,7 +36,10 @@ yarn tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root 
 
 Application supports iTunes file sharing YES
 Supports opening documents in place YES
-
+Permitted background task scheduler identifiers
+com.flomesh.ztm.pipy
+add framework:
+- BackgroundTasks
 [services]
 Background Modes
 - Location updates
