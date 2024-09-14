@@ -6,6 +6,7 @@
 #import <UIKit/UIKit.h>
 #include "bindings/bindings.h"
 #include <dlfcn.h>
+#import "ztm-Swift.h"
 //#import "AppDelegate.h"
 
 /*
@@ -83,6 +84,7 @@ void callPipyMain(int argc, char * arguments[]) {
     dlclose(handle);
 }
 
+
 void startPipyInNewThread() {
         // 创建一个后台任务
     __block UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
@@ -119,25 +121,25 @@ void configureAudioSession() {
                                       error:&error];
 
     if (!success || error) {
-        NSLog(@"设置音频会话类别失败: %@", error.localizedDescription.UTF8String);
+        NSLog(@"调试-设置音频会话类别失败: %@", error.localizedDescription.UTF8String);
     }
 
     // 激活音频会话
     [session setActive:YES error:&error];
     if (!success || error) {
-        NSLog(@"激活音频会话失败: %@", error.localizedDescription.UTF8String);
+        NSLog(@"调试-激活音频会话失败: %@", error.localizedDescription.UTF8String);
     }
 }
 void setupRemoteCommandCenter() {
     MPRemoteCommandCenter *commandCenter = [MPRemoteCommandCenter sharedCommandCenter];
     
     [commandCenter.playCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-        NSLog(@"播放命令触发");
+        NSLog(@"调试-播放命令触发");
         return MPRemoteCommandHandlerStatusSuccess;
     }];
     
     [commandCenter.pauseCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-        NSLog(@"暂停命令触发");
+        NSLog(@"调试-暂停命令触发");
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 }
@@ -168,7 +170,7 @@ void scheduleBackgroundTask() {
     if (!success) {
         NSLog(@"提交后台处理任务失败: %@", error);
     } else {
-        NSLog(@"后台处理任务提交成功");
+        NSLog(@"调试-后台处理任务提交成功");
     }
 }
 
@@ -214,10 +216,13 @@ bool applicationDidFinishLaunchingWithOptions(UIApplication *application, NSDict
 //}
 int main(int argc, char * argv[]) {
     @autoreleasepool {
-        
+        NSLog(@"调试1");
         // 启动后台任务
+        [ActivityHelper startLiveActivityWithID:@"com.flomesh.ztm.pipy"]; // 自定义 Swift 方法
+        NSLog(@"调试2");
         UIApplication *application = [UIApplication sharedApplication];
         applicationDidFinishLaunchingWithOptions(application, nil);
+        NSLog(@"调试3");
         // 手动创建 UIApplication 实例和 AppDelegate
 //        startApplication();
         ffi::start_app();

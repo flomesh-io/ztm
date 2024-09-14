@@ -52,7 +52,12 @@ Background Modes
 	2.	MediaPlayer.framework：
 iCloud
 - iCloud Documents: iCloud.com.flomesh.ztm
+
+info plist
 NSLiveActivityUsageDescription: ZTM will run in the background
+NSSupportsLiveActivities:YES
+Privacy - Tracking Usage Description(NSUserTrackingUsageDescription): ZTM will run in the background
+NSPushNotificationsUsageDescription: ZTM will run in the background
 
 <key>NSUbiquitousContainers</key>
 <dict>
