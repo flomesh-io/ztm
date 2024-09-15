@@ -378,13 +378,14 @@ const copyDir = () => {
 	copy(localDir.value)
 }
 
-const hasTauri = ref(!!window.__TAURI_INTERNALS__ || true);
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const getConfig = () => {
 	fileService.getConfig(info.value?.endpoint?.id).then((res)=>{
 		config.value = res;
 		localDir.value = config.value.localDir;
 		mirrorPaths.value = config.value.mirrorPaths;
 		if(config.value.localDir == '~/ztmCloud' && !!hasTauri.value){
+			debugger
 			fileService.getDir().then((dir)=>{
 				config.value.localDir = `${dir}/ztmCloud`;
 				fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
