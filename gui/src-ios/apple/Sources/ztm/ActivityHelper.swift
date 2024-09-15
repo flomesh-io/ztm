@@ -48,10 +48,11 @@ import BackgroundTasks
                 }
                 
                 let ztmdbPath = documentDirectory.appendingPathComponent("ztmdb").path
+                let ztmlogPath = documentDirectory.appendingPathComponent("log.txt").path
                 NSLog("调试-libpipy documentDirectory is \(documentDirectory.path)")
                 
                 // Create the argument list
-                var args = ["--pipy", "repo://ztm/agent", "--args", "--data", ztmdbPath, "--listen", "7777", "--pipy-options", "--log-local-only"]
+                var args = ["--pipy", "repo://ztm/agent", "--args", "--data", ztmdbPath, "--listen", "7777", "--pipy-options", "--log-file=\(ztmlogPath)"]
                 
                 let cArgs = args.map { strdup($0) }
                 defer { cArgs.forEach { free($0) } }  // 确保释放内存
