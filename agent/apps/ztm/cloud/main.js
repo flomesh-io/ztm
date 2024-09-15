@@ -113,6 +113,14 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/downloads/*': {
+      'DELETE': responder(
+        (params) => api.cancelDownload(params['*']).then(
+          response(204)
+        )
+      )
+    },
+
     '/api/uploads': {
       'GET': responder(
         () => api.listUploads().then(

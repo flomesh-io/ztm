@@ -215,10 +215,12 @@ export default function ({ api, utils }) {
             usage: 'download [<pathname>]',
             options: `
               -l, --list                 List all files that are being downloaded currently
+                  --cancel               Cancel the on-going download
               -o, --output  <pathname>   Save the downloaded file to a specified location
             `,
             action: (args) => {
               var pathname = args['[<pathname>]']
+              var isCancel = args['--cancel']
               var isListing = args['--list']
               var outputFilename = args['--output']
               if (!pathname && !isListing) {
@@ -229,12 +231,20 @@ export default function ({ api, utils }) {
                 error(`cloud: redundant pathname while using option --list`)
                 return Promise.resolve()
               }
-              if (isListing) {
+              if (isCancel) {
+                if (outputFilename) {
+                  error(`cloud: cannot use --cancel and --output together`)
+                  return Promise.resolve()
+                }
+                api.cancelDownload(pathname)
+                return Promise.resolve()
+              } else if (isListing) {
                 return api.listDownloads().then(
-                  list => output(printTable(list.filter(f => f.downloading), {
+                  list => output(printTable(list, {
                     'PATH': f => f.path,
                     'SIZE': f => f.size,
                     'PROGRESS': f => Math.floor(f.downloading * 100) + '%',
+                    'ERROR': f => f.error || '-',
                   }))
                 )
               } else if (outputFilename) {
