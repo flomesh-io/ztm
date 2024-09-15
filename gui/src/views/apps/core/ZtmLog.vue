@@ -28,10 +28,10 @@ onBeforeUnmount(()=>{
 const timmer = ref(false)
 const loaddata = () => {
 	shellService.loadLog();
-	setTimeout(() => {
-		if(timmer.value)
-		loaddata();
-	},3000)
+	// setTimeout(() => {
+	// 	if(timmer.value)
+	// 	loaddata();
+	// },3000)
 }
 const showHeader = computed(()=>{
 	return platform() == 'ios' || platform() == 'android' || platform() == 'web'

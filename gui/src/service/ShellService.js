@@ -20,16 +20,30 @@ export default class ShellService {
 	async loadLog() {
 		const pm = platform();
 		if(true){
+			
+			store.commit('account/setLogs', []);
 			const lines = await readTextFileLines('ztm.log', { baseDir: BaseDirectory.Document });
-			const logs = []
+			const logs = [];
+			let counter = 0;
+			
 			for await (const line of lines) {
-				if(line.indexOf("[INF]")>=0){
-					logs.push({level:'Info',msg:line});
-				} else {
-					logs.push({level:'Error',msg:line});
-				}
+			    if (line.indexOf("[INF]") >= 0) {
+						store.commit('account/pushLog', { level: 'Info', msg: line });
+			    } else {
+						store.commit('account/pushLog', { level: 'Error', msg: line });
+			    }
+			
+			    counter++;
+			
+			    // 每读取 100 行，暂停 10 秒
+					if(counter >= 100) {
+						break;
+					}else if (counter >= 100) {
+			        counter = 0; // 重置计数器
+			        await new Promise(resolve => setTimeout(resolve, 1000)); // 暂停 10 秒
+			    }
 			}
-			store.commit('account/setLogs', logs);
+			
 		}
 	}
 	async takePipyVersion (apiGet) {

@@ -2,22 +2,89 @@
 #import <AVFoundation/AVFoundation.h>
 #import <MediaPlayer/MediaPlayer.h>
 #import <BackgroundTasks/BackgroundTasks.h>
+#import <ActivityKit/ActivityKit.h>
 #import <UIKit/UIKit.h>
 #include "bindings/bindings.h"
 #include <dlfcn.h>
 #import "ztm-Swift.h"
+//#import "AppDelegate.h"
 
-void playPipy() {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentDirectory = [paths objectAtIndex:0];
-    NSLog(@"libpipy documentDirectory is %@", documentDirectory);
-    NSString *ztmdbPath = [documentDirectory stringByAppendingPathComponent:@"ztmdb"];
-    const char *args[] = {"--pipy", "repo://ztm/agent", "--args", "--data", [ztmdbPath UTF8String], "--listen", "7777", "--pipy-options", "--log-local-only"};
-    int argCount = sizeof(args) / sizeof(args[0]);
-    
-    int result = ffi::pipy_main(argCount, (char **)args);
-    NSLog(@"callPipyMain pipy_main 返回值: %d", result);
+/*
+// copyLibrary(@"assets/libpipy", @"dylib", @"libpipy.dylib");
+// copyLibrary(@"assets/libpipy.dylib", @"dSYM", @"libpipy.dylib.dSYM");
+// copyLibrary(@"assets/libsayhello", @"dylib", @"libsayhello.dylib");
+// copyLibrary(@"assets/pipy", @"framework", @"pipy.framework");
+*/
+void copyLibrary(NSString *resourceName, NSString *resourceType, NSString *destName) {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSError *error = nil;
+
+    // 获取资源路径
+    NSString *resourcePath = [[NSBundle mainBundle] pathForResource:resourceName ofType:resourceType];
+    if (resourcePath == nil) {
+        NSLog(@"libpipy Failed to get resource path for %@", resourceName);
+        return;
+    }
+
+    // 获取目标路径 (应用的文档目录)
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
+        NSString *libraryDirectory = [paths objectAtIndex:0];
+        NSLog(@"libpipy libraryDirectory is %@", libraryDirectory);
+        NSString *targetPath = [libraryDirectory stringByAppendingPathComponent:destName];
+        NSLog(@"libpipy targetPath is %@", targetPath);
+    // 复制文件
+    if ([fileManager fileExistsAtPath:targetPath]) {
+        NSLog(@"libpipy File already exists at target path: %@", targetPath);
+    } else {
+        if (![fileManager copyItemAtPath:resourcePath toPath:targetPath error:&error]) {
+            NSLog(@"libpipy Failed to copy file: %@", [error localizedDescription]);
+        } else {
+            NSLog(@"libpipy File copied successfully to %@", targetPath);
+        }
+    }
 }
+
+
+void callPipyMain(int argc, char * arguments[]) {
+    // 获取 libpipy.dylib 的路径
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"assets/libpipy" ofType:@"dylib"];
+    if (!path) {
+        NSLog(@"callPipyMain 未找到动态库 libpipy.dylib");
+        return;
+    }
+
+    // 加载动态库
+    void *handle = dlopen([path UTF8String], RTLD_NOW);
+    if (!handle) {
+        const char *error = dlerror();
+        if (error) {
+            NSLog(@"callPipyMain 加载动态库失败: %s", error);
+        }
+        return;
+    }
+
+    // 获取 pipy_main 函数指针
+    const char *symbolName = "pipy_main";
+    typedef int (*PipyMainFunction)(int, char **);
+    PipyMainFunction pipyMain = (PipyMainFunction)dlsym(handle, symbolName);
+    if (!pipyMain) {
+        NSLog(@"callPipyMain 未找到符号: %s", symbolName);
+        dlclose(handle);
+        return;
+    }
+
+        // int argCount = sizeof(arguments) / sizeof(arguments[0]);
+    // 调用 pipy_main 函数
+    int result = pipyMain(argc, arguments);
+
+    // 输出结果
+    NSLog(@"callPipyMain pipy_main 返回值: %d", result);
+
+    // 关闭动态库
+    dlclose(handle);
+}
+
+
 void startPipyInNewThread() {
         // 创建一个后台任务
     __block UIBackgroundTaskIdentifier bgTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
@@ -27,10 +94,21 @@ void startPipyInNewThread() {
             
     // 创建一个新的线程来调用 callPipyMain
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        for (double progress = 0.0; progress <= 100.0; progress += 1.0) {
-            playPipy();
-        }
-        
+            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+            NSString *documentDirectory = [paths objectAtIndex:0];
+            NSLog(@"libpipy documentDirectory is %@", documentDirectory);
+            NSString *ztmdbPath = [documentDirectory stringByAppendingPathComponent:@"ztmdb"];
+            const char *args[] = {"--pipy", "repo://ztm/agent", "--args", "--data", [ztmdbPath UTF8String], "--listen", "7777", "--pipy-options", "--log-local-only"};
+            int argCount = sizeof(args) / sizeof(args[0]);
+            
+            int result = ffi::pipy_main(argCount, (char **)args);
+            NSLog(@"callPipyMain pipy_main 返回值: %d", result);
+            
+            // 当任务完成后，结束后台任务
+            if (bgTask != UIBackgroundTaskInvalid) {
+                [[UIApplication sharedApplication] endBackgroundTask:bgTask];
+                bgTask = UIBackgroundTaskInvalid;
+            }
     });
 }
 
@@ -131,23 +209,22 @@ bool applicationDidFinishLaunchingWithOptions(UIApplication *application, NSDict
 
     return true;
 }
-
+//void startApplication() {
+//    UIApplication *application = [UIApplication sharedApplication];
+//    AppDelegate *appDelegate = [[AppDelegate alloc] init];
+//    application.delegate = appDelegate;
+//}
 int main(int argc, char * argv[]) {
     @autoreleasepool {
-//        [ActivityHelper startLiveActivityWithID:@"com.flomesh.ztm.pipy"];
-//        UIApplication *application = [UIApplication sharedApplication];
-//        applicationDidFinishLaunchingWithOptions(application, nil);
-        registerBackgroundTasks();
-//        [ActivityHelper playPipy];
-        [ActivityHelper watchEvent];
-        [ActivityHelper startLiveActivity];
-        [ActivityHelper startTimer];
-        
-//
-//        NSLog(@"调试-reloadWidgets");
-//        [WidgetHelper reloadWidgets];
-//        NSLog(@"调试-start_app");
-//        [ActivityHelper applicationDidFinishLaunchingWithOptions];
+        NSLog(@"调试1");
+        // 启动后台任务
+        [ActivityHelper startLiveActivityWithID:@"com.flomesh.ztm.pipy"]; // 自定义 Swift 方法
+        NSLog(@"调试2");
+        UIApplication *application = [UIApplication sharedApplication];
+        applicationDidFinishLaunchingWithOptions(application, nil);
+        NSLog(@"调试3");
+        // 手动创建 UIApplication 实例和 AppDelegate
+//        startApplication();
         ffi::start_app();
         return 0;
     }
