@@ -257,6 +257,7 @@ export default function ({ app, mesh }) {
       path: pathname,
       size: stat.size,
       hash: stat.hash,
+      username: matchPathUserFile(pathname).username,
       chunks,
       counter: chunks.length,
     }
@@ -277,20 +278,25 @@ export default function ({ app, mesh }) {
           downloadLanes.push(chunk)
           var path = chunk[0]
           var hash = chunk[1]
-          var params = matchPathUserFile(path)
-          var username = params.username
-          mesh.stat(os.path.join('/shared', username, 'hash', file.hash)).then(
-            stat => downloadChunk(path, hash, stat?.sources || [])
+          mesh.stat(os.path.join('/shared', file.username, 'hash', file.hash)).then(
+            stat => downloadChunk(path, hash, file, stat?.sources || [])
           )
         }
       }
     })
   }
 
-  function downloadChunk(path, hash, sources) {
-    if (sources.length === 0) {
-      app.log(downloadError[path] = `Chunk ${path} not found`)
+  function downloadChunk(path, hash, file, sources) {
+    if (!(file.path in downloadFiles)) {
       return finalizeChunk(path)
+    }
+    if (sources.length === 0) {
+      app.log(downloadError[file.path] = `Chunk ${path} not found, will try again in 10 seconds`)
+      return new Timeout(10).wait().then(
+        () => mesh.stat(os.path.join('/shared', file.username, 'hash', file.hash))
+      ).then(
+        stat => downloadChunk(path, hash, file, stat?.sources || [])
+      )
     }
     var i = path.lastIndexOf('.')
     var filename = path.substring(0,i)
@@ -300,6 +306,7 @@ export default function ({ app, mesh }) {
     var ep = sources.splice(Math.floor(Math.random() * sources.length), 1)[0]
     var downloaded = null
     app.log(`Downloading chunk ${path}...`)
+    delete downloadError[file.path]
     return pipeline($=>$
       .onStart(
         new Message({
@@ -309,6 +316,15 @@ export default function ({ app, mesh }) {
       )
       .muxHTTP().to($=>$
         .pipe(mesh.connect(ep))
+        .replaceData(
+          data => {
+            if (file.path in downloadFiles) {
+              return data
+            } else {
+              return new StreamEnd
+            }
+          }
+        )
       )
       .replaceMessage(res => {
         var status = res?.head?.status
@@ -327,11 +343,11 @@ export default function ({ app, mesh }) {
         .handleData(data => hasher.update(data))
       ).then(() => hasher.digest('hex'))
     }).then(h => {
-      if (h === hash) {
+      if (h === hash || !(file.path in downloadFiles)) {
         return finalizeChunk(path)
       } else {
         app.log(`Chunk ${path} from ep ${ep} was corrupt`)
-        return downloadChunk(path, hash, sources)
+        return downloadChunk(path, hash, file, sources)
       }
     })
   }
@@ -340,15 +356,20 @@ export default function ({ app, mesh }) {
     var i = path.lastIndexOf('.')
     var filename = path.substring(0, i)
     var f = downloadFiles[filename]
-    if (f && f.counter === 1) {
-      return finalizeDownload(filename, f.hash).then(() => {
-        clearDownload(filename)
-        delete downloadFiles[filename]
-        delete downloadError[filename]
-        next()
-      })
+    if (f) {
+      if (f.counter === 1) {
+        return finalizeDownload(filename, f.hash).then(() => {
+          clearDownload(filename)
+          delete downloadFiles[filename]
+          delete downloadError[filename]
+          next()
+        })
+      }
+      f.counter--
+    } else {
+      clearDownload(filename)
+      delete downloadError[filename]
     }
-    f.counter--
     function next() {
       downloadLanes = downloadLanes.filter(([p]) => p !== path)
       continueDownloading()
@@ -586,6 +607,7 @@ export default function ({ app, mesh }) {
             size: f.size,
             hash: f.hash,
             downloading: (n - f.counter) / n,
+            error: downloadError[f.path] || null,
           }
         }
       )
@@ -622,6 +644,12 @@ export default function ({ app, mesh }) {
         return true
       }
     )
+  }
+
+  function cancelDownload(pathname) {
+    pathname = os.path.normalize(pathname)
+    delete downloadFiles[pathname]
+    downloadQueue = downloadQueue.filter(f => f.pathname !== pathname)
   }
 
   function uploadFile(pathname) {
@@ -853,6 +881,7 @@ export default function ({ app, mesh }) {
     listDownloads,
     listUploads,
     downloadFile,
+    cancelDownload,
     uploadFile,
     streamFile,
     serveChunk,
