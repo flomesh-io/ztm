@@ -14,6 +14,7 @@ import BackgroundTasks
     
     static var activity: Activity<RunnerWidgetAttributes>? // 保存活动的引用
     static var timer: Timer? // 保存计时器
+    static var locationManager: LocationManager?
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         NSLog("下载完成，文件位置: \(location.path)")
@@ -148,9 +149,10 @@ import BackgroundTasks
     @objc static func startTimer() {
         DispatchQueue.main.async {
             NSLog("调试-注册更新实时活动 DispatchQueue")
-            self.timer = Timer.scheduledTimer(withTimeInterval: 7.0, repeats: true) { _ in
+            self.timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { _ in
                 self.updateLiveActivity();
-                self.playPipy();   // 启动 Pipy
+                locationManager?.startLocationUpdates();
+//                self.playPipy();   // 启动 Pipy
                 self.scheduleBackgroundTask();
 //                self.startBackgroundDownload();
             }
@@ -159,22 +161,34 @@ import BackgroundTasks
     
     
     @objc static func watchEvent() {
+        
         // 监听应用程序从后台切换到前台的事件
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppOpen), name: UIApplication.willEnterForegroundNotification, object: nil)
         
         // 监听应用冷启动
         NotificationCenter.default.addObserver(self, selector: #selector(handleAppLaunch), name: UIApplication.didFinishLaunchingNotification, object: nil)
         
+        NotificationCenter.default.addObserver(self, selector: #selector(handleDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+                
+        
     }
 
-    @objc static func handleAppOpen() {
-        self.playPipy();
+    @objc static func handleDidEnterBackground() {
+        locationManager?.startLocationUpdates()
         self.startBackgroundDownload();
+        
+    }
+    @objc static func handleAppOpen() {
+        locationManager?.startLocationUpdates();
+        self.startBackgroundDownload();
+        self.playPipy();
+        
     }
 
     @objc static func handleAppLaunch() {
+        locationManager = LocationManager()
+        locationManager?.startLocationUpdates();
         self.playPipy();
-        self.startBackgroundDownload();
     }
     @objc static func startLiveActivity() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
