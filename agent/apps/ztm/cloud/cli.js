@@ -105,7 +105,7 @@ export default function ({ api, utils }) {
                 if (!list) return
                 var format = {
                   'NAME': ([name]) => name,
-                  'STATE': ([_, stat]) => stat.downloading ? 'downloading' : (stat.state || '-'),
+                  'STATE': ([_, stat]) => typeof stat.downloading === 'number' ? 'downloading' : (stat.state || '-'),
                   'SIZE': ([_, stat]) => stat.list ? '-' : stat.size,
                   'DATE': ([_, stat]) => stat.time ? new Date(stat.time).toString() : '-',
                   'SOURCES': ([_, stat]) => stat.list ? '-' : (stat.sources?.length || '0'),
@@ -243,6 +243,7 @@ export default function ({ api, utils }) {
                   list => output(printTable(list, {
                     'PATH': f => f.path,
                     'SIZE': f => f.size,
+                    'SPEED': f => (f.speed / 1000).toFixed(3) + 'KB/s',
                     'PROGRESS': f => Math.floor(f.downloading * 100) + '%',
                     'ERROR': f => f.error || '-',
                   }))

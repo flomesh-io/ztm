@@ -114,13 +114,18 @@ export default function ({ app, mesh }) {
         data => {
           if (!data) return
           try {
+            var downloadedSize = 0
             var stat = JSON.decode(data)
             var chunks = stat.chunks.map((hash, i) => {
               var filename = `${pathname}.${i}`
               try {
                 var hasher = new crypto.Hash('sha256')
-                hasher.update(os.read(os.path.join(rootDir, filename)))
-                if (hasher.digest('hex') === hash) return null
+                var data = os.read(os.path.join(rootDir, filename))
+                hasher.update(data)
+                if (hasher.digest('hex') === hash) {
+                  downloadedSize += data.size
+                  return null
+                }
               } catch {}
               return [filename, hash]
             }).filter(s=>s)
@@ -128,7 +133,7 @@ export default function ({ app, mesh }) {
               finalizeDownload(pathname, stat.hash)
               clearDownload(pathname)
             } else {
-              appendDownload(pathname, stat, chunks.filter(s=>s))
+              appendDownload(pathname, stat, downloadedSize, chunks.filter(s=>s))
               continueDownloading()
             }
           } catch {}
@@ -251,7 +256,8 @@ export default function ({ app, mesh }) {
   var downloadError = {}
   var uploadFiles = {}
 
-  function appendDownload(pathname, stat, chunks) {
+  function appendDownload(pathname, stat, downloadedSize, chunks) {
+    downloadedSize = downloadedSize || 0
     chunks = chunks || stat.chunks.map((hash, i) => [`${pathname}.${i}`, hash])
     var download = {
       path: pathname,
@@ -260,6 +266,10 @@ export default function ({ app, mesh }) {
       username: matchPathUserFile(pathname).username,
       chunks,
       counter: chunks.length,
+      speed: 0,
+      receivedSince: Date.now(),
+      receivedSize: 0,
+      downloadedSize,
     }
     downloadFiles[pathname] = download
     downloadQueue.push(download)
@@ -304,7 +314,7 @@ export default function ({ app, mesh }) {
     var outputPath = os.path.join(localDir, 'downloads', path)
     os.mkdir(os.path.dirname(outputPath), { recursive: true })
     var ep = sources.splice(Math.floor(Math.random() * sources.length), 1)[0]
-    var downloaded = null
+    var downloadedData = null
     app.log(`Downloading chunk ${path}...`)
     delete downloadError[file.path]
     return pipeline($=>$
@@ -316,28 +326,39 @@ export default function ({ app, mesh }) {
       )
       .muxHTTP().to($=>$
         .pipe(mesh.connect(ep))
-        .replaceData(
-          data => {
-            if (file.path in downloadFiles) {
-              return data
+      )
+      .replaceData(
+        data => {
+          if (file.path in downloadFiles) {
+            var t = Date.now()
+            var d = t - file.receivedSince
+            if (d >= 1000) {
+              file.speed = Math.round((file.receivedSize + data.size) / (d/1000))
+              file.receivedSize = 0
+              file.receivedSince = t
             } else {
-              return new StreamEnd
+              file.receivedSize += data.size
             }
+            file.downloadedSize += data.size
+            return data
+          } else {
+            return new MessageEnd
           }
-        )
+        }
       )
       .replaceMessage(res => {
         var status = res?.head?.status
         if (status === 200) {
-          downloaded = res.body
+          downloadedData = res.body
         } else {
+          file.downloadedSize -= res.body?.size || 0
           app.log(`Downloading ${filename} from ep ${ep} returned status ${status}`)
         }
         return new StreamEnd
       })
     ).spawn().then(() => {
-      if (!downloaded) return '' // no hash
-      os.write(outputPath, downloaded)
+      if (!downloadedData) return '' // no hash
+      os.write(outputPath, downloadedData)
       var hasher = new crypto.Hash('sha256')
       return pipy.read(outputPath, $=>$
         .handleData(data => hasher.update(data))
@@ -551,8 +572,7 @@ export default function ({ app, mesh }) {
         }
         if (path in downloadFiles) {
           var f = downloadFiles[path]
-          var n = Math.ceil(f.size / CHUNK_SIZE)
-          stat.downloading = (n - f.counter) / n
+          stat.downloading = f.downloadedSize / f.size
         }
         return mesh.stat(os.path.join('/shared', username, 'hash', hash)).then(
           s => ({ ...stat, sources: s?.sources || [], access })
@@ -598,15 +618,22 @@ export default function ({ app, mesh }) {
   }
 
   function listDownloads() {
+    var t = Date.now()
     return Promise.resolve(
       Object.values(downloadFiles).map(
         f => {
-          var n = Math.ceil(f.size / CHUNK_SIZE)
+          var d = t - f.receivedSince
+          if (d >= 1000) {
+            f.speed = Math.round(f.receivedSize / (d/1000))
+            f.receivedSize = 0
+            f.receivedSince = t
+          }
           return {
             path: f.path,
             size: f.size,
             hash: f.hash,
-            downloading: (n - f.counter) / n,
+            downloading: f.downloadedSize / f.size,
+            speed: f.speed,
             error: downloadError[f.path] || null,
           }
         }
