@@ -35,6 +35,10 @@
 	<true/>
 	<key>NSLiveActivityUsageDescription</key>
 	<string>ZTM will run in the background</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>hold ztm agent to alway online</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>hold ztm agent</string>
 	<key>NSPushNotificationsUsageDescription</key>
 	<string>ZTM will run in the background</string>
 	<key>NSSupportsLiveActivities</key>
