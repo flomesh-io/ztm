@@ -61,11 +61,11 @@ const fullPath = computed(()=>(item)=>{
 		return _joinPath.join("/");
 	}
 })
-const loadFileAttr = (item, unload, detailload) => {
+const loadFileAttr = (unload, detailItem) => {
 	if(!unload){
 		attrLoading.value = true;
 	}
-	fileService.getFiles(fullPath.value(item)).then((res)=>{
+	fileService.getFiles(fullPath.value(detailItem || selectedFile.value)).then((res)=>{
 		const _res = res;
 		if(!!_res.access){
 			if(!_res.access.users){
@@ -73,7 +73,7 @@ const loadFileAttr = (item, unload, detailload) => {
 			}
 		}
 		attrLoading.value = false;
-		if(!detailload){
+		if(!detailItem){
 			selectedFile.value = {
 				...item,
 				..._res,
@@ -84,14 +84,14 @@ const loadFileAttr = (item, unload, detailload) => {
 			...item,
 			..._res,
 		}
-		if(res?.downloading!=null || res?.uploading!=null){
+		if(res?.downloading!=null){
 			setTimeout(()=>{
-				loadFileAttr(item, true);
+				loadFileAttr(true);
 			},1000)
 		}
 	}).catch((e)=>{
 		attrLoading.value = false;
-		if(!detailload){
+		if(!detailItem){
 			selectedFile.value = {
 				...item,
 				state:'error',
@@ -124,7 +124,7 @@ const formatFile = (path, d, ary, pre) => {
 				ary.push(_file);
 			} else {
 				ary.push(_file);
-				loadFileAttr(_file, true, true);
+				loadFileAttr(true, _file);
 			}
 		})
 }
@@ -265,7 +265,8 @@ const selectFile = (e, item) => {
 }
 
 const handleLongTap = (item) => () => {
-	loadFileAttr(item);
+	selectedFile.value = item;
+	loadFileAttr();
 	showAtionMenu();
 }
 const actions = computed(()=>{
@@ -400,11 +401,13 @@ const doDownload = (item) => {
 		fileService.download(item.path).then((res)=>{
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
 			emits('download',[item]);
-			loadFileAttr(item, true);
+			selectedFile.value = item;
+			loadFileAttr(true);
 		})
 		.catch(err => {
 			emits('download',[item]);
-			loadFileAttr(item, true);
+			selectedFile.value = item;
+			loadFileAttr(true);
 		}); 
 	}
 }
@@ -413,11 +416,12 @@ const doCancelDownload = (item) => {
 		fileService.cancelDownload(item.path).then((res)=>{
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `Download cancelled`, life: 3000 });
 			emits('download',[item]);
-			loadFileAttr(item, true);
+			selectedFile.value = item;
+			loadFileAttr(true);
 		})
 		.catch(err => {
 			emits('download',[item]);
-			loadFileAttr(item, true);
+			loadFileAttr(true);
 		}); 
 	}
 }
@@ -445,14 +449,21 @@ const doDownloads = () => {
 
 const doUpload = (item) => {
 	if(item.path){
+		item.uploading = true;
 		fileService.upload(item.path).then((res)=>{
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the upload queue.`, life: 3000 });
 			emits('upload',[item]);
-			loadFileAttr(item, true);
+			selectedFile.value = item;
+			setTimeout(()=>{
+				item.uploading = false;
+				loadFileAttr(true);
+			},1500)
 		})
 		.catch(err => {
 			emits('upload',[item]);
-			loadFileAttr(item, true);
+			item.uploading = false;
+			selectedFile.value = item;
+			loadFileAttr(true);
 		}); 
 	}
 }
@@ -733,8 +744,8 @@ onMounted(()=>{
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || detailData[slotProps.node.path]?.downloading!=null || detailData[slotProps.node.path]?.uploading!=null)">
-									{{ detailData[slotProps.node.path]?.downloading!=null?'downloading':(!!detailData[slotProps.node.path]?.uploading?'uploading':detailData[slotProps.node.path].state) }}
+									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || detailData[slotProps.node.path]?.downloading!=null)">
+									{{ detailData[slotProps.node.path]?.downloading!=null?'downloading':(detailData[slotProps.node.path].state) }}
 									</Tag>
 								</template>
 						</Column>
@@ -765,8 +776,8 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || detailData[file.path]?.downloading!=null || !!detailData[file.path]?.uploading)" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >
-								{{ detailData[file.path]?.downloading!=null?'downloading':(!!detailData[file.path]?.uploading?'uploading':detailData[file.path].state) }}
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || detailData[file.path]?.downloading!=null )" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >
+								{{ detailData[file.path]?.downloading!=null?'downloading':(detailData[file.path].state) }}
 								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
@@ -802,18 +813,13 @@ onMounted(()=>{
 							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
 														<Tag v-tooltip="item?.error?.message" :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">
-															{{ selectedFile?.downloading!=null?'downloading':(!!selectedFile?.uploading?'uploading':item.shortcut) }}
+															{{ selectedFile?.downloading!=null?'downloading':(item.shortcut) }}
 														</Tag>
 														<span v-else>{{ item.shortcut }}</span>
 													</span>
 							        </a>
 							    </template>
 							    <template #end >
-										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
-												<ProgressBar :value="selectedFile.uploading*100<20?20:selectedFile.uploading*100">
-													{{(selectedFile.uploading*100).toFixed(0)}}%
-												</ProgressBar>
-										</div>
 										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading != null">
 												<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''"  :value="selectedFile.downloading*100<20?20:selectedFile.downloading*100">
 													{{(selectedFile.downloading*100).toFixed(0)}}% <span v-if="selectedFile?.speed">({{bitUnit(selectedFile.speed)}}/s)</span>
@@ -831,7 +837,7 @@ onMounted(()=>{
 												<Button :loading="saving" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save" severity="secondary"  />
 											</div>
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing' && selectedFile?.state != 'error'">
-												<Button :disabled="!selectedFile?.path" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
+												<Button :disabled="!selectedFile?.path" @click="openPreviewFile(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
 											</div>
 											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new' && selectedFile?.state != 'error'">
 												<Button :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
