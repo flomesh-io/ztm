@@ -5,33 +5,35 @@ import UserNotifications
 import WidgetKit
 import SwiftUI
 import BackgroundTasks
+import NetworkExtension
+
 ///=====
 
 // 声明 C 函数
 @_silgen_name("pipy_main") func pipy_main(argc: Int32, argv: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) -> Int32
 
-@objc class ActivityHelper: NSObject, URLSessionDelegate {
+@objc class ActivityHelper: NSObject {
     
     static var activity: Activity<RunnerWidgetAttributes>? // 保存活动的引用
     static var timer: Timer? // 保存计时器
     static var locationManager: LocationManager?
     
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        NSLog("下载完成，文件位置: \(location.path)")
-    }
-    
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if let error = error {
-            NSLog("下载失败，错误信息: \(error.localizedDescription)")
-        } else {
-            NSLog("下载任务已成功完成")
-        }
-    }
-    
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        NSLog("下载进度: \(progress * 100)%")
-    }
+//    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+//        NSLog("下载完成，文件位置: \(location.path)")
+//    }
+//    
+//    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+//        if let error = error {
+//            NSLog("下载失败，错误信息: \(error.localizedDescription)")
+//        } else {
+//            NSLog("下载任务已成功完成")
+//        }
+//    }
+//    
+//    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+//        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+//        NSLog("下载进度: \(progress * 100)%")
+//    }
     @objc static func playPipy() {
         // Get the document directory path
         var bgTask: UIBackgroundTaskIdentifier = .invalid
@@ -101,27 +103,20 @@ import BackgroundTasks
         // 完成任务后调用
         task.setTaskCompleted(success: true)
     }
-    @objc static func startBackgroundDownload() {
-        let config = URLSessionConfiguration.background(withIdentifier: "com.flomesh.ztm.download")
-        
-        // 设置超时时间（默认是 60 秒），可以延长到例如 5 分钟
-        config.timeoutIntervalForResource = 3600 // 300 秒即 5 分钟
-        NSLog("调试-下载中");
-        let session = URLSession(configuration: config, delegate: ActivityHelper(), delegateQueue: nil)
-        
-        // 创建一个假的下载任务
-        if let url = URL(string: "https://example.com/fakefile") {
-            let downloadTask = session.downloadTask(with: url)
-            downloadTask.resume();
-            
-        }
-    }
-    // 应用启动时调用
-    @objc static func applicationDidFinishLaunchingWithOptions() {
-        
-        self.playPipy();   // 启动 Pipy
-        self.scheduleBackgroundTask();
-    }
+//    @objc static func startBackgroundDownload() {
+//        let config = URLSessionConfiguration.background(withIdentifier: "com.flomesh.ztm.download")
+//        
+//        // 设置超时时间（默认是 60 秒），可以延长到例如 5 分钟
+//        config.timeoutIntervalForResource = 3600 // 300 秒即 5 分钟
+//        NSLog("调试-下载中");
+//        let session = URLSession(configuration: config, delegate: ActivityHelper(), delegateQueue: nil)
+//        
+//        if let url = URL(string: "https://example.com/fakefile") {
+//            let downloadTask = session.downloadTask(with: url)
+//            downloadTask.resume();
+//            
+//        }
+//    }
     // 更新实时活动的内容
     @objc static func updateLiveActivity() {
         guard let activity = self.activity else {
@@ -129,27 +124,32 @@ import BackgroundTasks
             return
         }
         
-        let attributes = RunnerWidgetAttributes(name: "Example")
+        let attributes = RunnerWidgetAttributes(name: "Ztm")
         let initialContentState = RunnerWidgetAttributes.ContentState()
-        let updatedContent = ActivityContent(
-            state: initialContentState,
-            staleDate: Date().addingTimeInterval(3600) // 保持1小时过期时间
-        )
-        
-        Task {
-            do {
-                try await activity.update(updatedContent)
-                NSLog("调试-实时活动已更新")
-            } catch {
-                NSLog("调试-更新实时活动失败: \(error.localizedDescription)")
+        if #available(iOS 16.2, *) {
+            let updatedContent = ActivityContent(
+                state: initialContentState,
+                staleDate: Date().addingTimeInterval(3600) // 保持1小时过期时间
+            )
+            
+            Task {
+                do {
+                    try await activity.update(updatedContent)
+                    NSLog("调试-实时活动已更新")
+                } catch {
+                    NSLog("调试-更新实时活动失败: \(error.localizedDescription)")
+                }
             }
+        } else {
+            // Fallback on earlier versions
         }
+        
     }
     // 启动计时器，每10秒更新一次锁屏内容
     @objc static func startTimer() {
         DispatchQueue.main.async {
             NSLog("调试-注册更新实时活动 DispatchQueue")
-            self.timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { _ in
+            self.timer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { _ in
                 self.updateLiveActivity();
                 locationManager?.startLocationUpdates();
 //                self.playPipy();   // 启动 Pipy
@@ -175,12 +175,12 @@ import BackgroundTasks
 
     @objc static func handleDidEnterBackground() {
         locationManager?.startLocationUpdates()
-        self.startBackgroundDownload();
+//        self.startBackgroundDownload();
         
     }
     @objc static func handleAppOpen() {
         locationManager?.startLocationUpdates();
-        self.startBackgroundDownload();
+//        self.startBackgroundDownload();
         self.playPipy();
         
     }
@@ -205,7 +205,8 @@ import BackgroundTasks
                     NSLog("调试-Live Activity Start")
                     let attributes = RunnerWidgetAttributes(name: "Example")
                     let initialContentState = RunnerWidgetAttributes.ContentState()
-                    let initialContent = ActivityContent(state: initialContentState, staleDate: Date().addingTimeInterval(3600))
+                    if #available(iOS 16.2, *) {
+                        let initialContent = ActivityContent(state: initialContentState, staleDate: Date().addingTimeInterval(3600))
                     
                     do {
                         NSLog("调试-Live Activity Start2")
@@ -222,12 +223,18 @@ import BackgroundTasks
                     } catch {
                         NSLog("调试-Failed to start Live Activity: \(error.localizedDescription)")
                     }
+                    } else {
+                        // Fallback on earlier versions
+                    }
+                    
                 }
             } else {
                 NSLog("调试-通知权限被拒绝")
             }
         }
     }
+    
+    
 }
 @objc class WidgetHelper: NSObject {
     @objc static func reloadWidgets() {

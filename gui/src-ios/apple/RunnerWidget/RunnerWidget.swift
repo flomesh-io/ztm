@@ -123,10 +123,3 @@ struct RunnerWidget: Widget {
         .contentMarginsDisabledIfAvailable()
     }
 }
-
-#Preview(as: .systemSmall) {
-    RunnerWidget()
-} timeline: {
-    SimpleEntry(date: .now, emoji: "")
-    SimpleEntry(date: .now, emoji: "")
-}

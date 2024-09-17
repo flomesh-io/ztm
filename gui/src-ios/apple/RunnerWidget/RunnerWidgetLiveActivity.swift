@@ -126,10 +126,3 @@ extension RunnerWidgetAttributes.ContentState {
          RunnerWidgetAttributes.ContentState()
      }
 }
-
-#Preview("Notification", as: .content, using: RunnerWidgetAttributes.preview) {
-   RunnerWidgetLiveActivity()
-} contentStates: {
-    RunnerWidgetAttributes.ContentState.smiley
-    RunnerWidgetAttributes.ContentState.starEyes
-}
