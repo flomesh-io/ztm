@@ -48,7 +48,6 @@ const getTunnels = (tunnel) => {
 			}
 		}
 	},()=>{
-		alert(2)
 		loading.value = false;
 		loader.value = false;
 	});
