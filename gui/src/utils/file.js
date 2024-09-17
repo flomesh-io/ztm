@@ -13,6 +13,7 @@ import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
 import { open } from '@tauri-apps/plugin-shell';
+import { download } from '@tauri-apps/plugin-upload';
 import { platform } from '@/utils/platform';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { create, copyFile, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
@@ -40,21 +41,22 @@ const isMobile = () => {
 	return platform() == 'ios' || platform() == 'android';
 }
 
-const getSavePath = (target, oldName) => {
-	if(!!target){
-		return oldName;
+const getSavePath = (target, dft) => {
+	if(!target){
+		return dft;
 	} else if(isMobile()){
 		const newName = target.split("/")[target.split("/").length-1];
+		const oldName = dft?dft.split("/")[dft.split("/").length-1]:'';
 		// if(target.toLowerCase().indexOf('library/cache')>-1 || target.toLowerCase().indexOf('libraries/cache')>-1){
 		// 	return decodeURI(target)
 		// }else 
 		if(!!oldName && newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
-			return oldName;
+			return dft;
 		}else{
 			return decodeURI(newName);
 		}
 	} else {
-		return target;
+		return decodeURI(target);
 	}
 }
 const writeMobileFile = (name, append) => {
@@ -174,7 +176,7 @@ const bitUnit = (value)=> {
 	if(typeof(value) != 'number'){
 		return value;
 	} else if(value>(1024 * 1024 * 1024)){
-		return (value/(1024 * 1024 * 1024)).toFixed(0) + "GB";
+		return (value*100/(1024 * 1024 * 1024)).toFixed(0)/100 + "GB";
 	} else if(value>(1024 * 1024)){
 		return (value/(1024 * 1024)).toFixed(0) + "MB";
 	} else if(value>1024){
@@ -211,38 +213,48 @@ const saveFile = (fileUrl, before, after) => {
 			if(!!before){
 				before()
 			}
-			requestMeta(fileUrl)
-				.then(arrayBuffer => {
-					setTimeout(()=>{
-						create(getSavePath(targetUrl, name), {
-							write:true, 
-							create:true, 
-							baseDir: BaseDirectory.Document ,
-						}).then((file)=>{
-							file.write(convertToUint8Array(arrayBuffer)).then(()=>{
-								file.close();
-								if(!!after){
-									after()
-								}
-							});
-						}).catch((e2)=>{
-							writeMobileFile('saveFileReqError2.txt',e2.toString());
-							if(!!after){
-								after()
-							}
-						});
-					},300)
-					// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
-					// 	if(!!after){
-					// 		after()
-					// 	}
-					// });
-				}).catch((e)=>{
-					writeMobileFile('saveFileReqError.txt',e.toString());
-					if(!!after){
-						after()
-					}
-				});
+			download(fileUrl, getSavePath(targetUrl, `${defaultPath}/${name}`)).then(()=>{
+				if(!!after){
+					after()
+				}
+			}).catch((e2)=>{
+				writeMobileFile('downloadError.txt',e2.toString());
+				if(!!after){
+					after()
+				}
+			});
+			// requestMeta(fileUrl)
+			// 	.then(arrayBuffer => {
+			// 		setTimeout(()=>{
+			// 			create(getSavePath(targetUrl, name), {
+			// 				write:true, 
+			// 				create:true, 
+			// 				baseDir: BaseDirectory.Document ,
+			// 			}).then((file)=>{
+			// 				file.write(convertToUint8Array(arrayBuffer)).then(()=>{
+			// 					file.close();
+			// 					if(!!after){
+			// 						after()
+			// 					}
+			// 				});
+			// 			}).catch((e2)=>{
+			// 				writeMobileFile('saveFileReqError2.txt',e2.toString());
+			// 				if(!!after){
+			// 					after()
+			// 				}
+			// 			});
+			// 		},300)
+			// 		// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
+			// 		// 	if(!!after){
+			// 		// 		after()
+			// 		// 	}
+			// 		// });
+			// 	}).catch((e)=>{
+			// 		writeMobileFile('saveFileReqError.txt',e.toString());
+			// 		if(!!after){
+			// 			after()
+			// 		}
+			// 	});
 		})
 	});
 }

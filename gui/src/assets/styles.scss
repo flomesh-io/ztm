@@ -1294,3 +1294,6 @@ fieldset{
   -ms-user-select: none;
   user-select: none;
 }
+.error .p-progressbar-value{
+	background-color: var(--red-500);
+}
