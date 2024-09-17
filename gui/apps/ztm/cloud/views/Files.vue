@@ -75,13 +75,13 @@ const loadFileAttr = (unload, detailItem) => {
 		attrLoading.value = false;
 		if(!detailItem){
 			selectedFile.value = {
-				...item,
+				...selectedFile.value,
 				..._res,
 			}
 		} 
 		
 		detailData.value[res.path] = {
-			...item,
+			...detailData.value[res.path],
 			..._res,
 		}
 		if(res?.downloading!=null){
@@ -93,14 +93,14 @@ const loadFileAttr = (unload, detailItem) => {
 		attrLoading.value = false;
 		if(!detailItem){
 			selectedFile.value = {
-				...item,
+				...selectedFile.value,
 				state:'error',
 				error:e,
 			}
 		} 
 		
 		detailData.value[item.path] = {
-			...item,
+			...detailData.value[res.path],
 			state:'error',
 			error:e,
 		}
