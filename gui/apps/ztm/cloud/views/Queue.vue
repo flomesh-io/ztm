@@ -8,7 +8,7 @@ import { useStore } from 'vuex';
 import { checker, bitUnit } from '@/utils/file';
 import _ from "lodash"
 const props = defineProps(['downloads','uploads']);
-const emits = defineEmits(['back']);
+const emits = defineEmits(['back','load']);
 const store = useStore();
 const endpoints = ref([]);
 const users = ref([]);
@@ -28,6 +28,7 @@ const back = () => {
 	emits('back')
 }
 const loaddata = () => {
+	emits('load')
 }
 
 onMounted(() => {
@@ -38,6 +39,17 @@ watch(()=>props.d,()=>{
 },{
 	deep:true
 })
+
+const doCancelDownload = (item) => {
+	if(item.path){
+		fileService.cancelDownload(item.path).then((res)=>{
+			loaddata();
+		})
+		.catch(err => {
+			loaddata();
+		}); 
+	}
+}
 const active = ref(0)
 </script>
 
@@ -60,15 +72,22 @@ const active = ref(0)
 					<div class="pr-3">
 						<img v-tooltip="item.hash" class="relative" :src="checker({...item,name:item.path})" width="30" height="30" style="top: 5px;"/>
 					</div>
-					<div class="flex-item text-left">
+					<div class="flex-item text-left" >
 						<div>
-							<b class="mr-2" style="word-break: break-all;">{{ item.path }}</b>
+							<b class="mr-2" style="word-break: break-all;">{{ item.path }} </b>
 						</div>
 						<div >
-							<ProgressBar :value="item.downloading*100<30?30:item.downloading*100" style="height: 14px;">
-								{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}}
+							<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''" :value="item.downloading*100<30?30:item.downloading*100" style="height: 14px;">
+								{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}} <span v-if="item.speed">({{bitUnit(item.speed)}}/s)</span>
 							</ProgressBar>
 						</div>
+						<div v-if="item?.error" style="word-break: break-all;font-size: 8pt;">
+							<i class="pi pi-info-circle text-red-500 mr-1 relative" style="top: 3px;" />
+							{{item.error}}
+						</div>
+					</div>
+					<div >
+						<Button @click="doCancelDownload(item)" class="w-full" text label="Cancel" severity="danger"  />
 					</div>
 				</div>
 			</div>

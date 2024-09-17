@@ -2,6 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import Files from './Files.vue'
 import Queue from './Queue.vue'
+import Preview from './Preview.vue'
 import FileService from '../service/FileService';
 
 const visibleEditor = ref(false);
@@ -85,6 +86,15 @@ const timmer = () => {
 		}
 	},3000)
 }
+const visiblePreview = ref(false);
+const previewItem = ref({});
+const dir = ref('');
+const openPreview = ({item, localDir}) => {
+	dir.value = localDir;
+	previewItem.value = item;
+	visiblePreview.value = true;
+	visibleEditor.value = false;
+}
 onMounted(()=>{
 	timmer();
 	getEndpoints();
@@ -103,18 +113,29 @@ onActivated(()=>{
 				:endpoints="endpoints"
 				:error="error" 
 				:loading="loading"
-				:small="visibleEditor" 
+				:small="visibleEditor || visiblePreview" 
 				@upload="()=>{}" 
 				@download="downloadChange" 
+				@preview="openPreview"
 				@load="changePath"/>
+		</div>
+		<div class="flex-item h-full shadow" v-if="!!visiblePreview">
+			<div class="mobile-fixed h-full">
+				<Preview
+					:item="previewItem"
+					:dir="dir"
+					@back="() => {previewItem=null;visiblePreview=false;}"/>
+			</div>
 		</div>
 		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
 			<div class="mobile-fixed h-full">
 				<Queue
 					:downloads="downloads"
+					@load="getDownloads()"
 					@back="() => {selectedFile=null;visibleEditor=false;}"/>
 			</div>
 		</div>
+		
 	</div>
 </template>
 

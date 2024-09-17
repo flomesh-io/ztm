@@ -47,7 +47,11 @@ const getTunnels = (tunnel) => {
 				visibleEditor.value = false;
 			}
 		}
-	})
+	},()=>{
+		alert(2)
+		loading.value = false;
+		loader.value = false;
+	});
 }
 </script>
 

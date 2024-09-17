@@ -19,7 +19,7 @@ const scopeType = ref('All');
 const portMap = ref({});
 
 const props = defineProps(['small','files','error','loading','queueSize','endpoints'])
-const emits = defineEmits(['download','upload','load'])
+const emits = defineEmits(['download','upload','load','preview'])
 const info = computed(() => {
 	return store.getters['app/info']
 });
@@ -84,7 +84,7 @@ const loadFileAttr = (item, unload, detailload) => {
 			...item,
 			..._res,
 		}
-		if(!!res.downloading || !!res.uploading){
+		if(res?.downloading!=null || res?.uploading!=null){
 			setTimeout(()=>{
 				loadFileAttr(item, true);
 			},1000)
@@ -173,16 +173,9 @@ const onNodeExpand = (node) => {
 	}
 };
 
-const preview = ref({
-	visible:false,
-	url:''
-});
-
 const openPreview = (item) => {
-	preview.value = {
-		visible:true,
-		url:item?.fileUrl
-	}
+	emits('preview',{item, localDir: localDir.value});
+	visible.value = false;
 }
 const isPC = computed(()=>{
 	const pm = platform();
@@ -406,6 +399,19 @@ const doDownload = (item) => {
 	if(item.path){
 		fileService.download(item.path).then((res)=>{
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
+			emits('download',[item]);
+			loadFileAttr(item, true);
+		})
+		.catch(err => {
+			emits('download',[item]);
+			loadFileAttr(item, true);
+		}); 
+	}
+}
+const doCancelDownload = (item) => {
+	if(item.path){
+		fileService.cancelDownload(item.path).then((res)=>{
+			toast.add({ severity: 'contrast', summary:'Tips', detail: `Download cancelled`, life: 3000 });
 			emits('download',[item]);
 			loadFileAttr(item, true);
 		})
@@ -727,8 +733,8 @@ onMounted(()=>{
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || !!detailData[slotProps.node.path]?.downloading || !!detailData[slotProps.node.path]?.uploading)">
-									{{ !!detailData[slotProps.node.path]?.downloading?'downloading':(!!detailData[slotProps.node.path]?.uploading?'uploading':detailData[slotProps.node.path].state) }}
+									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || detailData[slotProps.node.path]?.downloading!=null || detailData[slotProps.node.path]?.uploading!=null)">
+									{{ detailData[slotProps.node.path]?.downloading!=null?'downloading':(!!detailData[slotProps.node.path]?.uploading?'uploading':detailData[slotProps.node.path].state) }}
 									</Tag>
 								</template>
 						</Column>
@@ -759,8 +765,8 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || !!detailData[file.path]?.downloading || !!detailData[file.path]?.uploading)" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >
-								{{ !!detailData[file.path]?.downloading?'downloading':(!!detailData[file.path]?.uploading?'uploading':detailData[file.path].state) }}
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || detailData[file.path]?.downloading!=null || !!detailData[file.path]?.uploading)" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >
+								{{ detailData[file.path]?.downloading!=null?'downloading':(!!detailData[file.path]?.uploading?'uploading':detailData[file.path].state) }}
 								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
@@ -796,7 +802,7 @@ onMounted(()=>{
 							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
 														<Tag v-tooltip="item?.error?.message" :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">
-															{{ !!selectedFile?.downloading?'downloading':(!!selectedFile?.uploading?'uploading':item.shortcut) }}
+															{{ selectedFile?.downloading!=null?'downloading':(!!selectedFile?.uploading?'uploading':item.shortcut) }}
 														</Tag>
 														<span v-else>{{ item.shortcut }}</span>
 													</span>
@@ -805,20 +811,21 @@ onMounted(()=>{
 							    <template #end >
 										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.uploading">
 												<ProgressBar :value="selectedFile.uploading*100<20?20:selectedFile.uploading*100">
-													{{(selectedFile.uploading*100).toFixed(0)}}
+													{{(selectedFile.uploading*100).toFixed(0)}}%
 												</ProgressBar>
 										</div>
-										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading">
-												<ProgressBar :value="selectedFile.downloading*100<20?20:selectedFile.downloading*100">
-													{{(selectedFile.downloading*100).toFixed(0)}}
+										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading != null">
+												<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''"  :value="selectedFile.downloading*100<20?20:selectedFile.downloading*100">
+													{{(selectedFile.downloading*100).toFixed(0)}}% <span v-if="selectedFile?.speed">({{bitUnit(selectedFile.speed)}}/s)</span>
 												</ProgressBar>
 										</div>
 										<div class="px-3 pt-2 pb-3 grid m-0 justify-content-between">
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
-												<Button :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
+												<Button :loading="!!selectedFile.uploading" :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 											</div>
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'  && selectedFile?.state != 'error'">
-												<Button :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+												<Button v-if="selectedFile?.downloading == null" :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
+												<Button v-else @click="doCancelDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Cancel" severity="danger"  />
 											</div>
 											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl && selectedFile?.state != 'error'">
 												<Button :loading="saving" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save" severity="secondary"  />
@@ -882,9 +889,6 @@ onMounted(()=>{
 							</div>
 						</TabPanel>
 					</TabView>
-				</Dialog>
-				<Dialog class="nopd noheader" style="max-width: 100%;" v-model:visible="preview.visible" modal :dismissableMask="true" :draggable="true" >
-					<FilePreview v-if="preview.visible && preview.url" class="w-full" :src="preview.url" />
 				</Dialog>
 			</div>
 			</ScrollPanel>

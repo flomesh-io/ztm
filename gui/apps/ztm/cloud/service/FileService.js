@@ -73,4 +73,7 @@ export default class FileService {
 			path
 		});
 	}
+	cancelDownload(path) {
+		return request(`/api/downloads${path}`,"DELETE");
+	}
 }

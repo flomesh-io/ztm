@@ -76,18 +76,20 @@ export default class TunnelService {
 			listens: _listens, exits
 		});
 	}
-	getTunnels(callback) {
+	getTunnels(callback, error) {
 		this.getEndpoints().then((eps)=>{
 			let reqs = [];
 			// merge request
 			(eps||[]).forEach((ep)=>{
 				const outboundReq = this.getOutbounds(ep?.id).then((res)=> {
 					return { data:res, ep, type:'outbound' }
-				}).catch((e)=>{})
+				}).catch((e)=>{
+				})
 				reqs.push(outboundReq);
 				const inboundReq = this.getInbounds(ep?.id).then((res)=> {
 					return { data:res, ep, type:'inbound' }
-				}).catch((e)=>{})
+				}).catch((e)=>{
+				})
 				reqs.push(inboundReq)
 			})
 			
@@ -141,6 +143,9 @@ export default class TunnelService {
 				})
 				if(!!callback)
 				callback(Object.values(tunnels),eps||[])
+			}).catch(()=>{
+				if(!!error)
+				error()
 			})
 		})
 	}

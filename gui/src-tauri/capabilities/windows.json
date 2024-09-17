@@ -291,6 +291,8 @@
     "deep-link:allow-is-registered",
     "deep-link:allow-register",
     "deep-link:allow-unregister",
+		"upload:allow-download",
+		"upload:allow-upload",
 		"dialog:default",
 		"dialog:allow-open"
   ]
