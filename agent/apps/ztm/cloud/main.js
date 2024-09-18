@@ -114,11 +114,12 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/downloads/*': {
-      'DELETE': responder(
-        (params) => api.cancelDownload(params['*']).then(
+      'DELETE': responder((params) => {
+        var pathname = URL.decode(params['*'])
+        return api.cancelDownload(pathname).then(
           response(204)
         )
-      )
+      })
     },
 
     '/api/uploads': {
