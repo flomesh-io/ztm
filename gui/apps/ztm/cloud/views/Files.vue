@@ -65,15 +65,19 @@ const loadFileAttr = (unload, detailItem) => {
 	if(!unload){
 		attrLoading.value = true;
 	}
-	fileService.getFiles(fullPath.value(detailItem || selectedFile.value)).then((res)=>{
+	let targetItem = detailItem || selectedFile.value;
+	fileService.getFiles(fullPath.value(targetItem)).then((res)=>{
 		const _res = res;
+		if(!_res.access){
+			_res.access = {}
+		}
 		if(!!_res.access){
 			if(!_res.access.users){
 				_res.access.users = {};
 			}
 		}
 		attrLoading.value = false;
-		if(!detailItem){
+		if(_res.path == selectedFile.value?.path){
 			selectedFile.value = {
 				...selectedFile.value,
 				..._res,
@@ -86,7 +90,7 @@ const loadFileAttr = (unload, detailItem) => {
 		}
 		if(res?.downloading!=null){
 			setTimeout(()=>{
-				loadFileAttr(true);
+				loadFileAttr(true, targetItem);
 			},1000)
 		}
 	}).catch((e)=>{
@@ -508,14 +512,15 @@ const toggleMirror = () => {
 const moreMenu = ref();
 const moreItems = computed(()=>{
 	
-	const actions = [
-		{
+	const actions = [];
+	if(isMobile.value){
+		actions.push({
 				label: 'Home',
 				command(){
 					changePath(0)
 				}
-		}
-	];
+		})
+	}
 	if(isMirror(current.value.path, mirrorPaths.value)>-1){
 		actions.push({
 				label: 'Remove Mirror',
@@ -525,7 +530,7 @@ const moreItems = computed(()=>{
 		})
 	}else{
 		actions.push({
-				label: 'Set Mirror',
+				label: 'Auto-Mirror',
 				command(){
 					toggleMirror()
 				}
@@ -679,7 +684,7 @@ onMounted(()=>{
 						<!-- <b>Files</b> -->
 					</template>
 					<template #end> 
-						<Button v-if="!isMobile" @click="toggleMirror()" v-tooltip.bottom="isMirror(current.path, mirrorPaths)>-1?'Remove Mirror':'Set Mirror'" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" :severity="isMirror(current.path, mirrorPaths)>-1?'primary':'secondary'" text />
+						<Button v-if="!isMobile && isMirror(current.path, mirrorPaths)>-1" v-tooltip.bottom="isMirror(current.path, mirrorPaths)>-1?'Mirror':''" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" :severity="isMirror(current.path, mirrorPaths)>-1?'primary':'secondary'" text />
 						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
 						<FileImportSelector icon="pi pi-plus" v-if="isMyFolder && hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
 						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
@@ -821,9 +826,17 @@ onMounted(()=>{
 							    </template>
 							    <template #end >
 										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading != null">
-												<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''"  :value="selectedFile.downloading*100<20?20:selectedFile.downloading*100">
-													{{(selectedFile.downloading*100).toFixed(0)}}% <span v-if="selectedFile?.speed">({{bitUnit(selectedFile.speed)}}/s)</span>
+												<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''"  :value="selectedFile.downloading*100">
+													<span></span>
 												</ProgressBar>
+												<div class="flex">
+													<div class="flex-item">
+														{{bitUnit(selectedFile.size*selectedFile.downloading)}}  / {{bitUnit(selectedFile.size)}} 
+													</div>
+													<div >
+														{{bitUnit(selectedFile?.speed||0)}}/s
+													</div>
+												</div>
 										</div>
 										<div class="px-3 pt-2 pb-3 grid m-0 justify-content-between">
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">

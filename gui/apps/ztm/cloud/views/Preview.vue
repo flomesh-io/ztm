@@ -37,8 +37,8 @@ onMounted(() => {
 
 const saving = ref(false);
 const saveAs = () => {
-	if(props?.item.fileUrl){
-		saveFile(item.fileUrl,()=>{
+	if(props?.item?.fileUrl){
+		saveFile(props.item.fileUrl,()=>{
 			saving.value = true;
 		},()=>{
 			saving.value = false;
