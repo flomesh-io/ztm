@@ -73,7 +73,31 @@ export default class FileService {
 			path
 		});
 	}
-	cancelDownload(path) {
-		return request(`/api/downloads${path}`,"DELETE");
+	cancelDownload(path, callback) {
+		confirm.custom({
+				message: `Are you sure want to cancel this file?`,
+				header: 'Cancel download',
+				rejectProps: {
+						label: 'Close',
+						severity: 'secondary',
+						outlined: true
+				},
+				acceptProps: {
+						severity: 'danger',
+						label: 'Ok'
+				},
+				icon: 'pi pi-info-circle',
+				accept: () => {
+					request(`/api/downloads${path}`,"DELETE").then(()=>{
+						if(!!callback)
+						callback();
+					}).catch((e)=>{
+						if(!!callback)
+						callback(e);
+					});
+				},
+				reject: () => {
+				}
+		});
 	}
 }

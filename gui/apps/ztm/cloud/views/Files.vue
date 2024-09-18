@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit, openFile, isMirror, isImage, saveFile } from '@/utils/file';
+import { checker, bitUnit, openFile, isMirror, isImage, saveFile, writeMobileFile } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
@@ -81,12 +81,14 @@ const loadFileAttr = (unload, detailItem) => {
 			selectedFile.value = {
 				...selectedFile.value,
 				..._res,
+				downloading:_res?.downloading
 			}
 		} 
 		
 		detailData.value[res.path] = {
 			...detailData.value[res.path],
 			..._res,
+			downloading:_res?.downloading
 		}
 		if(res?.downloading!=null){
 			setTimeout(()=>{
@@ -100,6 +102,7 @@ const loadFileAttr = (unload, detailItem) => {
 				...selectedFile.value,
 				state:'error',
 				error:e,
+				downloading:null
 			}
 		} 
 		
@@ -107,6 +110,7 @@ const loadFileAttr = (unload, detailItem) => {
 			...detailData.value[res.path],
 			state:'error',
 			error:e,
+			downloading:null
 		}
 	})
 }
@@ -401,14 +405,17 @@ const openQueue = () => {
 	emits('upload',[])
 }
 const doDownload = (item) => {
+	writeMobileFile('doDownloadStart.txt',item?.path||'');
 	if(item.path){
 		fileService.download(item.path).then((res)=>{
+			writeMobileFile('doDownloadSuccess.txt',res?.toString()||'');
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
 			emits('download',[item]);
 			selectedFile.value = item;
 			loadFileAttr(true);
 		})
 		.catch(err => {
+			writeMobileFile('doDownloadError.txt',error?.message);
 			emits('download',[item]);
 			selectedFile.value = item;
 			loadFileAttr(true);
@@ -417,16 +424,14 @@ const doDownload = (item) => {
 }
 const doCancelDownload = (item) => {
 	if(item.path){
-		fileService.cancelDownload(item.path).then((res)=>{
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `Download cancelled`, life: 3000 });
-			emits('download',[item]);
+		fileService.cancelDownload(item.path, (error)=>{
+			if(!error){
+				toast.add({ severity: 'contrast', summary:'Tips', detail: `Cancelled.`, life: 3000 });
+			}
+			emits('download',[]);
 			selectedFile.value = item;
 			loadFileAttr(true);
-		})
-		.catch(err => {
-			emits('download',[item]);
-			loadFileAttr(true);
-		}); 
+		});
 	}
 }
 const doDownloads = () => {
@@ -500,12 +505,12 @@ const fileIcon = computed(()=>(item)=>{
 		return checker(item, mirrorPaths.value);
 	}
 })
-const toggleMirror = () => {
-	const _index = isMirror(current.value.path, mirrorPaths.value);
+const toggleMirror = (path) => {
+	const _index = isMirror(path, mirrorPaths.value);
 	if(_index>-1){
 		mirrorPaths.value.splice(_index,1);
 	} else {
-		mirrorPaths.value.push(current.value.path)
+		mirrorPaths.value.push(path)
 	}
 	saveConfig();
 }
@@ -518,21 +523,6 @@ const moreItems = computed(()=>{
 				label: 'Home',
 				command(){
 					changePath(0)
-				}
-		})
-	}
-	if(isMirror(current.value.path, mirrorPaths.value)>-1){
-		actions.push({
-				label: 'Remove Mirror',
-				command(){
-					toggleMirror()
-				}
-		})
-	}else{
-		actions.push({
-				label: 'Auto-Mirror',
-				command(){
-					toggleMirror()
 				}
 		})
 	}
@@ -558,12 +548,6 @@ const moreItems = computed(()=>{
 			}
 		});
 	}
-	actions.push({
-		label: 'Reload',
-		command(){
-			load()
-		}
-	});
 	return actions
 });
 
@@ -575,6 +559,7 @@ const stateColor = ref({
 	changed:'warn',
 	synced:'success',
 	error: 'danger',
+	downloading: 'contrast',
 	missing: 'secondary',
 	outdated: 'secondary'
 })
@@ -648,7 +633,13 @@ watch(()=>props.files,()=>{
 	deep:true,
 	immediate:true,
 });
-
+const stateLabel = computed(()=>(item)=>{
+	if(item?.downloading!=null){
+		return 'downloading'
+	} else {
+		return item.state
+	}
+})
 onMounted(()=>{
 	getConfig();
 	
@@ -684,14 +675,14 @@ onMounted(()=>{
 						<!-- <b>Files</b> -->
 					</template>
 					<template #end> 
-						<Button v-if="!isMobile && isMirror(current.path, mirrorPaths)>-1" v-tooltip.bottom="isMirror(current.path, mirrorPaths)>-1?'Mirror':''" :icon="isMirror(current.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" :severity="isMirror(current.path, mirrorPaths)>-1?'primary':'secondary'" text />
+						<Button v-if="!isMobile" @click="load()" :icon="loading?'pi pi-refresh pi-spin':'pi pi-refresh'" :severity="'secondary'" text />
 						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
 						<FileImportSelector icon="pi pi-plus" v-if="isMyFolder && hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
-						<Button @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
+						<Button v-if="!props.small" @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
 							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
 						</Button>
-						<Button icon="pi pi-ellipsis-v" @click="moreToggle" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
+						<Button v-if="moreItems.length>0" icon="pi pi-ellipsis-v" @click="moreToggle" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
 						</Button>
 					</template>
 			</AppHeader>
@@ -749,8 +740,8 @@ onMounted(()=>{
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[detailData[slotProps.node.path].state]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || detailData[slotProps.node.path]?.downloading!=null)">
-									{{ detailData[slotProps.node.path]?.downloading!=null?'downloading':(detailData[slotProps.node.path].state) }}
+									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[stateLabel(detailData[slotProps.node.path])]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || detailData[slotProps.node.path]?.downloading!=null)">
+										{{stateLabel(detailData[slotProps.node.path])}}
 									</Tag>
 								</template>
 						</Column>
@@ -768,8 +759,8 @@ onMounted(()=>{
 						</Column>
 						
 				</TreeTable>
-				<div v-else class="grid text-left px-3 m-0 pt-1" v-if="filesFilter && filesFilter.length >0">
-						<div :class="props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block" v-for="(file,hid) in filesFilter" :key="hid">
+				<div v-else class="grid text-left px-3 m-0 pt-3" v-if="filesFilter && filesFilter.length >0">
+						<div :class="!!props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block p-1" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2 relative noSelect" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
 								<img oncontextmenu="return false;"  :src="fileIcon(file)" class="pointer noEvent noSelect" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								
@@ -781,8 +772,8 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || detailData[file.path]?.downloading!=null )" :severity="stateColor[detailData[file.path].state]" class="py-0 px-1 mt-2" >
-								{{ detailData[file.path]?.downloading!=null?'downloading':(detailData[file.path].state) }}
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || detailData[file.path]?.downloading!=null )"  :severity="stateColor[stateLabel(detailData[file.path])]" class="py-0 px-1 mt-2" >
+									{{stateLabel(detailData[file.path])}}
 								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>
@@ -817,8 +808,8 @@ onMounted(()=>{
 							            <span>{{ item.label }}</span>
 							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-														<Tag v-tooltip="item?.error?.message" :severity="stateColor[item.shortcut]" v-if="item.label == 'State'">
-															{{ selectedFile?.downloading!=null?'downloading':(item.shortcut) }}
+														<Tag v-tooltip="item?.error?.message" :severity="stateColor[stateLabel(selectedFile)]" v-if="item.label == 'State'">
+															{{stateLabel(selectedFile)}}
 														</Tag>
 														<span v-else>{{ item.shortcut }}</span>
 													</span>
@@ -833,7 +824,7 @@ onMounted(()=>{
 													<div class="flex-item">
 														{{bitUnit(selectedFile.size*selectedFile.downloading)}}  / {{bitUnit(selectedFile.size)}} 
 													</div>
-													<div >
+													<div v-if="selectedFile?.speed">
 														{{bitUnit(selectedFile?.speed||0)}}/s
 													</div>
 												</div>
@@ -862,7 +853,7 @@ onMounted(()=>{
 						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new' && selectedFile?.state != 'error'">
 							<template #header>
 								<div>
-									<i class="pi pi-shield mr-2" />ACL
+									<i class="pi pi-shield mr-2" />Sharing
 								</div>
 							</template>
 							<div class="p-3">
@@ -905,6 +896,16 @@ onMounted(()=>{
 										</div>
 									</template>
 								</Listbox>
+							</div>
+						</TabPanel>
+						<TabPanel v-if="selectedFile?.ext == '/' && !!selectedFile?.path">
+							<template #header>
+								<div>
+									<i :icon="isMirror(selectedFile.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" class=" mr-2" />Auto-Mirror
+								</div>
+							</template>
+							<div class="p-3">
+								<Button @click="toggleMirror(selectedFile.path)"  :label="isMirror(selectedFile.path, mirrorPaths)?'ON':'OFF'" :severity="isMirror(selectedFile.path, mirrorPaths)?'primary':'secondary'"  />
 							</div>
 						</TabPanel>
 					</TabView>

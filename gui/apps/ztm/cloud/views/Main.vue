@@ -18,6 +18,11 @@ const downloads = ref([]);
 const getDownloads = () => {
 	fileService.getDownloads().then((res)=>{
 		downloads.value = res || [];
+		if(downloads.value.length>0){
+			setTimeout(()=>{
+				getDownloads();
+			},1000)
+		}
 	})
 }
 const getUploads = () => {
@@ -73,19 +78,6 @@ const downloadChange = (downloadFiles) => {
 // }
 const queueSize = computed(()=> downloads.value.length );
 
-const timmer = () => {
-	setTimeout(()=>{
-		// if(uploads.value.length>0){
-		// 	getUploads();
-		// }
-		if(downloads.value.length>0){
-			getDownloads();
-		}
-		if(uploads.value.length>0 || downloads.value.length>0){
-			timmer();
-		}
-	},3000)
-}
 const visiblePreview = ref(false);
 const previewItem = ref({});
 const dir = ref('');
@@ -96,7 +88,6 @@ const openPreview = ({item, localDir}) => {
 	visibleEditor.value = false;
 }
 onMounted(()=>{
-	timmer();
 	getEndpoints();
 })
 onActivated(()=>{
@@ -113,7 +104,7 @@ onActivated(()=>{
 				:endpoints="endpoints"
 				:error="error" 
 				:loading="loading"
-				:small="visibleEditor || visiblePreview" 
+				:small="visibleEditor?'queue':(visiblePreview?'preview':'')" 
 				@upload="()=>{}" 
 				@download="downloadChange" 
 				@preview="openPreview"
