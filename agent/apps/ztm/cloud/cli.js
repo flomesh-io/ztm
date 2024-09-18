@@ -1,4 +1,4 @@
-export default function ({ api, utils }) {
+export default function ({ app, api, utils }) {
   return pipeline($=>$
     .onStart(ctx => main(ctx))
   )
@@ -14,6 +14,8 @@ export default function ({ api, utils }) {
       output('ztm: ')
       output(err.message || err.toString())
       output('\n')
+      app.log(err.message || err.toString())
+      if (err.stack) app.log(err.stack)
     }
 
     function flush() {
