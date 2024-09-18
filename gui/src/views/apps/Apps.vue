@@ -56,27 +56,27 @@ const upload = (d)=>{
 	}
 }
 const loaddata = () => {
-	appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
+		appService.getEpApps(selectedMesh.value?.name,selectedMesh.value?.agent?.id).then((res)=>{
 		console.log("start getApps")
 		meshApps.value = res?.filter((app) => app.name !='terminal') || [];
-		console.log(res);
-		appService.getApps(selectedMesh.value?.name).then((res2)=>{
-			console.log("uninstallApps:")
-			console.log(res2)
-			const _uninstallApps = [];
-			(res2||[]).forEach((_uninstallApp)=>{
-				const installed = meshApps.value.find((_app)=>app.name == _uninstallApp.name && app.provider == _uninstallApp.provider )
-				if(!installed){
-					_uninstallApps.push({
-						..._uninstallApp,
-						uninstall: true
-					})
-				}
-			})
-			uninstallApps.value = _uninstallApps;
-		}).catch((e)=>{
-			console.log(e)
-		});
+		//appService.getApps(selectedMesh.value?.name).then((res)=>{
+		// console.log(res);
+		// 	console.log("uninstallApps:")
+		// 	console.log(res2)
+		// 	const _uninstallApps = [];
+		// 	(res2||[]).forEach((_uninstallApp)=>{
+		// 		const installed = meshApps.value.find((_app)=>app.name == _uninstallApp.name && app.provider == _uninstallApp.provider )
+		// 		if(!installed){
+		// 			_uninstallApps.push({
+		// 				..._uninstallApp,
+		// 				uninstall: true
+		// 			})
+		// 		}
+		// 	})
+		// 	uninstallApps.value = _uninstallApps;
+		// }).catch((e)=>{
+		// 	console.log(e)
+		// });
 	}).catch((e)=>{
 		console.log(e)
 	});
@@ -87,6 +87,22 @@ const manage = ref(false);
 const mergeApps = computed(()=>{
 	return (!props.noInners?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
 })
+
+const installAPP = (app, options, base) => {
+	try{
+		appLoading.value[app.name] = true;
+		appService.downloadApp(options).then(()=>{
+			app.uninstall = false;
+			appLoading.value[app.name] = false;
+			loaddata();
+			openAppUI(app, base);
+		})
+		console.log(config.value)
+	}catch(e){
+		appLoading.value[app.name] = false;
+		loaddata();
+	}
+}
 const openAppContent = (app) => {
 		const options = {
 			provider:app.provider||'ztm',
@@ -101,7 +117,7 @@ const openAppContent = (app) => {
 		}
 		const base = appService.getAppUrl(options);
 		if(app.uninstall){
-			installAPP(app, options)
+			installAPP(app, options, base)
 		// }else if((app.name == 'proxy' || app.name == 'browser') && !app.shortcut){
 		// }else if(!app.isRunning && !!app.provider){
 		} else {
@@ -137,20 +153,6 @@ const openAppUI = (app, base) => {
 				mesh:selectedMesh.value
 			}
 		};
-	}
-}
-const installAPP = (app, options) => {
-	try{
-		appLoading.value[app.name] = true;
-		appService.downloadApp(options, ()=>{
-			setTimeout(() => {
-				app.uninstall = false;
-				appLoading.value[app.name] = false;
-				loaddata();
-			},500)
-		})
-		console.log(config.value)
-	}catch(e){
 	}
 }
 const current = ref(false);

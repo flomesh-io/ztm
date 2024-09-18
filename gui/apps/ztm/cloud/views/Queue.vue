@@ -70,24 +70,32 @@ const active = ref(0)
 			<div v-else-if="props.downloads.length>0" class="px-4 py-2">
 				<div v-for="(item, index) in props.downloads" :key="index" class="flex p-2" >
 					<div class="pr-3">
-						<img v-tooltip="item.hash" class="relative" :src="checker({...item,name:item.path})" width="30" height="30" style="top: 5px;"/>
+						<img v-tooltip.right="item.hash" class="relative" :src="checker({...item,name:item.path})" width="30" height="30" style="top: 5px;"/>
 					</div>
-					<div class="flex-item text-left" >
+					<div class="flex-item text-left text-sm" >
 						<div>
 							<b class="mr-2" style="word-break: break-all;">{{ item.path }} </b>
 						</div>
 						<div >
-							<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''" :value="item.downloading*100<30?30:item.downloading*100" style="height: 14px;">
-								{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}} <span v-if="item.speed">({{bitUnit(item.speed)}}/s)</span>
+							<ProgressBar v-tooltip.bottom="item?.error" :class="item?.error?'error':''" :value="item.downloading*100" style="height: 8px;">
+								<span></span>
 							</ProgressBar>
+							<div class="flex">
+								<div class="flex-item">
+									{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}} 
+								</div>
+								<div >
+									{{bitUnit(item?.speed||0)}}/s
+								</div>
+							</div>
 						</div>
 						<div v-if="item?.error" style="word-break: break-all;font-size: 8pt;">
 							<i class="pi pi-info-circle text-red-500 mr-1 relative" style="top: 3px;" />
 							{{item.error}}
 						</div>
 					</div>
-					<div >
-						<Button @click="doCancelDownload(item)" class="w-full" text label="Cancel" severity="danger"  />
+					<div class="pt-2 pl-2">
+						<Button @click="doCancelDownload(item)" text icon="pi pi-times" severity="danger"  />
 					</div>
 				</div>
 			</div>
