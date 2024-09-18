@@ -42,12 +42,12 @@ watch(()=>props.d,()=>{
 
 const doCancelDownload = (item) => {
 	if(item.path){
-		fileService.cancelDownload(item.path).then((res)=>{
+		fileService.cancelDownload(item.path,(error)=>{
 			loaddata();
-		})
-		.catch(err => {
-			loaddata();
-		}); 
+			if(!error){
+				toast.add({ severity: 'contrast', summary:'Tips', detail: `Cancelled.`, life: 3000 });
+			}
+		});
 	}
 }
 const active = ref(0)
@@ -58,10 +58,13 @@ const active = ref(0)
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					 <b>Downloads</b> <Badge v-if="!props.downloads" :value="props.downloads.length"/>
+					 <b>Downloads</b>
 				</template>
 				<template #end> 
-					 <Button icon="pi pi-inbox" text /> 
+					<Button  :severity="!props.downloads.length?'secondary':'primary'">
+						<i :class="!props.downloads.length?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
+						<Badge v-if="!!props.downloads.length" :value="props.downloads.length" size="small"></Badge>
+					</Button>
 					<!-- <Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/> -->
 				</template>
 		</AppHeader>
