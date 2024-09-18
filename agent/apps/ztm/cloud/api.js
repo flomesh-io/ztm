@@ -677,6 +677,7 @@ export default function ({ app, mesh }) {
     pathname = os.path.normalize(pathname)
     delete downloadFiles[pathname]
     downloadQueue = downloadQueue.filter(f => f.pathname !== pathname)
+    return Promise.resolve()
   }
 
   function uploadFile(pathname) {

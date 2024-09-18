@@ -95,7 +95,7 @@ export default function ({ app, mesh }) {
             new Message({ path: '/api/config' })
           ).then(res => ({
             ep,
-            config: res.head.status === 200 ? JSON.decode(res.body) : {}
+            config: res?.head?.status === 200 ? JSON.decode(res.body) : {}
           }))
         ))
       ).then(peers => {
@@ -171,7 +171,7 @@ export default function ({ app, mesh }) {
   )
 
   function hasDomain(config) {
-    return config.targets instanceof Array && config.targets.some(
+    return config?.targets instanceof Array && config.targets.some(
       domain => {
         if (domain.startsWith('*')) {
           return $host.endsWith(domain.substring(1))
@@ -183,7 +183,7 @@ export default function ({ app, mesh }) {
   }
 
   function hasIP(config) {
-    return config.targets instanceof Array && config.targets.some(
+    return config?.targets instanceof Array && config.targets.some(
       mask => {
         try {
           var m = new IPMask(mask)
