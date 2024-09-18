@@ -236,8 +236,7 @@ export default function ({ api, utils }) {
                   error(`cloud: cannot use --cancel and --output together`)
                   return Promise.resolve()
                 }
-                api.cancelDownload(pathname)
-                return Promise.resolve()
+                return api.cancelDownload(pathname)
               } else if (isListing) {
                 return api.listDownloads().then(
                   list => output(printTable(list, {
