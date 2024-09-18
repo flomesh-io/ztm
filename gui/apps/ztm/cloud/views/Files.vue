@@ -18,7 +18,7 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-const props = defineProps(['small','files','error','loading','queueSize','endpoints'])
+const props = defineProps(['small','files','loading','queueSize','endpoints'])
 const emits = defineEmits(['download','upload','load','preview'])
 const info = computed(() => {
 	return store.getters['app/info']
@@ -100,15 +100,13 @@ const loadFileAttr = (unload, detailItem) => {
 		if(!detailItem){
 			selectedFile.value = {
 				...selectedFile.value,
-				state:'error',
 				error:e,
 				downloading:null
 			}
 		} 
 		
-		detailData.value[item.path] = {
-			...detailData.value[res.path],
-			state:'error',
+		detailData.value[targetItem.path] = {
+			...detailData.value[targetItem.path],
 			error:e,
 			downloading:null
 		}
@@ -191,7 +189,7 @@ const isPC = computed(()=>{
 })
 const openPreviewFile = (item) => {
 	
-	if(detailData.value[item.path]?.state != 'error'){
+	if(!detailData.value[item.path]?.error){
 		if(isPC.value && detailData.value[item.path]?.state != 'missing'){
 			openFile(`${localDir.value}${item?.path}`);
 		} else if(detailData.value[item.path]?.state != 'new') {
@@ -439,7 +437,7 @@ const doDownloads = () => {
 	if(selectedFiles.value.length>0){
 		const downloadFiles = []
 		selectedFiles.value.forEach((item)=>{
-			if(detailData.value[item.path].state != "new" && detailData.value[item.path].state != "error"){
+			if(detailData.value[item.path].state != "new" && !detailData.value[item.path].error){
 				downloadFiles.push(item);
 				reqs.push(fileService.download(item.path));
 			}
@@ -499,7 +497,7 @@ const doUploads = () => {
 }
 const fileIcon = computed(()=>(item)=>{
 	
-	if(!!item.ext && detailData.value[item.path] && detailData.value[item.path].state != "new" && detailData.value[item.path].state != "error" && isImage(item.ext) && item.fileUrl){
+	if(!!item.ext && detailData.value[item.path] && detailData.value[item.path].state != "new" && !detailData.value[item.path]?.error && isImage(item.ext) && item.fileUrl){
 		return item.fileUrl;
 	} else {
 		return checker(item, mirrorPaths.value);
@@ -554,15 +552,6 @@ const moreItems = computed(()=>{
 const moreToggle = (event) => {
     moreMenu.value.toggle(event);
 };
-const stateColor = ref({
-	new:'warn',
-	changed:'warn',
-	synced:'success',
-	error: 'danger',
-	downloading: 'contrast',
-	missing: 'secondary',
-	outdated: 'secondary'
-})
 const sortField = ref();
 const sortOrder = ref();
 const searchSort = (e)=>{
@@ -624,6 +613,25 @@ const saveAs = (item) => {
 	}
 }
 
+const stateColor = ref({
+	new:'warn',
+	changed:'warn',
+	synced:'success',
+	error: 'danger',
+	'not find': 'secondary',
+	downloading: 'contrast',
+	missing: 'secondary',
+	outdated: 'secondary'
+})
+const stateLabel = computed(()=>(item)=>{
+	if(!!item?.error){
+		return item.error?.message.indexOf('404')>=0?'not find':'error'
+	} else if(item?.downloading!=null){
+		return 'downloading'
+	} else {
+		return item?.state||''
+	}
+})
 watch(()=>props.files,()=>{
 	fileData.value = [];
 	if(!!props.files && props.files.length>0){
@@ -633,13 +641,6 @@ watch(()=>props.files,()=>{
 	deep:true,
 	immediate:true,
 });
-const stateLabel = computed(()=>(item)=>{
-	if(item?.downloading!=null){
-		return 'downloading'
-	} else {
-		return item.state
-	}
-})
 onMounted(()=>{
 	getConfig();
 	
@@ -717,7 +718,7 @@ onMounted(()=>{
 					<Button class="w-full" label="Apply" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
 				</div>
 			</Popover>
-			<Card class="nopd" v-if="!props.error">
+			<Card class="nopd" >
 				<template #content>
 					<InputGroup class="search-bar" >
 						<DataViewLayoutOptions v-model="layout" style="z-index: 2;"/>
@@ -733,7 +734,7 @@ onMounted(()=>{
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
 									<div class="selector pointer noSelect" v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
-										<img oncontextmenu="return false;"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle noEvent noSelect" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
+										<img :class="stateLabel(detailData[slotProps.node.path]) == 'not find'?'opacity-40':''" oncontextmenu="return false;"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle noEvent noSelect" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 										<b class="px-2 vertical-align-middle noSelect" ><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
 									</div>
 								</template>
@@ -762,7 +763,7 @@ onMounted(()=>{
 				<div v-else class="grid text-left px-3 m-0 pt-3" v-if="filesFilter && filesFilter.length >0">
 						<div :class="!!props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block p-1" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2 relative noSelect" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
-								<img oncontextmenu="return false;"  :src="fileIcon(file)" class="pointer noEvent noSelect" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<img :class="stateLabel(detailData[file.path]) == 'not find'?'opacity-40':''" oncontextmenu="return false;"  :src="fileIcon(file)" class="pointer noEvent noSelect" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 								
 								<ProgressSpinner v-if="file.loading" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
@@ -792,7 +793,7 @@ onMounted(()=>{
 							<Menu :model="actions" class="w-60">
 							    <template #start>
 										<div v-if="selectedFile" class="text-center pt-4 relative">
-											<img :src="fileIcon(selectedFile)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+											<img  :class="stateLabel(selectedFile) == 'not find'?'opacity-40':''" :src="fileIcon(selectedFile)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 											<div class="px-2 ">
 												<Button style="word-break: break-all;" class="max-w-16rem" @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
 											</div>
@@ -833,24 +834,24 @@ onMounted(()=>{
 											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
 												<Button :loading="!!selectedFile.uploading" :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
 											</div>
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'  && selectedFile?.state != 'error'">
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'  && !selectedFile?.error">
 												<Button v-if="selectedFile?.downloading == null" :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
 												<Button v-else @click="doCancelDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Cancel" severity="danger"  />
 											</div>
-											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl && selectedFile?.state != 'error'">
+											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl && !selectedFile?.error">
 												<Button :loading="saving" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing' && selectedFile?.state != 'error'">
+											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing' && !selectedFile?.error">
 												<Button :disabled="!selectedFile?.path" @click="openPreviewFile(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
 											</div>
-											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new' && selectedFile?.state != 'error'">
+											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new' && !selectedFile?.error">
 												<Button :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
 											</div>
 										</div>
 							    </template>
 							</Menu>
 						</TabPanel>
-						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new' && selectedFile?.state != 'error'">
+						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new' && !selectedFile?.error">
 							<template #header>
 								<div>
 									<i class="pi pi-shield mr-2" />Sharing
@@ -912,7 +913,7 @@ onMounted(()=>{
 				</Dialog>
 			</div>
 			</ScrollPanel>
-			<Empty v-else :title="emptyMsg" :error="props.error"/>
+			<Empty v-else :title="emptyMsg"/>
 		</div>
 	</div>
 </template>

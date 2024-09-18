@@ -10,7 +10,6 @@ const fileService = new FileService();
 const path = ref('');
 const selectedFile = ref();
 const loading = ref(true);
-const error = ref();
 const files = ref([]);
 const endpoints = ref([]);
 const uploads = ref([]);
@@ -102,7 +101,6 @@ onActivated(()=>{
 				:queueSize="queueSize"
 				:files="files" 
 				:endpoints="endpoints"
-				:error="error" 
 				:loading="loading"
 				:small="visibleEditor?'queue':(visiblePreview?'preview':'')" 
 				@upload="()=>{}" 
