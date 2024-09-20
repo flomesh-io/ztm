@@ -70,7 +70,7 @@ export default function ({ app, mesh, utils }) {
 
     '/api/files/*': {
       'GET': responder((params) => {
-        var pathname = URL.decode(params['*'])
+        var pathname = URL.decodeComponent(params['*'])
         return api.getFileStat(pathname).then(
           stat => {
             if (!stat) return response(404)
@@ -87,17 +87,18 @@ export default function ({ app, mesh, utils }) {
 
     '/api/acl/*': {
       'GET': responder((params) => {
-        var pathname = URL.decode(params['*'])
+        var pathname = URL.decodeComponent(params['*'])
         return api.getACL(pathname).then(
           ret => ret ? response(200, ret) : response(404)
         )
       }),
 
-      'POST': responder(
-        (params, req) => api.setACL(params['*'], JSON.decode(req.body)).then(
+      'POST': responder((params, req) => {
+        var pathname = URL.decodeComponent(params['*'])
+        return api.setACL(pathname, JSON.decode(req.body)).then(
           ret => response(ret ? 201 : 404)
         )
-      ),
+      }),
     },
 
     '/api/downloads': {
@@ -115,7 +116,7 @@ export default function ({ app, mesh, utils }) {
 
     '/api/downloads/*': {
       'DELETE': responder((params) => {
-        var pathname = URL.decode(params['*'])
+        var pathname = URL.decodeComponent(params['*'])
         return api.cancelDownload(pathname).then(
           response(204)
         )

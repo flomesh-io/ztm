@@ -321,7 +321,7 @@ export default function ({ app, mesh }) {
       .onStart(
         new Message({
           method: 'GET',
-          path: os.path.join('/api/chunks', filename) + '?chunk=' + chunkNum,
+          path: os.path.join('/api/chunks', encodePathname(filename)) + '?chunk=' + chunkNum,
         })
       )
       .muxHTTP().to($=>$
@@ -688,6 +688,7 @@ export default function ({ app, mesh }) {
     if (!params) return Promise.resolve(false)
     var username = params.username
     var filename = params['*']
+    if (username !== app.username) throw 'No permission'
     return getFileStatByUser(username, filename).then(
       statLocal => {
         if (!statLocal) return false
@@ -788,8 +789,8 @@ export default function ({ app, mesh }) {
       function () {
         var params = matchPathUserFile('/' + $params['*'])
         if (!params) return
-        var username = params.username
-        var filename = params['*']
+        var username = URL.decodeComponent(params.username)
+        var filename = URL.decodeComponent(params['*'])
         return getFileStatByUser(username, filename).then(stat => {
           if (stat && !stat.list) {
             if (stat.state === 'new') return
@@ -833,7 +834,7 @@ export default function ({ app, mesh }) {
                 return mesh.request(
                   ep, new Message({
                     method: 'GET',
-                    path: os.path.join('/api/chunks', $filename) + '?chunk=' + msg.head.index,
+                    path: os.path.join('/api/chunks', encodePathname($filename)) + '?chunk=' + msg.head.index,
                   })
                 ).then(res => {
                   if (res?.head?.status === 200 && res.body) {
@@ -863,8 +864,8 @@ export default function ({ app, mesh }) {
       function (req) {
         var params = matchPathChunk(req.head.path)
         if (!params) return
-        var username = params.username
-        var filename = params['*']
+        var username = URL.decodeComponent(params.username)
+        var filename = URL.decodeComponent(params['*'])
         return mesh.access(os.path.join('/shared', username, 'stat', filename), $ctx.peer.username).then(
           ret => {
             if (ret) {
@@ -914,4 +915,8 @@ export default function ({ app, mesh }) {
     streamFile,
     serveChunk,
   }
+}
+
+function encodePathname(pathname) {
+  return pathname.split('/').map(s => URL.encodeComponent(s)).join('/')
 }

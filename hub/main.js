@@ -323,7 +323,7 @@ var signCertificate = pipeline($=>$
   .replaceMessage(
     function (req) {
       var user = $ctx.username
-      var name = $params.name
+      var name = URL.decodeComponent($params.name)
       if (name !== user && user !== 'root') return response(403)
       var pkey = new crypto.PublicKey(req.body)
       return ca.signCertificate(name, pkey).then(
@@ -475,9 +475,10 @@ var checkACL = pipeline($=>$
   .replaceMessage(
     function (req) {
       var url = new URL(req.head.path)
-      var username = url.searchParams.get('username') || $ctx.username
+      var pathname = '/' + URL.decodeComponent($params['*'])
+      var username = url.searchParams.get('username')
       username = username ? URL.decodeComponent(username) : $ctx.username
-      return response(makeAccessChecker(username)('/' + $params['*']) ? 200 : 403)
+      return response(makeAccessChecker(username)(pathname) ? 200 : 403)
     }
   )
 )
@@ -486,7 +487,7 @@ var getFileInfo = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
-      var pathname = '/' + $params['*']
+      var pathname = '/' + URL.decodeComponent($params['*'])
       if (!makeAccessChecker($ctx.username)(pathname)) return response(404)
       var info = files[pathname]
       if (!info || info['$'] < 0) return response(404)
@@ -525,8 +526,11 @@ var muxToAgent = pipeline($=>$
 
 var connectEndpoint = pipeline($=>$
   .acceptHTTPTunnel(
-    function () {
+    function (req) {
+      var url = new URL(req.head.path)
+      var name = URL.decodeComponent(url.searchParams.get('name') || '(unknown)')
       var id = $params.ep
+      makeEndpoint(id).name = name
       $ctx.id = id
       $hub = new pipeline.Hub
       sessions[id] ??= new Set
@@ -549,7 +553,7 @@ var connectEndpoint = pipeline($=>$
 var connectApp = pipeline($=>$
   .acceptHTTPTunnel(
     function (req) {
-      var app = $params.app
+      var app = URL.decodeComponent($params.app)
       var id = $params.ep
       var ep = endpoints[id]
       if (!ep) return response(404, 'Endpoint not found')
@@ -561,6 +565,8 @@ var connectApp = pipeline($=>$
     }
   ).to($=>$
     .connectHTTPTunnel(() => {
+      var provider = $params.provider || ''
+      var app = $params.app
       var src = $params.query.src
       var ip = $ctx.ip
       var port = $ctx.port
@@ -568,7 +574,7 @@ var connectApp = pipeline($=>$
       var q = `?src=${src}&ip=${ip}&port=${port}&username=${username}`
       return new Message({
         method: 'CONNECT',
-        path: $params.provider ? `/api/apps/${$params.provider}/${$params.app}${q}` : `/api/apps/${$params.app}${q}`,
+        path: provider ? `/api/apps/${provider}/${app}${q}` : `/api/apps/${app}${q}`,
       })
     }).to(muxToAgent)
   )
@@ -584,8 +590,9 @@ var forwardRequest = pipeline($=>$
         if (!canOperate($ctx.username, ep)) return notAllowed
         sessions[id]?.forEach?.(h => $hubSelected = h)
         if (!$hubSelected) return notFound
+        var url = new URL(req.head.path)
         var path = $params['*']
-        req.head.path = `/api/${path}`
+        req.head.path = `/api/${path}${url.search}`
         return muxToAgent
       }
     }
@@ -657,23 +664,44 @@ function collectMyNames(addr) {
   }
 }
 
-function findCurrentEndpointSession() {
-  var id = $ctx.id
-  if (!id) return false
-  $endpoint = endpoints[id]
-  if (!$endpoint) {
-    $endpoint = endpoints[id] = {
+function makeEndpoint(id) {
+  var ep = endpoints[id]
+  if (!ep) {
+    ep = endpoints[id] = {
       id,
+      name: '(unknown)',
       username: $ctx.username,
       ip: $ctx.ip,
       port: $ctx.port,
       via: $ctx.via,
-      hubs: [...myNames]
+      hubs: [...myNames],
+      heartbeat: Date.now(),
+      isConnected: true,
     }
   } else {
-    $endpoint.username = $ctx.username
+    ep.username = $ctx.username
   }
-  $endpoint.isConnected = true
+  return ep
+}
+
+function findCurrentEndpointSession() {
+  var id = $ctx.id
+  if (!id) return false
+  // $endpoint = endpoints[id]
+  // if (!$endpoint) {
+  //   $endpoint = endpoints[id] = {
+  //     id,
+  //     username: $ctx.username,
+  //     ip: $ctx.ip,
+  //     port: $ctx.port,
+  //     via: $ctx.via,
+  //     hubs: [...myNames]
+  //   }
+  // } else {
+  //   $endpoint.username = $ctx.username
+  // }
+  $endpoint = makeEndpoint(id)
+  // $endpoint.isConnected = true
   return true
 }
 

@@ -156,7 +156,7 @@ export default function (rootDir, config) {
           .connectHTTPTunnel(
             new Message({
               method: 'CONNECT',
-              path: `/api/endpoints/${config.agent.id}`,
+              path: `/api/endpoints/${config.agent.id}?name=${URL.encodeComponent(config.agent.name)}`,
             })
           )
           .to(hubSession)
@@ -267,6 +267,7 @@ export default function (rootDir, config) {
     }
 
     function checkACL(pathname, user) {
+      pathname = encodePathname(pathname)
       user = URL.encodeComponent(user)
       return requestHub.spawn(
         new Message({ method: 'GET', path: os.path.join('/api/acl', pathname) + `?username=${user}` })
@@ -319,6 +320,7 @@ export default function (rootDir, config) {
     }
 
     function issuePermit(username, identity) {
+      username = URL.encodeComponent(username)
       return requestHub.spawn(
         new Message({ method: 'POST', path: `/api/sign/${username}`}, identity)
       ).then(
@@ -357,6 +359,7 @@ export default function (rootDir, config) {
     }
 
     function findFile(pathname) {
+      pathname = encodePathname(pathname)
       return requestHub.spawn(
         new Message({ method: 'GET', path: os.path.join('/api/filesystem', pathname) })
       ).then(
@@ -1504,6 +1507,10 @@ function getAppNameTag(app) {
       tag: app.substring(i + 1),
     }
   }
+}
+
+function encodePathname(pathname) {
+  return pathname.split('/').map(s => URL.encodeComponent(s)).join('/')
 }
 
 function response(status, body) {
