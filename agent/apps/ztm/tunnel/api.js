@@ -22,6 +22,19 @@ export default function ({ app, mesh }) {
     return mesh.discover()
   }
 
+  function allTunnels(ep) {
+    if (ep === app.endpoint.id) {
+      return getLocalConfig()
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: `/api/tunnels`,
+        }
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
+    }
+  }
+
   function allInbound(ep) {
     if (ep === app.endpoint.id) {
       return getLocalConfig().then(
@@ -384,6 +397,7 @@ export default function ({ app, mesh }) {
 
   return {
     allEndpoints,
+    allTunnels,
     allInbound,
     allOutbound,
     getInbound,
