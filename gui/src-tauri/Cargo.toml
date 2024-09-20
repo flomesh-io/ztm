@@ -29,6 +29,7 @@ tauri-plugin-fs = "=2.0.0-rc.5"
 tauri-plugin-dialog = "=2.0.0-rc.7"
 tauri-plugin-deep-link = "=2.0.0-rc.6"
 tauri-plugin-clipboard-manager = "=2.0.0-rc.4"
+# tauri-plugin-sharesheet = { git = "https://github.com/buildyourwebapp/tauri-plugin-sharesheet" }
 lazy_static = "1.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -39,6 +40,7 @@ wry = "0.41.0"
 # tao = "0.28.1"
 # oslog = "0.2.0"
 # log = "0.4.22"
+
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-cli = "=2.0.0-rc.1"

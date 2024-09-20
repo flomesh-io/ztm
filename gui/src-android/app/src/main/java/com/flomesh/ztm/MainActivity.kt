@@ -13,7 +13,8 @@ import androidx.activity.result.ActivityResultLauncher
 class MainActivity : TauriActivity() {
 
     private lateinit var overlayPermissionLauncher: ActivityResultLauncher<Intent>
-
+    private lateinit var fileHelper: FileHelper
+		
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CopyBinaryActivity.start(this)
@@ -34,6 +35,16 @@ class MainActivity : TauriActivity() {
 						overlayPermissionLauncher.launch(intent)
 				} else {
 						startFloatingWindowService()
+				}
+				
+				fileHelper = FileHelper(this)
+				// 检查并请求外部存储管理权限（Android 11+）
+				if (!fileHelper.hasManageExternalStoragePermission()) {
+						fileHelper.requestManageExternalStoragePermission()
+				} else {
+						// // 保存文件到公共 Documents 目录并打开它
+						// val uri: Uri? = fileHelper.saveFileToDocuments("Readme.txt", "Welcome ZTM!")
+						// uri?.let { fileHelper.openFile(it) }
 				}
     }
 
