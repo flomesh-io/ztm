@@ -122,6 +122,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}': {
       'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMesh(mesh)
         if (!obj) return response(404)
         delete obj.agent.privateKey
@@ -129,10 +130,12 @@ function main(listen) {
       },
 
       'POST': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
         return response(201, api.setMesh(mesh, JSON.decode(req.body)))
       },
 
       'DELETE': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         api.delMesh(mesh)
         return response(204)
       },
@@ -140,6 +143,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/log': {
       'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMeshLog(mesh)
         if (obj) return response(200, obj)
         return response(404)
@@ -148,11 +152,13 @@ function main(listen) {
 
     '/api/meshes/{mesh}/ca': {
       'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMesh(mesh)
         return obj ? response(200, obj.ca || '') : response(404)
       },
 
       'POST': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMesh(mesh)
         if (!obj) return response(404)
         var data = req.body.toString()
@@ -164,11 +170,13 @@ function main(listen) {
 
     '/api/meshes/{mesh}/agent/certificate': {
       'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMesh(mesh)
         return obj ? response(200, obj.agent.certificate || '') : response(404)
       },
 
       'POST': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMesh(mesh)
         if (!obj) return response(404)
         var data = req.body.toString()
@@ -179,6 +187,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/agent/key': {
       'POST': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
         var obj = api.getMesh(mesh)
         if (!obj) return response(404)
         var data = req.body.toString()
@@ -189,12 +198,16 @@ function main(listen) {
 
     '/api/meshes/{mesh}/permits/{username}': {
       'POST': function ({ mesh, username }, req) {
+        mesh = URL.decodeComponent(mesh)
+        username = URL.decodeComponent(username)
         return api.getPermit(mesh, username, req.body).then(
           ret => ret ? response(200, ret) : response(403)
         )
       },
 
       'DELETE': function ({ mesh, username }) {
+        mesh = URL.decodeComponent(mesh)
+        username = URL.decodeComponent(username)
         return api.delPermit(mesh, username).then(
           ret => ret ? response(204) : response(404)
         )
@@ -216,6 +229,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/endpoints': {
       'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         return api.allEndpoints(mesh).then(
           ret => response(200, ret)
         )
@@ -224,6 +238,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/endpoints/{ep}': {
       'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
         return api.getEndpoint(mesh, ep).then(
           ret => ret ? response(200, ret) : response(404)
         )
@@ -232,6 +247,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/endpoints/{ep}/log': {
       'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
         return api.getEndpointLog(mesh, ep).then(
           ret => ret ? response(200, ret) : response(404)
         )
@@ -247,6 +263,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/files': {
       'GET': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
         var url = new URL(req.head.path)
         var since = url.searchParams.get('since')
         return api.allFiles(mesh, since).then(
@@ -257,13 +274,17 @@ function main(listen) {
 
     '/api/meshes/{mesh}/files/*': {
       'GET': function (params) {
-        return api.getFileInfo(params.mesh, params['*']).then(
+        mesh = URL.decodeComponent(params.mesh)
+        path = URL.decodeComponent(params['*'])
+        return api.getFileInfo(mesh, path).then(
           ret => ret ? response(200, ret) : response(404)
         )
       },
 
       'DELETE': function (params) {
-        return api.delFileInfo(params.mesh, params['*']).then(
+        mesh = URL.decodeComponent(params.mesh)
+        path = URL.decodeComponent(params['*'])
+        return api.delFileInfo(mesh, path).then(
           ret => ret ? response(204) : response(404)
         )
       },
@@ -271,19 +292,25 @@ function main(listen) {
 
     '/api/meshes/{mesh}/file-data/*': {
       'GET': function (params) {
-        return api.getFileData(params.mesh, params['*']).then(
+        mesh = URL.decodeComponent(params.mesh)
+        path = URL.decodeComponent(params['*'])
+        return api.getFileData(mesh, path).then(
           ret => ret ? response(200, ret) : response(404)
         )
       },
 
       'POST': function (params, req) {
-        return api.setFileData(params.mesh, params['*'], req.body).then(
+        mesh = URL.decodeComponent(params.mesh)
+        path = URL.decodeComponent(params['*'])
+        return api.setFileData(mesh, path, req.body).then(
           ret => ret ? response(201) : response(404)
         )
       },
 
       'DELETE': function (params) {
-        return api.delFileData(params.mesh, params['*']).then(
+        mesh = URL.decodeComponent(params.mesh)
+        path = URL.decodeComponent(params['*'])
+        return api.delFileData(mesh, path).then(
           ret => ret ? response(204) : response(404)
         )
       },
@@ -291,6 +318,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/endpoints/{ep}/file-data/{hash}': {
       'GET': function ({ mesh, ep, hash }) {
+        mesh = URL.decodeComponent(mesh)
         return api.getFileDataFromEP(mesh, ep, hash).then(
           ret => ret ? response(200, ret) : response(404)
         )
@@ -310,6 +338,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/apps': {
       'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
         return api.allApps(mesh).then(
           ret => response(200, ret)
         )
@@ -318,6 +347,7 @@ function main(listen) {
 
     '/api/meshes/{mesh}/endpoints/{ep}/apps': {
       'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
         return api.allApps(mesh, ep).then(
           ret => response(200, ret)
         )
@@ -326,24 +356,36 @@ function main(listen) {
 
     '/api/meshes/{mesh}/endpoints/{ep}/apps/{provider}/{app}': {
       'GET': function ({ mesh, ep, provider, app }) {
+        mesh = URL.decodeComponent(mesh)
+        provider = URL.decodeComponent(provider)
+        app = URL.decodeComponent(app)
         return api.getApp(mesh, ep, provider, app).then(
           ret => ret ? response(200, ret) : response(404)
         )
       },
 
       'POST': function ({ mesh, ep, provider, app }, req) {
+        mesh = URL.decodeComponent(mesh)
+        provider = URL.decodeComponent(provider)
+        app = URL.decodeComponent(app)
         return api.setApp(mesh, ep, provider, app, JSON.decode(req.body)).then(
           ret => response(201, ret)
         )
       },
 
       'DELETE': function ({ mesh, ep, provider, app }) {
+        mesh = URL.decodeComponent(mesh)
+        provider = URL.decodeComponent(provider)
+        app = URL.decodeComponent(app)
         return api.delApp(mesh, ep, provider, app).then(response(204))
       },
     },
 
     '/api/meshes/{mesh}/endpoints/{ep}/apps/{provider}/{app}/log': {
       'GET': function ({ mesh, ep, provider, app }) {
+        mesh = URL.decodeComponent(mesh)
+        provider = URL.decodeComponent(provider)
+        app = URL.decodeComponent(app)
         return api.getAppLog(mesh, ep, provider, app).then(
           ret => ret ? response(200, ret) : response(404)
         )
@@ -411,9 +453,9 @@ function main(listen) {
           ),
           'app': ($=>$
             .onStart(() => api.connectApp(
-                $params.mesh,
-                $params.provider,
-                $params.app,
+                URL.decodeComponent($params.mesh),
+                URL.decodeComponent($params.provider),
+                URL.decodeComponent($params.app),
               ).then(p => {
                 var pool = appSessionPools.get(p)
                 $appPipeline = p

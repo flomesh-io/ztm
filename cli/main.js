@@ -471,7 +471,7 @@ function startApp(name, mesh, ep) {
     var provider = app.provider
     var name = app.tag ? `${app.name}@${app.tag}` : app.name
     return client.post(
-      `/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${name}`,
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(name)}`,
       JSON.encode({ isRunning: true })
     )
   })
@@ -700,7 +700,7 @@ function stopApp(name, mesh, ep) {
     var provider = app.provider
     var name = app.tag ? `${app.name}@${app.tag}` : app.name
     return client.post(
-      `/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${name}`,
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(name)}`,
       JSON.encode({ isRunning: false })
     )
   })
@@ -766,7 +766,7 @@ function invite(name, identity, permit, mesh) {
   var username = normalizeName(name)
   var data = new Data
   return pipy.read(identity, $=>$.handleData(d => data.push(d))).then(
-    () => client.post(`/api/meshes/${mesh.name}/permits/${username}`, data).then(ret => {
+    () => client.post(`/api/meshes/${uri(mesh.name)}/permits/${uri(username)}`, data).then(ret => {
       if (permit) {
         try {
           os.write(permit, ret)
@@ -787,7 +787,7 @@ function invite(name, identity, permit, mesh) {
 function evict(name, mesh) {
   if (!mesh) throw `no mesh specified`
   var username = normalizeName(name)
-  return client.delete(`/api/meshes/${mesh.name}/permits/${username}`).catch(
+  return client.delete(`/api/meshes/${uri(mesh.name)}/permits/${uri(username)}`).catch(
     err => Promise.reject(err.status === 404 ? `user '${username}' not found` : err)
   )
 }
@@ -823,7 +823,7 @@ function join(name, epName, permitPathname) {
     bootstraps: permit.bootstraps,
   }
   if (permit.agent.privateKey) json.agent.privateKey = permit.agent.privateKey
-  return client.post(`/api/meshes/${meshName}`, JSON.encode(json))
+  return client.post(`/api/meshes/${uri(meshName)}`, JSON.encode(json))
 }
 
 //
@@ -832,7 +832,7 @@ function join(name, epName, permitPathname) {
 
 function leave(name) {
   var meshName = normalizeName(name)
-  return client.delete(`/api/meshes/${meshName}`)
+  return client.delete(`/api/meshes/${uri(meshName)}`)
 }
 
 //
@@ -857,7 +857,7 @@ function getMesh(name) {
 
 function getEndpoint(name, mesh) {
   var epName = normalizeName(name)
-  return client.get(`/api/meshes/${mesh.name}/endpoints`).then(ret => {
+  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints`).then(ret => {
     printTable(
       JSON.decode(ret).filter(ep => !epName || ep.name.indexOf(epName) >= 0),
       {
@@ -873,7 +873,7 @@ function getEndpoint(name, mesh) {
 
 function getFile(name, mesh) {
   var name = normalizeName(name)
-  return client.get(`/api/meshes/${mesh.name}/files`).then(ret => {
+  return client.get(`/api/meshes/${uri(mesh.name)}/files`).then(ret => {
     printTable(
       Object.entries(JSON.decode(ret)).filter(
         ([k]) => !name || k.indexOf(name) >= 0
@@ -897,9 +897,9 @@ function getFile(name, mesh) {
 function getApp(name, mesh, ep) {
   var appName = normalizeAppName(name)
   var apps = null
-  return client.get(`/api/meshes/${mesh.name}/apps`).then(ret => {
+  return client.get(`/api/meshes/${uri(mesh.name)}/apps`).then(ret => {
     apps = JSON.decode(ret)
-    return client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps`)
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps`)
   }).then(ret => {
     var list = JSON.decode(ret)
     apps.forEach(app => {
@@ -951,7 +951,7 @@ function getApp(name, mesh, ep) {
 
 function describeMesh(name) {
   var meshName = normalizeName(name)
-  return client.get(`/api/meshes/${meshName}`).then(ret => {
+  return client.get(`/api/meshes/${uri(meshName)}`).then(ret => {
     var m = JSON.decode(ret)
     println(`Mesh: ${m.name}`)
     println(`Hubs:`)
@@ -977,7 +977,7 @@ function describeMesh(name) {
 function describeEndpoint(name, mesh) {
   var epName = normalizeName(name)
   return selectEndpoint(epName, mesh).then(
-    ep => client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}`)
+    ep => client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}`)
   ).then(ret => {
     var ep = JSON.decode(ret)
     println(`Endpoint: ${ep.name}${ep.isLocal ? ' (local)' : ''}`)
@@ -994,12 +994,12 @@ function describeEndpoint(name, mesh) {
 
 function describeFile(name, mesh) {
   var path = os.path.normalize(name)
-  return client.get(os.path.join(`/api/meshes/${mesh.name}/files/`, path)).catch(
+  return client.get(os.path.join(`/api/meshes/${uri(mesh.name)}/files/`, path)).catch(
     err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
   ).then(ret => {
     var file = JSON.decode(ret)
     return Promise.all(file.sources.map(
-      id => client.get(`/api/meshes/${mesh.name}/endpoints/${id}`)
+      id => client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${id}`)
     )).then(ret => {
       var sources = ret.map(r => JSON.decode(r))
       println(`Path: ${path}`)
@@ -1021,7 +1021,7 @@ function describeApp(name, mesh, ep) {
     if (!app) throw `app not found: ${name}`
     var provider = app.provider
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
-    return client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}`)
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}`)
   }).then(ret => {
     var app = JSON.decode(ret)
     println(`App: ${app.name}`)
@@ -1047,7 +1047,7 @@ function downloadApp(name, mesh, ep) {
     var provider = app.provider
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
     return client.post(
-      `/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}`,
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}`,
       JSON.encode({})
     )
   })
@@ -1055,7 +1055,7 @@ function downloadApp(name, mesh, ep) {
 
 function downloadFile(name, output, mesh) {
   var path = os.path.normalize(name)
-  return client.get(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path)).then(
+  return client.get(os.path.join(`/api/meshes/${uri(mesh.name)}/file-data/`, uri(path))).then(
     ret => pipeline($=>$
       .onStart([ret, new StreamEnd])
       .tee(output || '-')
@@ -1076,13 +1076,13 @@ function eraseApp(name, mesh, ep) {
     if (!app) throw `app not found: ${name}`
     var provider = app.provider
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
-    return client.delete(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}`)
+    return client.delete(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}`)
   })
 }
 
 function eraseFile(name, mesh) {
   var path = os.path.normalize(name)
-  return client.delete(os.path.join(`/api/meshes/${mesh.name}/files/`, path)).catch(
+  return client.delete(os.path.join(`/api/meshes/${uri(mesh.name)}/files/`, path)).catch(
     err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
   )
 }
@@ -1099,7 +1099,7 @@ function publishApp(name, mesh, ep) {
     var provider = app.provider
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
     return client.post(
-      `/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}`,
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}`,
       JSON.encode({ isPublished: true })
     )
   })
@@ -1110,7 +1110,7 @@ function publishFile(name, input, mesh) {
   var path = os.path.normalize(name)
   var data = new Data
   return pipy.read(input, $=>$.handleData(d => data.push(d))).then(
-    () => client.post(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path), data)
+    () => client.post(os.path.join(`/api/meshes/${uri(mesh.name)}/file-data/`, uri(path)), data)
   )
 }
 
@@ -1126,7 +1126,7 @@ function unpublishApp(name, mesh, ep) {
     var provider = app.provider
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
     return client.post(
-      `/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}`,
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}`,
       JSON.encode({ isPublished: false })
     )
   })
@@ -1134,7 +1134,7 @@ function unpublishApp(name, mesh, ep) {
 
 function unpublishFile(name, mesh) {
   var path = os.path.normalize(name)
-  return client.delete(os.path.join(`/api/meshes/${mesh.name}/file-data/`, path)).catch(
+  return client.delete(os.path.join(`/api/meshes/${uri(mesh.name)}/file-data/`, uri(path))).catch(
     err => Promise.reject(err.status === 404 ? `file not found: ${path}` : err)
   )
 }
@@ -1146,7 +1146,7 @@ function unpublishFile(name, mesh) {
 function logEndpoint(name, mesh, ep) {
   var epName = normalizeName(name)
   return (epName ? selectEndpoint(epName, mesh) : Promise.resolve(ep)).then(
-    ep => client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/log`)
+    ep => client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/log`)
   ).then(ret => {
     JSON.decode(ret).forEach(l => {
       println(l.time, l.message)
@@ -1161,7 +1161,7 @@ function logApp(name, mesh, ep) {
     if (!app) throw `app not found: ${name}`
     var provider = app.provider
     var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
-    return client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps/${provider}/${tagname}/log`)
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}/log`)
   }).then(ret => {
     JSON.decode(ret).forEach(l => {
       println(l.time, l.message)
@@ -1184,7 +1184,7 @@ function callApp(argv, mesh, ep) {
     if (app.tag) tagname += '@' + app.tag
 
     var program = `ztm ${name}`
-    var url = `/api/meshes/${mesh.name}/apps/${app.provider}/${tagname}/cli`
+    var url = `/api/meshes/${uri(mesh.name)}/apps/${uri(app.provider)}/${uri(tagname)}/cli`
     url += '?argv=' + URL.encodeComponent(JSON.stringify([program, ...argv]))
     url += '&cwd=' + URL.encodeComponent(os.path.resolve())
     url += '&ep_id=' + ep.id
@@ -1213,6 +1213,10 @@ function callApp(argv, mesh, ep) {
 //
 // Utilities
 //
+
+function uri(s) {
+  return URL.encodeComponent(s)
+}
 
 function invalidObjectType(type, command) {
   throw `invalid object type '${type}' for command '${command}'`
@@ -1246,7 +1250,7 @@ function normalizeAppName(name) {
 }
 
 function selectMesh(name) {
-  if (name) return client.get(`/api/meshes/${name}`)
+  if (name) return client.get(`/api/meshes/${uri(name)}`)
     .then(ret => JSON.decode(ret))
     .catch(err => Promise.reject(err.status === 404 ? `mesh '${name}' not found` : err))
   return client.get('/api/meshes').then(
@@ -1268,7 +1272,7 @@ function selectMesh(name) {
 function selectEndpoint(name, mesh) {
   if (!mesh) throw 'no mesh specified'
   if (name) {
-    return client.get(`/api/meshes/${mesh.name}/endpoints`).then(ret => {
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints`).then(ret => {
       var list = JSON.decode(ret)
       var ep = list.find(ep => ep.id === name)
       if (ep) return ep
@@ -1278,9 +1282,9 @@ function selectEndpoint(name, mesh) {
       throw `ambiguous endpoint name '${name}'`
     })
   } else {
-    return client.get(`/api/meshes/${mesh.name}`).then(ret => {
+    return client.get(`/api/meshes/${uri(mesh.name)}`).then(ret => {
       var id = JSON.decode(ret).agent.id
-      return client.get(`/api/meshes/${mesh.name}/endpoints/${id}`)
+      return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${id}`)
     }).then(ret => JSON.decode(ret))
   }
 }
@@ -1301,11 +1305,11 @@ function selectApp(appName, mesh, ep) {
     if (provider && app.provider !== provider) return false
     return (app.name === name && (app.tag || '') === tag)
   }
-  return client.get(`/api/meshes/${mesh.name}/endpoints/${ep.id}/apps`).then(ret => {
+  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps`).then(ret => {
     var list = JSON.decode(ret).filter(select)
     if (list.length === 1) return { name, tag, provider: list[0].provider }
     if (list.length > 1) throw `ambiguous app name '${name}'`
-    return client.get(`/api/meshes/${mesh.name}/apps`).then(ret => {
+    return client.get(`/api/meshes/${uri(mesh.name)}/apps`).then(ret => {
       var list = JSON.decode(ret).filter(select)
       if (list.length === 1) return { name, tag, provider: list[0].provider }
       if (list.length > 1) throw `ambiguous app name '${name}'`
