@@ -30,7 +30,7 @@ export default function ({ app, mesh }) {
         }))
       )
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'GET',
           path: `/api/inbound`,
@@ -45,7 +45,7 @@ export default function ({ app, mesh }) {
         config => config.outbound
       )
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'GET',
           path: `/api/outbound`,
@@ -65,10 +65,10 @@ export default function ({ app, mesh }) {
         return { ...i, listens: i.listens.map(l => getListenStatus(i.protocol, l)) }
       })
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'GET',
-          path: `/api/inbound/${protocol}/${name}`,
+          path: `/api/inbound/${protocol}/${URL.encodeComponent(name)}`,
         }
       )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
@@ -82,10 +82,10 @@ export default function ({ app, mesh }) {
         ) || null
       )
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'GET',
-          path: `/api/outbound/${protocol}/${name}`,
+          path: `/api/outbound/${protocol}/${URL.encodeComponent(name)}`,
         }
       )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
@@ -111,10 +111,10 @@ export default function ({ app, mesh }) {
         applyLocalConfig(config)
       })
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'POST',
-          path: `/api/inbound/${protocol}/${name}`,
+          path: `/api/inbound/${protocol}/${URL.encodeComponent(name)}`,
         },
         JSON.encode({ listens, exits })
       )).then(checkResponse)
@@ -143,10 +143,10 @@ export default function ({ app, mesh }) {
         applyLocalConfig(config)
       })
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'POST',
-          path: `/api/outbound/${protocol}/${name}`,
+          path: `/api/outbound/${protocol}/${URL.encodeComponent(name)}`,
         },
         JSON.encode({ targets, entrances })
       )).then(checkResponse)
@@ -165,10 +165,10 @@ export default function ({ app, mesh }) {
         }
       })
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'DELETE',
-          path: `/api/inbound/${protocol}/${name}`,
+          path: `/api/inbound/${protocol}/${URL.encodeComponent(name)}`,
         }
       )).then(checkResponse)
     }
@@ -186,10 +186,10 @@ export default function ({ app, mesh }) {
         }
       })
     } else {
-      return requestPeer(ep, new Message(
+      return mesh.request(ep, new Message(
         {
           method: 'DELETE',
-          path: `/api/outbound/${protocol}/${name}`,
+          path: `/api/outbound/${protocol}/${URL.encodeComponent(name)}`,
         }
       )).then(checkResponse)
     }
@@ -232,7 +232,7 @@ export default function ({ app, mesh }) {
         .connectHTTPTunnel(
           new Message({
             method: 'CONNECT',
-            path: `/api/outbound/${protocol}/${name}`,
+            path: `/api/outbound/${protocol}/${URL.encodeComponent(name)}`,
           })
         ).to($=>$
           .muxHTTP().to($=>$
@@ -310,21 +310,6 @@ export default function ({ app, mesh }) {
     })
   }
 
-  function requestPeer(ep, req) {
-    var $response
-    return pipeline($=>$
-      .onStart(req)
-      .muxHTTP().to($=>$
-        .pipe(mesh.connect(ep))
-      )
-      .replaceMessage(res => {
-        $response = res
-        return new StreamEnd
-      })
-      .onEnd(() => $response)
-    ).spawn()
-  }
-
   var matchApiOutbound = new http.Match('/api/outbound/{proto}/{name}')
   var response200 = new Message({ status: 200 })
   var response403 = new Message({ status: 403 })
@@ -340,7 +325,7 @@ export default function ({ app, mesh }) {
     .acceptHTTPTunnel(req => {
       var params = matchApiOutbound(req.head.path)
       var proto = params?.proto
-      var name = params?.name
+      var name = URL.decodeComponent(params?.name)
       var key = `${proto}/${name}`
       var outbound = currentOutbound[key]
       if (outbound) {
