@@ -10,7 +10,7 @@ const router = useRouter();
 const confirm = useConfirm();
 const ztmService = new ZtmService();
 const meshes = computed(() => {
-	return store.getters['account/meshes']
+	return store.getters['account/meshes'] || []
 });
 const status = ref({});
 const scopeType = ref('All');

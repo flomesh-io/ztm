@@ -249,6 +249,7 @@ pub fn run() {
 				.plugin(tauri_plugin_fs::init())				
 				.plugin(tauri_plugin_deep_link::init())
 				.plugin(tauri_plugin_clipboard_manager::init())
+				// .plugin(tauri_plugin_sharesheet::init())
 				.invoke_handler(tauri::generate_handler![
 					pipylib,create_proxy_webview,create_wry_webview
 				])

@@ -30,6 +30,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".CopyBinaryActivity" />
+        <activity android:name=".FileHelper" />
+				
         <service 
 					android:name=".FloatingWindowService" 
 					android:exported="true" 
