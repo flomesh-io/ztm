@@ -94,6 +94,12 @@ export default function ({ app, mesh, utils }) {
   })
 
   var servePeer = utils.createServer({
+    '/api/tunnels': {
+      'GET': responderOwnerOnly(() => api.allTunnels(app.endpoint.id).then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+
     '/api/inbound': {
       'GET': responderOwnerOnly(() => api.allInbound(app.endpoint.id).then(
         ret => ret ? response(200, ret) : response(404)

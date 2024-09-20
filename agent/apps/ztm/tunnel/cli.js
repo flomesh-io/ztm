@@ -64,6 +64,7 @@ export default function ({ api, utils }) {
             notes: objectTypeNotes,
             action: (args) => {
               switch (validateObjectType(args, 'get')) {
+                case 'tunnel': return getTunnels()
                 case 'inbound': return getInbound()
                 case 'outbound': return getOutbound()
               }
@@ -77,6 +78,7 @@ export default function ({ api, utils }) {
             action: (args) => {
               var name = args['<object name>']
               switch (validateObjectType(args, 'describe')) {
+                case 'tunnel': return describeTunnel(name)
                 case 'inbound': return describeInbound(name)
                 case 'outbound': return describeOutbound(name)
               }
@@ -132,6 +134,62 @@ export default function ({ api, utils }) {
       return Promise.resolve(flush())
     }
 
+    function getTunnels() {
+      var tcp = {}
+      var udp = {}
+      var tunnels = { tcp, udp }
+      return api.allEndpoints().then(
+        endpoints => Promise.all(endpoints.map(
+          ep => api.allTunnels(ep.id).then(
+            ret => {
+              if (ret) {
+                ret.inbound?.forEach?.(i => {
+                  var list = (tunnels[i.protocol][i.name] ??= [])
+                  list.push({
+                    ep: ep.name,
+                    in: i,
+                  })
+                })
+                ret.outbound?.forEach?.(o => {
+                  var list = (tunnels[o.protocol][o.name] ??= [])
+                  list.push({
+                    ep: ep.name,
+                    out: o,
+                  })
+                })
+              }
+            }
+          )
+        ))
+      ).then(() => {
+        var list = [
+          ...Object.keys(tcp).sort().map(name => ({ name: `tcp/${name}`, io: tcp[name] })),
+          ...Object.keys(udp).sort().map(name => ({ name: `udp/${name}`, io: udp[name] })),
+        ]
+        printTable(list, {
+          'NAME': r => r.name,
+          'INBOUND': r => {
+            var ib = r.io.filter(i => i.in)
+            if (ib.length === 0) return '-'
+            var i = ib[0]
+            var l = i.in.listens.map(l => `${l.ip}:${l.port}`).join(', ')
+            var s = `${i.ep} (${l})`
+            if (ib.length > 1) s += ` + ${ib.length - 1} more`
+            return s
+          },
+          'OUTBOUND': r => {
+            var ob = r.io.filter(o => o.out)
+            if (ob.length === 0) return '-'
+            var o = ob[0]
+            var t = o.out.targets.map(t => `${t.host}:${t.port}`).join(', ')
+            var s = `${o.ep} (${t})`
+            if (ob.length > 1) s += ` + ${ob.length - 1} more`
+            return s
+          },
+        })
+      })
+    }
+
     function getInbound() {
       return api.allInbound(endpoint.id).then(list => (
         Promise.all(list.map(i =>
@@ -164,6 +222,60 @@ export default function ({ api, utils }) {
           })
         )
       ))
+    }
+
+    function describeTunnel(tunnelName) {
+      var obj = validateObjectName(tunnelName)
+      var protocol = obj.protocol
+      var name = obj.name
+      var inbound = []
+      var outbound = []
+      return api.allEndpoints().then(
+        endpoints => Promise.all(endpoints.map(
+          ep => api.allTunnels(ep.id).then(
+            ret => {
+              if (ret) {
+                ret.inbound?.forEach?.(i => {
+                  if (i.protocol === protocol && i.name === name) {
+                    inbound.push({ ep, in: i })
+                  }
+                })
+                ret.outbound?.forEach?.(o => {
+                  if (o.protocol === protocol && o.name === name) {
+                    outbound.push({ ep, out: o })
+                  }
+                })
+              }
+            }
+          )
+        ))
+      ).then(() => {
+        output(`Tunnel: ${protocol}/${name}\n`)
+        output(`Inbound:\n`)
+        inbound.forEach(i => {
+          output(`  Endpoint: ${i.ep.name} (${i.ep.id})\n`)
+          output(`    Listens:\n`)
+          i.in.listens.forEach(l => output(`      ${l.ip}:${l.port}\n`))
+          output(`    Exits:\n`)
+          i.in.exits.forEach(e => output(`      ${e}\n`))
+          if (i.in.exits.length === 0) output(`      (all endpoints)\n`)
+        })
+        output(`Outbound:\n`)
+        outbound.forEach(o => {
+          output(`  Endpoint: ${o.ep.name} (${o.ep.id})\n`)
+          output(`    Targets:\n`)
+          o.out.targets.forEach(t => output(`      ${t.host}:${t.port}\n`))
+          output(`    Entrances:\n`)
+          o.out.entrances.forEach(e => output(`      ${e}\n`))
+          if (o.out.entrances.length === 0) output(`      (all endpoints)\n`)
+          output(`    Users:\n`)
+          if (o.out.users && o.out.users.length > 0) {
+            o.out.users.forEach(u => output(`      ${u}\n`))
+          } else {
+            output(`      (all users)\n`)
+          }
+        })
+      })
     }
 
     function describeInbound(tunnelName) {
@@ -235,6 +347,10 @@ export default function ({ api, utils }) {
     function validateObjectType(args, command) {
       var ot = args['<object type>']
       switch (ot) {
+        case 'tunnel':
+        case 'tunnels':
+        case 'tun':
+          return 'tunnel'
         case 'inbound':
         case 'in':
           return 'inbound'
@@ -302,6 +418,7 @@ export default function ({ api, utils }) {
 var objectTypeNotes = `
   Object Types:
 
+    tunnel   tun   A tunnel composed of inbound and outbound ends
     inbound  in    Inbound end of a tunnel
     outbound out   Outbound end of a tunnel
 `
