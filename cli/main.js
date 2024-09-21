@@ -673,6 +673,11 @@ function startServiceDarwin(name, args, optsChanged) {
         <true/>
         <key>StandardOutPath</key>
         <string>/tmp/io.flomesh.ztm.${name}.log</string>
+        <key>SoftResourceLimits</key>
+        <dict>
+          <key>NumberOfFiles</key>
+          <integer>10000</integer>
+        </dict>
       </dict>
       </plist>
     `))
