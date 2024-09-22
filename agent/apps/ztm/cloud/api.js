@@ -348,12 +348,16 @@ export default function ({ app, mesh }) {
       )
       .replaceMessage(res => {
         var status = res?.head?.status
-        if (status === 200) {
-          downloadedData = res.body
-        } else {
-          file.downloadedSize -= res.body?.size || 0
-          app.log(`Downloading ${filename} from ep ${ep} returned status ${status}`)
+        if (status === 200 && res.body) {
+          var hasher = new crypto.Hash('sha256')
+          hasher.update(res.body)
+          if (hasher.digest('hex') === hash) {
+            downloadedData = res.body
+            return new StreamEnd
+          }
         }
+        file.downloadedSize -= res?.body?.size || 0
+        app.log(`Downloading ${filename} from ep ${ep} failed with status ${status}`)
         return new StreamEnd
       })
     ).spawn().then(() => {
@@ -367,6 +371,7 @@ export default function ({ app, mesh }) {
       if (h === hash || !(file.path in downloadFiles)) {
         return finalizeChunk(path)
       } else {
+        file.downloadedSize -= downloadedData?.size || 0
         app.log(`Chunk ${path} from ep ${ep} was corrupt`)
         return downloadChunk(path, hash, file, sources)
       }
