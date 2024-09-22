@@ -30,34 +30,13 @@ export default function ({ app, api, utils }) {
             title: 'Change endpoint settings',
             usage: 'config',
             options: `
-              --local-dir       <pathname>      Set the local directory to mirror the cloud files
-              --add-mirror      <pathname ...>  Start auto-downloading the given files or directories
-              --remove-mirror   <pathname ...>  Stop auto-downloading the given files or directories
+              --local-dir   <pathname>   Set the local directory to mirror the cloud files
             `,
             action: (args) => api.getEndpointConfig(endpoint.id).then(config => {
               var changed = false
 
               if ('--local-dir' in args) {
                 config.localDir = os.path.resolve(args['--local-dir'])
-                changed = true
-              }
-
-              if ('--add-mirror' in args) {
-                if (!(config.mirrorPaths instanceof Array)) config.mirrorPaths = []
-                args['--add-mirror'].forEach(path => {
-                  path = os.path.normalize(path)
-                  if (!config.mirrorPaths.includes(path)) {
-                    config.mirrorPaths.push(path)
-                  }
-                })
-                changed = true
-              }
-
-              if ('--remove-mirror' in args && config.mirrorPaths instanceof Array) {
-                args['--remove-mirror'].forEach(path => {
-                  path = os.path.normalize(path)
-                  config.mirrorPaths = config.mirrorPaths.filter(p => p !== path)
-                })
                 changed = true
               }
 
@@ -72,12 +51,6 @@ export default function ({ app, api, utils }) {
               function printConfig(config) {
                 output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
                 output(`Local Directory: ${config.localDir}\n`)
-                if (config.mirrorPaths instanceof Array && config.mirrorPaths.length > 0) {
-                  output('Auto Mirror Paths:\n')
-                  config.mirrorPaths.forEach(path => output(`  ${path}\n`))
-                } else {
-                  output('Auto Mirror Paths: (none)\n')
-                }
               }
             })
           },
@@ -186,6 +159,56 @@ export default function ({ app, api, utils }) {
                 if (readonly.length > 0) output(`Read-Only Users: ${readonly.join(', ')}\n`)
                 if (block.length > 0) output(`Blocked Users: ${block.join(', ')}\n`)
               }
+            }
+          },
+          {
+            title: 'View or set auto-mirroring',
+            usage: 'mirror <pathname>',
+            options: `
+              --download   [on|off]   Enable or disable auto-downloading the specified directory
+              --upload     [on|off]   Enable or disable auto-uploading the specified directory
+            `,
+            action: (args) => {
+              var pathname = os.path.normalize(args['<pathname>'])
+              var download = args['--download']
+              var upload = args['--upload']
+              return api.getEndpointMirror(endpoint.id, pathname).then(
+                mirror => {
+                  if (download !== undefined || upload !== undefined) {
+                    mirror = mirror || {}
+                    if (download !== undefined) {
+                      download = download || 'on'
+                      switch (download) {
+                        case 'on': mirror.download = true; break
+                        case 'off': mirror.download = false; break
+                        default: throw 'option --download expects a value of "on" or "off"'
+                      }
+                    }
+                    if (upload !== undefined) {
+                      upload = upload || 'on'
+                      switch (upload) {
+                        case 'on': mirror.upload = true; break
+                        case 'off': mirror.upload = false; break
+                        default: throw 'option --upload expects a value of "on" or "off"'
+                      }
+                    }
+                    return api.setEndpointMirror(endpoint.id, pathname, mirror).then(mirror)
+                  } else {
+                    return mirror
+                  }
+                }
+              ).then(
+                config => {
+                  if (config) {
+                    output(`Endpoint: ${endpoint.name} (${endpoint.id})\n`)
+                    output(`Pathname: ${pathname}\n`)
+                    output(`Auto-downloading: ${config.download ? 'on' : 'off'}\n`)
+                    output(`Auto-upload: ${config.upload ? 'on' : 'off'}\n`)
+                  } else {
+                    error(`Mirror not found`)
+                  }
+                }
+              )
             }
           },
           {

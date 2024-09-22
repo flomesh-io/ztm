@@ -45,6 +45,27 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/endpoints/{ep}/mirrors': {
+      'GET': responder(({ ep }) => api.allEndpointMirrors(ep).then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+
+    '/api/endpoints/{ep}/mirrors/*': {
+      'GET': responder((params) => {
+        var pathname = URL.decodeComponent(params['*'])
+        return api.getEndpointMirror(params.ep, pathname).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+
+      'POST': responder((params, req) => {
+        var pathname = URL.decodeComponent(params['*'])
+        var config = JSON.decode(req.body)
+        return api.setEndpointMirror(params.ep, pathname, config).then(response(201))
+      }),
+    },
+
     //
     // File = {
     //   readers: [ 'user-1' ],
@@ -153,6 +174,27 @@ export default function ({ app, mesh, utils }) {
       'POST': responderOwnerOnly((_, req) => {
         var config = JSON.decode(req.body)
         return api.setEndpointConfig(app.endpoint.id, config).then(response(201))
+      }),
+    },
+
+    '/api/mirrors': {
+      'GET': responder(() => api.allEndpointMirrors(app.endpoint.id).then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+
+    '/api/mirrors/*': {
+      'GET': responder((params) => {
+        var pathname = URL.decodeComponent(params['*'])
+        return api.getEndpointMirror(app.endpoint.id, pathname).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+
+      'POST': responderOwnerOnly((params, req) => {
+        var pathname = URL.decodeComponent(params['*'])
+        var mirror = JSON.decode(req.body)
+        return api.setEndpointMirror(app.endpoint.id, pathname, mirror).then(response(201))
       }),
     },
 

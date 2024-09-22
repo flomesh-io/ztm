@@ -57,10 +57,13 @@ var matchPathChunk = new http.Match('/api/chunks/users/{username}/*')
 
 export default function ({ app, mesh }) {
   var localDir
-  var mirrorPaths
+  var autoDownloadPaths
+  var autoUploadPaths
 
   applyConfig().then(
     () => resumeDownloads()
+  ).then(
+    () => applyMirrors()
   ).then(
     () => initMirrors()
   ).then(
@@ -70,10 +73,9 @@ export default function ({ app, mesh }) {
   mesh.acl(`/shared/${app.username}/stat`, { all: 'block' })
 
   function applyConfig() {
-    return getLocalConfig().then(
+    return readLocalConfig().then(
       config => {
         localDir = config.localDir
-        mirrorPaths = config.mirrorPaths
         if (localDir.startsWith('~/')) {
           localDir = os.home() + localDir.substring(1)
         }
@@ -81,6 +83,22 @@ export default function ({ app, mesh }) {
           os.mkdir(os.path.join(localDir, 'users', app.username), { recursive: true })
         } catch (e) {
           app.log(e.message || e.toString())
+        }
+      }
+    )
+  }
+
+  function applyMirrors() {
+    return readLocalConfig().then(
+      config => {
+        var mirrors = config.mirrors
+        if (mirrors) {
+          var entries = Object.entries(mirrors)
+          autoDownloadPaths = entries.filter(([_, v]) => v.download).map(([k]) => k)
+          autoUploadPaths = entries.filter(([_, v]) => v.upload).map(([k]) => k)
+        } else {
+          autoDownloadPaths = []
+          autoUploadPaths = []
         }
       }
     )
@@ -143,9 +161,9 @@ export default function ({ app, mesh }) {
   }
 
   function initMirrors() {
-    if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
+    if (autoDownloadPaths instanceof Array && autoDownloadPaths.length > 0) {
       return mesh.list('/shared').then(files => {
-        var mirrors = mirrorPaths.map(path => path.endsWith('/') ? path : path + '/')
+        var mirrors = autoDownloadPaths.map(path => path.endsWith('/') ? path : path + '/')
         Object.keys(files).forEach(
           pathname => {
             var params = matchPathSharedFile(pathname)
@@ -170,10 +188,10 @@ export default function ({ app, mesh }) {
   }
 
   function watchMirrors() {
-    if (mirrorPaths instanceof Array && mirrorPaths.length > 0) {
+    if (autoDownloadPaths instanceof Array && autoDownloadPaths.length > 0) {
       mesh.watch('/shared/').then(pathnames => {
         try {
-          var mirrors = mirrorPaths.map(path => path.endsWith('/') ? path : path + '/')
+          var mirrors = autoDownloadPaths.map(path => path.endsWith('/') ? path : path + '/')
           pathnames.forEach(pathname => {
             var params = matchPathSharedFile(pathname)
             if (!params) return
@@ -207,7 +225,7 @@ export default function ({ app, mesh }) {
           method: 'GET',
           path: `/api/config`,
         }
-      )).then(res => res ? JSON.decode(res.body) : null)
+      )).then(res => res?.head?.status === 200 ? JSON.decode(res.body) : null)
     }
   }
 
@@ -228,25 +246,118 @@ export default function ({ app, mesh }) {
     }
   }
 
-  function getLocalConfig() {
+  function allEndpointMirrors(ep) {
+    if (ep === app.endpoint.id) {
+      return allLocalMirrors()
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: '/api/mirrors',
+        }
+      )).then(res => res ? JSON.decode(res.body) : null)
+    }
+  }
+
+  function getEndpointMirror(ep, pathname) {
+    if (ep === app.endpoint.id) {
+      return getLocalMirror(pathname)
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: os.path.join('/api/mirrors', encodePathname(pathname)),
+        }
+      )).then(res => res?.head?.status === 200 ? JSON.decode(res.body) : null)
+    }
+  }
+
+  function setEndpointMirror(ep, pathname, mirror) {
+    if (ep === app.endpoint.id) {
+      return setLocalMirror(pathname, mirror)
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'POST',
+          path: os.path.join('/api/mirrors', encodePathname(pathname)),
+        },
+        JSON.encode(mirror)
+      )).then(res => {
+        var status = res?.head?.status
+        if (!(200 <= status && status <= 299)) throw res.head.statusText
+      })
+    }
+  }
+
+  function readLocalConfig() {
     return mesh.read('/local/config.json').then(
       data => {
         try {
-          var config = JSON.decode(data) || {}
+          return JSON.decode(data) || {}
         } catch {
-          var config = {}
+          return {}
         }
-        config.localDir ??= '~/ztmCloud'
-        config.mirrorPaths ??= []
-        return config
+      }
+    )
+  }
+
+  function writeLocalConfig(config) {
+    return mesh.write('/local/config.json', JSON.encode(config))
+  }
+
+  function getLocalConfig() {
+    return readLocalConfig().then(
+      config => {
+        var localDir = config.localDir || '~/ztmCloud'
+        return { localDir }
       }
     )
   }
 
   function setLocalConfig(config) {
-    mesh.write('/local/config.json', JSON.encode(config))
-    return applyConfig().then(
-      () => initMirrors()
+    var newConfig = config
+    return readLocalConfig().then(
+      config => {
+        if (newConfig.localDir) {
+          config.localDir = newConfig.localDir
+        }
+        return writeLocalConfig(config).then(applyConfig)
+      }
+    )
+  }
+
+  function allLocalMirrors() {
+    return readLocalConfig().then(
+      config => {
+        return config.mirrors || {}
+      }
+    )
+  }
+
+  function getLocalMirror(pathname) {
+    pathname = os.path.normalize(pathname)
+    return readLocalConfig().then(
+      config => {
+        return config.mirrors?.[pathname] || null
+      }
+    )
+  }
+
+  function setLocalMirror(pathname, mirror) {
+    pathname = os.path.normalize(pathname)
+    return readLocalConfig().then(
+      config => {
+        config.mirrors ??= {}
+        var m = config.mirrors[pathname] || {}
+        if (mirror?.download !== undefined) m.download = Boolean(mirror.download)
+        if (mirror?.upload !== undefined) m.upload = Boolean(mirror.upload)
+        if (m.download || m.upload) {
+          config.mirrors[pathname] = m
+        } else {
+          delete config.mirrors[pathname]
+        }
+        return writeLocalConfig(config).then(applyMirrors)
+      }
     )
   }
 
@@ -506,19 +617,19 @@ export default function ({ app, mesh }) {
     ]).then(
       ([statEndp, statMesh, access]) => {
         if (statEndp instanceof Array) {
-          if (statMesh instanceof Array) {
-            var s = new Set
-            var l = []
-            statEndp.concat(statMesh).forEach(
-              name => {
-                var k = name.endsWith('/') ? name.substring(0, name.length - 1) : name
-                if (!s.has(k)) {
-                  s.add(k)
-                  l.push(name)
-                }
+          var s = new Set
+          var l = []
+          var combined = statEndp
+          if (statMesh instanceof Array) combined = combined.concat(statMesh)
+          combined.forEach(
+            name => {
+              var k = name.endsWith('/') ? name.substring(0, name.length - 1) : name
+              if (!s.has(k)) {
+                s.add(k)
+                l.push(name)
               }
-            )
-          }
+            }
+          )
           return {
             path,
             list: l.sort(),
@@ -909,6 +1020,9 @@ export default function ({ app, mesh }) {
     allEndpoints,
     getEndpointConfig,
     setEndpointConfig,
+    allEndpointMirrors,
+    getEndpointMirror,
+    setEndpointMirror,
     getFileStat,
     getACL,
     setACL,
