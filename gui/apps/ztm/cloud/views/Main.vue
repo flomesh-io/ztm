@@ -11,7 +11,6 @@ const path = ref('');
 const selectedFile = ref();
 const loading = ref(true);
 const files = ref([]);
-const endpoints = ref([]);
 const uploads = ref([]);
 const downloads = ref([]);
 const getDownloads = () => {
@@ -48,11 +47,6 @@ const loaddata = () => {
 	// getUploads();
 }
 
-const getEndpoints = (endpoint) => {
-	fileService.getEndpoints().then((res)=>{
-		endpoints.value = res || [];
-	})
-}
 const changePath = (p) => {
 	path.value = p;
 	loaddata();
@@ -86,12 +80,6 @@ const openPreview = ({item, localDir}) => {
 	visiblePreview.value = true;
 	visibleEditor.value = false;
 }
-onMounted(()=>{
-	getEndpoints();
-})
-onActivated(()=>{
-	getEndpoints();
-})
 </script>
 
 <template>

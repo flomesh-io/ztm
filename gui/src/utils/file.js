@@ -138,11 +138,11 @@ const isPdf = (val) => FileTypes.pdf.includes(val?.toLocaleLowerCase());
 const isText = (val) => FileTypes.text.includes(val?.toLocaleLowerCase());
 
 
-const checker = (item, mirrorPaths) => {
+const checker = (item) => {
 	const name = item?.name;
 	const path = item?.path || '';
 	const pathAry = path.split("/");
-	if(!!name && name.charAt(name.length-1) == "/" && isMirror(`${path}/${name.split('/')[0]}`,mirrorPaths)>-1){
+	if(item.isMirror){
 		return ext.mirror;
 	}else if((name=="users/" || (pathAry.length == 3 && pathAry[1] == "users")) && name.indexOf(".")==-1){
 		return ext.userfolder;
@@ -157,19 +157,12 @@ const checker = (item, mirrorPaths) => {
 		return ext.default;
 	}
 }
-const isMirror = (path, mirrorPaths) => {
-	const _mirrorPaths = [];
-	if(!!mirrorPaths){
-		mirrorPaths.forEach((mirrorPath)=>{
-			if(!!mirrorPath){
-				_mirrorPaths.push(mirrorPath)
-			}
-		})
-	};
-	if(!!_mirrorPaths){
-		return _mirrorPaths.findIndex((_mirrorPath)=>_mirrorPath==path)
+
+const icons = (item)=>{
+	if(!!item.ext && item && item.state != "new" && !item?.error && isImage(item.ext) && item.fileUrl){
+		return item.fileUrl;
 	} else {
-		return -1
+		return checker(item);
 	}
 }
 const bitUnit = (value)=> {
@@ -344,12 +337,35 @@ const importFiles = ({
 	
 	})
 }
+
+const labels = (item)=>{
+	if(!!item?.error){
+		return item.error?.message.indexOf('404')>=0?'not find':'error'
+	} else if(item?.downloading!=null){
+		return 'downloading'
+	} else {
+		return item?.state||''
+	}
+}
+
+const colors = {
+	new:'warn',
+	changed:'warn',
+	synced:'success',
+	error: 'danger',
+	'not find': 'secondary',
+	downloading: 'contrast',
+	missing: 'secondary',
+	outdated: 'secondary'
+}
 export {
 	ext, 
 	checker, 
 	bitUnit, 
 	openFile, 
-	isMirror, 
+	icons,
+	labels,
+	colors,
 	writeMobileFile, 
 	convertToUint8Array,
 	writeFile, 
