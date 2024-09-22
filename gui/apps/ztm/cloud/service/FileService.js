@@ -38,6 +38,40 @@ export default class FileService {
 	setConfig(ep, body) {
 		return request(`/api/endpoints/${ep}/config`,"POST", body)
 	}
+	getMirror(path, ep) {
+		if(!!path && path != "/"){
+			return request(`/api/endpoints/${ep}/mirrors${path}`)
+		}else{
+			return request(`/api/endpoints/${ep}/mirrors`)
+		}
+	}
+	setMirror(path, ep, body) {
+		if(!!path && path != "/"){
+			return request(`/api/endpoints/${ep}/mirrors${path}`,"POST", body)
+		}else{
+			return request(`/api/endpoints/${ep}/mirrors`,"POST", body)
+		}
+	}
+	
+	getMirrors(path,eps, callback, error) {
+		let reqs = [];
+		// merge request
+		(eps||[]).forEach((ep)=>{
+			const req = this.getMirror(path, ep?.id).then((res)=> {
+				return { data:res, ep }
+			}).catch((e)=>{
+			})
+			reqs.push(req);
+		})
+		
+		return merge(reqs).then((allRes) => {
+			if(!!callback)
+			callback(allRes||[], eps)
+		}).catch(()=>{
+			if(!!error)
+			error()
+		})
+	}
 	getFileMetaUrl(path) {
 		return getMetaUrl(`/api/file-data${path}`)
 	}

@@ -5,7 +5,7 @@ import FileService from '../service/FileService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
-import { checker, bitUnit, openFile, isMirror, isImage, saveFile } from '@/utils/file';
+import { checker, bitUnit, openFile, isImage, saveFile } from '@/utils/file';
 import _ from "lodash"
 
 const props = defineProps(['item','dir']);

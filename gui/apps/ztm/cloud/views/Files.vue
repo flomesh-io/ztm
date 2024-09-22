@@ -2,13 +2,14 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit, openFile, isMirror, isImage, saveFile, writeMobileFile } from '@/utils/file';
+import { checker, bitUnit, openFile, isImage, saveFile, writeMobileFile,labels, colors,icons } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
+import Config from './Config.vue'
 import _ from "lodash";
 const toast = useToast();
 const store = useStore();
@@ -18,12 +19,12 @@ const fileService = new FileService();
 const scopeType = ref('All');
 const portMap = ref({});
 
-const props = defineProps(['small','files','loading','queueSize','endpoints'])
+const props = defineProps(['small','files','loading','queueSize'])
 const emits = defineEmits(['download','upload','load','preview'])
 const info = computed(() => {
 	return store.getters['app/info']
 });
-
+const fileConfig = ref();
 const fileData = ref([]);
 const current = ref({
 	path:'/',
@@ -35,11 +36,10 @@ const isMyFolder = computed(()=>{
 })
 const attrLoading = ref(false);
 const detailData = ref({});
-const visible = ref(false);
 const typing = ref('');
 const actionMenu = ref();
 const showAtionMenu = (e) => {
-	visible.value = true;
+	fileConfig.value.open();
 };
 const layout = ref('grid');
 const windowWidth = ref(window.innerWidth);
@@ -61,6 +61,12 @@ const fullPath = computed(()=>(item)=>{
 		return _joinPath.join("/");
 	}
 })
+const mirrors = ref({})
+const getMirrors = () => {
+	fileService.getMirror('', info.value?.endpoint?.id).then((res)=>{
+		mirrors.value = res;
+	})
+}
 const loadFileAttr = (unload, detailItem) => {
 	if(!unload){
 		attrLoading.value = true;
@@ -84,7 +90,6 @@ const loadFileAttr = (unload, detailItem) => {
 				downloading:_res?.downloading
 			}
 		} 
-		
 		detailData.value[res.path] = {
 			...detailData.value[res.path],
 			..._res,
@@ -181,7 +186,8 @@ const onNodeExpand = (node) => {
 
 const openPreview = (item) => {
 	emits('preview',{item, localDir: localDir.value});
-	visible.value = false;
+	
+	fileConfig.value.close();
 }
 const isPC = computed(()=>{
 	const pm = platform();
@@ -200,7 +206,8 @@ const openPreviewFile = (item) => {
 const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
 const itemsBreadcrumb = ref([]);
 const load = () => {
-	emits('load',current.value?.path)
+	emits('load',current.value?.path);
+	getMirrors();
 }
 const back = () => {
 	if(window.parent){
@@ -275,68 +282,9 @@ const handleLongTap = (item) => () => {
 	loadFileAttr();
 	showAtionMenu();
 }
-const actions = computed(()=>{
-	 
-	if(selectedFile.value?.ext == "/"){
-		return [
-			{
-					label: 'Path',
-					shortcut: selectedFile.value?.path,
-					command: () => {
-					}
-			}
-		]
-		
-	}else{
-		return [
-			{
-					label: 'State',
-					shortcut: selectedFile.value?.state,
-					error: selectedFile.value?.error,
-					command: () => {
-					}
-			},
-			{
-					label: 'Sources',
-					badge: selectedFile.value?.sources?.length,
-					command: () => {
-					}
-			},
-			
-			
-			{
-					label: 'Path',
-					shortcut: selectedFile.value?.path,
-					command: () => {
-					}
-			},
-			{
-					label: 'Hash',
-					shortcut: selectedFile.value?.hash,
-					command: () => {
-					}
-			},
-			{
-					label: 'Time',
-					shortcut: !!selectedFile.value?.time?new Date(selectedFile.value.time).toLocaleString():'-',
-					command: () => {
-					}
-			},
-			{
-					label: 'Size',
-					shortcut: bitUnit(selectedFile.value?.size),
-					command: () => {
-					}
-			},
-		]
-	}
-})
-const copyFile = () => {
-	copy(JSON.stringify(selectedFile.value))
-}
 const closeFile = () => {
 	selectedFile.value = null;
-	visible.value = false;
+	fileConfig.value.close();
 }
 const getSelectFiles = (list) => {
 	let ary = []
@@ -358,10 +306,10 @@ const openSetting = () => {
 	op.value.toggle(event);
 }
 const localDir = ref("");
-const mirrorPaths = ref([])
+// const mirrorPaths = ref([])
 const config = ref({
 	localDir: "",
-	mirrorPaths: []
+	// mirrorPaths: []
 })
 const saveConfig = () => {
 	fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
@@ -383,9 +331,8 @@ const getConfig = () => {
 	fileService.getConfig(info.value?.endpoint?.id).then((res)=>{
 		config.value = res;
 		localDir.value = config.value.localDir;
-		mirrorPaths.value = config.value.mirrorPaths;
+		// mirrorPaths.value = config.value.mirrorPaths;
 		if(config.value.localDir == '~/ztmCloud' && !!hasTauri.value){
-			debugger
 			fileService.getDir().then((dir)=>{
 				config.value.localDir = `${dir}/ztmCloud`;
 				fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
@@ -421,16 +368,9 @@ const doDownload = (item) => {
 	}
 }
 const doCancelDownload = (item) => {
-	if(item.path){
-		fileService.cancelDownload(item.path, (error)=>{
-			if(!error){
-				toast.add({ severity: 'contrast', summary:'Tips', detail: `Cancelled.`, life: 3000 });
-			}
-			emits('download',[]);
-			selectedFile.value = item;
-			loadFileAttr(true);
-		});
-	}
+	emits('download',[]);
+	selectedFile.value = item;
+	loadFileAttr(true);
 }
 const doDownloads = () => {
 	const reqs = [];
@@ -495,23 +435,18 @@ const doUploads = () => {
 		}); 
 	}
 }
-const fileIcon = computed(()=>(item)=>{
-	
-	if(!!item.ext && detailData.value[item.path] && detailData.value[item.path].state != "new" && !detailData.value[item.path]?.error && isImage(item.ext) && item.fileUrl){
-		return item.fileUrl;
-	} else {
-		return checker(item, mirrorPaths.value);
-	}
-})
-const toggleMirror = (path) => {
-	const _index = isMirror(path, mirrorPaths.value);
-	if(_index>-1){
-		mirrorPaths.value.splice(_index,1);
-	} else {
-		mirrorPaths.value.push(path)
-	}
-	saveConfig();
-}
+const fileIcon = computed(()=> (item) => icons(
+		detailData.value[item?.path]? {
+			...item,
+			...detailData.value[item.path],
+			isMirror:mirrors.value[item?.path]?.download || mirrors.value[item?.path]?.upload
+		}:{
+			...item,
+			isMirror:mirrors.value[item?.path]?.download || mirrors.value[item?.path]?.upload
+		}
+	)
+)
+
 const moreMenu = ref();
 const moreItems = computed(()=>{
 	
@@ -560,33 +495,11 @@ const searchSort = (e)=>{
 		sortOrder.value = e.sortOrder;
 	}
 }
-const filterEps = computed(()=>(users)=>{
-	const usernames = Object.keys(users);
-	usernames.push(info.value?.username);
-	return _.filter(props.endpoints, (item) => !_.includes(usernames, item.username));
-})
-const acl = ref({
-	user:'',
-	permission: 'readonly'
-})
-const addUser = () => {
-	selectedFile.value.access.users[acl.value.user] = acl.value.permission;
-	acl.value = {
-		user:'',
-		permission: 'readonly'
-	};
+const addUser = (acl) => {
+	selectedFile.value.access.users[acl.user] = acl.permission;
 }
 const delUser = (key) => {
 	delete selectedFile.value.access.users[key];
-}
-const active = ref(0);
-const aclLoading = ref(false);
-const saveAcl = () => {
-	aclLoading.value = true;
-	fileService.setAcl(fullPath.value(selectedFile.value), selectedFile.value?.access || {}).then((res)=>{
-		aclLoading.value = false;
-		toast.add({ severity: 'success', summary:'Tips', detail: 'ACL Save successfully.', life: 3000 });
-	})
 }
 const perIcon = computed(()=>(_file)=>{
 	const detailFile = detailData.value[_file.path];
@@ -601,37 +514,8 @@ const perIcon = computed(()=>(_file)=>{
 		return false;
 	}
 })
-const saving = ref(false);
-const saveAs = (item) => {
-	if(item.fileUrl){
-		saveFile(item.fileUrl,()=>{
-			saving.value = true;
-		},()=>{
-			saving.value = false;
-			toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
-		})
-	}
-}
-
-const stateColor = ref({
-	new:'warn',
-	changed:'warn',
-	synced:'success',
-	error: 'danger',
-	'not find': 'secondary',
-	downloading: 'contrast',
-	missing: 'secondary',
-	outdated: 'secondary'
-})
-const stateLabel = computed(()=>(item)=>{
-	if(!!item?.error){
-		return item.error?.message.indexOf('404')>=0?'not find':'error'
-	} else if(item?.downloading!=null){
-		return 'downloading'
-	} else {
-		return item?.state||''
-	}
-})
+const stateColor = ref(colors);
+const stateLabel = computed(()=>labels)
 watch(()=>props.files,()=>{
 	fileData.value = [];
 	if(!!props.files && props.files.length>0){
@@ -780,137 +664,19 @@ onMounted(()=>{
 							</div>
 					 </div>
 				</div>
-				<Dialog style="max-width: 400px;min-width: 300px;" class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
-					<Button v-if="active == 1" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
-					<Loading v-if="attrLoading" />
-					<TabView v-else v-model:activeIndex="active">
-						<TabPanel>
-							<template #header>
-								<div>
-									<i class="pi pi-info-circle mr-2" />Info
-								</div>
-							</template>
-							<Menu :model="actions" class="w-60">
-							    <template #start>
-										<div v-if="selectedFile" class="text-center pt-4 relative">
-											<img  :class="stateLabel(selectedFile) == 'not find'?'opacity-40':''" :src="fileIcon(selectedFile)" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-											<div class="px-2 ">
-												<Button style="word-break: break-all;" class="max-w-16rem" @click="copyFile" iconPos="right" icon="pi pi-copy" plain :label="selectedFile.name" text />
-											</div>
-										</div>
-										
-							    </template>
-							    <template #submenulabel="{ item }">
-							        <span class="text-primary font-bold">{{ item.label }}</span>
-							    </template>
-							    <template #item="{ item, props }">
-							        <a v-ripple class="flex items-center" v-bind="props.action">
-							            <span :class="item.icon" />
-							            <span>{{ item.label }}</span>
-							            <Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
-							            <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-														<Tag v-tooltip="item?.error?.message" :severity="stateColor[stateLabel(selectedFile)]" v-if="item.label == 'State'">
-															{{stateLabel(selectedFile)}}
-														</Tag>
-														<span v-else>{{ item.shortcut }}</span>
-													</span>
-							        </a>
-							    </template>
-							    <template #end >
-										<div class="px-4 pt-2 pb-1" v-if="selectedFile?.downloading != null">
-												<ProgressBar v-tooltip="item?.error" :class="item?.error?'error':''"  :value="selectedFile.downloading*100">
-													<span></span>
-												</ProgressBar>
-												<div class="flex">
-													<div class="flex-item">
-														{{bitUnit(selectedFile.size*selectedFile.downloading)}}  / {{bitUnit(selectedFile.size)}} 
-													</div>
-													<div v-if="selectedFile?.speed">
-														{{bitUnit(selectedFile?.speed||0)}}/s
-													</div>
-												</div>
-										</div>
-										<div class="px-3 pt-2 pb-3 grid m-0 justify-content-between">
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && (selectedFile?.state == 'new' || selectedFile?.state == 'changed' || selectedFile?.state == 'synced')">
-												<Button :loading="!!selectedFile.uploading" :disabled="!selectedFile?.path" @click="doUpload(selectedFile)" class="w-full" icon="pi pi-cloud-upload" label="Upload" severity="secondary" />
-											</div>
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && selectedFile?.state != 'new'  && !selectedFile?.error">
-												<Button v-if="selectedFile?.downloading == null" :disabled="!selectedFile?.path" @click="doDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Download" severity="secondary"  />
-												<Button v-else @click="doCancelDownload(selectedFile)" class="w-full" icon="pi pi-cloud-download" label="Cancel" severity="danger"  />
-											</div>
-											<div  class="col-6 px-2 py-2" v-if="!!selectedFile?.fileUrl && !selectedFile?.error">
-												<Button :loading="saving" @click="saveAs(selectedFile)" class="w-full" icon="pi pi-save" label="Save" severity="secondary"  />
-											</div>
-											<div  class="col-6 px-2 py-2" v-if="selectedFile?.ext != '/' && isPC && selectedFile?.state != 'missing' && !selectedFile?.error">
-												<Button :disabled="!selectedFile?.path" @click="openPreviewFile(selectedFile)" class="w-full" icon="pi pi-external-link" label="Open" severity="secondary"  />
-											</div>
-											<div  class="col-6 px-2 py-2" v-else-if="selectedFile?.ext != '/' && selectedFile?.state != 'new' && !selectedFile?.error">
-												<Button :disabled="!selectedFile?.fileUrl" @click="openPreview(selectedFile)" class="w-full" icon="pi pi-eye" label="Preview" severity="secondary"  />
-											</div>
-										</div>
-							    </template>
-							</Menu>
-						</TabPanel>
-						<TabPanel v-if="isMyFolder && selectedFile?.access && selectedFile?.state != 'new' && !selectedFile?.error">
-							<template #header>
-								<div>
-									<i class="pi pi-shield mr-2" />Sharing
-								</div>
-							</template>
-							<div class="p-3">
-								<div class="py-2">
-									<b>All permission:</b>
-								</div>
-								<SelectButton class="w-full" v-model="selectedFile.access.all" :options="[{name:'Inherit',id:null},{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" aria-labelledby="basic" />
-								<div class="pt-4 pb-2">
-									<b>Users permission:</b>
-								</div>
-								<Listbox v-if="selectedFile.access?.users" :options="Object.keys(selectedFile.access.users)" class="w-full md:w-56" listStyle="max-height:250px">
-									<template #option="slotProps">
-											<div class="flex w-full">
-												<div class="flex-item pt-1">
-													<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
-													<span class="ml-2">{{slotProps.option}}</span>
-												</div>
-												<div>
-													<Select size="small" class="w-full small"  v-model="selectedFile.access.users[slotProps.option]" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
-												</div>
-											<div class="pl-1">
-												<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary" />
-											</div>
-											</div>
-									</template>
-									<template #empty>
-										---
-									</template>
-									<template #footer>
-										<div class="flex items-center pt-1 pb-2 px-3">
-											<div class="flex-item pr-1">
-												<Select size="small" class="w-full"  v-model="acl.user" :options="filterEps(selectedFile.access.users)" optionLabel="username" optionValue="username" :filter="filterEps(selectedFile.access.users).length>8" placeholder="Endpoint"/>
-											</div>
-											<div class="flex-item">
-												<Select size="small" class="w-full"  v-model="acl.permission" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
-											</div>
-											<div class="pl-1">
-												<Button :disabled="!acl.user" @click="addUser" icon="pi pi-plus" severity="secondary" />
-											</div>
-										</div>
-									</template>
-								</Listbox>
-							</div>
-						</TabPanel>
-						<TabPanel v-if="selectedFile?.ext == '/' && !!selectedFile?.path">
-							<template #header>
-								<div>
-									<i :icon="isMirror(selectedFile.path, mirrorPaths)>-1?'pi pi-sync pi-spin':'pi pi-sync'" class=" mr-2" />Auto-Mirror
-								</div>
-							</template>
-							<div class="p-3">
-								<Button @click="toggleMirror(selectedFile.path)"  :label="isMirror(selectedFile.path, mirrorPaths)?'ON':'OFF'" :severity="isMirror(selectedFile.path, mirrorPaths)?'primary':'secondary'"  />
-							</div>
-						</TabPanel>
-					</TabView>
-				</Dialog>
+				<Config 
+					ref="fileConfig" 
+					:current="current"
+					:loading="attrLoading"
+					:saving="saving"
+					:file="selectedFile"
+					@download="doDownload"
+					@upload="doUpload"
+					@cancelDownload="doCancelDownload"
+					@openPreviewFile="openPreviewFile"
+					@openPreview="openPreview"
+					@delUser="delUser"
+					/>
 			</div>
 			</ScrollPanel>
 			<Empty v-else :title="emptyMsg"/>
