@@ -290,13 +290,14 @@ onMounted(()=>{
 								<span class="text-primary font-bold">{{ item.label }}</span>
 						</template>
 						<template #item="{ item, props }">
+							
 								<a v-ripple class="flex items-center" v-bind="props.action">
 										<span :class="item.icon" />
 										<span>{{ item.label }}</span>
 										<Badge v-if="item.badge>=0" class="ml-auto" :value="item.badge" />
 										<span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1 max-w-14rem text-right" style="word-break: break-all;">
-											<Tag v-tooltip="item?.error?.message" :severity="stateColor[stateLabel(props.file)]" v-if="item.label == 'State'">
-												{{stateLabel(props.file)}}
+											<Tag v-tooltip="item?.error?.message" :severity="stateColor[stateLabel(file)]" v-if="item.label == 'State'">
+												{{stateLabel(file)}}
 											</Tag>
 											<span v-else>{{ item.shortcut }}</span>
 										</span>
