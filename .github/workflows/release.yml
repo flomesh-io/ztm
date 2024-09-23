@@ -51,6 +51,32 @@ jobs:
       commit_date: ${{steps.version.outputs.commit_date}}
       commit_sha: ${{steps.version.outputs.commit_sha}}
 
+  archive-ztm-src:
+    needs: set-release-version
+    name: archive-ztm-src
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        id: build
+        env:
+          RELEASE_VERSION: ${{ needs.set-release-version.outputs.release_version }}
+          ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
+          ZTM_COMMIT_SHA: ${{needs.set-release-version.outputs.commit_sha}}
+          ZTM_COMMIT_DATE: ${{needs.set-release-version.outputs.commit_date}}
+        run: |
+          set -x
+          curl -LO https://github.com/fabacab/git-archive-all.sh/raw/refs/heads/master/git-archive-all.sh
+          chmod +x git-archive-all.sh
+          ./git-archive-all.sh --prefix ztm-src-${ZTM_VERSION}/ ztm-src-${ZTM_VERSION}.tar
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ztm-src-${{needs.set-release-version.outputs.release_version}}.tar
+          path: ztm-src-${{needs.set-release-version.outputs.release_version}}.tar
+
   build-ztm-aio-linux-x86_64:
     needs: set-release-version
     name: build-ztm-aio-linux-x86_64
@@ -210,8 +236,8 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
-          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.tar
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.tar
 
   build-libztm-android:
     needs: set-release-version
@@ -229,7 +255,7 @@ jobs:
         with:
           ndk-version: r26c
 
-      - uses: seanmiddleditch/gha-setup-ninja@v4
+      - uses: seanmiddleditch/gha-setup-ninja@v5
         id: setup-ninja
         with:
           version: 1.11.1
@@ -265,6 +291,7 @@ jobs:
       - build-ztm-aio-macos-arm64
       - build-ztm-aio-win-x86_64
       - build-libztm-android
+      - archive-ztm-src
     env:
       ZTM_VERSION: ${{needs.set-release-version.outputs.release_version}}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -287,5 +314,6 @@ jobs:
             ztm-aio-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
-            ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip/ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip
+            ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.tar/ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.tar
             libztm-${{env.ZTM_VERSION}}-android.tar.gz/libztm-${{env.ZTM_VERSION}}-android.tar.gz
+            ztm-src-${{needs.set-release-version.outputs.release_version}}.tar/ztm-src-${{needs.set-release-version.outputs.release_version}}.tar
