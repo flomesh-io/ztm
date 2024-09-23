@@ -59,21 +59,25 @@ export default function ({ app, mesh }) {
   var localDir
   var autoDownloadPaths
   var autoUploadPaths
+  var autoUploadStates
 
   applyConfig().then(
     () => resumeDownloads()
   ).then(
     () => applyMirrors()
   ).then(
-    () => initMirrors()
+    () => initAutoDownload()
   ).then(
-    () => watchMirrors()
-  )
+    () => initAutoUpload()
+  ).then(() => {
+    watchAutoDownload()
+    watchAutoUpload()
+  })
 
   mesh.acl(`/shared/${app.username}/stat`, { all: 'block' })
 
   function applyConfig() {
-    return readLocalConfig().then(
+    return getLocalConfig().then(
       config => {
         localDir = config.localDir
         if (localDir.startsWith('~/')) {
@@ -104,25 +108,31 @@ export default function ({ app, mesh }) {
     )
   }
 
+  function searchLocalFiles(path, cb) {
+    os.readDir(os.path.join(localDir, path)).forEach(
+      name => {
+        var pathname = os.path.join(path, name)
+        if (name.endsWith('/')) return searchLocalFiles(pathname, cb)
+        cb(pathname)
+      }
+    )
+  }
+
   function resumeDownloads() {
-    var rootDir = os.path.join(localDir, 'downloads')
+    var basePath = '/downloads'
     var downloads = {}
-    findDownloads('/')
-    function findDownloads(dirname) {
-      var names = os.readDir(os.path.join(rootDir, dirname))
-      names.forEach(name => {
-        if (name.endsWith('/')) {
-          findDownloads(os.path.join(dirname, name))
-        } else {
-          var i = name.lastIndexOf('.')
-          var n = Number.parseInt(name.substring(i + 1))
-          name = name.substring(0, i)
-          if (!name || Number.isNaN(n)) return
-          var path = os.path.join(dirname, name)
-          downloads[path] = true
-        }
-      })
-    }
+
+    searchLocalFiles(basePath, pathname => {
+      var name = os.path.basename(pathname)
+      var i = name.lastIndexOf('.')
+      var n = Number.parseInt(name.substring(i + 1))
+      name = name.substring(0, i)
+      if (!name || Number.isNaN(n)) return
+      var dir = os.path.dirname(pathname).substring(basePath.length)
+      var path = os.path.join(dir, name)
+      downloads[path] = true
+    })
+
     return Promise.all(Object.keys(downloads).map(pathname => {
       var params = matchPathUserFile(pathname)
       if (!params) return Promise.resolve()
@@ -160,10 +170,11 @@ export default function ({ app, mesh }) {
     }))
   }
 
-  function initMirrors() {
+  function initAutoDownload() {
     if (autoDownloadPaths instanceof Array && autoDownloadPaths.length > 0) {
       return mesh.list('/shared').then(files => {
-        var mirrors = autoDownloadPaths.map(path => path.endsWith('/') ? path : path + '/')
+        var prefixes = autoDownloadPaths.map(path => path.endsWith('/') ? path : path + '/')
+        var updateList = []
         Object.keys(files).forEach(
           pathname => {
             var params = matchPathSharedFile(pathname)
@@ -171,45 +182,100 @@ export default function ({ app, mesh }) {
             var username = params.username
             var filename = params['*']
             var path = os.path.join('/users', username, filename)
-            if (!mirrors.some(p => path.startsWith(p))) return
-            return getFileStatByUser(username, filename).then(
-              stat => {
-                if (stat && !stat.list && stat.state !== 'synced' && stat.state !== 'updated') {
-                  downloadFile(path)
-                }
-              }
-            )
+            if (prefixes.some(p => path.startsWith(p))) updateList.push(path)
           }
-        )}
-      )
+        )
+        return startAutoDownload(updateList)
+      })
     } else {
       return Promise.resolve()
     }
   }
 
-  function watchMirrors() {
+  function initAutoUpload() {
+    if (autoUploadPaths instanceof Array && autoUploadPaths.length > 0) {
+      autoUploadStates = {}
+      autoUploadPaths.forEach(
+        path => searchLocalFiles(path, pathname => {
+          var stat = os.stat(os.path.join(localDir, pathname))
+          if (stat) autoUploadStates[pathname] = stat.mtime
+        })
+      )
+      return startAutoUpload(Object.keys(autoUploadStates))
+    } else {
+      return Promise.resolve()
+    }
+  }
+
+  function watchAutoDownload() {
     if (autoDownloadPaths instanceof Array && autoDownloadPaths.length > 0) {
       mesh.watch('/shared/').then(pathnames => {
-        try {
-          var mirrors = autoDownloadPaths.map(path => path.endsWith('/') ? path : path + '/')
-          pathnames.forEach(pathname => {
-            var params = matchPathSharedFile(pathname)
-            if (!params) return
-            var username = params.username
-            var filename = params['*']
-            var path = os.path.join('/users', username, filename)
-            if (mirrors.some(p => path.startsWith(p))) {
-              downloadFile(path)
-            }
-          })
-        } catch (e) {
-          app.log(`Cannot update mirrors: ${e.message || e}`)
-        }
-        watchMirrors()
+        var prefixes = autoDownloadPaths.map(path => path.endsWith('/') ? path : path + '/')
+        var updateList = []
+        pathnames.forEach(pathname => {
+          var params = matchPathSharedFile(pathname)
+          if (!params) return
+          var username = params.username
+          var filename = params['*']
+          var path = os.path.join('/users', username, filename)
+          if (prefixes.some(p => path.startsWith(p))) updateList.push(path)
+        })
+        startAutoDownload(updateList).then(watchAutoDownload)
       })
     } else {
-      new Timeout(5).wait().then(watchMirrors)
+      new Timeout(5).wait().then(watchAutoDownload)
     }
+  }
+
+  function watchAutoUpload() {
+    return new Timeout(5).wait().then(() => {
+      if (autoUploadPaths instanceof Array && autoUploadPaths.length > 0) {
+        autoUploadStates ??= {}
+        var updateList = []
+        autoUploadPaths.forEach(
+          path => searchLocalFiles(path, pathname => {
+            var stat = os.stat(os.path.join(localDir, pathname))
+            if (stat && autoUploadStates[pathname] !== stat.mtime) {
+              autoUploadStates[pathname] = stat.mtime
+              updateList.push(pathname)
+            }
+          })
+        )
+        return startAutoUpload(updateList).then(watchAutoUpload)
+      } else {
+        watchAutoUpload()
+      }
+    })
+  }
+
+  function startAutoDownload(paths) {
+    return Promise.all(paths.map(path => {
+      var params = matchPathUserFile(path)
+      var username = params.username
+      var filename = params['*']
+      return getFileStatByUser(username, filename).then(
+        stat => {
+          if (stat && !stat.list && stat.state !== 'synced' && stat.state !== 'updated') {
+            downloadFile(path)
+          }
+        }
+      )
+    }))
+  }
+
+  function startAutoUpload(paths) {
+    return Promise.all(paths.map(path => {
+      var params = matchPathUserFile(path)
+      var username = params.username
+      var filename = params['*']
+      return getFileStatByUser(username, filename).then(
+        stat => {
+          if (stat && !stat.list && stat.state !== 'synced' && stat.state !== 'outdated') {
+            uploadFile(path)
+          }
+        }
+      )
+    }))
   }
 
   function allEndpoints() {
