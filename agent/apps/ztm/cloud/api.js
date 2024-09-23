@@ -148,7 +148,7 @@ export default function ({ app, mesh }) {
               var filename = `${pathname}.${i}`
               try {
                 var hasher = new crypto.Hash('sha256')
-                var data = os.read(os.path.join(rootDir, filename))
+                var data = os.read(os.path.join(localDir, basePath, filename))
                 hasher.update(data)
                 if (hasher.digest('hex') === hash) {
                   downloadedSize += data.size
