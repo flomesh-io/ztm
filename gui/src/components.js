@@ -1,6 +1,9 @@
 import AutoComplete from 'primevue/autocomplete';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import AccordionPanel from 'primevue/accordionpanel';
+import AccordionHeader from 'primevue/accordionheader';
+import AccordionContent from 'primevue/accordioncontent';
 import Avatar from 'primevue/avatar';
 import AvatarGroup from 'primevue/avatargroup';
 import Badge from 'primevue/badge';
@@ -122,6 +125,9 @@ export function useComponent(app){
 	app.component('BlockViewer', BlockViewer);
 	app.component('Accordion', Accordion);
 	app.component('AccordionTab', AccordionTab);
+	app.component('AccordionPanel', AccordionPanel);
+	app.component('AccordionHeader', AccordionHeader);
+	app.component('AccordionContent', AccordionContent);
 	app.component('AutoComplete', AutoComplete);
 	app.component('Avatar', Avatar);
 	app.component('AvatarGroup', AvatarGroup);
