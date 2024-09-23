@@ -236,8 +236,8 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
-          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.zip
+          name: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.tar
+          path: ztm-aio-${{needs.set-release-version.outputs.release_version}}-win-x86_64.tar
 
   build-libztm-android:
     needs: set-release-version
@@ -314,6 +314,6 @@ jobs:
             ztm-aio-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-generic_linux-arm64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-x86_64.tar.gz
             ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz/ztm-aio-${{env.ZTM_VERSION}}-macos-arm64.tar.gz
-            ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip/ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.zip
+            ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.tar/ztm-aio-${{env.ZTM_VERSION}}-win-x86_64.tar
             libztm-${{env.ZTM_VERSION}}-android.tar.gz/libztm-${{env.ZTM_VERSION}}-android.tar.gz
             ztm-src-${{needs.set-release-version.outputs.release_version}}.tar/ztm-src-${{needs.set-release-version.outputs.release_version}}.tar
