@@ -152,7 +152,7 @@ const checker = (item) => {
 		const nameAry = name.split("/");
 		const _name = nameAry[nameAry.length -1];
 		const _ext = _name.split(".")[_name.split(".").length-1]
-		return ext[_ext] || ext.default
+		return ext[_ext?.toLowerCase()] || ext.default
 	} else {
 		return ext.default;
 	}

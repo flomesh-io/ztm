@@ -408,7 +408,7 @@ onMounted(()=>{
 						<template #option="slotProps">
 								<div class="flex items-center pt-1 pb-2 px-0 w-full">
 									<div class="flex-item pr-2 py-2">
-										<Tag>{{slotProps.option.ep?.username}}</Tag>
+										<Tag v-if="info?.endpoint?.id == slotProps.option?.ep?.id" value="Local" class="mr-2" severity="contrast"/> <Tag>{{slotProps.option.ep?.name}}</Tag>
 									</div>
 									<div class="px-2 py-2">
 										<InputSwitch @click="updMirror(slotProps.option,!slotProps.option.data.download,slotProps.option.data.upload)" v-model="slotProps.option.data.download" />
@@ -427,7 +427,11 @@ onMounted(()=>{
 						<template #footer>
 							<div class="flex items-center pt-1 pb-2 px-3">
 								<div class="flex-item pr-2">
-									<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="username" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Endpoint"/>
+									<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Endpoint">
+										<template #option="slotProps">
+											<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+										</template>
+									</Select>
 								</div>
 								<div class="px-2 py-2">
 									<InputSwitch v-model="mirror.download" />

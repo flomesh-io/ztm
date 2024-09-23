@@ -338,30 +338,46 @@ watch(()=>props.d,()=>{
 														optionLabel="name" 
 														optionValue="id"
 														placeholder="Endpoint" 
-														class="flex"></Select>
+														class="flex">
+															<template #option="slotProps">
+																<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+															</template>
+														</Select>
 												</span>
 										</Chip>
 									</FormItem>
 									<FormItem label="Listens">
 										<ChipList direction="v" icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
-									<FormItem label="Allowed Exits"  :border="false">
-											<Chip class="pl-0 pr-3 mr-2">
-													<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-														<i class="pi pi-chart-scatter"/>
-													</span>
-													<span class="font-medium">
-														<MultiSelect
-															v-model="inbound.exits" 
-															:options="endpoints" 
-															optionLabel="name" 
-															optionValue="id"
-															:filter="endpoints.length>=8"
-															placeholder="Endpoints" 
-															class="flex" :maxSelectedLabels="3"></MultiSelect>
-												</span>
-										</Chip>
-									</FormItem>
+									<Accordion expandIcon="pi pi-angle-double-down" collapseIcon="pi pi-angle-double-up">
+									    <AccordionPanel value="0">
+									        <AccordionHeader><div class="text-center w-full">Restrict access</div></AccordionHeader>
+									        <AccordionContent>
+									            <FormItem label="Allowed Exits"  :border="false">
+									            		<Chip class="pl-0 pr-3 mr-2">
+									            				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+									            					<i class="pi pi-chart-scatter"/>
+									            				</span>
+									            				<span class="font-medium">
+									            					<MultiSelect
+									            						v-model="inbound.exits" 
+									            						:options="endpoints" 
+									            						optionLabel="name" 
+									            						optionValue="id"
+									            						:filter="endpoints.length>=8"
+									            						placeholder="Endpoints" 
+									            						class="flex" :maxSelectedLabels="3">
+									            							<template #option="slotProps">
+									            								<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+									            							</template>
+									            						</MultiSelect>
+									            			</span>
+									            	</Chip>
+									            </FormItem>
+									        </AccordionContent>
+									    </AccordionPanel>
+									</Accordion>
+									
 								</ul>
 								<DataView class="transparent" v-else :value="inbounds">
 										<template #empty>
@@ -437,51 +453,68 @@ watch(()=>props.d,()=>{
 															optionLabel="name" 
 															optionValue="id"
 															placeholder="Endpoint" 
-															class="flex"></Select>
+															class="flex">
+																<template #option="slotProps">
+																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+																</template>
+															</Select>
 													</span>
 											</Chip>
 										</FormItem>
 										<FormItem label="Targets">
 											<ChipList direction="v" icon="pi-desktop" placeholder="Host:Port" v-model:list="outbound.targets" />
 										</FormItem>
-										<FormItem label="Allowed Entrances" >
-												<Chip class="pl-0 pr-3 mr-2">
-														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-															<i class="pi pi-chart-scatter"/>
-														</span>
-														<span class="font-medium">
-															<MultiSelect
-																v-model="outbound.entrances" 
-																:options="endpoints" 
-																optionLabel="name" 
-																optionValue="id"
-																:filter="endpoints.length>=8"
-																placeholder="Endpoints" 
-																class="flex" :maxSelectedLabels="3"></MultiSelect>
-													</span>
-											</Chip>
-										</FormItem>
-										<FormItem label="Users"  :border="false">
-												<Chip class="pl-0 pr-3 mr-2">
-														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-															<i class="pi pi-users"/>
-														</span>
-														<span class="font-medium">
-															<MultiSelect
-																v-model="outbound.users" 
-																:options="users" 
-																:filter="users.length>=8"
-																placeholder="Users" 
-																class="flex" :maxSelectedLabels="3">
-																
-																<template #dropdownicon>
-																	<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
-																</template>
-															</MultiSelect>
-															<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" placeholder="Add" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
-													</span>
-											</Chip>
-										</FormItem>
+										
+										<Accordion expandIcon="pi pi-angle-double-down" collapseIcon="pi pi-angle-double-up">
+										    <AccordionPanel value="0">
+										        <AccordionHeader><div class="text-center w-full">Restrict access</div></AccordionHeader>
+										        <AccordionContent>
+										            <FormItem label="Allowed Entrances" >
+										            		<Chip class="pl-0 pr-3 mr-2">
+										            				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+										            					<i class="pi pi-chart-scatter"/>
+										            				</span>
+										            				<span class="font-medium">
+										            					<MultiSelect
+										            						v-model="outbound.entrances" 
+										            						:options="endpoints" 
+										            						optionLabel="name" 
+										            						optionValue="id"
+										            						:filter="endpoints.length>=8"
+										            						placeholder="Endpoints" 
+										            						class="flex" :maxSelectedLabels="3">
+										            							<template #option="slotProps">
+										            								<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+										            							</template>
+										            						</MultiSelect>
+										            			</span>
+										            	</Chip>
+										            </FormItem>
+										            <FormItem label="Users"  :border="false">
+										            		<Chip class="pl-0 pr-3 mr-2">
+										            				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+										            					<i class="pi pi-users"/>
+										            				</span>
+										            				<span class="font-medium">
+										            					<MultiSelect
+										            						v-model="outbound.users" 
+										            						:options="users" 
+										            						:filter="users.length>=8"
+										            						placeholder="Users" 
+										            						class="flex" :maxSelectedLabels="3">
+										            						
+										            						<template #dropdownicon>
+										            							<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
+										            						</template>
+										            					</MultiSelect>
+										            					<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" placeholder="Add" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
+										            			</span>
+										            	</Chip>
+										            </FormItem>
+										        </AccordionContent>
+										    </AccordionPanel>
+										</Accordion>
+										
 									</ul>
 									<DataView  class="transparent" v-else :value="outbounds">
 										<template #empty>
@@ -541,5 +574,8 @@ watch(()=>props.d,()=>{
 	:deep(.add-tag-input:hover){
 		width:160px;
 	}
+}
+:deep(.p-accordioncontent-content){
+	padding: 0;
 }
 </style>
