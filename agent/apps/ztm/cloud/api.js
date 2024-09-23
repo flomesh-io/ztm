@@ -702,6 +702,13 @@ export default function ({ app, mesh }) {
             access,
           }
         } else if (statMesh instanceof Array) {
+          if (!statEndp) {
+            return {
+              path,
+              list: statMesh.sort(),
+              access,
+            }
+          }
           statMesh = null
         }
         if (!statEndp && !statMesh) {
