@@ -877,18 +877,12 @@ function getEndpoint(name, mesh) {
 }
 
 function getFile(name, mesh) {
-  var name = normalizeName(name)
   return client.get(`/api/meshes/${uri(mesh.name)}/files`).then(ret => {
+    var files = JSON.decode(ret)
     printTable(
-      Object.entries(JSON.decode(ret)).filter(
-        ([k]) => !name || k.indexOf(name) >= 0
-      ).sort(
-        (a, b) => {
-          if (a[0] < b[0]) return -1
-          if (a[0] > b[1]) return 1
-          return 0
-        }
-      ),
+      Object.keys(files).filter(
+        k => !name || k.indexOf(name) >= 0
+      ).sort().map(k => [k, files[k]]),
       {
         'PATH': ([k]) => k,
         'SIZE': ([_, v]) => v.size,
