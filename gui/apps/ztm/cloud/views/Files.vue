@@ -57,7 +57,9 @@ const fullPath = computed(()=>(item)=>{
 		if(!!_pre){
 			_joinPath.push(_pre)
 		}
-		_joinPath.push(item.name);
+		if(item?.name){
+			_joinPath.push(item.name);
+		}
 		return _joinPath.join("/");
 	}
 })
@@ -620,7 +622,7 @@ onMounted(()=>{
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
-									<div class="selector pointer noSelect" v-longtap="handleLongTap(file)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
+									<div class="selector pointer noSelect" v-longtap="handleLongTap(slotProps.node)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
 										<img :class="stateLabel(detailData[slotProps.node.path]) == 'not find'?'opacity-40':''" oncontextmenu="return false;"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle noEvent noSelect" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
 										<b class="px-2 vertical-align-middle noSelect" ><i v-if="perIcon(slotProps.node)" :class="perIcon(slotProps.node)" style="font-size: 8pt;"  /> {{ slotProps.node.name }}</b>
 									</div>
@@ -628,7 +630,8 @@ onMounted(()=>{
 						</Column>
 						<Column field="state" header="State"  sortable>
 								<template  #body="slotProps">
-									<Tag v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[stateLabel(detailData[slotProps.node.path])]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path] && (detailData[slotProps.node.path]?.state!='synced' || detailData[slotProps.node.path]?.downloading!=null)">
+									<ProgressBar v-if="slotProps.node.ext!='/' && detailData[slotProps.node.path]?.downloading!=null" :value="detailData[slotProps.node.path].downloading*100" class="w-3rem" style="height: 6px;"><span></span></ProgressBar>
+									<Tag v-else v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[stateLabel(detailData[slotProps.node.path])]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path]">
 										{{stateLabel(detailData[slotProps.node.path])}}
 									</Tag>
 								</template>
@@ -660,7 +663,8 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && (detailData[file.path]?.state!='synced' || detailData[file.path]?.downloading!=null )"  :severity="stateColor[stateLabel(detailData[file.path])]" class="py-0 px-1 mt-2" >
+								<ProgressBar v-if="file.ext!='/' && detailData[file.path]?.downloading!=null" :value="detailData[file.path].downloading*100" class="w-3rem" style="height: 6px;margin: 3px auto;"><span></span></ProgressBar>
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-else-if="file.ext!='/' && !!detailData[file.path] && detailData[file.path]?.state!='synced'"  :severity="stateColor[stateLabel(detailData[file.path])]" class="py-0 px-1 mt-2" >
 									{{stateLabel(detailData[file.path])}}
 								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
