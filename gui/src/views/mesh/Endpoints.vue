@@ -178,15 +178,14 @@ const newInvite = () => {
 								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 										<div class="w-40 relative">
 											<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
-											<span class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >{{node.isLocal?'Local':'Remote'}}</Tag></span>
 										</div>
 										<div class="flex-item">
 												<div class="flex">
 													<div class="flex-item pt-1">
 														<b>{{ node.label || node.id }} <span v-if="!!node.username">({{node.username}})</span></b>
-														
+														<span v-if="node.isLocal" class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >Local</Tag></span>
 													</div>
-													<Status :run="node.online" :tip="timeago(node.heartbeat)"  style="top: 12px;margin-right: 0;right: -10px;"/>
+													<Status :run="node.online" :tip="timeago(node.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 												</div>
 										</div>
 								</div>

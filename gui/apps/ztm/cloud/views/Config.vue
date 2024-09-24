@@ -199,8 +199,7 @@ const close = () => {
 }
 const mirror = ref({
 	user:'',
-	download:true,
-	upload:true,
+	mode:'Download'
 })
 const mirrorLoading = ref(false);
 const mirrors = ref([]);
@@ -213,12 +212,17 @@ const isMirror = computed(() => {
 	return !!mirrors.value.find((m)=>m?.ep?.id == info.value?.endpoint?.id)
 })
 const filterMirrors = computed(()=>{
-	return mirrors.value.filter((m)=> m?.data?.download || m?.data?.upload)
+	return mirrors.value.filter((m)=> {
+		if(m?.data){
+			m.data.mode = (m.data?.download && m.data?.upload)?'2-Way Sync':(m.data?.download?'Download':((m.data?.upload?'Upload':null)))
+		}
+		return m?.data?.download || m?.data?.upload;
+	})
 })
 const filterUnMirrorEps = computed(()=>{
 	return endpoints.value.filter((ep)=> {
 		const _find = filterMirrors.value.find((m) => m?.ep?.id == ep?.id);
-		return !_find || (!_find.download && !_find.upload)
+		return !_find || (!_find?.data?.download && !_find?.data?.upload)
 	})
 })
 const postMirror = (ep, download, upload, callback) => {
@@ -229,11 +233,10 @@ const postMirror = (ep, download, upload, callback) => {
 	})
 }
 const addMirror = () => {
-	postMirror(mirror.value.user, mirror.value.download, mirror.value.upload, ()=>{
+	postMirror(mirror.value.user, mirror.value.mode == '2-Way Sync' || mirror.value.mode == 'Download', mirror.value.mode == '2-Way Sync' || mirror.value.mode == 'Upload', ()=>{
 		mirror.value = {
 			user:'',
-			download:true,
-			upload:true,
+			mode:'Download'
 		};
 		loadMirrors();
 	})
@@ -267,10 +270,10 @@ onMounted(()=>{
 <template>
 	
 	<Dialog style="max-width: 400px;min-width: 360px;min-height: 500px;" class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
-		<Button v-if="active == 1" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
+		<Button v-if="active == 1 && isMyFolder && props.file?.access && props.file?.state != 'new' && !props.file?.error" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
 		<Loading v-if="loading" />
 		<TabView v-else v-model:activeIndex="active">
-			<TabPanel>
+			<TabPanel value="Info">
 				<template #header>
 					<div>
 						<i class="pi pi-info-circle mr-2" />Info
@@ -338,7 +341,7 @@ onMounted(()=>{
 						</template>
 				</Menu>
 			</TabPanel>
-			<TabPanel v-if="isMyFolder && props.file?.access && props.file?.state != 'new' && !props.file?.error">
+			<TabPanel value="Sharing" v-if="isMyFolder && props.file?.access && props.file?.state != 'new' && !props.file?.error">
 				<template #header>
 					<div>
 						<i class="pi pi-shield mr-2" />Sharing
@@ -386,35 +389,28 @@ onMounted(()=>{
 					</Listbox>
 				</div>
 			</TabPanel>
-			<TabPanel v-if="props.file?.ext == '/' && !!props.file?.path">
+			<TabPanel value="Sync" v-if="props.file?.ext == '/' && !!props.file?.path">
 				<template #header>
 					<div>
-						<i class="pi pi-sync mr-2" :class="isMirror?'pi-spin text-primary':''"/>Auto-Mirror
+						<i class="pi pi-sync mr-2" :class="isMirror?'pi-spin text-primary':''"/>Auto-Sync
 					</div>
 				</template>
 				<div class="p-3">
 					<Listbox :loading="mirrorLoading" v-if="filterMirrors" :options="filterMirrors" class="w-full md:w-56" listStyle="max-height:250px">
-						
-						<template #header>
-							<div class="flex pt-1 pb-2 px-2">
-								<div class="flex-item">
-									Endpoint 
-								</div>
-								<div class="flex-item texxt-right">
-									Download | Upload
-								</div>
-							</div>
-						</template>
 						<template #option="slotProps">
 								<div class="flex items-center pt-1 pb-2 px-0 w-full">
 									<div class="flex-item pr-2 py-2">
-										<Tag v-if="info?.endpoint?.id == slotProps.option?.ep?.id" value="Local" class="mr-2" severity="contrast"/> <Tag>{{slotProps.option.ep?.name}}</Tag>
+										<Tag>{{slotProps.option.ep?.name}}</Tag>
+										<Tag v-if="info?.endpoint?.id == slotProps.option?.ep?.id" value="Local" class="ml-2" severity="contrast"/> 
 									</div>
-									<div class="px-2 py-2">
-										<InputSwitch @click="updMirror(slotProps.option,!slotProps.option.data.download,slotProps.option.data.upload)" v-model="slotProps.option.data.download" />
-									</div>
-									<div class="px-2 py-2">
-										<InputSwitch @click="updMirror(slotProps.option,slotProps.option.data.download,!slotProps.option.data.upload)" v-model="slotProps.option.data.upload" />
+									<div class="flex-item">
+										<Select 
+											size="small" 
+											class="w-full" 
+											@change="updMirror(slotProps.option,slotProps.option.data.mode == 'Download' || slotProps.option.data.mode == '2-Way Sync',slotProps.option.data.mode == 'Upload' || slotProps.option.data.mode == '2-Way Sync')"  
+											v-model="slotProps.option.data.mode" 
+											:options="['Download','Upload','2-Way Sync']" 
+											placeholder="Mode"/>
 									</div>
 									<div class="pl-2">
 										<Button @click="delMirror(slotProps.option)" icon="pi pi-minus" severity="secondary" />
@@ -426,21 +422,24 @@ onMounted(()=>{
 						</template>
 						<template #footer>
 							<div class="flex items-center pt-1 pb-2 px-3">
-								<div class="flex-item pr-2">
-									<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Endpoint">
+								<div class="flex-item pr-1">
+									<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Select">
 										<template #option="slotProps">
-											<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+											{{ slotProps.option.name }}
+											<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
 										</template>
 									</Select>
 								</div>
-								<div class="px-2 py-2">
-									<InputSwitch v-model="mirror.download" />
-								</div>
-								<div class="px-2 py-2">
-									<InputSwitch v-model="mirror.upload" />
+								<div class="flex-item">
+									<Select 
+										size="small" 
+										class="w-full" 
+										v-model="mirror.mode" 
+										:options="['Download','Upload','2-Way Sync']" 
+										placeholder="Mode"/>
 								</div>
 								<div class="pl-2 ">
-									<Button :disabled="!mirror.user || (!mirror.download && !mirror.upload)" @click="addMirror" icon="pi pi-plus" severity="secondary" />
+									<Button :disabled="!mirror.user" @click="addMirror" icon="pi pi-plus" severity="secondary" />
 								</div>
 							</div>
 						</template>
