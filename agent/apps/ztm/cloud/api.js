@@ -1073,7 +1073,7 @@ export default function ({ app, mesh }) {
           if (!chunkNum) return response404
           if (!matchPathUserFile($filename)) return response404
           var path = os.path.join(localDir, $filename)
-          var seek = Number.parseInt(chunkNum) * CHUNK_SIZE
+          var seek = new Int(chunkNum) * CHUNK_SIZE
           return pipeline($=>$
             .read(path, { seek, size: CHUNK_SIZE })
             .replaceStreamStart(evt => [new MessageStart, evt])
