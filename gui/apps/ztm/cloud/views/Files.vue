@@ -78,6 +78,9 @@ const loadFileAttr = (unload, detailItem) => {
 			_res.access = {}
 		}
 		if(!!_res.access){
+			if(!_res.access.all){
+				_res.access.all = null;
+			}
 			if(!_res.access.users){
 				_res.access.users = {};
 			}

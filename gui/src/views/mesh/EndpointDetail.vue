@@ -77,7 +77,7 @@ const loadApps = () => {
 			</template>
 	
 			<template #end> 
-				<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >{{props.ep.isLocal?'Local':'Remote'}}</Tag></span>
+				<span v-if="!!props.ep && props.ep.isLocal" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >Local</Tag></span>
 				<Button v-if="selectedMesh?.agent?.username == 'root' && props.ep.username != 'root'" icon="pi pi-trash" severity="danger"  @click="removeEp"/>
 			</template>
 	</AppHeader>

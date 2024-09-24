@@ -193,15 +193,29 @@ const loaddata = () => {
 	}
 	getEndpoints();
 }
+
+const inboundCreate = (t,index) => {
+	inboundEditor.value = true;
+	inbound.value = _.cloneDeep(newInbound);
+	inboundRestrict.value = false;
+}
+const outboundCreate = (t,index) => {
+	outboundEditor.value = true;
+	outbound.value = _.cloneDeep(newOutbound);
+	outboundRestrict.value = false;
+}
+
 const inboundEdit = (t,index) => {
 	inboundEditor.value = true;
 	inbound.value = _.cloneDeep(t);
 	inbound.value.ep = t.ep?.id;
+	inboundRestrict.value = !!inbound.value?.exits && inbound.value?.exits.length>0;
 }
 const outboundEdit = (t,index) => {
 	outboundEditor.value = true;
 	outbound.value = _.cloneDeep(t);
 	outbound.value.ep = t.ep?.id;
+	outboundRestrict.value = (!!outbound.value?.entrances && outbound.value?.entrances.length>0) || (!!outbound.value?.users && outbound.value?.users.length>0);
 }
 const inboundRemove = (t,index) => {
 	if(!props.d){
@@ -240,7 +254,8 @@ const outboundTypeEnter = () => {
 	}
 	visibleOutboundType.value = false;
 }
-
+const inboundRestrict = ref(false);
+const outboundRestrict = ref(false);
 onMounted(() => {
 	loaddata()
 });
@@ -314,7 +329,7 @@ watch(()=>props.d,()=>{
 									<div class="flex-item text-right">
 										<Button 
 											v-if="!loading && !inboundEditor" 
-											@click="() => inboundEditor = true" 
+											@click="inboundCreate" 
 											v-tooltip.left="'Add Inbound'" 
 											size="small" 
 											icon="pi pi-plus" ></Button>
@@ -340,7 +355,8 @@ watch(()=>props.d,()=>{
 														placeholder="Endpoint" 
 														class="flex">
 															<template #option="slotProps">
-																<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+																{{ slotProps.option.name }}
+																<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
 															</template>
 														</Select>
 												</span>
@@ -349,35 +365,31 @@ watch(()=>props.d,()=>{
 									<FormItem label="Listens">
 										<ChipList direction="v" icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
-									<Accordion expandIcon="pi pi-angle-double-down" collapseIcon="pi pi-angle-double-up">
-									    <AccordionPanel value="0">
-									        <AccordionHeader><div class="text-center w-full">Restrict access</div></AccordionHeader>
-									        <AccordionContent>
-									            <FormItem label="Allowed Exits"  :border="false">
-									            		<Chip class="pl-0 pr-3 mr-2">
-									            				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-									            					<i class="pi pi-chart-scatter"/>
-									            				</span>
-									            				<span class="font-medium">
-									            					<MultiSelect
-									            						v-model="inbound.exits" 
-									            						:options="endpoints" 
-									            						optionLabel="name" 
-									            						optionValue="id"
-									            						:filter="endpoints.length>=8"
-									            						placeholder="Endpoints" 
-									            						class="flex" :maxSelectedLabels="3">
-									            							<template #option="slotProps">
-									            								<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
-									            							</template>
-									            						</MultiSelect>
-									            			</span>
-									            	</Chip>
-									            </FormItem>
-									        </AccordionContent>
-									    </AccordionPanel>
-									</Accordion>
-									
+									<FormItem label=""  :border="inboundRestrict">
+										<InputSwitch  class="vm" v-model="inboundRestrict" inputId="inboundRestrict"/><label for="inboundRestrict" class="vm ml-2">Restrict access</label>
+									</FormItem>
+									<FormItem v-if="inboundRestrict" label="Allowed Exits"  :border="false">
+											<Chip class="pl-0 pr-3 mr-2">
+													<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+														<i class="pi pi-chart-scatter"/>
+													</span>
+													<span class="font-medium">
+														<MultiSelect
+															v-model="inbound.exits" 
+															:options="endpoints" 
+															optionLabel="name" 
+															optionValue="id"
+															:filter="endpoints.length>=8"
+															placeholder="Endpoints" 
+															class="flex" :maxSelectedLabels="3">
+																<template #option="slotProps">
+																	{{ slotProps.option.name }}
+																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+																</template>
+															</MultiSelect>
+												</span>
+										</Chip>
+									</FormItem>
 								</ul>
 								<DataView class="transparent" v-else :value="inbounds">
 										<template #empty>
@@ -388,8 +400,8 @@ watch(()=>props.d,()=>{
 												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 														<div class="flex-item flex flex-col justify-between items-start gap-2 ">
 															<div class="text-lg font-medium align-items-start flex flex-col flex-column-reverse  md:flex-row" style="justify-content: start;">
-																<Tag v-if="info.endpoint?.id == item.ep?.id" class="mr-2" severity="contrast" >Local</Tag> 
 																{{ item.ep?.name }}
+																<Tag v-if="info.endpoint?.id == item.ep?.id" class="ml-2" severity="contrast" >Local</Tag>
 															</div>
 														</div>
 														<div class="flex flex-col md:items-end gap-4 align-items-start md:align-items-center">
@@ -429,7 +441,7 @@ watch(()=>props.d,()=>{
 									<div class="flex-item text-right">
 										<Button 
 											v-if="!loading && !outboundEditor" 
-											@click="() => outboundEditor = true" 
+											@click="outboundCreate" 
 											v-tooltip.left="'Add Outbound'" 
 											size="small" 
 											icon="pi pi-plus" ></Button>
@@ -455,7 +467,8 @@ watch(()=>props.d,()=>{
 															placeholder="Endpoint" 
 															class="flex">
 																<template #option="slotProps">
-																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
+																	{{ slotProps.option.name }}
+																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
 																</template>
 															</Select>
 													</span>
@@ -465,55 +478,52 @@ watch(()=>props.d,()=>{
 											<ChipList direction="v" icon="pi-desktop" placeholder="Host:Port" v-model:list="outbound.targets" />
 										</FormItem>
 										
-										<Accordion expandIcon="pi pi-angle-double-down" collapseIcon="pi pi-angle-double-up">
-										    <AccordionPanel value="0">
-										        <AccordionHeader><div class="text-center w-full">Restrict access</div></AccordionHeader>
-										        <AccordionContent>
-										            <FormItem label="Allowed Entrances" >
-										            		<Chip class="pl-0 pr-3 mr-2">
-										            				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-										            					<i class="pi pi-chart-scatter"/>
-										            				</span>
-										            				<span class="font-medium">
-										            					<MultiSelect
-										            						v-model="outbound.entrances" 
-										            						:options="endpoints" 
-										            						optionLabel="name" 
-										            						optionValue="id"
-										            						:filter="endpoints.length>=8"
-										            						placeholder="Endpoints" 
-										            						class="flex" :maxSelectedLabels="3">
-										            							<template #option="slotProps">
-										            								<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="mr-2" severity="contrast"/>{{ slotProps.option.name }}
-										            							</template>
-										            						</MultiSelect>
-										            			</span>
-										            	</Chip>
-										            </FormItem>
-										            <FormItem label="Users"  :border="false">
-										            		<Chip class="pl-0 pr-3 mr-2">
-										            				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-										            					<i class="pi pi-users"/>
-										            				</span>
-										            				<span class="font-medium">
-										            					<MultiSelect
-										            						v-model="outbound.users" 
-										            						:options="users" 
-										            						:filter="users.length>=8"
-										            						placeholder="Users" 
-										            						class="flex" :maxSelectedLabels="3">
-										            						
-										            						<template #dropdownicon>
-										            							<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
-										            						</template>
-										            					</MultiSelect>
-										            					<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" placeholder="Add" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
-										            			</span>
-										            	</Chip>
-										            </FormItem>
-										        </AccordionContent>
-										    </AccordionPanel>
-										</Accordion>
+										<FormItem label=""  :border="outboundRestrict">
+											<InputSwitch  class="vm" v-model="outboundRestrict" inputId="outboundRestrict"/><label for="outboundRestrict" class="vm ml-2">Restrict access</label>
+										</FormItem>
+										<FormItem v-if="outboundRestrict" label="Allowed Entrances" >
+												<Chip class="pl-0 pr-3 mr-2">
+														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+															<i class="pi pi-chart-scatter"/>
+														</span>
+														<span class="font-medium">
+															<MultiSelect
+																v-model="outbound.entrances" 
+																:options="endpoints" 
+																optionLabel="name" 
+																optionValue="id"
+																:filter="endpoints.length>=8"
+																placeholder="Endpoints" 
+																class="flex" :maxSelectedLabels="3">
+																	<template #option="slotProps">
+																		{{ slotProps.option.name }}
+																		<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+																	</template>
+																</MultiSelect>
+													</span>
+											</Chip>
+										</FormItem>
+										<FormItem v-if="outboundRestrict" label="Users"  :border="false">
+												<Chip class="pl-0 pr-3 mr-2">
+														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+															<i class="pi pi-users"/>
+														</span>
+														<span class="font-medium">
+															<MultiSelect
+																v-model="outbound.users" 
+																:options="users" 
+																:filter="users.length>=8"
+																placeholder="Users" 
+																class="flex" :maxSelectedLabels="3">
+																
+																<template #dropdownicon>
+																	<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
+																</template>
+															</MultiSelect>
+															<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" placeholder="Add" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
+													</span>
+											</Chip>
+										</FormItem>
 										
 									</ul>
 									<DataView  class="transparent" v-else :value="outbounds">
@@ -523,24 +533,24 @@ watch(()=>props.d,()=>{
 										<template #list="slotProps">
 										
 											<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
-													<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+													<div class="flex py-2 gap-4 md:gap-1" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 															<div class="flex-item flex flex-col justify-between items-start gap-2 ">
 																	<div class="text-lg font-medium align-items-start flex flex-col flex-column-reverse  md:flex-row" style="justify-content: start;">
-																			<Tag v-if="info.endpoint?.id == item.ep?.id" class="mr-2" severity="contrast" >Local</Tag> {{ item.ep?.name }} 
+																			{{ item.ep?.name }} <Tag v-if="info.endpoint?.id == item.ep?.id" class="ml-2" severity="contrast" >Local</Tag>
 																	</div>
 															</div>
-															<div class="flex flex-col md:items-end gap-4 align-items-start md:align-items-center">
+															<div class="flex flex-col md:items-end gap-4 md:gap-1 align-items-start md:align-items-center">
 																<div class="flex md:flex-row flex-column">
-																	<div  class="flex md:flex-row flex-column gap-4 ">
-																		<span class="font-semibold w-6rem md:text-right text-sm">Targets:</span>
+																	<div  class="flex md:flex-row flex-column gap-4 md:gap-2 align-items-start md:align-items-center mt-4 md:mt-0" >
+																		<span class="font-semibold w-5rem md:text-right text-sm">Targets:</span>
 																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets.filter((target)=> !!target)" :value="target" severity="secondary" /></span>
 																	</div>	
-																	<div  class="flex md:flex-row flex-column gap-4 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.entrances && item.entrances.length>0">
-																		<span class="font-semibold w-6rem md:text-right text-sm" >Entrances:</span>
+																	<div  class="flex md:flex-row flex-column gap-4 md:gap-2 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.entrances && item.entrances.length>0">
+																		<span class="font-semibold w-5rem md:text-right text-sm" >Entrances:</span>
 																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></span>
 																	</div>
-																	<div class="flex md:flex-row flex-column gap-4 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.users && item.users.length>0">
-																		<span class="font-semibold w-6rem md:text-right text-sm">Users:</span>
+																	<div class="flex md:flex-row flex-column gap-4 md:gap-2 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.users && item.users.length>0">
+																		<span class="font-semibold w-5rem md:text-right text-sm">Users:</span>
 																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></span>
 																	</div>
 																</div>	

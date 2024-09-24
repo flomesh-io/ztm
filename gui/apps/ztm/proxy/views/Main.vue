@@ -103,8 +103,8 @@ const loadproxys = () => {
 										<div class="flex-item" style="min-width: 150px;">
 												<div class="flex">
 													<div class="flex-item pt-1">
-														<Tag class="mr-2" v-if="node.id == info.endpoint?.id" severity="contrast" >Local</Tag>
 														<b>{{ node.name || 'Unknow EP' }}</b>
+														<Tag class="ml-2" v-if="node.id == info.endpoint?.id" severity="contrast" >Local</Tag>
 													</div>
 												</div>
 										</div>
