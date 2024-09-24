@@ -204,7 +204,9 @@ const mirror = ref({
 const mirrorLoading = ref(false);
 const mirrors = ref([]);
 const loadMirrors = () => {
+	mirrorLoading.value = true;
 	fileService.getMirrors(props.file?.path, endpoints.value, (d)=>{
+		mirrorLoading.value = false;
 		mirrors.value = d;
 	},()=>{})
 }
@@ -396,7 +398,8 @@ onMounted(()=>{
 					</div>
 				</template>
 				<div class="p-3">
-					<Listbox :loading="mirrorLoading" v-if="filterMirrors" :options="filterMirrors" class="w-full md:w-56" listStyle="max-height:250px">
+					<Loading v-if="mirrorLoading" />
+					<Listbox v-else :options="filterMirrors" class="w-full md:w-56" listStyle="max-height:250px">
 						<template #option="slotProps">
 								<div class="flex items-center pt-1 pb-2 px-0 w-full">
 									<div class="flex-item pr-2 py-2">
@@ -423,7 +426,7 @@ onMounted(()=>{
 						<template #footer>
 							<div class="flex items-center pt-1 pb-2 px-3">
 								<div class="flex-item pr-1">
-									<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Select">
+									<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Endpoint">
 										<template #option="slotProps">
 											{{ slotProps.option.name }}
 											<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>

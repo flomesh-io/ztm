@@ -1,4 +1,4 @@
-import { request,getMetaUrl,getUrl, merge, spread } from '@/service/common/request';
+import { request,requestWithTimeout,getMetaUrl,getUrl, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { platform } from '@/utils/platform';
@@ -40,9 +40,9 @@ export default class FileService {
 	}
 	getMirror(path, ep) {
 		if(!!path && path != "/"){
-			return request(`/api/endpoints/${ep}/mirrors${path}`)
+			return requestWithTimeout(3000, `/api/endpoints/${ep}/mirrors${path}`)
 		}else{
-			return request(`/api/endpoints/${ep}/mirrors`)
+			return requestWithTimeout(3000, `/api/endpoints/${ep}/mirrors`)
 		}
 	}
 	setMirror(path, ep, body) {
@@ -63,10 +63,9 @@ export default class FileService {
 			})
 			reqs.push(req);
 		})
-		
 		return merge(reqs).then((allRes) => {
 			if(!!callback)
-			callback(allRes||[], eps)
+			callback(allRes||[])
 		}).catch(()=>{
 			if(!!error)
 			error()

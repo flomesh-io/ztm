@@ -204,6 +204,23 @@ async function request(url, method, params, config) {
 		}
 	}
 }
+function requestWithTimeout(timeout = 5000, url, method, params, config) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            reject(new Error('timeout'));
+        }, timeout);
+
+        request(url, method, params, config)
+            .then(response => {
+                clearTimeout(timer); 
+                resolve(response);
+            })
+            .catch(err => {
+                clearTimeout(timer); 
+                reject(err);
+            });
+    });
+}
 async function requestMeta(url) {
 	return fetch(url, {
 		method: METHOD.GET,
@@ -374,6 +391,7 @@ export {
   request,
 	requestNM,
 	requestMeta,
+	requestWithTimeout,
 	localRequest,
   merge,
   spread,

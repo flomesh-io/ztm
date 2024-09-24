@@ -1,4 +1,4 @@
-import { request, merge, spread } from '@/service/common/request';
+import { request,requestWithTimeout, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 export default class TunnelService {
@@ -8,8 +8,14 @@ export default class TunnelService {
 	getEndpoints() {
 		return request(`/api/endpoints`);
 	}
+	getInbounds(ep) {
+		return requestWithTimeout(3000, `/api/endpoints/${ep}/inbound`)
+	}
+	getInbound({ep, proto, name}) {
+		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`);
+	}
 	getOutbounds(ep) {
-		return request(`/api/endpoints/${ep}/outbound`)
+		return requestWithTimeout(3000, `/api/endpoints/${ep}/outbound`)
 	}
 	getOutbound({ep, proto, name}) {
 		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`);
@@ -47,12 +53,6 @@ export default class TunnelService {
 				callback(err);
 			});
 		})
-	}
-	getInbounds(ep) {
-		return request(`/api/endpoints/${ep}/inbound`)
-	}
-	getInbound({ep, proto, name}) {
-		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`);
 	}
 	createInbound({ep, proto, name, listens, exits}) {
 		const _listens = [];
