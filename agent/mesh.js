@@ -380,6 +380,20 @@ export default function (rootDir, config) {
       )
     }
 
+    function getEndpointStats(ep) {
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: ep ? `/api/stats/endpoints/${ep}` : '/api/stats/endpoints' })
+      ).then(
+        function (res) {
+          if (res && res.head.status === 200) {
+            return JSON.decode(res.body)
+          } else {
+            return null
+          }
+        }
+      )
+    }
+
     function leave() {
       closed = true
       connections.forEach(
@@ -400,6 +414,7 @@ export default function (rootDir, config) {
       revokePermit,
       findEndpoint,
       findFile,
+      getEndpointStats,
       leave,
     }
 
@@ -1399,6 +1414,10 @@ export default function (rootDir, config) {
     }
   }
 
+  function getEndpointStats(ep) {
+    return hubs[0].getEndpointStats(ep)
+  }
+
   function leave() {
     hubs.forEach(hub => hub.leave())
     exited = true
@@ -1493,6 +1512,7 @@ export default function (rootDir, config) {
     deleteFile,
     syncFile,
     remoteQueryLog,
+    getEndpointStats,
     leave,
   }
 }
