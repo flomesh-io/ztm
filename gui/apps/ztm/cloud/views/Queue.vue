@@ -71,7 +71,7 @@ const active = ref(0)
 		<ScrollPanel class="absolute-scroll-panel" style="bottom: 0;">
 			<Loading v-if="loading" />
 			<div v-else-if="props.downloads.length>0" class="px-4 py-2">
-				<div v-for="(item, index) in props.downloads" :key="index" class="flex p-2" >
+				<div v-for="(item, index) in props.downloads" :key="item?.path" class="flex p-2" >
 					<div class="pr-3">
 						<img v-tooltip.right="item.hash" class="relative" :src="checker({...item,name:item.path})" width="30" height="30" style="top: 5px;"/>
 					</div>

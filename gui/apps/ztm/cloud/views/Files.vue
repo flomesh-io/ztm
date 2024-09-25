@@ -520,7 +520,7 @@ const perIcon = computed(()=>(_file)=>{
 	}
 })
 const stateColor = ref(colors);
-const stateLabel = computed(()=>labels)
+const stateLabel = computed(()=>(item)=>labels(item, true))
 watch(()=>props.files,()=>{
 	fileData.value = [];
 	if(!!props.files && props.files.length>0){
@@ -663,8 +663,10 @@ onMounted(()=>{
 										<i v-if="perIcon(file)" :class="perIcon(file)" style="font-size: 8pt;"  /> {{ file.name }}
 									</b>
 								</div>
-								<ProgressBar v-if="file.ext!='/' && detailData[file.path]?.downloading!=null" :value="detailData[file.path].downloading*100" class="w-3rem" style="height: 6px;margin: 3px auto;"><span></span></ProgressBar>
-								<Tag v-tooltip="detailData[file.path]?.error?.message" v-else-if="file.ext!='/' && !!detailData[file.path] && detailData[file.path]?.state!='synced'"  :severity="stateColor[stateLabel(detailData[file.path])]" class="py-0 px-1 mt-2" >
+								<div class="mt-1">
+									<ProgressBar v-if="file.ext!='/' && detailData[file.path]?.downloading!=null" :value="detailData[file.path].downloading*100" class="w-3rem" style="height: 6px;margin: auto;"><span></span></ProgressBar>
+								</div>
+								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && detailData[file.path]?.state!='synced'"  :severity="stateColor[stateLabel(detailData[file.path])]" class="py-0 px-1 mt-2" >
 									{{stateLabel(detailData[file.path])}}
 								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
