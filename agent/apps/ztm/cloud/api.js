@@ -854,6 +854,9 @@ export default function ({ app, mesh }) {
           os.mkdir(os.path.dirname(pathname), { recursive: true })
           os.write(pathname, new Data)
         } else {
+          var chunkPathname = os.path.join(localDir, 'downloads', pathname) + '.0'
+          os.mkdir(os.path.dirname(chunkPathname), { recursive: true })
+          os.write(chunkPathname, new Data)
           appendDownload(pathname, stat)
           continueDownloading()
         }
