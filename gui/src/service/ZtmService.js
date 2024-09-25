@@ -52,6 +52,9 @@ export default class ZtmService {
 	getLogs(mesh, ep) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/log`);
 	}
+	getEndpointStats(mesh) {
+		return request(`/api/meshes/${mesh}/stats/endpoints`);
+	}
 	getEndpoints(mesh) {
 		return request(`/api/meshes/${mesh}/endpoints`);
 	}

@@ -1,10 +1,11 @@
 <script setup>
-import { ref,onActivated,watch, computed } from "vue";
+import { ref,onActivated,onMounted,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
 import EndpointDetail from './EndpointDetail.vue'
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
+import { bitUnit } from '@/utils/file';
 import dayjs from 'dayjs';
 import { useToast } from "primevue/usetoast";
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -21,7 +22,7 @@ const toast = useToast();
 const loader = ref(false);
 const status = ref({});
 const endpoints = ref([]);
-
+const stats = ref({})
 const meshes = computed(() => {
 	return store.getters['account/meshes']
 });
@@ -40,6 +41,23 @@ const timeago = computed(() => (ts) => {
 onActivated(()=>{
 	getEndpoints();
 })
+onMounted(()=>{
+	getStatsTimer();
+})
+const getStats = () => {
+	
+	ztmService.getEndpointStats(selectedMesh.value?.name)
+		.then(res => {
+			stats.value = res || {};
+		})
+		.catch(err => console.log('Request Failed', err)); 
+}
+const getStatsTimer = () => {
+	setTimeout(()=>{
+		getStats();
+		getStatsTimer();
+	},3000)
+}
 const getEndpoints = () => {
 	loading.value = true;
 	loader.value = true;
@@ -185,7 +203,12 @@ const newInvite = () => {
 														<b>{{ node.label || node.id }} <span v-if="!!node.username">({{node.username}})</span></b>
 														<span v-if="node.isLocal" class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >Local</Tag></span>
 													</div>
-													<Status :run="node.online" :tip="timeago(node.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+													<div class="flex">
+														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[node.id]">↑{{bitUnit(stats[node.id]?.send)}}</span>
+														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[node.id]">↓{{bitUnit(stats[node.id]?.receive)}}</span>
+														<Status :run="node.online" :tip="timeago(node.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+													</div>
+													
 												</div>
 										</div>
 								</div>
