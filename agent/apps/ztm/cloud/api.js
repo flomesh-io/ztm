@@ -452,15 +452,15 @@ export default function ({ app, mesh }) {
     downloadQueue.push(download)
   }
 
-  function continueDownloading() {
+  function continueDownloading(freeLane) {
+    if (freeLane) {
+      downloadLanes = downloadLanes.filter(([path]) => path !== freeLane)
+    }
     var vacantLanes = DOWNLOAD_CONCURRENCY - downloadLanes.length
     new Array(vacantLanes).fill().forEach(() => {
-      var file = downloadQueue[0]
+      var file = downloadQueue.find(f => f.chunks.length > 0)
       if (file) {
         var chunk = file.chunks.shift()
-        if (file.chunks.length === 0) {
-          downloadQueue.shift()
-        }
         if (chunk) {
           downloadLanes.push(chunk)
           var path = chunk[0]
@@ -473,21 +473,31 @@ export default function ({ app, mesh }) {
     })
   }
 
-  function downloadChunk(path, hash, file, sources) {
+  function downloadChunk(path, hash, file, sources, tryCount) {
+    tryCount = tryCount || 0
     if (!(file.path in downloadFiles)) {
       return finalizeChunk(path)
-    }
-    if (sources.length === 0) {
-      app.log(downloadError[file.path] = `Chunk ${path} not found, will try again in 10 seconds`)
-      return new Timeout(10).wait().then(
-        () => mesh.stat(os.path.join('/shared', file.username, 'hash', file.hash))
-      ).then(
-        stat => downloadChunk(path, hash, file, stat?.sources || [])
-      )
     }
     var i = path.lastIndexOf('.')
     var filename = path.substring(0,i)
     var chunkNum = path.substring(i+1)
+    if (sources.length === 0) {
+      app.log(`Chunk ${path} not found`)
+      if (tryCount >= 3) {
+        downloadError[file.path] = `Chunk ${chunkNum} not found, will try again later`
+        file.chunks.push([path, hash])
+        downloadQueue = downloadQueue.filter(f => f !== file)
+        downloadQueue.push(file)
+        return continueDownloading(path)
+      } else {
+        downloadError[file.path] = `Chunk ${chunkNum} not found, will try again in 10 seconds`
+        return new Timeout(10).wait().then(
+          () => mesh.stat(os.path.join('/shared', file.username, 'hash', file.hash))
+        ).then(
+          stat => downloadChunk(path, hash, file, stat?.sources || [], tryCount + 1)
+        )
+      }
+    }
     var outputPath = os.path.join(localDir, 'downloads', path)
     os.mkdir(os.path.dirname(outputPath), { recursive: true })
     var ep = sources.splice(Math.floor(Math.random() * sources.length), 1)[0]
@@ -550,7 +560,7 @@ export default function ({ app, mesh }) {
       } else {
         file.downloadedSize -= downloadedData?.size || 0
         app.log(`Chunk ${path} from ep ${ep} was corrupt`)
-        return downloadChunk(path, hash, file, sources)
+        return downloadChunk(path, hash, file, sources, tryCount)
       }
     })
   }
@@ -561,11 +571,12 @@ export default function ({ app, mesh }) {
     var f = downloadFiles[filename]
     if (f) {
       if (f.counter === 1) {
+        downloadQueue = downloadQueue.filter(f => f.pathname !== filename)
         return finalizeDownload(filename, f.hash).then(() => {
           clearDownload(filename)
           delete downloadFiles[filename]
           delete downloadError[filename]
-          next()
+          continueDownloading(path)
         })
       }
       f.counter--
@@ -573,11 +584,7 @@ export default function ({ app, mesh }) {
       clearDownload(filename)
       delete downloadError[filename]
     }
-    function next() {
-      downloadLanes = downloadLanes.filter(([p]) => p !== path)
-      continueDownloading()
-    }
-    next()
+    continueDownloading(path)
     return Promise.resolve()
   }
 
@@ -618,7 +625,7 @@ export default function ({ app, mesh }) {
       name => {
         var i = name.lastIndexOf('.')
         if (name.substring(0, i) === basename) {
-          os.rm(os.path.join(dir, name))
+          os.rm(os.path.join(dir, name), { force: true })
         }
       }
     )
@@ -804,6 +811,37 @@ export default function ({ app, mesh }) {
     ).then(
       () => mesh.acl(`/shared/${username}/stat/${filename}`, data)
     ).then(data)
+  }
+
+  function deleteFile(pathname, ep) {
+    pathname = os.path.normalize(pathname)
+    if (!ep || ep === app.endpoint.id) {
+      var params = matchPathUserFile(pathname)
+      if (!params) return Promise.resolve(false)
+      var username = params.username
+      var filename = params['*']
+      if (username !== app.username) return Promise.resolve(false)
+      return getFileStatByUser(username, filename).then(
+        stat => {
+          if (!stat) return false
+          if (ep) {
+            os.rm(os.path.join(localDir, 'users', username, filename), { force: true })
+            os.rm(os.path.join(localDir, 'cache', username, filename), { force: true })
+          } else {
+            mesh.erase(os.path.join('/shared', username, 'stat', filename))
+            mesh.erase(os.path.join('/shared', username, 'hash', stat.hash))
+          }
+          return true
+        }
+      )
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'DELETE',
+          path: os.path.join('/api/files', pathname),
+        }
+      )).then(res => res?.head?.status === 204)
+    }
   }
 
   function listDownloads() {
@@ -1102,6 +1140,7 @@ export default function ({ app, mesh }) {
     getFileStat,
     getACL,
     setACL,
+    deleteFile,
     listDownloads,
     listUploads,
     downloadFile,
