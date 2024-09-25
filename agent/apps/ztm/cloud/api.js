@@ -1,7 +1,7 @@
 import MIME from './mime.js'
 
-var CHUNK_SIZE = 2*1024*1024
-var DOWNLOAD_CONCURRENCY = 5
+var CHUNK_SIZE = 1*1024*1024
+var DOWNLOAD_CONCURRENCY = 8
 
 //
 // Cloud view:
