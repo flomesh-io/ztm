@@ -210,6 +210,12 @@ function connectApp(mesh, provider, app) {
   return m.connectApp(provider, app, m.username)
 }
 
+function getEndpointStats(mesh, ep) {
+  var m = findMesh(mesh)
+  if (!m) return null
+  return m.getEndpointStats(ep)
+}
+
 export default {
   init,
   getIdentity,
@@ -236,4 +242,5 @@ export default {
   delApp,
   getAppLog,
   connectApp,
+  getEndpointStats,
 }

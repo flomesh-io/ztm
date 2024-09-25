@@ -52,6 +52,14 @@ var routes = Object.entries({
     'GET': () => checkACL,
   },
 
+  '/api/stats/endpoints': {
+    'GET': () => getEndpointStats,
+  },
+
+  '/api/stats/endpoints/{ep}': {
+    'GET': () => getEndpointStats,
+  },
+
   '/api/forward/{ep}/*': {
     'GET': () => forwardRequest,
     'POST': () => forwardRequest,
@@ -208,6 +216,20 @@ var $hub = null
 var $hubSelected = null
 var $pingID
 
+var trafficTotalSend = new stats.Counter('send', ['ep'])
+var trafficTotalRecv = new stats.Counter('recv', ['ep'])
+var trafficTotalMove = new stats.Counter('move', ['a','b'])
+var trafficSampled = {}
+var trafficStats = {}
+var trafficStatsTime = 0
+
+var $trafficSend
+var $trafficRecv
+var $trafficPeerSend
+var $trafficPeerRecv
+var $trafficLinkSend
+var $trafficLinkRecv
+
 function start(listen) {
   db.allFiles().forEach(f => {
     files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.since)
@@ -276,32 +298,9 @@ function start(listen) {
 
   console.info('Hub started at', listen)
 
-  function clearOutdatedEndpoints() {
-    new Timeout(60).wait().then(() => {
-      var outdated = []
-      Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
-        (ep) => {
-          console.info(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
-          if (sessions[ep.id]?.size === 0) {
-            outdated.push(ep.id)
-            delete endpoints[ep.id]
-          }
-        }
-      )
-      if (outdated.length > 0) {
-        outdated = Object.fromEntries(outdated.map(ep => [ep, true]))
-        Object.values(files).forEach(file => {
-          var sources = file['@']
-          if (sources.some(ep => ep in outdated)) {
-            file['@'] = sources.filter(ep => !(ep in outdated))
-          }
-        })
-      }
-      clearOutdatedEndpoints()
-    })
-  }
-
+  startPing()
   clearOutdatedEndpoints()
+  measureTraffic()
 }
 
 var postStatus = pipeline($=>$
@@ -515,6 +514,44 @@ var getFileData = pipeline($=>$
   )
 )
 
+var getEndpointStats = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      var send = trafficStats.send
+      var recv = trafficStats.recv
+      var move = trafficStats.move
+      var ep = $params.ep
+      if (ep) {
+        var peerRates = move?.[ep] || {}
+        var peers = {}
+        Object.keys(peerRates).forEach(k => {
+          peers[k] = {
+            send: peerRates[k],
+            receive: move?.[k]?.[ep] || 0,
+          }
+        })
+        return response(200, {
+          send: send?.[ep] || 0,
+          receive: recv?.[ep] || 0,
+          peers,
+        })
+      } else {
+        var all = {}
+        Object.keys(endpoints).forEach(
+          ep => {
+            all[ep] = {
+              send: send?.[ep] || 0,
+              receive: recv?.[ep] || 0,
+            }
+          }
+        )
+        return response(200, all)
+      }
+    }
+  )
+)
+
 var muxToAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, {
     version: 2,
@@ -559,11 +596,26 @@ var connectApp = pipeline($=>$
       if (!ep) return response(404, 'Endpoint not found')
       sessions[id]?.forEach?.(h => $hubSelected = h)
       if (!$hubSelected) return response(404, 'Agent not found')
-      $params.query = new URL(req.head.path).searchParams.toObject()
+      var query = new URL(req.head.path).searchParams.toObject()
+      var src = query.src
+      $params.query = query
+      $trafficSend = trafficTotalSend.withLabels(src)
+      $trafficRecv = trafficTotalRecv.withLabels(src)
+      $trafficPeerSend = trafficTotalSend.withLabels(id)
+      $trafficPeerRecv = trafficTotalRecv.withLabels(id)
+      $trafficLinkSend = trafficTotalMove.withLabels(src, id)
+      $trafficLinkRecv = trafficTotalMove.withLabels(id, src)
       console.info(`Forward to app ${app} at ${endpointName(id)}`)
       return response(200)
     }
   ).to($=>$
+    .handleData(data => {
+      var size = data.size
+      trafficTotalSend.increase(size)
+      $trafficSend.increase(size)
+      $trafficPeerRecv.increase(size)
+      $trafficLinkSend.increase(size)
+    })
     .connectHTTPTunnel(() => {
       var provider = $params.provider || ''
       var app = $params.app
@@ -576,7 +628,14 @@ var connectApp = pipeline($=>$
         method: 'CONNECT',
         path: provider ? `/api/apps/${provider}/${app}${q}` : `/api/apps/${app}${q}`,
       })
-    }).to(muxToAgent)
+    })
+    .to(muxToAgent)
+    .handleData(data => {
+      var size = data.size
+      $trafficRecv.increase(size)
+      $trafficPeerSend.increase(size)
+      $trafficLinkRecv.increase(size)
+    })
   )
 )
 
@@ -603,35 +662,119 @@ var forwardRequest = pipeline($=>$
 // Ping agents regularly
 //
 
-pipeline($=>$
-  .onStart(new Message({ path: '/api/ping' }))
-  .repeat(() => new Timeout(15).wait().then(true)).to($=>$
-    .forkJoin(() => Object.keys(sessions)).to($=>$
-      .onStart(id => { $pingID = id })
-      .forkJoin(() => {
-        var hubs = []
-        sessions[$pingID].forEach(h => hubs.push(h))
-        return hubs
-      }).to($=>$
-        .onStart(hub => { $hubSelected = hub})
-        .pipe(muxToAgent)
-        .replaceData()
-        .replaceMessage(
-          res => {
-            var hubs = sessions[$pingID]
-            if (res.head.status !== 200) {
-              hubs?.delete?.($hubSelected)
-              console.info(`Endpoint ${endpointName($pingID)} ping failure, connections = ${hubs?.size || 0}`)
+function startPing() {
+  pipeline($=>$
+    .onStart(new Message({ path: '/api/ping' }))
+    .repeat(() => new Timeout(15).wait().then(true)).to($=>$
+      .forkJoin(() => Object.keys(sessions)).to($=>$
+        .onStart(id => { $pingID = id })
+        .forkJoin(() => {
+          var hubs = []
+          sessions[$pingID].forEach(h => hubs.push(h))
+          return hubs
+        }).to($=>$
+          .onStart(hub => { $hubSelected = hub})
+          .pipe(muxToAgent)
+          .replaceData()
+          .replaceMessage(
+            res => {
+              var hubs = sessions[$pingID]
+              if (res.head.status !== 200) {
+                hubs?.delete?.($hubSelected)
+                console.info(`Endpoint ${endpointName($pingID)} ping failure, connections = ${hubs?.size || 0}`)
+              }
+              return new StreamEnd
             }
-            return new StreamEnd
-          }
+          )
         )
+        .replaceMessage(new StreamEnd)
       )
       .replaceMessage(new StreamEnd)
     )
-    .replaceMessage(new StreamEnd)
-  )
-).spawn()
+  ).spawn()
+}
+
+//
+// Clear outdated endpoints
+//
+
+function clearOutdatedEndpoints() {
+  new Timeout(60).wait().then(() => {
+    var outdated = []
+    Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
+      (ep) => {
+        console.info(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
+        if (sessions[ep.id]?.size === 0) {
+          outdated.push(ep.id)
+          delete endpoints[ep.id]
+        }
+      }
+    )
+    if (outdated.length > 0) {
+      outdated = Object.fromEntries(outdated.map(ep => [ep, true]))
+      Object.values(files).forEach(file => {
+        var sources = file['@']
+        if (sources.some(ep => ep in outdated)) {
+          file['@'] = sources.filter(ep => !(ep in outdated))
+        }
+      })
+    }
+    clearOutdatedEndpoints()
+  })
+}
+
+//
+// Measure traffic regularly
+//
+
+function measureTraffic() {
+  new Timeout(1).wait().then(() => {
+    stats.sum(['send', 'recv', 'move']).then(
+      ({ send, recv, move }) => {
+        var t = Date.now()
+        var dt = (trafficStatsTime > 0 ? t - trafficStatsTime : 0) / 1000
+        trafficStatsTime = t
+        var sizeSend = (trafficSampled.send ??= {})
+        var sizeRecv = (trafficSampled.recv ??= {})
+        var sizeMove = (trafficSampled.move ??= {})
+        var rateSend = (trafficStats.send ??= {})
+        var rateRecv = (trafficStats.recv ??= {})
+        var rateMove = (trafficStats.move ??= {})
+        if (send) {
+          send.submetrics().forEach(m => {
+            var ep = m.label
+            var newValue = m.value
+            var oldValue = sizeSend[ep] || 0
+            if (dt > 0) rateSend[ep] = (newValue - oldValue) / dt
+            sizeSend[ep] = newValue
+          })
+        }
+        if (recv) {
+          recv.submetrics().forEach(m => {
+            var ep = m.label
+            var newValue = m.value
+            var oldValue = sizeRecv[ep] || 0
+            if (dt > 0) rateRecv[ep] = (newValue - oldValue) / dt
+            sizeRecv[ep] = newValue
+          })
+        }
+        if (move) {
+          move.submetrics().forEach(m => {
+            var ep = m.label
+            m.submetrics().forEach(m => {
+              var peer = m.label
+              var newValue = m.value
+              var oldValue = (sizeMove[ep] ??= {})[peer] || 0
+              if (dt > 0) (rateMove[ep] ??= {})[peer] = (newValue - oldValue) / dt
+              sizeMove[ep][peer] = newValue
+            })
+          })
+        }
+        measureTraffic()
+      }
+    )
+  })
+}
 
 var notFound = pipeline($=>$
   .replaceData()
@@ -687,21 +830,7 @@ function makeEndpoint(id) {
 function findCurrentEndpointSession() {
   var id = $ctx.id
   if (!id) return false
-  // $endpoint = endpoints[id]
-  // if (!$endpoint) {
-  //   $endpoint = endpoints[id] = {
-  //     id,
-  //     username: $ctx.username,
-  //     ip: $ctx.ip,
-  //     port: $ctx.port,
-  //     via: $ctx.via,
-  //     hubs: [...myNames]
-  //   }
-  // } else {
-  //   $endpoint.username = $ctx.username
-  // }
   $endpoint = makeEndpoint(id)
-  // $endpoint.isConnected = true
   return true
 }
 

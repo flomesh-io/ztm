@@ -392,6 +392,28 @@ function main(listen) {
       }
     },
 
+    //
+    // Stats
+    //
+
+    '/api/meshes/{mesh}/stats/endpoints': {
+      'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.getEndpointStats(mesh).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }
+    },
+
+    '/api/meshes/{mesh}/stats/endpoints/{ep}': {
+      'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.getEndpointStats(mesh, ep).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }
+    },
+
   }).map(
     function ([path, methods]) {
       var match = new http.Match(path)
