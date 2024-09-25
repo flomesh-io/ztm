@@ -66,20 +66,14 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
-    //
-    // File = {
-    //   readers: [ 'user-1' ],
-    //   writers: [ 'user-2' ],
-    //   replicas: [
-    //     {
-    //       id: '<uuid>',
-    //       name: 'ep-x',
-    //     }
-    //   ],
-    //   isDownloaded: false,
-    //   isUploaded: false,
-    // }
-    //
+    '/api/endpoints/{ep}/files/*': {
+      'DELETE': responder((params) => {
+        var pathname = URL.decodeComponent(params['*'])
+        return api.deleteFile(pathname, params.ep).then(
+          ret => response(ret ? 204 : 404)
+        )
+      })
+    },
 
     '/api/files': {
       'GET': responder(() => {
@@ -100,6 +94,13 @@ export default function ({ app, mesh, utils }) {
           }
         )
       }),
+
+      'DELETE': responder((params) => {
+        var pathname = URL.decodeComponent(params['*'])
+        return api.deleteFile(pathname).then(
+          ret => response(ret ? 204 : 404)
+        )
+      })
     },
 
     '/api/file-data/*': {
@@ -200,6 +201,15 @@ export default function ({ app, mesh, utils }) {
 
     '/api/chunks/*': {
       'GET': pipeline($=>$.pipe(api.serveChunk, () => $ctx)),
+    },
+
+    '/api/files/*': {
+      'DELETE': responderOwnerOnly((params) => {
+        var pathname = URL.decodeComponent(params['*'])
+        return api.deleteFile(pathname, app.endpoint.id).then(
+          ret => response(ret ? 204 : 404)
+        )
+      })
     },
   })
 
