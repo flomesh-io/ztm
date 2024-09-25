@@ -166,7 +166,9 @@ const icons = (item)=>{
 	}
 }
 const bitUnit = (value)=> {
-	if(typeof(value) != 'number'){
+	if(isNaN(value)){
+		return "0B";
+	}else if(typeof(value) != 'number'){
 		return value;
 	} else if(value>(1024 * 1024 * 1024)){
 		return (value*100/(1024 * 1024 * 1024)).toFixed(0)/100 + "GB";

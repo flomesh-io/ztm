@@ -87,8 +87,11 @@ const active = ref(0)
 								<div class="flex-item">
 									{{bitUnit(item.size*item.downloading)}}  / {{bitUnit(item.size)}} 
 								</div>
-								<div >
+								<div v-if="!!item?.speed || !!item?.downloading">
 									{{bitUnit(item?.speed||0)}}/s
+								</div>
+								<div v-else>
+									{{!!item?.error?'Error':'Waiting'}}
 								</div>
 							</div>
 						</div>
