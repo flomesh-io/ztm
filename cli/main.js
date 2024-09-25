@@ -354,6 +354,23 @@ function doCommand(meshName, epName, argv, program) {
           }
         }
       },
+
+      {
+        title: `View stats of endpoints`,
+        usage: 'stats <object type> [object name]',
+        notes: `
+          Available object types include:
+            endpoint ep
+        `,
+        action: (args) => {
+          var type = args['<object type>']
+          var name = args['[object name]']
+          switch (type) {
+            case 'endpoint': case 'ep':return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => statsEndpoint(name, mesh, ep))
+            default: return invalidObjectType(type, 'stats')
+          }
+        }
+      },
     ],
     fallback: (argv) => {
       if (argv.length === 0) throw `no command or app specified. Type 'ztm help' for help info.`
@@ -1169,6 +1186,61 @@ function logApp(name, mesh, ep) {
 }
 
 //
+// Command: stats
+//
+
+function statsEndpoint(name, mesh, ep) {
+  return allEndpoints(mesh).then(endpoints => {
+    if (name) {
+      var epName = normalizeName(name)
+      return selectEndpoint(epName, mesh).then(
+        ep => client.get(`/api/meshes/${uri(mesh.name)}/stats/endpoints/${ep.id}`).then(
+          ret => {
+            var stats = JSON.decode(ret)
+            var peers = stats.peers || {}
+            var list = Object.entries(peers).map(([k, v]) => {
+              var peer = endpoints[k]
+              var name = peer?.name || k
+              return {
+                name,
+                send: v.send || 0,
+                recv: v.receive || 0,
+              }
+            })
+            list.push({ name: '(All Peers)', send: stats.send || 0, recv: stats.receive || 0 })
+            printTable(list, {
+              'PEER': p => p.name,
+              'SEND': p => (p.send / 1024).toFixed(3) + 'KB/s',
+              'RECEIVE': p => (p.recv / 1024).toFixed(3) + 'KB/s',
+            })
+          }
+        )
+      )
+    } else {
+      return client.get(`/api/meshes/${uri(mesh.name)}/stats/endpoints`).then(
+        ret => {
+          var stats = JSON.decode(ret)
+          var list = Object.entries(stats).map(([k, v]) => {
+            var ep = endpoints[k]
+            var name = ep?.name || k
+            return {
+              name,
+              send: v.send || 0,
+              recv: v.receive || 0,
+            }
+          })
+          printTable(list, {
+            'ENDPOINT': ep => ep.name,
+            'SEND': ep => (ep.send / 1024).toFixed(3) + 'KB/s',
+            'RECEIVE': ep => (ep.recv / 1024).toFixed(3) + 'KB/s',
+          })
+        }
+      )
+    }
+  })
+}
+
+//
 // Invoke app CLI
 //
 
@@ -1246,6 +1318,14 @@ function normalizeAppName(name) {
   }
   if (!app) throw `invalid app name '${name}'`
   return { provider, name: app, tag }
+}
+
+function allEndpoints(mesh) {
+  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints`).then(ret => {
+    var endpoints = {}
+    JSON.decode(ret).forEach(ep => endpoints[ep.id] = ep)
+    return endpoints
+  })
 }
 
 function selectMesh(name) {

@@ -267,7 +267,7 @@ export default function ({ app, api, utils }) {
                   list => output(printTable(list, {
                     'PATH': f => f.path,
                     'SIZE': f => f.size,
-                    'SPEED': f => (f.speed / 1000).toFixed(3) + 'KB/s',
+                    'SPEED': f => (f.speed / 1024).toFixed(3) + 'KB/s',
                     'PROGRESS': f => Math.floor(f.downloading * 100) + '%',
                     'ERROR': f => f.error || '-',
                   }))
