@@ -189,6 +189,7 @@ const copyFile = () => {
 const visible = ref(false);
 const open = () => {
 	visible.value = true;
+	active.value = 0;
 	getEndpoints(()=>{
 		loadMirrors()
 	});
@@ -271,7 +272,7 @@ onMounted(()=>{
 
 <template>
 	
-	<Dialog style="max-width: 400px;min-width: 360px;min-height: 500px;" class="nopd noheader transparentMask" v-model:visible="visible" modal :dismissableMask="true" :draggable="true" >
+	<Dialog v-if="visible" v-model:visible="visible" style="max-width: 400px;min-width: 360px;min-height: 500px;" class="nopd noheader transparentMask" modal :dismissableMask="true" :draggable="true" >
 		<Button v-if="active == 1 && isMyFolder && props.file?.access && props.file?.state != 'new' && !props.file?.error" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
 		<Loading v-if="loading" />
 		<TabView v-else v-model:activeIndex="active">

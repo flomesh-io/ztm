@@ -108,8 +108,8 @@ export default class FileService {
 	}
 	cancelDownload(path, callback) {
 		confirm.custom({
-				message: `Are you sure want to cancel this file?`,
-				header: 'Cancel download',
+				message: `Are you sure to cancel downloading of the file?`,
+				header: 'Cancel Download',
 				rejectProps: {
 						label: 'Close',
 						severity: 'secondary',

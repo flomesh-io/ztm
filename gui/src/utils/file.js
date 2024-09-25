@@ -340,10 +340,10 @@ const importFiles = ({
 	})
 }
 
-const labels = (item)=>{
+const labels = (item, undownload)=>{
 	if(!!item?.error){
 		return item.error?.message.indexOf('404')>=0?'not find':'error'
-	} else if(item?.downloading!=null){
+	} else if(item?.downloading!=null && !undownload){
 		return 'downloading'
 	} else {
 		return item?.state||''
