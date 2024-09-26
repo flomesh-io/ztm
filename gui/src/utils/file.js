@@ -177,7 +177,7 @@ const bitUnit = (value)=> {
 	} else if(value>1024){
 		return (value/1024).toFixed(0) + "KB";
 	} else {
-		return value*1 + "B";
+		return (value*1).toFixed(0) + "B";
 	}
 }
 const openFile = (path) => {

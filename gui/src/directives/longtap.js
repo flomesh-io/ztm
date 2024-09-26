@@ -22,6 +22,7 @@ export default {
     // 阻止右键菜单
     const preventContextMenu = (event) => {
       event.preventDefault();
+			binding.value(event);
     };
 		
     el._start = start;

@@ -1300,6 +1300,9 @@ fieldset{
 .noborder{
 	border: none !important;
 }
+.noshadow{
+	box-shadow: none !important;
+}
 .noclose .p-dialog-header-actions{
 	width: 30px;
 }
@@ -1309,3 +1312,8 @@ fieldset{
 .smheader .p-dialog-header{
 	padding: 1rem;
 }
+.noborder{
+	.p-listbox-option,.p-listbox-list{
+		padding: 0 !important;
+	}
+} 

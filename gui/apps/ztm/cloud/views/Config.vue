@@ -384,10 +384,10 @@ const actions = computed(()=>{
 	_actions.push({separator: true});
 	if(isMyFolder.value && !!props.file?.state &&  props.file?.state != 'new'){
 		_actions.push({
-			label: 'Unpublish',
+			label: 'Take Down',
 			class:'opacity-80',
 			icon: 'pi pi-trash',
-			loading: unpublishLoading.value,
+			loading: false,
 			command(e){
 				unpublishLoading.value = true;
 				fileService.unpublish(props.file?.path,(reject)=>{
@@ -399,10 +399,10 @@ const actions = computed(()=>{
 		})
 	}
 	_actions.push({
-		label: 'Local Delete',
+		label: 'Delete Local File',
 		class:'opacity-80',
 		icon: 'pi pi-trash',
-		loading: deleteLoading.value,
+		loading: false,
 		command(e){
 			deleteLoading.value = true;
 			fileService.localDelete(props.file?.path,info.value?.endpoint?.id,(reject)=>{
@@ -508,7 +508,7 @@ onMounted(()=>{
 			<div class="pt-4 pb-2">
 				<b>Users permission:</b>
 			</div>
-			<Listbox v-if="props.file.access?.users" :options="Object.keys(props.file.access.users)" class="w-full md:w-56" listStyle="max-height:250px">
+			<Listbox v-if="props.file.access?.users" :options="Object.keys(props.file.access.users)" class="w-full md:w-56 noborder noshadow" listStyle="max-height:250px">
 				<template #option="slotProps">
 						<div class="flex w-full">
 							<div class="flex-item pt-1">
@@ -524,10 +524,10 @@ onMounted(()=>{
 						</div>
 				</template>
 				<template #empty>
-					---
+					<span></span>
 				</template>
 				<template #footer>
-					<div class="flex items-center pt-1 pb-2 px-3">
+					<div class="flex items-center pt-1 pb-2 ">
 						<div class="flex-item pr-1">
 							<Select size="small" class="w-full"  v-model="acl.user" :options="filterEps(props.file.access.users)" optionLabel="username" optionValue="username" :filter="filterEps(props.file.access.users).length>8" placeholder="Endpoint"/>
 						</div>
@@ -548,9 +548,9 @@ onMounted(()=>{
 			</template>
 			<div class="p-3">
 				<Loading v-if="mirrorLoading" />
-				<Listbox v-else :options="filterMirrors" class="w-full md:w-56" listStyle="max-height:250px">
+				<Listbox v-else :options="filterMirrors" class="w-full md:w-56 noborder noshadow" listStyle="max-height:250px">
 					<template #option="slotProps">
-							<div class="flex items-center pt-1 pb-2 px-0 w-full">
+							<div class="flex items-center px-0 w-full">
 								<div class="flex-item pr-2 py-2">
 									<Tag>{{slotProps.option.ep?.name}}</Tag>
 									<Tag v-if="info?.endpoint?.id == slotProps.option?.ep?.id" value="Local" class="ml-2" severity="contrast"/> 
@@ -570,10 +570,10 @@ onMounted(()=>{
 							</div>
 					</template>
 					<template #empty>
-						------
+					<span></span>
 					</template>
 					<template #footer>
-						<div class="flex items-center pt-1 pb-2 px-3">
+						<div class="flex items-center pt-1 pb-2">
 							<div class="flex-item pr-1">
 								<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Endpoint">
 									<template #option="slotProps">
