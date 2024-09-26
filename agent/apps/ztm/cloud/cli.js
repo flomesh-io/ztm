@@ -305,6 +305,38 @@ export default function ({ app, api, utils }) {
               }
             }
           },
+          {
+            title: 'Take down a file',
+            usage: 'unpublish <pathname>',
+            action: (args) => {
+              var pathname = os.path.normalize(args['<pathname>'])
+              return api.deleteFile(pathname).then(
+                ret => {
+                  if (ret) {
+                    output(`File taken down: ${pathname}\n`)
+                  } else {
+                    error(`cloud: cannot take down file: ${pathname}\n`)
+                  }
+                }
+              )
+            }
+          },
+          {
+            title: 'Erase a file',
+            usage: 'erase <pathname>',
+            action: (args) => {
+              var pathname = os.path.normalize(args['<pathname>'])
+              return api.deleteFile(pathname, endpoint.id).then(
+                ret => {
+                  if (ret) {
+                    output(`Local file deleted: ${pathname}\n`)
+                  } else {
+                    error(`cloud: cannot delete local file: ${pathname}\n`)
+                  }
+                }
+              )
+            }
+          },
         ]
 
       }).then(flush).catch(err => {

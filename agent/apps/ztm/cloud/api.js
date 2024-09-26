@@ -825,6 +825,7 @@ export default function ({ app, mesh }) {
         stat => {
           if (!stat) return false
           if (ep) {
+            mesh.unlink(os.path.join('/shared', username, 'hash', stat.hash))
             os.rm(os.path.join(localDir, 'users', username, filename), { force: true })
             os.rm(os.path.join(localDir, 'cache', username, filename), { force: true })
           } else {
