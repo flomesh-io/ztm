@@ -109,8 +109,8 @@ export default class FileService {
 	
 	unpublish(path, callback) {
 		confirm.custom({
-				message: `Are you sure you want to unpublish this file from the mesh?`,
-				header: 'Unpublish',
+				message: `Are you sure you want to take down this file from the mesh?`,
+				header: 'Take Down',
 				rejectProps: {
 						label: 'Close',
 						severity: 'secondary',
@@ -140,7 +140,7 @@ export default class FileService {
 	localDelete(path, ep , callback) {
 		confirm.custom({
 				message: `Are you sure to delete local source of the file?`,
-				header: 'Delete Local Source',
+				header: 'Delete Local File',
 				rejectProps: {
 						label: 'Close',
 						severity: 'secondary',
