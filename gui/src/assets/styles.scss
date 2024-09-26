@@ -1297,3 +1297,15 @@ fieldset{
 .error .p-progressbar-value{
 	background-color: var(--red-500);
 }
+.noborder{
+	border: none !important;
+}
+.noclose .p-dialog-header-actions{
+	width: 30px;
+}
+.noclose .p-dialog-close-button{
+	display: none;
+}
+.smheader .p-dialog-header{
+	padding: 1rem;
+}

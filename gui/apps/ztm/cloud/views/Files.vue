@@ -39,7 +39,7 @@ const detailData = ref({});
 const typing = ref('');
 const actionMenu = ref();
 const showAtionMenu = (e) => {
-	fileConfig.value.open();
+	fileConfig.value.open(e);
 };
 const layout = ref('grid');
 const windowWidth = ref(window.innerWidth);
@@ -210,8 +210,11 @@ const openPreviewFile = (item) => {
 }
 const home = ref({ type: 'home',icon: 'pi pi-angle-left' });
 const itemsBreadcrumb = ref([]);
-const load = () => {
-	emits('load',current.value?.path);
+const load = (unload) => {
+	emits('load',{
+		path:current.value?.path,
+		unload
+	});
 	getMirrors();
 }
 const back = () => {
@@ -245,7 +248,12 @@ const changePath = (item) => {
 	load();
 }
 const selectedFile = ref();
+const longtapblock = ref(0);
 const selectFile = (e, item) => {
+	if(longtapblock.value>0){
+		longtapblock.value--;
+		return;
+	}
 	if(item.ext == "/"){
 		const _name = item.name.split("/")[0];
 		if(!!current.value?.path && current.value?.path!='/'){
@@ -266,7 +274,7 @@ const selectFile = (e, item) => {
 		load();
 	} else if(!item.selected) {
 		item.selected = { time:new Date(),value:true };
-		selectedFile.value = null;
+		// selectedFile.value = null;
 	} else if(!!item.selected) {
 		const diff = Math.abs((new Date()).getTime() - item.selected.time.getTime());
 			if(diff <= 600){
@@ -275,21 +283,18 @@ const selectFile = (e, item) => {
 			} else {
 				item.selected.value = !item.selected.value;
 				item.selected.time = new Date();
-				selectedFile.value = null;
+				// selectedFile.value = null;
 			}
 		
 		//openFile(`${localDir.value}${current.value.path}`)
 	}
 }
 
-const handleLongTap = (item) => () => {
+const handleLongTap = (item) => (e) => {
+	longtapblock.value++;
 	selectedFile.value = item;
 	loadFileAttr();
-	showAtionMenu();
-}
-const closeFile = () => {
-	selectedFile.value = null;
-	fileConfig.value.close();
+	showAtionMenu(e);
 }
 const getSelectFiles = (list) => {
 	let ary = []
@@ -399,6 +404,10 @@ const doDownloads = () => {
 	}
 }
 
+const doRemove = (item) => {
+	loadFileAttr(true, item);
+	load(true);
+}
 const doUpload = (item) => {
 	if(item.path){
 		item.uploading = true;
@@ -679,6 +688,7 @@ onMounted(()=>{
 					:loading="attrLoading"
 					:saving="saving"
 					:file="selectedFile"
+					@remove="doRemove"
 					@download="doDownload"
 					@upload="doUpload"
 					@cancelDownload="doCancelDownload"

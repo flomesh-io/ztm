@@ -28,9 +28,10 @@ const getUploads = () => {
 		uploads.value = res || [];
 	})
 }
-const getFiles = () => {
-	
-	loading.value = true;
+const getFiles = (unload) => {
+	if(!unload){
+		loading.value = true;
+	}
 	fileService.getFiles(path.value).then((res)=>{
 		files.value = res?.list|| [];
 		loading.value = false;
@@ -41,15 +42,15 @@ const getFiles = () => {
 	})
 }
 
-const loaddata = () => {
-	getFiles();
+const loaddata = (unload) => {
+	getFiles(unload);
 	getDownloads();
 	// getUploads();
 }
 
-const changePath = (p) => {
-	path.value = p;
-	loaddata();
+const changePath = (d) => {
+	path.value = d?.path;
+	loaddata(d?.unload);
 }
 const save = () => {
 	loaddata();

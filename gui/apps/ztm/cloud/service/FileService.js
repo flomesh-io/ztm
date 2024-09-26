@@ -106,6 +106,66 @@ export default class FileService {
 			path
 		});
 	}
+	
+	unpublish(path, callback) {
+		confirm.custom({
+				message: `Are you sure you want to unpublish this file from the mesh?`,
+				header: 'Unpublish',
+				rejectProps: {
+						label: 'Close',
+						severity: 'secondary',
+						outlined: true
+				},
+				acceptProps: {
+						severity: 'danger',
+						label: 'Ok'
+				},
+				icon: 'pi pi-info-circle',
+				accept: () => {
+					request(`/api/files${path}`,"DELETE").then(()=>{
+						if(!!callback)
+						callback();
+					}).catch((e)=>{
+						if(!!callback)
+						callback(e);
+					});
+				},
+				reject: () => {
+					if(!!callback)
+					callback(true);
+				}
+		});
+	}
+	
+	localDelete(path, ep , callback) {
+		confirm.custom({
+				message: `Are you sure to delete local source of the file?`,
+				header: 'Delete Local Source',
+				rejectProps: {
+						label: 'Close',
+						severity: 'secondary',
+						outlined: true
+				},
+				acceptProps: {
+						severity: 'danger',
+						label: 'Ok'
+				},
+				icon: 'pi pi-info-circle',
+				accept: () => {
+					request(`/api/endpoints/${ep}/files${path}`,"DELETE").then(()=>{
+						if(!!callback)
+						callback();
+					}).catch((e)=>{
+						if(!!callback)
+						callback(e);
+					});
+				},
+				reject: () => {
+					if(!!callback)
+					callback(true);
+				}
+		});
+	}
 	cancelDownload(path, callback) {
 		confirm.custom({
 				message: `Are you sure to cancel downloading of the file?`,
