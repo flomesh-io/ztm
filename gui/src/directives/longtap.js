@@ -1,6 +1,6 @@
 export default {
   mounted(el, binding) {
-    const duration = binding.arg || 800;
+    const duration = binding.arg || 600;
     let timer = null;
 
     const start = (event) => {
