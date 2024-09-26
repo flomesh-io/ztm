@@ -274,16 +274,16 @@ function main(listen) {
 
     '/api/meshes/{mesh}/files/*': {
       'GET': function (params) {
-        mesh = URL.decodeComponent(params.mesh)
-        path = URL.decodeComponent(params['*'])
+        var mesh = URL.decodeComponent(params.mesh)
+        var path = URL.decodeComponent(params['*'])
         return api.getFileInfo(mesh, path).then(
           ret => ret ? response(200, ret) : response(404)
         )
       },
 
       'DELETE': function (params) {
-        mesh = URL.decodeComponent(params.mesh)
-        path = URL.decodeComponent(params['*'])
+        var mesh = URL.decodeComponent(params.mesh)
+        var path = URL.decodeComponent(params['*'])
         return api.delFileInfo(mesh, path).then(
           ret => ret ? response(204) : response(404)
         )
@@ -292,24 +292,24 @@ function main(listen) {
 
     '/api/meshes/{mesh}/file-data/*': {
       'GET': function (params) {
-        mesh = URL.decodeComponent(params.mesh)
-        path = URL.decodeComponent(params['*'])
+        var mesh = URL.decodeComponent(params.mesh)
+        var path = URL.decodeComponent(params['*'])
         return api.getFileData(mesh, path).then(
           ret => ret ? response(200, ret) : response(404)
         )
       },
 
       'POST': function (params, req) {
-        mesh = URL.decodeComponent(params.mesh)
-        path = URL.decodeComponent(params['*'])
+        var mesh = URL.decodeComponent(params.mesh)
+        var path = URL.decodeComponent(params['*'])
         return api.setFileData(mesh, path, req.body).then(
           ret => ret ? response(201) : response(404)
         )
       },
 
       'DELETE': function (params) {
-        mesh = URL.decodeComponent(params.mesh)
-        path = URL.decodeComponent(params['*'])
+        var mesh = URL.decodeComponent(params.mesh)
+        var path = URL.decodeComponent(params['*'])
         return api.delFileData(mesh, path).then(
           ret => ret ? response(204) : response(404)
         )
@@ -519,6 +519,7 @@ function responseCT(status, ct, body) {
 }
 
 function responseError(e) {
+  console.error(e)
   if (typeof e === 'object') {
     return response(e.status || 500, e)
   } else {
