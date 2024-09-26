@@ -1316,6 +1316,18 @@ export default function (rootDir, config) {
       return Promise.resolve()
     }
 
+    function unlink(pathname) {
+      var path = os.path.normalize(pathname)
+      if (path.startsWith(pathLocal)) {
+        db.delFile(meshName, provider, app, path.substring(pathLocal.length))
+      } else {
+        var globalPath = pathToGlobal(path)
+        if (globalPath) {
+          unpublishFile(globalPath)
+        }
+      }
+    }
+
     function erase(pathname) {
       var path = os.path.normalize(pathname)
       if (path.startsWith(pathLocal)) {
@@ -1391,7 +1403,7 @@ export default function (rootDir, config) {
       }
     }
 
-    return { list, dir, read, write, erase, stat, acl, access, watch }
+    return { list, dir, read, write, unlink, erase, stat, acl, access, watch }
   }
 
   function remoteQueryLog(ep) {
