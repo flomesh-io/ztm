@@ -84,8 +84,8 @@ jobs:
       run: |
         export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/usr/local/lib/android/sdk'
-        $ANDROID_HOME/build-tools/31.0.0/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm.apk
+        $ANDROID_HOME/build-tools/31.0.0/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
     - uses: actions/upload-artifact@v3
       with:
         name: release
-        path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm.apk
+        path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
