@@ -87,5 +87,5 @@ jobs:
         $ANDROID_HOME/build-tools/31.0.0/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
     - uses: actions/upload-artifact@v3
       with:
-        name: release
+        name: ztm-app-v${{ vars.APP_VERSION }}-android
         path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
