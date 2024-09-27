@@ -44,13 +44,8 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: rpm
-        path: ./gui/src-tauri/target/release/bundle/rpm/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.rpm
-    - uses: actions/upload-artifact@v3
-      with:
-        name: deb
-        path: ./gui/src-tauri/target/release/bundle/deb/ztm-app-v${{ vars.APP_VERSION }-generic_linux.deb
-    - uses: actions/upload-artifact@v3
-      with:
-        name: appimage
-        path: ./gui/src-tauri/target/release/bundle/appimage/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.AppImage
+        name: ztm-app-v${{ vars.APP_VERSION }}-generic_linux
+        path: |
+          ./gui/src-tauri/target/release/bundle/rpm/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.rpm
+          ./gui/src-tauri/target/release/bundle/deb/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.deb
+          ./gui/src-tauri/target/release/bundle/appimage/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.AppImage
