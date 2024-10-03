@@ -43,10 +43,10 @@ const platform = computed(() => {
 	return store.getters['account/platform']
 });
 const isMobileTauri = computed(()=>{
-	return platform.value == 'ios' && platform.value == 'android';
+	return platform.value == 'ios' || platform.value == 'android';
 })
 const mobileLeftbar = computed(() => {
-	return (platform.value == 'ios' && platform.value == 'android')?store.getters['account/mobileLeftbar']:false;
+	return (platform.value == 'ios' || platform.value == 'android')?store.getters['account/mobileLeftbar']:false;
 });
 
 const containerClass = computed(() => {
