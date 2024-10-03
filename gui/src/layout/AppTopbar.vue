@@ -191,12 +191,17 @@ const usermenuitems = computed(()=>[{
 const toggleUsermenu = (event) => {
     usermenu.value.toggle(event);
 };
+
+
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', !store.getters['account/mobileLeftbar']);
+}
 </script>
 
 <template>
 	<Menubar class="app-top-bar mobile-hidden" :model="model" breakpoint="0px">
 			<template #start>
-				<img class="logo mt-3 mb-1" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="XeyeSvg" height="50"/>
+				<img @click.stop="toggleLeft" class="logo mt-3 mb-1" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="XeyeSvg" height="50"/>
 			</template>
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>

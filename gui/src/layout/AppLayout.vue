@@ -27,9 +27,28 @@ watch(isSidebarActive, (newVal) => {
 const app = computed(() => {
 	return store.getters['notice/app'];
 });
-const mobileLeftbar = computed(() => {
-	return store.getters['account/mobileLeftbar'];
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const home = () => {
+	router.push('/root');
+}
+const windowWidth = computed(() => window.innerWidth);
+const isMobile = computed(() => windowWidth.value<=768);
+
+const toggleLeft = () => {
+	store.commit('account/setMobileLeftbar', false);
+}
+const windowHeight = ref(window.innerHeight);
+const viewHeight = computed(() => windowHeight.value - 50);
+const platform = computed(() => {
+	return store.getters['account/platform']
 });
+const isMobileTauri = computed(()=>{
+	return platform.value == 'ios' && platform.value == 'android';
+})
+const mobileLeftbar = computed(() => {
+	return (platform.value == 'ios' && platform.value == 'android')?store.getters['account/mobileLeftbar']:false;
+});
+
 const containerClass = computed(() => {
      let classAry = {
         'layout-theme-light': layoutConfig.darkTheme.value === 'light',
@@ -41,7 +60,7 @@ const containerClass = computed(() => {
         'layout-mobile-active': layoutState.staticMenuMobileActive.value,
         'p-input-filled': layoutConfig.inputStyle.value === 'filled',
         'p-ripple-disabled': !layoutConfig.ripple.value,
-				'mobile-transform-layout':!!mobileLeftbar.value
+				'transform-layout':!!mobileLeftbar.value
     };
 		if(!!platform.value){
 			classAry[platform.value] = true;
@@ -73,21 +92,6 @@ const isOutsideClicked = (event) => {
     return !(sidebarEl.isSameNode(event.target) || sidebarEl.contains(event.target) || topbarEl.isSameNode(event.target) || topbarEl.contains(event.target));
 };
 
-const hasTauri = ref(!!window.__TAURI_INTERNALS__);
-const home = () => {
-	router.push('/root');
-}
-const windowWidth = computed(() => window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
-
-const toggleLeft = () => {
-	store.commit('account/setMobileLeftbar', false);
-}
-const windowHeight = ref(window.innerHeight);
-const viewHeight = computed(() => windowHeight.value - 50);
-const platform = computed(() => {
-	return store.getters['account/platform']
-});
 onMounted(()=>{
 	// getCurrentWindow().listen<string>('tauri-back', (event) => {
 	// 	store.commit('notice/setApp', null);
@@ -99,7 +103,7 @@ onMounted(()=>{
 </script>
 
 <template>
-		<div class="embed-root" v-if="isMobile && hasTauri">
+		<div class="embed-root" v-if="isMobileTauri">
 			<AppRoot :embed="true"/>
 		</div>
 		<div class="layout-wrapper" :class="containerClass" @click="toggleLeft">

@@ -50,7 +50,9 @@ const loginGuard = (to, from, next, options) => {
     next();
   } else if(to.path == "/root"){
 		if(!!window.__TAURI_INTERNALS__ ){
-			if(platform() != "android" && platform() != "ios"){
+			const pm = platform();
+			store.commit('account/setPlatform', pm);
+			if(pm != "android" && pm != "ios"){
 				resize(455,350,false);
 				next();
 			}else {
@@ -60,7 +62,10 @@ const loginGuard = (to, from, next, options) => {
 			next("/mesh/list");
 		}
   } else {
-		
+		if(!!window.__TAURI_INTERNALS__ ){
+			const pm = platform();
+			store.commit('account/setPlatform', pm);
+		}
 		if(to.path.indexOf("/app") == -1){
 			resize(1280,860,true);
 		}

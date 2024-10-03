@@ -20,7 +20,7 @@ const containerClass = computed(() => {
         'layout-mobile-active': layoutState.staticMenuMobileActive.value,
         'p-input-filled': layoutConfig.inputStyle.value === 'filled',
         'p-ripple-disabled': !layoutConfig.ripple.value,
-				'mobile-transform-layout':false
+				'transform-layout':false
     };
 		if(!!platform()){
 			classAry[platform()] = true;
