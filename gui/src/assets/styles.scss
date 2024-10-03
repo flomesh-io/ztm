@@ -678,6 +678,7 @@ pre.app-code code{
 .layout-wrapper{
 	z-index: 2;
 	overflow-x: hidden;
+	transition: transform 0.5s ease;
 }
 .layout-main{
 	background-color: var(--surface-ground);
