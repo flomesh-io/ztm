@@ -1314,14 +1314,14 @@ fieldset{
 	}
 		
 	.ios.layout-wrapper{
-		 min-height: calc(100vh - 145px);
+		 min-height: calc(100vh - 25px);
 	}
 	.ios{
 		.p-scrollpanel-content{
-			height: calc(100% + calc(2 * var(--scrollpanel-bar-size)) - 145px);
+			height: calc(100% + calc(2 * var(--scrollpanel-bar-size)) - 25px);
 		}
 		.layout-main-container,.min-h-screen{
-			 min-height: calc(100vh - 145px) !important;
+			 min-height: calc(100vh - 25px) !important;
 		}
 	}
 }
