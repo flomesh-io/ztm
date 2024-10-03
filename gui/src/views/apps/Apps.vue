@@ -161,11 +161,17 @@ const mapping = ref(appMapping);
 const windowHeight = ref(window.innerHeight);
 const pannelHeight = computed(() => windowHeight.value - 80);
 onMounted(()=>{
-	loaddata();
 	resize(455,570,false);
 })
 watch(()=>manage,()=>{
 	loaddata();
+})
+
+watch(()=>selectedMesh,()=>{
+	loaddata();
+},{
+	immediate:true,
+	deep:true
 })
 </script>
 

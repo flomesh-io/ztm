@@ -166,13 +166,6 @@ onMounted(()=>{
 </template>
 
 <style lang="scss" scoped>
-	.container {
-		position: fixed;
-		top: 0;
-		bottom: 0;
-		left: 0;
-		right: 0;
-	}
 	:deep(.p-scrollpanel-bar.p-scrollpanel-bar-y){
 		opacity: 0.5;
 	}
@@ -195,16 +188,6 @@ onMounted(()=>{
 	}
 	:deep(.p-togglebutton .pi){
 		color: #fff !important;
-	}
-	.terminal_toolbar {
-	  display: flex;
-	  height: 30px;
-	  align-items: center;
-	  padding: 0 8px;
-	  box-sizing: border-box;
-	  border-top-left-radius: 5px;
-	  border-top-right-radius: 5px;
-	  background: linear-gradient(#504b45 0%, #3c3b37 100%);
 	}
 	
 	.butt {
@@ -251,51 +234,9 @@ onMounted(()=>{
 	  font-size: 14px;
 	  line-height: 15px;
 	}
-	.container_pannel{
-		background: rgba(56, 4, 40, 0.9);
-		min-height: 100%;
-	}
-	.terminal_body {
-	  height: calc(100%);
-	  padding-top: 2px;
-	  margin-top: 0px;
-	  font-size: 12px;
-	  border-bottom-left-radius: 5px;
-	  border-bottom-right-radius: 5px;
-	}
-	.terminal_content{
-		color: rgba(255,255,255,0.8);
-	}
-	.terminal_promt {
-	  display: flex;
-	}
-	
-	.terminal_promt span {
-	  margin-left: 4px;
-	}
-	
-	.terminal_user {
-	  color: #7eda28;
-	}
-	
-	.terminal_location {
-	  color: #4878c0;
-	}
 	:deep(.p-inputgroup.search-bar .p-multiselect-label){
 		line-height: 30px;
 	}
-	.terminal_bling {
-	  color: #dddddd;
-	}
-	
-	.terminal_cursor {
-	  display: block;
-	  height: 14px;
-	  width: 5px;
-	  margin-left: 10px;
-	  animation: curbl 1200ms linear infinite;
-	}
-	
 	@keyframes curbl {
 	  
 	  0% {

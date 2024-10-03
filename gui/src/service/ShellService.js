@@ -47,8 +47,6 @@ export default class ShellService {
 		}
 	}
 	async takePipyVersion (apiGet) {
-		const pm = platform();
-		store.commit('account/setPlatform', pm);
 		console.log("takePipyVersion");
 		if(false){
 			let command = await Command.sidecar("bin/ztmctl", ['version','--json','','','','']);

@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import AppService from '@/service/AppService';
 import toast from "@/utils/toast";
 import ShellService from '@/service/ShellService';
 import PipyVersion from '@/components/mesh/PipyVersion.vue';
