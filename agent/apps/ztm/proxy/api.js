@@ -89,28 +89,26 @@ export default function ({ app, mesh }) {
   var connectPeer = pipeline($=>$
     .onStart(
       () => mesh.discover().then(
-        peers => Promise.all(peers.map(
+        peers => Promise.any(peers.map(
           ep => mesh.request(
             ep.id,
             new Message({ path: '/api/config' })
-          ).then(res => ({
-            ep,
-            config: res?.head?.status === 200 ? JSON.decode(res.body) : {}
-          }))
+          ).then(res => {
+            var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
+            if (IP.isV4($host) || IP.isV6($host)) {
+              if (hasIP(config)) return ep
+            } else {
+              if (hasDomain(config)) return ep
+            }
+            throw null
+          })
         ))
-      ).then(peers => {
-        if (IP.isV4($host) || IP.isV6($host)) {
-          peers = peers.filter(p => hasIP(p.config))
-        } else {
-          peers = peers.filter(p => hasDomain(p.config))
-        }
-        if (peers.length > 0) {
-          var peer = peers[Math.floor(Math.random() * peers.length)]
-          $targetEP = peer.ep.id
-          app.log(`Forward to ${$target} via ${peer.ep.name} (${peer.ep.id})`)
-        } else {
-          app.log(`No exit found for ${$target}`)
-        }
+      ).then(ep => {
+        $targetEP = ep.id
+        app.log(`Forward to ${$target} via ${ep.name} (${ep.id})`)
+        return new Data
+      }).catch(() => {
+        app.log(`No exit found for ${$target}`)
         return new Data
       })
     )
