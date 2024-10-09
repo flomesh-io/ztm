@@ -90,18 +90,21 @@ export default function ({ app, mesh }) {
     .onStart(
       () => mesh.discover().then(
         peers => Promise.any(peers.map(
-          ep => mesh.request(
-            ep.id,
-            new Message({ path: '/api/config' })
-          ).then(res => {
-            var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
-            if (IP.isV4($host) || IP.isV6($host)) {
-              if (hasIP(config)) return ep
-            } else {
-              if (hasDomain(config)) return ep
-            }
-            throw null
-          })
+          ep => {
+            if (!ep.online) throw null
+            return mesh.request(
+              ep.id,
+              new Message({ path: '/api/config' })
+            ).then(res => {
+              var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
+              if (IP.isV4($host) || IP.isV6($host)) {
+                if (hasIP(config)) return ep
+              } else {
+                if (hasDomain(config)) return ep
+              }
+              throw null
+            })
+          }
         ))
       ).then(ep => {
         $targetEP = ep.id
