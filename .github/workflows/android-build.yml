@@ -89,3 +89,10 @@ jobs:
       with:
         name: ztm-app-v${{ vars.APP_VERSION }}-android
         path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
+    
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ztm-lib-v${{ vars.APP_VERSION }}-android
+        path: |
+          ./gui/src-android/app/src/main/assets/libc++_shared.so
+          ./gui/src-android/app/src/main/assets/libztm.so
