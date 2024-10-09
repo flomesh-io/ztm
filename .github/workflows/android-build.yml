@@ -63,7 +63,7 @@ jobs:
         export ANDROID_HOME='/usr/local/lib/android/sdk'
         ls $ANDROID_HOME
         ls $ANDROID_HOME/build-tools
-        $ANDROID_HOME/build-tools/31.0.0/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
+        $ANDROID_HOME/build-tools/31.0.0/zipalign -v 4 ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
     - name: Decode keystore
       run: |
         echo ${{ secrets.KEYSTORE_BASE64 }} | base64 --decode > ./my-release-key.jks
@@ -75,8 +75,8 @@ jobs:
                                                        --ks-pass env:KEYSTORE_PASSWORD \
                                                        --key-pass env:KEY_PASSWORD \
                                                        --ks-key-alias "${{ secrets.KEY_ALIAS }}" \
-                                                       --out ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm.apk \
-                                                       ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
+                                                       --out ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk \
+                                                       ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned-aligned.apk
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
