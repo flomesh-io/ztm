@@ -40,16 +40,20 @@ class MainActivity : TauriActivity() {
 				fileHelper = FileHelper(this)
 				// 检查并请求外部存储管理权限（Android 11+）
 				if (!fileHelper.hasManageExternalStoragePermission()) {
-						fileHelper.requestManageExternalStoragePermission()
+					fileHelper.requestManageExternalStoragePermission()
 				} else {
+					fileHelper.createDirectory();
 						// // 保存文件到公共 Documents 目录并打开它
 						// val uri: Uri? = fileHelper.saveFileToDocuments("Readme.txt", "Welcome ZTM!")
 						// uri?.let { fileHelper.openFile(it) }
 				}
+				fileHelper.createShortcut()
+				// SAFActivity.start(this)
     }
 
     private fun startFloatingWindowService() {
         val intent = Intent(this, FloatingWindowService::class.java)
         startService(intent)
     }
+		
 }
