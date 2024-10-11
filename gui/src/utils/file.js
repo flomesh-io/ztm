@@ -59,13 +59,28 @@ const getSavePath = (target, dft) => {
 		return decodeURI(target);
 	}
 }
-const writeMobileFile = (name, append) => {
-	if(isMobile()){
-		create(name, { 
+const androidRoot = "/storage/emulated/0/com.flomesh.ztm"
+const createFile = (name) => {
+	if(platform() == 'android'){
+		return create(name, {
 			write:true, 
 			create:true, 
 			baseDir: BaseDirectory.Document,
-		}).then((file)=>{
+		})
+	} else {
+		return create(name, {
+			write:true, 
+			create:true, 
+			baseDir: BaseDirectory.Document,
+		})
+	}
+}
+const writeMobileFile = (name, append) => {
+	if(isMobile()){
+		documentDir().then((path)=>{
+			console.log(`$$$$$$$$4:${path}`)
+		})
+		createFile(name).then((file)=>{
 			file.write(new TextEncoder().encode(append)).then(()=>{
 				file.close();
 			});

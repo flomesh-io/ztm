@@ -266,6 +266,8 @@
     "os:allow-version",
     "os:allow-platform",
     "os:allow-hostname",
+		"fs:allow-create",
+		"fs:allow-open",
     "fs:allow-app-read",
     "fs:allow-app-read-recursive",
     "fs:allow-appcache-read",
@@ -285,6 +287,15 @@
 		"fs:allow-home-write", 
 		"fs:allow-home-write-recursive", 
 		"fs:allow-copy-file",
+		{
+			"identifier": "fs:scope",
+			"allow": [
+				{ "path": "$APPDATA" }, 
+				{ "path": "$APPDATA/**" },
+				{ "path": "$HOME" },
+				{ "path": "$HOME/**" }
+			]
+		},
     "deep-link:default",
     "deep-link:allow-get-current",
     "deep-link:allow-is-registered",
