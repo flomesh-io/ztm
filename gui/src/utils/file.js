@@ -77,9 +77,6 @@ const createFile = (name) => {
 }
 const writeMobileFile = (name, append) => {
 	if(isMobile()){
-		documentDir().then((path)=>{
-			console.log(`$$$$$$$$4:${path}`)
-		})
 		createFile(name).then((file)=>{
 			file.write(new TextEncoder().encode(append)).then(()=>{
 				file.close();
