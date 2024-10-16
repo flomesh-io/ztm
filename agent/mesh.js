@@ -598,7 +598,7 @@ export default function (rootDir, config) {
           }
           return connectApp(params.provider, $requestedApp, username).then(p => {
             if (p) {
-              logInfo(`Proxy to local app ${$requestedApp}`)
+              // logInfo(`Proxy to local app ${$requestedApp}`)
               $requestedAppPipeline = p
               return response200
             }
@@ -612,7 +612,7 @@ export default function (rootDir, config) {
       }
     ).to($=>$
       .pipe(() => $requestedAppPipeline, () => ({ source: 'peer', peer: $requestedAppPeer }))
-      .onEnd(() => logInfo(`Proxy to local app ${$requestedApp} ended`))
+      // .onEnd(() => logInfo(`Proxy to local app ${$requestedApp} ended`))
     )
   )
 
@@ -634,7 +634,7 @@ export default function (rootDir, config) {
     })
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
-        .onStart(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub}`))
+        // .onStart(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub}`))
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
           return new Message({
@@ -651,7 +651,7 @@ export default function (rootDir, config) {
             )
           )
         )
-        .onEnd(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub} ended`))
+        // .onEnd(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub} ended`))
       ),
       'deny': ($=>$
         .onStart(() => logError(`No route to endpoint ${ep}`))
