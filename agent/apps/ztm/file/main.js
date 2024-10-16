@@ -11,9 +11,6 @@ export default function ({ app, mesh, utils }) {
   var gui = new http.Directory(os.path.join(app.root, 'gui'))
   var response = utils.createResponse
   var responder = utils.createResponder
-  var responderOwnerOnly = (f) => responder((params, req) => (
-    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(403))
-  ))
 
   var serveUser = utils.createServer({
     '/cli': {
@@ -86,24 +83,6 @@ export default function ({ app, mesh, utils }) {
           username: app.username,
         }))
       ),
-    },
-
-    '/api/endpoints/{ep}/acl/*': {
-      'GET': responder((params) => {
-        var ep = params.ep
-        var pathname = URL.decodeComponent(params['*'])
-        return api.getACL(ep, pathname).then(
-          ret => ret ? response(200, ret) : response(404)
-        )
-      }),
-
-      'POST': responder((params, req) => {
-        var ep = params.ep
-        var pathname = URL.decodeComponent(params['*'])
-        return api.setACL(ep, pathname, JSON.decode(req.body)).then(
-          ret => response(ret ? 201 : 404)
-        )
-      }),
     },
 
     '/api/endpoints/{ep}/transfers': {
@@ -199,22 +178,6 @@ export default function ({ app, mesh, utils }) {
           username: $ctx.peer.username,
         }))
       ),
-    },
-
-    '/api/acl/*': {
-      'GET': responderOwnerOnly((params) => {
-        var pathname = URL.decodeComponent(params['*'])
-        return api.getACL(app.endpoint.id, pathname).then(
-          ret => ret ? response(200, ret) : response(404)
-        )
-      }),
-
-      'POST': responderOwnerOnly((params, req) => {
-        var pathname = URL.decodeComponent(params['*'])
-        return api.setACL(app.endpoint.id, pathname, JSON.decode(req.body)).then(
-          ret => response(ret ? 201 : 404)
-        )
-      }),
     },
 
     '/api/transfers': {
