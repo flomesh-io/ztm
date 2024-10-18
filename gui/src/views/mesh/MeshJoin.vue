@@ -7,6 +7,8 @@ import { isAdmin } from "@/service/common/authority-utils";
 import { useStore } from 'vuex';
 import _ from "lodash"
 import { downloadFile } from '@/utils/file';
+import { inAppPay } from '@/utils/pay';
+import { platform, isSafariOrMacOS } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
 const store = useStore();
 const props = defineProps(['pid','title']);
@@ -68,6 +70,7 @@ const commit = () => {
 		}); 
 }
 onMounted(() => {
+	// location.href = 'https://localhost:8000/pay.html'
 	if(!!props.pid){
 		permitType.value = "Form";
 		loaddata()
@@ -75,6 +78,7 @@ onMounted(() => {
 		config.value = _.cloneDeep(newConfig);
 		config.value.agent.name = user.value.id;
 	}
+	
 });
 const home = ref({
     icon: 'pi pi-desktop'
@@ -161,6 +165,12 @@ const toggleUsermenu = (event) => {
 };
 const windowWidth = computed(() =>  window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
+const pay = () => {
+	inAppPay(()=>{
+		console.log(res)
+		console.log('Apple Pay initiated');
+	})
+}
 </script>
 
 <template>
@@ -219,9 +229,13 @@ const isMobile = computed(() => windowWidth.value<=768);
 									</div>
 							</li>
 						</ul>
-						<div class="text-center" v-if="!permit">
-							<i class="pi pi-info-circle relative" style="top: 3px;"/>
+						<div class="pl-2" v-if="!permit">
+							<i class="pi pi-info-circle relative" style="top: 1px;"/>
 							For non-root users, get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> and send it to 'root' user to acquire a permit
+						</div>
+						
+						<div class="pl-2 mt-3" v-if="!permit && platform() == 'ios'">
+							<div><i class="pi pi-cart-arrow-down relative" style="top: 1px;"/> Or, you can <Button @click="pay" class="p-0" label="<Buy>" link /> an AWS hub and received a root permit</div>
 						</div>
 					</div>
 				</div>

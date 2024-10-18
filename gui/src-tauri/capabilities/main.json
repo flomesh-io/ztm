@@ -304,6 +304,7 @@
 		"upload:allow-download",
 		"upload:allow-upload",
 		"dialog:default",
-		"dialog:allow-open"
+		"dialog:allow-open",
+		"log:default"
   ]
 }

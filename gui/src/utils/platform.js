@@ -6,6 +6,17 @@ const platform = (text)=>{
 		return platformOs();
 	}
 }
+function isSafariOrMacOS() {
+    const ua = navigator.userAgent;
+    const vendor = navigator.vendor;
+    const platform = navigator.platform;
+
+    const isSafari = /Safari/.test(ua) && /Apple Computer/.test(vendor) && !/Chrome/.test(ua);
+    const isMacOS = /Macintosh|MacIntel|MacPPC|Mac68K/.test(platform);
+
+    return isSafari || isMacOS;
+}
+
 export {
-	platform
+	platform, isSafariOrMacOS
 };
