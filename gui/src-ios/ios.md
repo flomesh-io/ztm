@@ -91,6 +91,3 @@ NSPushNotificationsUsageDescription: ZTM will run in the background
         </array>
     </dict>
 </dict>
-
-
-[](https://developer.squareup.com/settings/notifications)
