@@ -70,7 +70,6 @@ const commit = () => {
 		}); 
 }
 onMounted(() => {
-	// location.href = 'https://localhost:8000/pay.html'
 	if(!!props.pid){
 		permitType.value = "Form";
 		loaddata()
