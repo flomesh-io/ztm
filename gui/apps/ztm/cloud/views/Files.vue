@@ -628,7 +628,7 @@ onMounted(()=>{
 			<Loading v-if="props.loading"/>
 			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="filesFilter && filesFilter.length >0">
 			<div class="text-center" >
-				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block" :value="filesFilter" >
+				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block pb-8" :value="filesFilter" >
 						<Column sortable field="name" header="Name" expander style="width: 50%">
 								<template  #body="slotProps">
 									<div class="selector pointer noSelect" v-longtap="handleLongTap(slotProps.node)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
@@ -659,7 +659,7 @@ onMounted(()=>{
 						</Column>
 						
 				</TreeTable>
-				<div v-else class="grid text-left px-3 m-0 pt-3" v-if="filesFilter && filesFilter.length >0">
+				<div v-else class="grid text-left px-3 m-0 pt-3 pb-8" v-if="filesFilter && filesFilter.length >0">
 						<div :class="!!props.small?'col-4 md:col-4 xl:col-2':'col-4 md:col-2 xl:col-1'" class="relative text-center file-block p-1" v-for="(file,hid) in filesFilter" :key="hid">
 							<div class="selector p-2 relative noSelect" v-longtap="handleLongTap(file)" @click="selectFile($event,file)" :class="{'active':!!file.selected?.value}" >
 								<img :class="stateLabel(detailData[file.path]) == 'not find'?'opacity-40':''" oncontextmenu="return false;"  :src="fileIcon(file)" class="pointer noEvent noSelect" height="40"  style="border-radius: 4px; overflow: hidden;margin: auto;"/>
