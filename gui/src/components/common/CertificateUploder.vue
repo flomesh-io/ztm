@@ -13,7 +13,7 @@ const props = defineProps({
 	},
 	accept: {
 		type: String,
-		default: '*/*'
+		default: null
 	},
 	placeholder: {
 		type: String,
@@ -148,7 +148,7 @@ const typeOk = () => {
 
 <template>
 	<div :class="{'noheader-upload':!!props.modelValue}">
-	<FileUpload :auto="!props.multiple" name="demo[]" customUpload @uploader="customUploader" :multiple="false" :maxFileSize="props.maxFileSize" @select="onSelectedFiles">
+	<FileUpload :accept="accept" :auto="!props.multiple" name="demo[]" customUpload @uploader="customUploader" :multiple="false" :maxFileSize="props.maxFileSize" @select="onSelectedFiles">
     <template #header="{ chooseCallback, uploadCallback, clearCallback, files }">
         <div class="w-full">
           <div class="flex flex-wrap justify-content-between align-items-center flex-1 gap-2" v-if="!props.modelValue">

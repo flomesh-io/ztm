@@ -51,8 +51,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 0.3.0
-        CFBundleVersion: 0.3.0
+        CFBundleShortVersionString: 0.3.8
+        CFBundleVersion: 0.3.81
     entitlements:
       path: ztm_iOS/ztm_iOS.entitlements
     scheme:
