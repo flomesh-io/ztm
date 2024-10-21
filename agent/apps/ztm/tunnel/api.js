@@ -277,23 +277,23 @@ export default function ({ app, mesh }) {
         .onStart(() =>
           ((i.exits && i.exits.length > 0)
             ? Promise.resolve(i.exits)
-            : mesh.discover().then(list => list.map(ep => ep.id))
-          ).then(exits => Promise.all(
+            : mesh.discover().then(list => list.filter(ep => ep.online).map(ep => ep.id))
+          ).then(exits => Promise.any(
             exits.map(
               id => getOutbound(id, protocol, name).then(
-                o => o ? { ep: id, ...o } : null
-              ).catch(() => null)
+                o => {
+                  if (!o) throw null
+                  if (!canAccess(o, app.endpoint.id, app.username)) throw null
+                  return id
+                }
+              )
             )
-          )).then(list => {
-            var ep = app.endpoint.id
-            var user = app.username
-            list = list.filter(o => (o && canAccess(o, ep, user)))
-            if (list.length > 0) {
-              $selectedEP = list[Math.floor(Math.random() * list.length)].ep
-              app.log(`Connect to ep ${$selectedEP} for ${protocol}/${name}`)
-            } else {
-              app.log(`No exit found for ${protocol}/${name}`)
-            }
+          )).then(exit => {
+            $selectedEP = exit
+            app.log(`Connect to ep ${$selectedEP} for ${protocol}/${name}`)
+            return new Data
+          }).catch(() => {
+            app.log(`No exit found for ${protocol}/${name}`)
             return new Data
           })
         )
