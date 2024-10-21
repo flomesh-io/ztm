@@ -106,7 +106,7 @@ onMounted(()=>{
 		<div class="embed-root" v-if="isMobileTauri">
 			<AppRoot :embed="true"/>
 		</div>
-		<div class="layout-wrapper" :class="containerClass" @click="toggleLeft">
+		<div class="layout-wrapper main-wrapper" :class="containerClass" @click="toggleLeft">
         <app-topbar></app-topbar>
 <!--        <div class="layout-sidebar">
             <app-sidebar></app-sidebar>

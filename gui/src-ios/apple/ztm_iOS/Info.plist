@@ -19,9 +19,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.3.0</string>
+	<string>0.3.8</string>
 	<key>CFBundleVersion</key>
-	<string>0.3.0</string>
+	<string>0.3.81</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
@@ -36,9 +36,9 @@
 	<key>NSLiveActivityUsageDescription</key>
 	<string>ZTM will run in the background</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>ZTM promises not to collect your location information, it only keeps the agent active</string>
+	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>ZTM promises not to collect your location information, it only keeps the agent active</string>
+	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSPushNotificationsUsageDescription</key>
 	<string>ZTM will run in the background</string>
 	<key>NSSupportsLiveActivities</key>

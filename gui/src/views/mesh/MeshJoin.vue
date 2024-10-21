@@ -224,7 +224,7 @@ const pay = () => {
 						<ul class="list-none p-0 m-0" >
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
 									<div class="text-900 w-full">
-										<CertificateUploder :placeholder="placeholder.json" v-model="permit" format="json" label="your permit"/>
+										<CertificateUploder accept="application/json,text/plain" :placeholder="placeholder.json" v-model="permit" format="json" label="your permit"/>
 									</div>
 							</li>
 						</ul>

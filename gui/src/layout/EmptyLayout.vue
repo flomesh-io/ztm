@@ -34,7 +34,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 </script>
 
 <template>
-		<div class="layout-wrapper" :class="containerClass" >
+		<div class="layout-wrapper embed-wrapper" :class="containerClass" >
         <div class="layout-main-container"  >
             <div class="layout-main" >
 							<router-view
