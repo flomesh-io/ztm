@@ -96,9 +96,11 @@ onMounted(()=>{
 	// getCurrentWindow().listen<string>('tauri-back', (event) => {
 	// 	store.commit('notice/setApp', null);
 	// });
-	setTimeout(()=>{
-		fetch('https://flomesh.io/').then(()=>{})
-	},300)
+	if(platform.value == 'ios'){
+		setTimeout(()=>{
+			fetch('https://flomesh.io/').then(()=>{})
+		},300)
+	}
 })
 </script>
 

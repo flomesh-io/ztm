@@ -5,11 +5,14 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
          android:required="false"/>
+		<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 		<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 		<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 		<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 		<uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT"/>
+    <!-- AndroidTV support -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
 		
     <application
 				android:allowBackup="true"
@@ -28,6 +31,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <!-- AndroidTV support -->
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".CopyBinaryActivity" />
