@@ -1257,7 +1257,10 @@ fieldset{
 		padding: 0 !important;
 	}
 } 
-
+.p-inputgroup textarea{
+	min-height: 36px;
+	border:none !important;
+}
 @media screen and (max-width: 768px){
 		
 	.block-content,.p-tabview .p-tabview-panels,.block-section{

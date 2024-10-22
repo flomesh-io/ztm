@@ -66,6 +66,7 @@
     "primeicons": "^7.0.0",
     "primevue": "4.1.1",
 		"@primevue/themes": "4.1.1",
+		"@primevue/core": "4.1.1",
     "vee-validate": "4.12.8",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vue": "^3.2.41",
