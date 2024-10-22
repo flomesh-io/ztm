@@ -50,7 +50,6 @@
     // 发起SKProductsRequest，仅请求指定的productIdentifier
 		NSLog(@"start purchaseProductWithID.");
     NSArray *productIdentifiers = @[
-			@"com.flomesh.ztm.awshub",
 			@"com.flomesh.ztm.sub.awshub"
 		];
     SKProductsRequest *productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithArray:productIdentifiers]];
