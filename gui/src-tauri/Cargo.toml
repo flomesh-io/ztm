@@ -12,21 +12,21 @@ name = "ztm_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
-tauri-build = { version = "=2.0.1", features = [] }
+tauri-build = { version = "=2.0.2", features = [] }
 
 # tauri = { version = "=2.0.2", features = ["devtools"] }
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri = { version = "=2.0.2", features = ["macos-proxy", "unstable"] }
-tauri-utils = "=2.0.1"
-tauri-runtime = "=2.0.1"
-tauri-plugin-shell = "=2.0.1"
+tauri = { version = "=2.0.6", features = ["macos-proxy", "unstable"] }
+tauri-utils = "=2.0.2"
+tauri-runtime = "=2.1.1"
+tauri-plugin-shell = "=2.0.2"
 tauri-plugin-process = "=2.0.1"
-tauri-plugin-http = "=2.0.1"
+tauri-plugin-http = "=2.0.3"
 tauri-plugin-os = "=2.0.1"
 tauri-plugin-upload = "=2.0.1"
-tauri-plugin-fs = "=2.0.1"
-tauri-plugin-dialog = "=2.0.1"
+tauri-plugin-fs = "=2.0.3"
+tauri-plugin-dialog = "=2.0.3"
 tauri-plugin-deep-link = "=2.0.1"
 tauri-plugin-clipboard-manager = "=2.0.1"
 tauri-plugin-log = "=2.0.1"

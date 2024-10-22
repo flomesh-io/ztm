@@ -1,5 +1,6 @@
 import browser from "@/assets/img/apps/browser.png";
 import proxy from "@/assets/img/apps/proxy.png";
+import rdp from "@/assets/img/apps/rdp.png";
 import terminal from "@/assets/img/apps/terminal.png";
 import scriptIcon from "@/assets/img/apps/script.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
@@ -10,6 +11,7 @@ import ztmlog from "@/assets/img/apps/ztmlog.png";
 import eplog from "@/assets/img/apps/eplog.png";
 import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
+import RDPComponent from '@/views/apps/core/RDP.vue';
 import { platform } from '@tauri-apps/plugin-os';
 const defaultApp = [{
 		name: "setting",
@@ -43,6 +45,8 @@ const defaultApp = [{
 		icon: eplog,
 	},{
 		name: "browser",
+	},{
+		name: "rdp",
 	}];
 const mobileApp = [{
 		name: "setting",
@@ -55,6 +59,8 @@ const mobileApp = [{
 		icon: ztmlog,
 	},{
 		name: "browser",
+	},{
+		name: "rdp",
 	}];
 const webApp = [{
 		name: "setting",
@@ -67,7 +73,9 @@ const webApp = [{
 		icon: ztmlog,
 	},{
 		name: "browser",
-	}]
+	},{
+		name: "rdp",
+	}];
 const appSelect = {
 	web:webApp,
 	ios:mobileApp,
@@ -84,6 +92,11 @@ const appMapping = {
 		icon: browser,
 		name: "Browser",
 		component: BrowserComponent
+	},
+	"/rdp": {
+		icon: rdp,
+		name: "RDP",
+		component: RDPComponent
 	},
 	"ztm/script": {
 		icon: scriptIcon,

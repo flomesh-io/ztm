@@ -8,6 +8,11 @@ const app = {
 				component: () => import('@/views/apps/core/TermContent.vue')
 		},
 		{
+				path: '/app/rdp',
+				name: 'RDP',
+				component: () => import('@/views/apps/core/RDP.vue')
+		},
+		{
 				path: '/app/ztmlog',
 				name: 'ZTM Log',
 				component: () => import('@/views/apps/core/ZtmLog.vue')

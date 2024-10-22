@@ -62,11 +62,15 @@ const getSavePath = (target, dft) => {
 const androidRoot = "/storage/emulated/0/com.flomesh.ztm"
 const createFile = (name) => {
 	if(platform() == 'android'){
-		return create(name, {
-			write:true, 
-			create:true, 
-			baseDir: BaseDirectory.Document,
-		})
+		return new Promise(() => {
+			// TODO
+		});
+		//Android forbidden path
+		// return create(name, {
+		// 	write:true, 
+		// 	create:true, 
+		// 	baseDir: BaseDirectory.Document,
+		// })
 	} else {
 		return create(name, {
 			write:true, 
