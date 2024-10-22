@@ -91,7 +91,7 @@ export default function ({ app, mesh }) {
       () => mesh.discover().then(
         peers => Promise.any(peers.map(
           ep => {
-            if (!ep.online) throw null
+            if (!ep.online) return Promise.reject(null)
             return mesh.request(
               ep.id,
               new Message({ path: '/api/config' })
