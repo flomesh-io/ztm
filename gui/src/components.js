@@ -41,7 +41,7 @@ import Image from 'primevue/image';
 import InlineMessage from 'primevue/inlinemessage';
 import Inplace from 'primevue/inplace';
 import InputSwitch from 'primevue/inputswitch';
-import Toggleswitch from 'primevue/toggleswitch';
+import ToggleSwitch from 'primevue/toggleswitch';
 import InputText from 'primevue/inputtext';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
@@ -168,7 +168,7 @@ export function useComponent(app){
 	app.component('InputMask', InputMask);
 	app.component('InputNumber', InputNumber);
 	app.component('InputSwitch', InputSwitch);
-	app.component('Toggleswitch', Toggleswitch);
+	app.component('ToggleSwitch', ToggleSwitch);
 	app.component('InputText', InputText);
 	app.component('Knob', Knob);
 	app.component('Listbox', Listbox);

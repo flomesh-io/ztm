@@ -366,7 +366,7 @@ watch(()=>props.d,()=>{
 										<ChipList direction="v" icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
 									<FormItem label=""  :border="inboundRestrict">
-										<InputSwitch  class="vm" v-model="inboundRestrict" inputId="inboundRestrict"/><label for="inboundRestrict" class="vm ml-2">Restrict access</label>
+										<ToggleSwitch  class="vm" v-model="inboundRestrict" inputId="inboundRestrict"/><label for="inboundRestrict" class="vm ml-2">Restrict access</label>
 									</FormItem>
 									<FormItem v-if="inboundRestrict" label="Allowed Exits"  :border="false">
 											<Chip class="pl-0 pr-3 mr-2">
@@ -479,7 +479,7 @@ watch(()=>props.d,()=>{
 										</FormItem>
 										
 										<FormItem label=""  :border="outboundRestrict">
-											<InputSwitch  class="vm" v-model="outboundRestrict" inputId="outboundRestrict"/><label for="outboundRestrict" class="vm ml-2">Restrict access</label>
+											<ToggleSwitch  class="vm" v-model="outboundRestrict" inputId="outboundRestrict"/><label for="outboundRestrict" class="vm ml-2">Restrict access</label>
 										</FormItem>
 										<FormItem v-if="outboundRestrict" label="Allowed Entrances" >
 												<Chip class="pl-0 pr-3 mr-2">

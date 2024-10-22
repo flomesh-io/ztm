@@ -121,7 +121,7 @@ const toggle = (event) => {
 						<div v-if="!isRunning" class="flex-item pl-2" >
 							<Button size="small" :loading="saving" icon="pi pi-play" @click="start"/>
 						</div>
-						<InputSwitch v-else class="relative green" v-model="proxy" style="left: -5px;" />
+						<ToggleSwitch v-else class="relative green" v-model="proxy" style="left: -5px;" />
 					</template>
 				</Select>
 			</InputGroup>					
