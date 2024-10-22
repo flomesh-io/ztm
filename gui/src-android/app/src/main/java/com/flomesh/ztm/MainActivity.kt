@@ -9,9 +9,14 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
 
 class MainActivity : TauriActivity() {
 
+		private val REQUEST_FOREGROUND_SERVICE_PERMISSION = 1001
     private lateinit var overlayPermissionLauncher: ActivityResultLauncher<Intent>
     private lateinit var fileHelper: FileHelper
 		
@@ -52,8 +57,25 @@ class MainActivity : TauriActivity() {
     }
 
     private fun startFloatingWindowService() {
-        val intent = Intent(this, FloatingWindowService::class.java)
-        startService(intent)
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+					if (ContextCompat.checkSelfPermission(
+									this,
+									Manifest.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK
+							) != PackageManager.PERMISSION_GRANTED
+					) {
+							ActivityCompat.requestPermissions(
+									this,
+									arrayOf(Manifest.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK),
+									REQUEST_FOREGROUND_SERVICE_PERMISSION
+							)
+					} else {
+							val intent = Intent(this, FloatingWindowService::class.java)
+							startService(intent)
+					}
+			} else {
+				val intent = Intent(this, FloatingWindowService::class.java)
+				startService(intent)
+			}
     }
 		
 }

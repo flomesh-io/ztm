@@ -102,8 +102,6 @@ watch(()=> meshes, ()=>{
 })
 onMounted(() => {
 	if(platform.value=='android'){
-		loading.value = true;
-		loader.value = true;
 		setTimeout(() => {
 			store.dispatch('account/meshes');
 		},2000)

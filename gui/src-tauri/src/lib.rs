@@ -12,11 +12,16 @@ use tauri::AppHandle;
 use url::Url;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
-extern crate objc;
-use objc::runtime::{Class, Object};
-use objc::{msg_send, sel, sel_impl};
 use tauri_plugin_log::{Target, TargetKind};
 use log::{trace, debug, info, warn, error};
+
+
+#[cfg(target_os = "ios")]
+extern crate objc;
+#[cfg(target_os = "ios")]
+use objc::runtime::{Class, Object};
+#[cfg(target_os = "ios")]
+use objc::{msg_send, sel, sel_impl};
 // use oslog::{OsLogger};
 
 // #[link(name = "pipy", kind = "framework")]
@@ -128,7 +133,7 @@ async fn create_wry_webview(
 			port: proxy_port
 		});
 		
-		let builder = wry::WebViewBuilder::new_as_child(&window);
+		let builder = wry::WebViewBuilder::new();
 		let webview = builder
 		  .with_url(curl)
 			.with_proxy_config(proxy_config)
@@ -136,7 +141,7 @@ async fn create_wry_webview(
 			    position: tauri::LogicalPosition::new(100, 100).into(),
 			    size: tauri::LogicalSize::new(960, 800).into(),
 			  })
-		  .build()
+		  .build_as_child(&window)
 		  .unwrap();
 	}
 	Ok(())
@@ -253,6 +258,7 @@ fn purchase_product() -> Result<String, String> {
 		
 		warn!("purchase_product start");
 		let handle = thread::spawn(move || -> Result<(), String> {
+			#[cfg(target_os = "ios")]
 			unsafe {
 					warn!("purchase_product in");
 					let cls = Class::get("InAppPayHandler").expect("InAppPayHandler class not found");
