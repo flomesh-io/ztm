@@ -143,10 +143,10 @@ const customUploader = async (event) => {
 		:disabled="props.disabled || uploading" 
 		customUpload>
 		<template #chooseicon>
-			<i class="pi pi-spin pi-spinner"></i>
+			<slot />
 		</template>
 		<template #uploadicon>
-			<slot />
+			<i class="pi pi-spin pi-spinner"></i>
 		</template>
 	</FileUpload>
 	<Toast  position="bottom-center" group="bc" @close="onClose">

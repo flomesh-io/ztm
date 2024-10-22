@@ -1,5 +1,5 @@
-import { definePreset } from 'primevue/themes';
-import Aura from 'primevue/themes/aura';
+import { definePreset } from '@primevue/themes';
+import Aura from '@primevue/themes/aura';
 const MyPreset = definePreset(Aura, {
     //Your customizations, see the following sections for examples
 		//#f9fafb
