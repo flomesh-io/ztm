@@ -3,7 +3,7 @@ import { ref, onMounted,onActivated,watch, computed } from "vue";
 import dayjs from 'dayjs';
 import _ from 'lodash';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { FilterMatchMode } from 'primevue/api';
+import { FilterMatchMode } from '@primevue/core/api';
 dayjs.extend(relativeTime)
 
 const props = defineProps(['d','endpoints']);
