@@ -176,7 +176,7 @@ watch(()=>selectedMesh,()=>{
 </script>
 
 <template>
-	<ScrollPanel class="container_pannel pb-2" :class="props.layout" >
+	<ScrollPanel class="container_pannel" :class="props.layout" >
 		<AppHeader v-if="props.layout=='absolute_container'" :main="true">
 				<template #center>
 					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
@@ -256,7 +256,7 @@ watch(()=>selectedMesh,()=>{
 	}
 	.actions{
 		left: 0px;
-		padding: 10px;
+		padding: 9px 10px;
 		display: flex;
 		right: 0px;
 		:deep(.p-button){
@@ -291,7 +291,7 @@ watch(()=>selectedMesh,()=>{
 		min-height: 100%;
 	}
 	.terminal_body, :deep(.terminal_body){
-	  padding-top: 2px;
+	  padding-top: 0px;
 	  margin-top: 0px;
 	  font-size: 12px;
 	  border-bottom-left-radius: 5px;

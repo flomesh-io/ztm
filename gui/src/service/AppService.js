@@ -7,6 +7,150 @@ import ZtmService from '@/service/ZtmService';
 const ztmService = new ZtmService();
 export default class AppService {
 	
+	getTunnelEndpoints(mesh){
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'tunnel',
+		}
+		const base = this.getAppUrl(options);
+		return this.invokeAppApi({
+			base,
+			url:`/api/endpoints`,
+			method: 'GET'
+		})
+	}
+	
+	getInbound({mesh, ep, proto, name}) {
+	
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'tunnel',
+		}
+		const base = this.getAppUrl(options);
+		return this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${ep}/inbound/${proto}/${name}`,
+			method: 'GET'
+		})
+	}
+	getOutbound({mesh, ep, proto, name}) {
+		
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'tunnel',
+		}
+		const base = this.getAppUrl(options);
+		return this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${ep}/outbound/${proto}/${name}`,
+			method: 'GET'
+		})
+	}
+	getTunnels({mesh, eps, callback, error}) {
+		let reqs = [];
+		// merge request
+		(eps||[]).forEach((ep)=>{
+			
+			const tunnelName = `${mesh?.agent?.name}To${ep?.name}`;
+			const outboundReq = this.getOutbound({
+				mesh,
+				ep:ep?.id,
+				proto: 'TCP',
+				name:tunnelName
+			}).then((res)=> {
+				return { data:res, ep, type:'outbound' }
+			}).catch((e)=>{
+			})
+			reqs.push(outboundReq);
+			const inboundReq = this.getInbound({
+				mesh,
+				ep:mesh?.agent?.id,
+				proto: 'TCP',
+				name:tunnelName
+			}).then((res)=> {
+				return { data:res, ep, type:'inbound' }
+			}).catch((e)=>{
+			})
+			reqs.push(inboundReq)
+		})
+		
+		return merge(reqs).then((allRes) => {
+			const tunnels = {};
+			// set tunnels
+			(allRes||[]).forEach((childres)=>{
+				if(!!childres?.data ){
+					const res = childres.data;
+					if(!!res.protocol && !!res.name){
+						const _key = childres.ep?.id;
+						if(!tunnels[_key]){
+							tunnels[_key] = {
+								name: res.name,
+								proto: res.protocol,
+								outbounds: [],
+								inbounds: [],
+							}
+						}
+						tunnels[_key][childres.type] = {
+							...res,
+							ep:childres.ep
+						}
+					}
+				}
+			})
+			if(!!callback)
+			callback(tunnels,eps||[])
+		}).catch(()=>{
+			if(!!error)
+			error()
+		})
+	}
+	startEDPTunnel({
+		mesh,
+		ep,
+	}) {
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'proxy',
+		}
+		const tunnelName = `${mesh?.agent?.name}To${ep?.name}`;
+		const base = this.getAppUrl(options);
+		let reqs = [];
+		const createInbound =  this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${mesh?.agent?.id}/inbound/TCP/${tunnelName}`,
+			method: 'POST',
+			body: {
+				listens: [{
+					host:'127.0.0.1',
+					port:13389
+				}], 
+				exits:[ep?.id]
+			}
+		});
+		reqs.push(createInbound);
+		const createOutbound =  this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${ep?.id}/outbound/TCP/${tunnelName}`,
+			method: 'POST',
+			body: {
+				targets: [{
+					host:'127.0.0.1',
+					port:3389
+				}], 
+				entrances:[mesh?.agent?.id]
+			}
+		});
+		reqs.push(createOutbound);
+		return merge(reqs);
+	}
 	//
 	// App
 	//   name: string
@@ -28,7 +172,7 @@ export default class AppService {
 		return this.invokeAppApi({
 			base,
 			url:`/api/endpoints/${mesh?.agent?.id}/config`,
-			method: 'GET',
+			method: 'GET'
 		})
 	}
 	getProxyOutbounds(mesh) {
