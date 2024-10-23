@@ -52,32 +52,38 @@ export default class AppService {
 			method: 'GET'
 		})
 	}
+	getTunnel({mesh, ep}) {
+		let reqs = [];
+		const tunnelName = `${mesh?.agent?.name}To${ep?.name}`;
+		const outboundReq = this.getOutbound({
+			mesh,
+			ep:ep?.id,
+			proto: 'tcp',
+			name:tunnelName
+		}).then((res)=> {
+			return { data:res, ep, type:'outbound' }
+		}).catch((e)=>{
+		})
+		reqs.push(outboundReq);
+		const inboundReq = this.getInbound({
+			mesh,
+			ep:mesh?.agent?.id,
+			proto: 'tcp',
+			name:tunnelName
+		}).then((res)=> {
+			return { data:res, ep, type:'inbound' }
+		}).catch((e)=>{
+		})
+		reqs.push(inboundReq);
+		return reqs;
+	}
 	getTunnels({mesh, eps, callback, error}) {
 		let reqs = [];
 		// merge request
 		(eps||[]).forEach((ep)=>{
-			
-			const tunnelName = `${mesh?.agent?.name}To${ep?.name}`;
-			const outboundReq = this.getOutbound({
-				mesh,
-				ep:ep?.id,
-				proto: 'TCP',
-				name:tunnelName
-			}).then((res)=> {
-				return { data:res, ep, type:'outbound' }
-			}).catch((e)=>{
-			})
-			reqs.push(outboundReq);
-			const inboundReq = this.getInbound({
-				mesh,
-				ep:mesh?.agent?.id,
-				proto: 'TCP',
-				name:tunnelName
-			}).then((res)=> {
-				return { data:res, ep, type:'inbound' }
-			}).catch((e)=>{
-			})
-			reqs.push(inboundReq)
+			reqs = reqs.concat(this.getTunnel({
+				mesh, ep
+			}))
 		})
 		
 		return merge(reqs).then((allRes) => {
@@ -92,14 +98,11 @@ export default class AppService {
 							tunnels[_key] = {
 								name: res.name,
 								proto: res.protocol,
-								outbounds: [],
-								inbounds: [],
 							}
 						}
-						tunnels[_key][childres.type] = {
-							...res,
-							ep:childres.ep
-						}
+						tunnels[_key][childres.type] = res;
+						tunnels[_key].starting = false;
+						tunnels[_key].stoping = false;
 					}
 				}
 			})
@@ -110,35 +113,22 @@ export default class AppService {
 			error()
 		})
 	}
-	startEDPTunnel({
+	startRDPTunnel({
 		mesh,
 		ep,
+		callback
 	}) {
 		const options = {
 			mesh:mesh?.name,
 			ep:mesh?.agent?.id,
 			provider:'ztm',
-			app:'proxy',
+			app:'tunnel',
 		}
 		const tunnelName = `${mesh?.agent?.name}To${ep?.name}`;
 		const base = this.getAppUrl(options);
-		let reqs = [];
-		const createInbound =  this.invokeAppApi({
+		this.invokeAppApi({
 			base,
-			url:`/api/endpoints/${mesh?.agent?.id}/inbound/TCP/${tunnelName}`,
-			method: 'POST',
-			body: {
-				listens: [{
-					host:'127.0.0.1',
-					port:13389
-				}], 
-				exits:[ep?.id]
-			}
-		});
-		reqs.push(createInbound);
-		const createOutbound =  this.invokeAppApi({
-			base,
-			url:`/api/endpoints/${ep?.id}/outbound/TCP/${tunnelName}`,
+			url:`/api/endpoints/${ep?.id}/outbound/tcp/${tunnelName}`,
 			method: 'POST',
 			body: {
 				targets: [{
@@ -147,9 +137,48 @@ export default class AppService {
 				}], 
 				entrances:[mesh?.agent?.id]
 			}
-		});
-		reqs.push(createOutbound);
-		return merge(reqs);
+		}).then((resInbound)=>{
+			this.invokeAppApi({
+				base,
+				url:`/api/endpoints/${mesh?.agent?.id}/inbound/tcp/${tunnelName}`,
+				method: 'POST',
+				body: {
+					listens: [{
+						ip:'127.0.0.1',
+						port:13389
+					}], 
+					exits:[ep?.id]
+				}
+			}).then((resOutbound)=>{
+				callback(resInbound,resOutbound)
+			});
+		})
+	}
+	
+	stopRDPTunnel({
+		mesh,
+		ep,
+	}) {
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'tunnel',
+		}
+		const tunnelName = `${mesh?.agent?.name}To${ep?.name}`;
+		const base = this.getAppUrl(options);
+		const deleteReqs = [];
+		deleteReqs.push(this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${ep?.id}/outbound/tcp/${tunnelName}`,
+			method: 'DELETE',
+		}))
+		deleteReqs.push(this.invokeAppApi({
+			base,
+			url:`/api/endpoints/${mesh?.agent?.id}/inbound/tcp/${tunnelName}`,
+			method: 'DELETE',
+		}));
+		return merge(deleteReqs)
 	}
 	//
 	// App

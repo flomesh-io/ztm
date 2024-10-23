@@ -85,7 +85,7 @@ const loaddata = () => {
 const appLoading = ref({})
 const manage = ref(false);
 const mergeApps = computed(()=>{
-	return (!props.noInners?innerApps.value:[]).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
+	return (!props.noInners?innerApps.value:innerApps.value).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
 })
 
 const installAPP = (app, options, base) => {
@@ -192,8 +192,7 @@ watch(()=>selectedMesh,()=>{
 		</AppHeader>
 		<div v-else class="flex actions transparent-header">
 			<div class="flex-item">
-				<Button  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
-					<i class="pi pi-chevron-left " />
+				<Button icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
 				</Button>
 			</div>
 			<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
@@ -256,7 +255,7 @@ watch(()=>selectedMesh,()=>{
 	}
 	.actions{
 		left: 0px;
-		padding: 9px 10px;
+		padding: 7px 10px;
 		display: flex;
 		right: 0px;
 		:deep(.p-button){
@@ -300,7 +299,7 @@ watch(()=>selectedMesh,()=>{
 	:deep(.p-inputgroup.search-bar .p-multiselect-label){
 		line-height: 30px;
 	}
-	:deep(.p-button){
+	.app-btn{
 		width: 2rem;
 		height: 2rem;
 	}
