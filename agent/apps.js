@@ -16,6 +16,8 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
   pipy.unmount(mountName)
   pipy.mount(mountName, rootDir)
 
+  var dataDir = os.path.resolve(rootDir, '..', 'appdata')
+
   function listRecursive(path, base, list) {
     os.readDir(path).forEach(name => {
       if (name.endsWith('/')) {
@@ -239,6 +241,7 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
           executable: pipy.argv[0],
           name: appname,
           root: appRootDir,
+          dataDir: os.path.join(dataDir, provider, username),
           url: `${meshEnv.url}/apps/${provider}/${appname}`,
           provider,
           username,
