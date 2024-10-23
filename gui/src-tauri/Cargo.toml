@@ -1,6 +1,6 @@
 [package]
 name = "ztm"
-version = "0.3.0"
+version = "0.3.1"
 description = "ZTM"
 authors = ["lindc"]
 edition = "2021"
