@@ -87,11 +87,22 @@ export default function ({ app, mesh }) {
     if (params) {
       return mesh.read(path).then(data => {
         if (data) {
-          if (params.receiver !== app.username) return
-          var chat = findPeerChat(params.sender)
-          if (!chat) chat = newPeerChat(params.sender)
+          var me = app.username
+          var sender = params.sender
+          var receiver = params.receiver
+          if (receiver === me) {
+            var peer = sender
+          } else if (sender === me) {
+            var peer = receiver
+          } else {
+            return
+          }
+          var chat = findPeerChat(peer)
+          if (!chat) chat = newPeerChat(peer)
           try {
-            mergeMessages(chat, JSON.decode(data))
+            var messages = JSON.decode(data)
+            messages.forEach(msg => msg.sender = sender)
+            mergeMessages(chat, messages)
           } catch {}
         }
       })
@@ -123,12 +134,15 @@ export default function ({ app, mesh }) {
     if (params) {
       return mesh.read(path).then(data => {
         if (data) {
-          var chat = findGroupChat(params.creator, params.group)
-          if (!chat) chat = newGroupChat(params.creator, params.group)
+          var sender = params.sender
+          var creator = params.creator
+          var group = params.group
+          var chat = findGroupChat(creator, group)
+          if (!chat) chat = newGroupChat(creator, group)
           if (chat.creator === app.username || chat.members.includes(app.username)) {
             try {
               var messages = JSON.decode(data)
-              messages.forEach(msg => msg.sender = params.sender)
+              messages.forEach(msg => msg.sender = sender)
               mergeMessages(chat, messages)
             } catch {}
           }
