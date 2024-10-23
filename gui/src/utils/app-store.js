@@ -63,16 +63,12 @@ const mobileApp = [{
 		name: "rdp",
 	}];
 const webApp = [{
-		name: "setting",
-	},{
 		name: "ZTMLog",
 		label: "ZTM Log",
 		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
 		icon: ztmlog,
-	},{
-		name: "browser",
 	},{
 		name: "rdp",
 	}];
@@ -81,7 +77,7 @@ const appSelect = {
 	ios:mobileApp,
 	android:mobileApp,
 }
-const apps = !!window.__TAURI_INTERNALS__ ? (appSelect[platform()] || defaultApp) : mobileApp;
+const apps = !!window.__TAURI_INTERNALS__ ? (appSelect[platform()] || defaultApp) : webApp;
 const appMapping = {
 	"/setting": {
 		icon: setting,
