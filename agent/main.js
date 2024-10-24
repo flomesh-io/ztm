@@ -224,6 +224,7 @@ function main(listen) {
     //   ip: string
     //   port: number
     //   heartbeat: number
+    //   ping: number
     //   online: boolean
     //
 
