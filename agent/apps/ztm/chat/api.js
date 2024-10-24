@@ -228,6 +228,7 @@ export default function ({ app, mesh }) {
           }
         } else {
           return {
+            creator: chat.creator,
             group: chat.group,
             name: chat.name,
             time: chat.updateTime,
