@@ -13,6 +13,7 @@ export default function ({ app, mesh }) {
     var chat = {
       peer,
       messages: [],
+      newCount: 0,
       updateTime: 0,
       checkTime: 0,
     }
@@ -27,6 +28,7 @@ export default function ({ app, mesh }) {
       name: '',
       members: [],
       messages: [],
+      newCount: 0,
       updateTime: 0,
       checkTime: 0,
     }
@@ -36,8 +38,13 @@ export default function ({ app, mesh }) {
 
   function mergeMessages(chat, messages) {
     messages.forEach(msg => {
-      chat.messages.push(msg)
-      if (msg.time > chat.updateTime) chat.updateTime = msg.time
+      var sender = msg.sender
+      var time = msg.time
+      if (!chat.messages.find(m => m.time === time && m.sender === sender)) {
+        chat.messages.push(msg)
+        if (sender !== app.username) chat.newCount++
+        if (time > chat.updateTime) chat.updateTime = time
+      }
     })
   }
 
@@ -71,18 +78,18 @@ export default function ({ app, mesh }) {
   var matchPublishGroupMsgs = new http.Match('/shared/{sender}/publish/groups/{creator}/{group}/messages/*')
 
   mesh.list('/shared').then(paths => Promise.all(
-    Object.keys(paths).map(path => readMessages(path))
+    Object.keys(paths).map(path => readMessages(path, true))
   )).then(
     () => watchMessages()
   )
 
   function watchMessages() {
     mesh.watch('/shared').then(paths => Promise.all(
-      paths.map(path => readMessages(path))
+      paths.map(path => readMessages(path, false))
     ).then(() => watchMessages()))
   }
 
-  function readMessages(path) {
+  function readMessages(path, initial) {
     var params = matchPublishPeerMsgs(path)
     if (params) {
       return mesh.read(path).then(data => {
@@ -104,6 +111,7 @@ export default function ({ app, mesh }) {
             messages.forEach(msg => msg.sender = sender)
             mergeMessages(chat, messages)
           } catch {}
+          if (initial) chat.newCount = 0
         }
       })
     }
@@ -145,6 +153,7 @@ export default function ({ app, mesh }) {
               messages.forEach(msg => msg.sender = sender)
               mergeMessages(chat, messages)
             } catch {}
+            if (initial) chat.newCount = 0
           }
         }
       })
@@ -218,7 +227,7 @@ export default function ({ app, mesh }) {
       chat => chat.peer || (chat.group && chat.name)
     ).map(
       chat => {
-        var updated = chat.updateTime > chat.checkTime
+        var updated = chat.newCount
         var latest = chat.messages.reduce((a, b) => a.time > b.time ? a : b)
         if (chat.peer) {
           return {
@@ -245,6 +254,7 @@ export default function ({ app, mesh }) {
     var chat = findPeerChat(peer)
     if (chat) {
       chat.checkTime = chat.updateTime
+      chat.newCount = 0
       return Promise.resolve(getMessagesBetween(chat.messages, since, before))
     } else {
       return Promise.resolve(null)
@@ -255,6 +265,7 @@ export default function ({ app, mesh }) {
     var chat = findGroupChat(creator, group)
     if (chat) {
       chat.checkTime = chat.updateTime
+      chat.newCount = 0
       return Promise.resolve(getMessagesBetween(chat.messages, since, before))
     } else {
       return Promise.resolve(null)
