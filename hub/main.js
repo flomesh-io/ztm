@@ -215,6 +215,7 @@ var $endpoint = null
 var $hub = null
 var $hubSelected = null
 var $pingID
+var $pingTime
 
 var trafficTotalSend = new stats.Counter('send', ['ep'])
 var trafficTotalRecv = new stats.Counter('recv', ['ep'])
@@ -343,6 +344,7 @@ var getEndpoints = pipeline($=>$
         ip: ep.ip,
         port: ep.port,
         heartbeat: ep.heartbeat,
+        ping: ep.ping,
         online: isEndpointOnline(ep),
       })
     ))
@@ -364,6 +366,7 @@ var getEndpoint = pipeline($=>$
         port: ep.port,
         hubs: ep.hubs,
         heartbeat: ep.heartbeat,
+        ping: ep.ping,
         online: isEndpointOnline(ep),
       })
     }
@@ -673,13 +676,20 @@ function startPing() {
           sessions[$pingID].forEach(h => hubs.push(h))
           return hubs
         }).to($=>$
-          .onStart(hub => { $hubSelected = hub})
+          .onStart(hub => {
+            $hubSelected = hub
+            $pingTime = Date.now()
+          })
           .pipe(muxToAgent)
           .replaceData()
           .replaceMessage(
             res => {
-              var hubs = sessions[$pingID]
-              if (res.head.status !== 200) {
+              if (res?.head?.status === 200) {
+                var ping = Date.now() - $pingTime
+                var ep = endpoints[$pingID]
+                if (ep) ep.ping = ping
+              } else {
+                var hubs = sessions[$pingID]
                 hubs?.delete?.($hubSelected)
                 console.info(`Endpoint ${endpointName($pingID)} ping failure, connections = ${hubs?.size || 0}`)
               }
@@ -819,6 +829,7 @@ function makeEndpoint(id) {
       via: $ctx.via,
       hubs: [...myNames],
       heartbeat: Date.now(),
+      ping: null,
       isConnected: true,
     }
   } else {

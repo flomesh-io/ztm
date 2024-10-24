@@ -888,6 +888,7 @@ function getEndpoint(name, mesh) {
         'IP': ep => ep.ip,
         'PORT': ep => ep.port,
         'STATUS': ep => ep.online ? 'Online' : 'Offline',
+        'PING': ep => ep.ping ? ep.ping + 'ms' : 'n/a',
       }
     )
   })
@@ -1004,6 +1005,7 @@ function describeEndpoint(name, mesh) {
     println(`IP: ${ep.ip}`)
     println(`Port: ${ep.port}`)
     println(`Heartbeat: ${new Date(ep.heartbeat).toUTCString()}`)
+    println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
     println(`Status:`, ep.online ? 'Online' : 'Offline')
   })
 }
