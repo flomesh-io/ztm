@@ -162,7 +162,8 @@ export default function ({ app, mesh }) {
         n => !Number.isNaN(n)
       )
 
-      var t = message.time
+      var time = Date.now()
+      var t = time
       var i = timestamps.findLastIndex(ts => t >= ts)
       if (i < 0) {
         t = t - 60 * 1000
@@ -173,18 +174,18 @@ export default function ({ app, mesh }) {
       var filename = os.path.join(dirname, `${t}.json`)
       return mesh.read(filename).then(
         data => {
-          if (data && data.size >= 1024 && message.time > timestamps[timestamps.length - 1]) {
-            filename = os.path.join(dirname, `${message.time}.json`)
+          if (data && data.size >= 1024 && time > timestamps[timestamps.length - 1]) {
+            filename = os.path.join(dirname, `${time}.json`)
             data = null
           }
           if (!data) {
-            return mesh.write(filename, JSON.encode([message]))
+            return mesh.write(filename, JSON.encode([{ time, message }]))
           }
           try {
             var list = JSON.decode(data)
           } catch {}
           if (!(list instanceof Array)) list = []
-          list.push(message)
+          list.push({ time, message })
           return mesh.write(filename, JSON.encode(list))
         }
       )
@@ -268,11 +269,11 @@ export default function ({ app, mesh }) {
     )
   }
 
-  function addPeerMessage(peer, type, content) {
+  function addPeerMessage(peer, message) {
     if (!peer) return Promise.resolve(false)
     var dirname = `/shared/${app.username}/publish/peers/${peer}/messages`
     return mesh.acl(dirname, { users: [peer] }).then(
-      () => publishMessage(dirname, { time: Date.now(), type, content })
+      () => publishMessage(dirname, message)
     ).then(
       () => true
     )
@@ -306,13 +307,13 @@ export default function ({ app, mesh }) {
     )
   }
 
-  function addGroupMessage(creator, group, type, content) {
+  function addGroupMessage(creator, group, message) {
     var chat = findGroupChat(creator, group)
     if (!chat) return Promise.resolve(false)
     if (app.username !== creator && !chat.members.includes(app.username)) return Promise.resolve(false)
     var dirname = `/shared/${app.username}/publish/groups/${creator}/${group}`
     return mesh.acl(dirname, { users: chat.members }).then(
-      () => publishMessage(os.path.join(dirname, 'messages'), { time: Date.now(), type, content })
+      () => publishMessage(os.path.join(dirname, 'messages'), message)
     ).then(
       () => true
     )
