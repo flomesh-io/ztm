@@ -148,7 +148,7 @@ const newChat = () => {
 }
 const openChat = (item) => {
 	selectRoom.value = null;
-	// resize(1280,860,false);
+	resize(1280,860,false);
 	if(!firstOpen.value){
 		position(30,30)
 		firstOpen.value = true;
