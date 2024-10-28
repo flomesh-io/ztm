@@ -2,10 +2,9 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import Editor from './Editor.vue'
 import ProxyService from '../service/ProxyService';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { dayjs,extend } from '@/utils/dayjs';
 import { useStore } from 'vuex';
-dayjs.extend(relativeTime)
+extend()
 
 const store = useStore();
 const visibleEditor = ref(false);

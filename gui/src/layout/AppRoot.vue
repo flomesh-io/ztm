@@ -147,7 +147,7 @@ const errorMsg = computed(() => {
 const startPipy = async () => {
 	await shellService.startPipy(getPort(), false, error => {
 		errors.value.push(error);
-		console.error(`command error: "${error}"`)
+		// console.error(`command error: "${error}"`)
 	});
 }
 const pause = async () => {
@@ -281,7 +281,8 @@ onMounted(() => {
 </script>
 
 <template>
-	<div class="e-card playing transparent-form" :class="{'blur': false,'android':platform=='android','ios':platform=='ios'}">
+	<Apps v-if="appsOpen" @close="() => appsOpen = false" layout="fixed_container"/>
+	<div v-else class="e-card playing transparent-form" :class="{'blur': false,'android':platform=='android','ios':platform=='ios'}">
 	  <div class="image"></div>
 	  <div class="wave"></div>
 	  <div class="wave"></div>
@@ -374,7 +375,6 @@ onMounted(() => {
 			</div>
 		</div>
 	</div>
-	<Apps v-if="appsOpen" @close="() => appsOpen = false" layout="fixed_container"/>
 </template>
 
 <style lang="scss" scoped>

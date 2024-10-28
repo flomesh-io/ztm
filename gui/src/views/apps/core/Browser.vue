@@ -112,41 +112,53 @@ const toggle = (event) => {
 </script>
 
 <template>
-	<div class="col-12">
-		<div class="text-center">
-			<InputGroup class="search-bar" style="border-radius: 8px;" >
-				<Button size="small" label="Proxy:" style="width: auto;"/>
-				<Select size="small" class="w-full flex small"  v-model="browser.listen" :options="listens" :placeholder="isRunning?'Unset.':'Paused.'">
-					<template #dropdownicon>
-						<div v-if="!isRunning" class="flex-item pl-2" >
-							<Button size="small" :loading="saving" icon="pi pi-play" @click="start"/>
-						</div>
-						<ToggleSwitch v-else class="relative green" v-model="proxy" style="left: -5px;" />
-					</template>
-				</Select>
-			</InputGroup>					
-		</div>
-		<div class="mt-3 text-center">
-			<InputGroup class="search-bar" style="border-radius: 8px;" >
-				<Textarea v-model="browser.url" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="http://" rows="1" cols="30" />
-				<!-- <Button :disabled="!browser.url" icon="pi pi-search"/> -->
-			</InputGroup>
-		</div>
-		<div class="mt-3 text-center flex">
-			<div class="flex-item pr-2">
-				<Button severity="secondary" class="w-full" style="height: 30px;" @click="closebrowser" label="Back"/>
+	<div class="col-12 min-h-screen pl-0 pr-0" style="background: rgba(56, 4, 40, 0.9);">
+		
+		<AppHeader>
+				<template #start>
+					<Button @click="closebrowser" icon="pi pi-angle-left" severity="secondary" text />
+				</template>
+				<template #center>
+					<b>Browser</b>
+				</template>
+				<template #end> 
+					<Button icon="pi" severity="secondary" text />
+				</template>
+		</AppHeader>
+		
+		<div class="px-3">
+			<div class="text-center">
+				<InputGroup class="search-bar" style="border-radius: 8px;" >
+					<Button size="small" label="Proxy:" style="width: auto;"/>
+					<Select size="small" class="w-full flex small"  v-model="browser.listen" :options="listens" :placeholder="isRunning?'Unset.':'Paused.'">
+						<template #dropdownicon>
+							<div v-if="!isRunning" class="flex-item pl-2" >
+								<Button size="small" :loading="saving" icon="pi pi-play" @click="start"/>
+							</div>
+							<ToggleSwitch v-else class="relative green" v-model="proxy" style="left: -5px;" />
+						</template>
+					</Select>
+				</InputGroup>					
 			</div>
-			<div class="flex-item pr-2">
-				<Button aria-haspopup="true" aria-controls="op" @click="toggle" :disabled="browser.url.length<8" class="w-full" style="height: 30px;" label="Shortcut"/>
+			<div class="mt-3 text-center">
+				<InputGroup class="search-bar" style="border-radius: 8px;" >
+					<Textarea v-model="browser.url" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="http://" rows="1" cols="30" />
+					<!-- <Button :disabled="!browser.url" icon="pi pi-search"/> -->
+				</InputGroup>
 			</div>
-			<div class="flex-item pl-2" >
-				<Button class="w-full" style="height: 30px;" :disabled="browser.url.length<8" label="Open" @click="openbrowser()"/>
-		</div>
-		</div>
-		<Popover class="ml-6 mt-3" ref="op" appendTo="self">
-				<InputText size="small" placeholder="As Name" v-model="browser.name"  class="w-20rem"></InputText>
-				<Button size="small" icon="pi pi-save" class="ml-2"  @click="addShortcut"></Button>
-		</Popover>
+			<div class="mt-3 text-center flex">
+				<div class="flex-item pr-2">
+					<Button severity="secondary" aria-haspopup="true" aria-controls="op" @click="toggle" :disabled="browser.url.length<8" class="w-full" style="height: 30px;" label="Shortcut"/>
+				</div>
+				<div class="flex-item pl-2" >
+					<Button class="w-full" style="height: 30px;" :disabled="browser.url.length<8" label="Open" @click="openbrowser()"/>
+			</div>
+			</div>
+			<Popover class="ml-6 mt-3" ref="op" appendTo="self">
+					<InputText size="small" placeholder="As Name" v-model="browser.name"  class="w-20rem"></InputText>
+					<Button size="small" icon="pi pi-save" class="ml-2"  @click="addShortcut"></Button>
+			</Popover>
+		</div>		
 	</div>									
 </template>
 

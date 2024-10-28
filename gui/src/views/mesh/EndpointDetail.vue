@@ -7,10 +7,9 @@ import EndpointInfo from './EndpointInfo.vue';
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import AppManage from '@/views/apps/AppManage.vue';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { dayjs, extend } from '@/utils/dayjs';
 import defaultIcon from "@/assets/img/apps/default.png";
-dayjs.extend(relativeTime)
+extend();
 
 const props = defineProps(['ep']);
 const emits = defineEmits(['back','reload']);

@@ -38,7 +38,7 @@ const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);
 }
 const windowHeight = ref(window.innerHeight);
-const viewHeight = computed(() => windowHeight.value - 50);
+const viewHeight = computed(() => windowHeight.value);
 const platform = computed(() => {
 	return store.getters['account/platform']
 });

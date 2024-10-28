@@ -25,6 +25,7 @@ tauri-plugin-process = "=2.0.1"
 tauri-plugin-http = "=2.0.3"
 tauri-plugin-os = "=2.0.1"
 tauri-plugin-upload = "=2.0.1"
+tauri-plugin-notification = "=2.0.1"
 tauri-plugin-fs = "=2.0.3"
 tauri-plugin-dialog = "=2.0.3"
 tauri-plugin-deep-link = "=2.0.1"
@@ -42,7 +43,7 @@ wry = "0.46.3"
 # oslog = "0.2.0"
 log = "0.4"
 
-[target.'cfg(any(target_os = "ios"))']
+[target."cfg(any(target_os = \"ios\"))".dependencies]
 objc = "0.2.7"
 
 

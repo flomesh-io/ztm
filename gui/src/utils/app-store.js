@@ -3,6 +3,7 @@ import proxy from "@/assets/img/apps/proxy.png";
 import rdp from "@/assets/img/apps/rdp.png";
 import terminal from "@/assets/img/apps/terminal.png";
 import scriptIcon from "@/assets/img/apps/script.png";
+import chatIcon from "@/assets/img/apps/chat.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
 import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
@@ -12,6 +13,7 @@ import eplog from "@/assets/img/apps/eplog.png";
 import BrowserComponent from '@/views/apps/core/Browser.vue';
 import SettingComponent from '@/views/apps/core/Setting.vue';
 import RDPComponent from '@/views/apps/core/RDP.vue';
+import ChatComponent from '@/views/chat/Main.vue';
 import { platform } from '@tauri-apps/plugin-os';
 const defaultApp = [{
 		name: "setting",
@@ -93,6 +95,14 @@ const appMapping = {
 		icon: rdp,
 		name: "RDP",
 		component: RDPComponent
+	},
+	"ztm/chat": {
+		icon: chatIcon,
+		url:'/#/chat/rooms',
+		component: ChatComponent,
+		name: "Chat",
+		width:330,
+		height:860,
 	},
 	"ztm/script": {
 		icon: scriptIcon,

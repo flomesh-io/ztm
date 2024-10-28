@@ -686,6 +686,9 @@ pre.app-code code{
 .layout-main-container{
 	z-index: 2;
 }
+.surface-html{
+	background-color: var(--surface-html);
+}
 .surface-ground{
 	background-color: var(--surface-ground);
 }
@@ -1121,7 +1124,59 @@ fieldset{
 		background-color: var(--primary-900) !important;
 	}
 }
-
+.nav-ul{
+	background-color: var(--surface-ground) !important;
+	margin:0;
+	list-style: none;
+	padding: 0;
+}
+.nav-li{
+	background-color: var(--surface-subground) !important;
+	transition: .3s all;
+	line-height: 40px;
+	position: relative;
+	padding-left: 1rem;
+	cursor: pointer;
+}
+.nav-li input[type=text]{
+	background-color: transparent !important;
+	border: none;
+	line-height: 40px;
+	text-align: right;
+	padding: 0 15px;
+	outline: none !important;
+	font-size: 12px;
+}
+.nav-li>.p-button{
+	line-height: 40px;
+	min-width: 40px;
+	height: 42px;
+	border-radius: 0;
+}
+.nav-li:hover{
+	background-color: var(--surface-hoverground) !important;
+}
+.nav-ul .nav-li:not(:first-child):after{
+	content: '';
+	position: absolute;
+	background-color: var(--surface-border) !important;
+	left: 15px;
+	right: 15px;
+	height: 1px;
+}
+.nav-li> i.pi-angle-right{
+	opacity: 0.8;
+	position: relative;
+	padding-right: 15px;
+	top: 12px;
+}
+.nav-li{
+	.p-datepicker,.p-datepicker-panel,.p-datepicker-header,.p-datepicker .p-button{
+		padding: 0;
+		border: none;
+		border-radius: 0;
+	}
+}
 .p-terminal-prompt-label{
 	
 	color: #7eda28;

@@ -63,7 +63,25 @@ const create = () => {
 const edit = (d) => {
 	emits('edit',d)
 }
+const inboundsInfo = computed(() => (inbounds) => {
+	let rtn = "";
+	(inbounds || []).forEach((n)=>{
+		const _listens = [];
+		n.listens.forEach(m=>{
+			_listens.push(m.value)
+		})
+		rtn += `${n.ep?.username}:${n.ep?.name} => ${_listens.join(',')}\r\n`;
+	});
+	return rtn;
+})
 
+const outboundsInfo = computed(() => (outbounds) => {
+	let rtn = "";
+	(outbounds || []).forEach((n)=>{
+		rtn += `${n.ep?.username}:${n.ep?.name} => ${n.targets.join(',')}\r\n`;
+	})
+	return rtn;
+})
 </script>
 
 <template>
@@ -98,12 +116,12 @@ const edit = (d) => {
 						</Column>
 						<Column header="Inbound">
 							<template #body="slotProps">
-								<Badge v-if="slotProps.data.inbounds" :value="slotProps.data.inbounds.length"/>
+								<Badge  v-tooltip="inboundsInfo(slotProps.data.inbounds)" v-if="slotProps.data.inbounds" :value="slotProps.data.inbounds.length"/>
 							</template>
 						</Column>
 						<Column header="Outbound">
 							<template #body="slotProps">
-								<Badge v-if="slotProps.data.outbounds" :value="slotProps.data.outbounds.length"/>
+								<Badge  v-tooltip="outboundsInfo(slotProps.data.outbounds)" v-if="slotProps.data.outbounds" :value="slotProps.data.outbounds.length"/>
 							</template>
 						</Column>
 						<Column header="Action"  style="width: 110px;">
@@ -121,8 +139,8 @@ const edit = (d) => {
 											 <div>
 													<span class="block text-tip font-medium mb-3"><Tag severity="contrast" class="mr-1">{{tunnel.proto.toUpperCase()}}</Tag> {{tunnel.name}}</span>
 													<div class="text-left w-full" >
-														<Tag severity="secondary" value="Secondary">Inbounds: <Badge :value="tunnel.inbounds.length"/></Tag> 
-														<Tag class="ml-2" severity="secondary" value="Secondary">Outbounds: <Badge :value="tunnel.outbounds.length"/></Tag> 
+														<Tag v-tooltip="inboundsInfo(tunnel.inbounds)" severity="secondary" value="Secondary">Inbounds: <Badge :value="tunnel.inbounds.length"/></Tag> 
+														<Tag v-tooltip="outboundsInfo(tunnel.outbounds)" class="ml-2" severity="secondary" value="Secondary">Outbounds: <Badge :value="tunnel.outbounds.length"/></Tag> 
 													</div>
 											 </div>
 											 <div class="flex">

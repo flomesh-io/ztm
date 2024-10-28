@@ -23,6 +23,10 @@ const hide = () => {
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+
+const unread = computed(() => {
+	return store.getters["notice/unread"];
+});
 const shortcutApps = computed(() => {
 	// let shortcuts = []
 	// try{
@@ -143,6 +147,9 @@ const openAppUI = (app, base) => {
 		console.log(webviewOptions)
 		openWebview(webviewOptions);
 	} else {
+		const width = mappingApp?.width || app?.width || 455;
+		const height = mappingApp?.height || app?.height || 570;
+		resize(width,height,false);
 		selectApp.value = {
 			...app,
 			options:{
@@ -160,6 +167,10 @@ const mapping = ref(appMapping);
 
 const windowHeight = ref(window.innerHeight);
 const pannelHeight = computed(() => windowHeight.value - 80);
+const close = () => {
+	resize(455,570,false);
+	selectApp.value = null;
+}
 onMounted(()=>{
 	resize(455,570,false);
 })
@@ -176,7 +187,13 @@ watch(()=>selectedMesh,()=>{
 </script>
 
 <template>
-	<ScrollPanel class="container_pannel" :class="props.layout" >
+	<div class="relative" style="z-index:3" v-if="!!app?.component">
+		<component :is="app.component" :app="selectApp.options" @close="close"/>
+	</div>
+	<div class="relative" style="z-index:3" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
+		<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="close"/>
+	</div>
+	<ScrollPanel v-else class="container_pannel" :class="props.layout" >
 		<AppHeader v-if="props.layout=='absolute_container'" :main="true">
 				<template #center>
 					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
@@ -192,7 +209,7 @@ watch(()=>selectedMesh,()=>{
 		</AppHeader>
 		<div v-else class="flex actions transparent-header">
 			<div class="flex-item">
-				<Button icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="'Close'"  severity="help" text rounded aria-label="Filter" @click="hide" >
+				<Button icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="'Close'"  severity="help" text  aria-label="Filter" @click="hide" >
 				</Button>
 			</div>
 			<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
@@ -207,14 +224,7 @@ watch(()=>selectedMesh,()=>{
 										offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
 			</div>
 		</div>
-			<div class="terminal_body" v-if="!!app?.component">
-				<component :is="app.component" :app="selectApp.options" @close="()=>selectApp=null"/>
-			</div>
-			<div class="terminal_body" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
-				<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="()=>selectApp=null"/>
-			</div>
-			
-			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-5':'pt-2'" v-else-if="!manage">
+			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-5':'pt-2'" v-if="!manage">
 				<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
 					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
 				</div>
@@ -225,10 +235,10 @@ watch(()=>selectedMesh,()=>{
 							@click="openAppContent(app)" 
 							class="py-4 relative text-center col-3 md:col-2" >
 							<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+							<Badge class="absolute opacity-90" v-if="`${app?.provider||''}/${app.name}` == 'ztm/chat' && unread>0" style="margin-left: -10px;margin-top: -10px;" :value="unread" severity="danger"/>
 							<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
 									animationDuration="2s" aria-label="Progress" />
 							<div class="mt-1" v-tooltip="`${app.provider||'local'}/${app.name}`">
-								<!-- <Badge value="3" severity="danger"></Badge> -->
 								<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
 									<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
 									{{ app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}
