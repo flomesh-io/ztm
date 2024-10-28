@@ -52,6 +52,8 @@ const MyPreset = definePreset(Aura, {
 						border: '#ececec',
 						card: "#ffffff",
 						ground: "#f3f6f7",
+						subground: "#f7fafb",
+						hoverground: "#eaf1f2",
 						html: "#ffffff",
 						tip: "{gray.600}"
 					}
@@ -66,6 +68,8 @@ const MyPreset = definePreset(Aura, {
 						section: "{gray-800}",
 						border: '{gray-600}',
 						ground: "#222222",
+						subground: "#191919",
+						hoverground: "#333333",
 						card: "{gray-900}",
 						html: "#18181B",
 						tip: "{gray.400}"

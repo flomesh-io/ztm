@@ -1,5 +1,6 @@
 import _ from "lodash";
 import mesh from "./modules/mesh";
+import chat from "./modules/chat";
 import app from "./modules/app";
 import AppLayout from '@/layout/AppLayout.vue';
 
@@ -32,6 +33,9 @@ const options = {
 		},
 		{
 			...app
+		},
+		{
+			...chat
 		},
     {
         path: '/',

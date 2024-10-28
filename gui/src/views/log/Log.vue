@@ -2,10 +2,9 @@
 import { ref, onMounted,onActivated,watch, computed } from "vue";
 import dayjs from 'dayjs';
 import _ from 'lodash';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { dayjs,extend } from '@/utils/dayjs';
 import { FilterMatchMode } from '@primevue/core/api';
-dayjs.extend(relativeTime)
-
+extend()
 const props = defineProps(['d','endpoints']);
 const severityMap = computed(() => (severity) => {
 	if(severity == 'error'){

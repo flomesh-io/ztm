@@ -52,7 +52,7 @@ export default class ShellService {
 			let command = await Command.sidecar("bin/ztmctl", ['version','--json','','','','']);
 			await command.spawn();
 			command.stdout.on('data', line => {
-				console.log(line)
+				// console.log(line)
 				//{"ztm":{"version":"v0.0.2","commit":"a73787b37cb500044410325b04558d2507a847f7","date":"Sat, 18 May 2024 18:55:27 +0800"},"pipy":{"version":"1.1.0-33","commit":"bd7450a98c9513394869493753456944aa26c1f7","date":"Sat, 18 May 2024 18:10:58 +0800"}}
 				store.commit('account/setVersion', !!line ? JSON.parse(line) : {});
 			});
@@ -60,7 +60,7 @@ export default class ShellService {
 			ztmService.getVersion()
 				.then(res => {
 					if(!!res){
-						console.log(res)
+						// console.log(res)
 						store.commit('account/setVersion', res);
 					}
 				})
@@ -171,18 +171,18 @@ export default class ShellService {
 			console.log(`[starting pipy:${args}]`);
 			const command = Command.sidecar("bin/ztmctl", args);
 			command.on('close', data => {
-				console.log("[close]");
-				console.log(data);
+				// console.log("[close]");
+				// console.log(data);
 				store.commit('account/pushLog', {level:'Info',msg:`pipy pause with code ${data.code} and signal ${data.signal}`});
 			});
 			command.stdout.on('data', line => {
-				console.log("[stdout]");
-				console.log(line);
+				// console.log("[stdout]");
+				// console.log(line);
 				store.commit('account/pushLog', {level:'Info',msg:line});
 			});
 			command.stderr.on('data', line => {
-				console.log("[stderr]");
-				console.log(line);
+				// console.log("[stderr]");
+				// console.log(line);
 				store.commit('account/pushLog', {level:'Error',msg:line});
 				callError(line);
 			});

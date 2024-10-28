@@ -60,7 +60,7 @@ onMounted(()=>{
 					<img class="logo pointer" :src="XeyeSvg" width="28px" height="28px"/>
 				</Button>
 				<Button v-else-if="props.main" @click="home" icon="iconfont icon-home" text />
-				<Button v-else-if="!(props.child && platform !='android' && platform !='ios')" @click="back" icon="pi pi-angle-left" severity="secondary" text />
+				<Button v-else-if="!(props.child && platform !='android' && platform !='ios' && platform !='web' && !!platform)" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>
 	
 			<template #center>

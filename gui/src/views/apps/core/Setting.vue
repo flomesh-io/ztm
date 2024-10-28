@@ -35,7 +35,18 @@ onMounted(()=>{
 </script>
 
 <template>
-	<div class="col-12" style="padding-left: 0;padding-right: 0">
+	<div class="col-12 min-h-screen pl-0 pr-0" style="background: rgba(56, 4, 40, 0.9);">
+		<AppHeader>
+				<template #start>
+					<Button @click="close" icon="pi pi-angle-left" severity="secondary" text />
+				</template>
+				<template #center>
+					<b>Setting</b>
+				</template>
+				<template #end> 
+					<Button text icon="pi pi-check" :loading="saving" :disabled="!port" v-tooltip="'Save'" @click="save"/>
+				</template>
+		</AppHeader>
 		<div>
 			<ul class="list-none px-2 m-0">
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
@@ -51,27 +62,17 @@ onMounted(()=>{
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="font-medium font-bold w-3 text-white">DB</div>
-						<div class="text-white" v-tooltip="db" style="white-space: nowrap;text-overflow: ellipsis;overflow: hidden;width: 300px;">
+						<div class="text-white flex-item" v-tooltip="db">
 							{{db}}
 						</div>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="font-medium font-bold w-3 text-white"></div>
-						<div >
+						<div class="flex-item">
 							<Button  class="w-12rem" @click="openFinder">Show in finder <i class="pi pi-box ml-2"></i></Button>
 						</div>
 				</li>
 			</ul>
-		</div>
-		<div class="px-3 mt-4">
-			<div class="text-center flex">
-				<div class="flex-item pr-2">
-					<Button severity="secondary" class="w-full" style="height: 30px;" @click="close" label="Back"/>
-				</div>
-				<div class="flex-item pl-2" >
-					<Button :loading="saving" class="w-full" style="height: 30px;" :disabled="!port" label="Save" @click="save"/>
-				</div>
-			</div>
 		</div>
 	</div>
 </template>

@@ -6,12 +6,11 @@ import EndpointDetail from './EndpointDetail.vue'
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import { bitUnit } from '@/utils/file';
-import dayjs from 'dayjs';
 import { useToast } from "primevue/usetoast";
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { dayjs, extend } from '@/utils/dayjs';
 import { downloadFile } from '@/utils/file';
 import clipboard from 'clipboardy';
-dayjs.extend(relativeTime)
+extend()
 
 const store = useStore();
 const router = useRouter();
