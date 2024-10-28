@@ -134,7 +134,7 @@ watch(() => props.room, () => {
 		<li class="nav-li flex" v-else-if="props.room.peer">
 			<b class="opacity-70">Peer</b>
 			<div class="flex-item text-right pr-3">
-				<img :src="userSvg" width="10px" height="10px" /> {{props.room.peer}}
+				<img :src="userSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/> {{props.room.peer}}
 			</div>
 		</li>
 		<li class="nav-li flex" @click="history">

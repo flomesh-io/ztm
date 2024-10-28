@@ -148,7 +148,7 @@ const newChat = () => {
 }
 const openChat = (item) => {
 	selectRoom.value = null;
-	resize(1280,860,false);
+	// resize(1280,860,false);
 	if(!firstOpen.value){
 		position(30,30)
 		firstOpen.value = true;
@@ -311,13 +311,13 @@ onActivated(()=>{
 				<Chat :endpointMap="endpointMap" v-model:room="selectRoom" @back="backList" @manager="() => manager = true"/>
 			</div>
 		</div>
-		<div v-if="manager && history" class="flex-item min-h-screen" style="flex: 2;">
-			<div class="shadow mobile-fixed min-h-screen" >
+		<div v-if="manager && history" class="flex-item min-h-screen " style="flex: 2;">
+			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<History :users="users" v-model:room="selectRoom" @back="backhistory" />
 			</div>
 		</div>
-		<div v-else-if="manager && selectRoom" class="flex-item min-h-screen" style="flex: 2;">
-			<div class="shadow mobile-fixed min-h-screen" >
+		<div v-else-if="manager && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<Setting :users="users" v-model:room="selectRoom" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
