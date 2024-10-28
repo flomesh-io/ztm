@@ -172,7 +172,7 @@ const request = ref({
 	}
 })
 
-const names = computed(() => style.nameStyle(user.value))
+const names = computed(() => style.nameStyle(user.value, isMobile.value))
 const avatars = computed(() => {
 	return {
 		system: {"src": systemSvg,"styles":style.avatarStyle},
