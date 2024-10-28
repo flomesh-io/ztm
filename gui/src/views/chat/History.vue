@@ -73,7 +73,7 @@ watch(() => today.value, () => {
 	</AppHeader>
 	<!-- props.room.members -->
 	<ul class="nav-ul shadow relative" style="z-index:2">
-		<li class="nav-li" style="padding: 0;">
+		<li class="nav-li" style="padding: 0;line-height: 30px;">
 			<DatePicker v-model="today" inline class="w-full" />
 		</li>
 	</ul>
