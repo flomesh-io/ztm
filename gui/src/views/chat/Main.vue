@@ -194,6 +194,8 @@ const manager = ref(false)
 const history = ref(false)
 const backList = () => {
 	selectRoom.value = false;
+	history.value = false;
+	manager.value = false;
 	resize(330,860,false);
 }
 const backmanage = () => {

@@ -10,9 +10,10 @@ export default {
 		app:null,
 		unread:0,
 		rooms:[],
+		pushed:{},
   },
 	actions: {
-		async rooms({ commit }) {
+		async rooms({ commit, getters }) {
 			const res = await chatService.getRooms();
 			commit('setRooms',res || []);
 			const news = (res || []).filter((room)=>!!room.updated) || [];
@@ -20,13 +21,30 @@ export default {
 			news.forEach((room)=>{
 				if(room.updated>0){
 					_unread += room.updated;
-					send(room?.name||room?.peer, room?.latest?.message?.type == 'text'?`${room?.latest?.sender}:${room?.latest?.message?.content}`:`${room?.latest?.sender}:[File]`)
+					let _msg = ""
+					const _pushed = getters['pushed'];
+					if(!!room?.peer){
+						const _key = `${room?.peer}-${room?.latest?.sender}-${room?.time}`;
+						if(!_pushed[_key]){
+							commit('setPushedByKey',_key);
+							send(room?.peer, room?.latest?.message?.type == 'text'?`${room?.latest?.message?.content}`:`[File]`)
+						}
+					}else {
+						const _key = `${room?.group}-${room?.latest?.sender}-${room?.time}`;
+						if(!_pushed[_key]){
+							commit('setPushedByKey',_key);
+							send(room?.name, room?.latest?.message?.type == 'text'?`${room?.latest?.sender}:${room?.latest?.message?.content}`:`${room?.latest?.sender}:[File]`)
+						}
+					}
 				}
 			});
 			commit('setUnread',_unread);
 		},
 	},
   getters: {
+    pushed: (state) => {
+      return state.pushed;
+    },
     confirm: (state) => {
       return state.confirm;
     },
@@ -44,6 +62,12 @@ export default {
     },
   },
   mutations: {
+    setPushedByKey(state, pushed) {
+      state.pushed[pushed] = true;
+    },
+    setPushed(state, pushed) {
+      state.pushed = pushed;
+    },
     setConfirm(state, confirm) {
       state.confirm = confirm;
     },

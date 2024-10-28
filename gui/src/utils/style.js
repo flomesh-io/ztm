@@ -7,7 +7,7 @@ const isDrak = () => {
 }
 const chatTheme = (viewHeight) => {
 	if(isDrak()){
-		return `width: 100%;flex: 1;border: none;height:${viewHeight}px;background-color: #292929`;
+		return `width: 100%;flex: 1;border: none;height:${viewHeight}px;background-color: #1c1c1c`;
 	}else{
 		return `width: 100%;flex: 1;border: none;height:${viewHeight}px`;
 	}
@@ -22,7 +22,7 @@ const auxiliaryStyle = () => {
 
 const inputAreaStyle = () => {
 	if(isDrak()){
-		return {"backgroundColor": "#333333"};
+		return {"backgroundColor": "#18181b"};
 	} else {
 		return {"backgroundColor": "#F4F6F7"};
 	}
@@ -317,8 +317,8 @@ const inputStyle = (isMobile) => {
 					"margin": "0",
 					"border": "unset",
 					"wordBreak": "break-all",
-					"borderTop": "1px solid #555555",
-					"backgroundColor": "#333333",
+					"borderTop": "1px solid #333333",
+					"backgroundColor": "#18181B",
 					"color": "#e8e8e8",
 					"borderRadius": "0px",
 					"boxShadow": "unset"

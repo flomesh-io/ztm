@@ -1125,15 +1125,15 @@ fieldset{
 	}
 }
 .nav-ul{
-	background-color: var(--surface-ground) !important;
+	background-color: var(--surface-subground) !important;
 	margin:0;
 	list-style: none;
 	padding: 0;
 }
 .nav-li{
-	background-color: var(--surface-subground) !important;
+	background-color: var(--surface-ground) !important;
 	transition: .3s all;
-	line-height: 40px;
+	line-height: 46px;
 	position: relative;
 	padding-left: 1rem;
 	cursor: pointer;
@@ -1141,16 +1141,16 @@ fieldset{
 .nav-li input[type=text]{
 	background-color: transparent !important;
 	border: none;
-	line-height: 40px;
+	line-height: 46px;
 	text-align: right;
 	padding: 0 15px;
 	outline: none !important;
 	font-size: 12px;
 }
 .nav-li>.p-button{
-	line-height: 40px;
-	min-width: 40px;
-	height: 42px;
+	line-height: 46px;
+	min-width: 46px;
+	height: 48px;
 	border-radius: 0;
 }
 .nav-li:hover{
@@ -1160,15 +1160,15 @@ fieldset{
 	content: '';
 	position: absolute;
 	background-color: var(--surface-border) !important;
-	left: 15px;
-	right: 15px;
+	left: 0px;
+	right: 0px;
 	height: 1px;
 }
 .nav-li> i.pi-angle-right{
 	opacity: 0.8;
 	position: relative;
 	padding-right: 15px;
-	top: 12px;
+	top: 16px;
 }
 .nav-li{
 	.p-datepicker,.p-datepicker-panel,.p-datepicker-header,.p-datepicker .p-button{

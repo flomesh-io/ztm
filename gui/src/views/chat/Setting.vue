@@ -104,7 +104,7 @@ watch(() => props.room, () => {
 			</template>
 	</AppHeader>
 	<ul class="nav-ul">
-		<li class="nav-li" style="padding: 0;">
+		<li class="nav-li" style="padding: 0;line-height: 30px;">
 			<div class="grid text-center pt-2 m-0" v-if="props.room.members">
 					<div  
 						v-for="(member) in props.room.members"

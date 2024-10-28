@@ -66,7 +66,7 @@ const MyPreset = definePreset(Aura, {
 					"primary-color-text": "#ffffff",
 					surface: {
 						section: "{gray-800}",
-						border: '{gray-600}',
+						border: '{gray-700}',
 						ground: "#222222",
 						subground: "#191919",
 						hoverground: "#333333",
