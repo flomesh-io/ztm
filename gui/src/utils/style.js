@@ -36,8 +36,8 @@ const dragAndDrop = () => {
 	}
 }
 
-const nameStyle = (user) => {
-	const base = {"position":"absolute","width": "50px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
+const nameStyle = (user, isMobile) => {
+	const base = {"position":"absolute","width": isMobile?"50px":"70px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
 	if(isDrak()){
 		return {
 			default: {
