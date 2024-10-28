@@ -37,33 +37,33 @@ const dragAndDrop = () => {
 }
 
 const nameStyle = (user) => {
-	
+	const base = {"position":"absolute","width": "50px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
 	if(isDrak()){
 		return {
 			default: {
-				"style": {"color": "white","position":"relative","width": "0","whiteSpace":"nowrap","wordBreak":"keep-all", "marginTop": "40px", "fontSize": "12px","left": "-45px"}
+				"style": { ...base, "color": "white", "fontSize": "12px","left": "5px"}
 			},
 			user: {
 				"text": user,
-				"style": {"color": "white","position":"relative","width": "0","whiteSpace":"nowrap","wordBreak":"keep-all", "marginTop": "40px", "fontSize": "12px","right": "-15px","left":"auto", "textAlign": "right"}
+				"style": { ...base, "color": "white", "fontSize": "12px","right": "5px","left":"auto"}
 			},
 			system: {
 				"text": "System",
-				"style": {"color": "white","position":"relative","width": "0","whiteSpace":"nowrap","wordBreak":"keep-all", "marginTop": "40px", "fontSize": "12px","left": "-45px"}
+				"style": { ...base, "color": "white", "fontSize": "12px","left": "5px"}
 			}
 		}
 	} else {
 		return {
 			default: {
-				"style": {"position":"relative","width": "0","whiteSpace":"nowrap","wordBreak":"keep-all", "marginTop": "40px", "fontSize": "12px","left": "-45px"}
+				"style": { ...base, "fontSize": "12px","left": "5px"}
 			},
 			user: {
 				"text": user,
-				"style": {"position":"relative","width": "0","whiteSpace":"nowrap","wordBreak":"keep-all", "marginTop": "40px", "fontSize": "12px","right": "-15px","left":"auto", "textAlign": "right"}
+				"style": { ...base, "fontSize": "12px","right": "5px","left":"auto"}
 			},
 			system: {
 				"text": "System",
-				"style": {"position":"relative","width": "0","whiteSpace":"nowrap","wordBreak":"keep-all", "marginTop": "40px", "fontSize": "12px","left": "-45px"}
+				"style": { ...base, "fontSize": "12px","left": "5px"}
 			}
 		}
 	}
@@ -123,6 +123,7 @@ const submitStyle = (position, space)=>{
 					"styles": {
 						"default": {
 							"fontSize": svgwidth,
+							"filter": "brightness(10) saturate(100%) invert(100%) sepia(100%) saturate(100%) hue-rotate(100deg) brightness(100%) contrast(100%)",
 						}
 					}
 				}
