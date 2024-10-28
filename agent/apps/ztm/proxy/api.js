@@ -172,7 +172,7 @@ export default function ({ app, mesh }) {
   )
 
   function hasDomain(config) {
-    return config?.targets instanceof Array && config.targets.some(
+    if (config?.exclusions instanceof Array && config.exclusions.some(
       domain => {
         if (domain.startsWith('*')) {
           return $host.endsWith(domain.substring(1))
@@ -180,11 +180,23 @@ export default function ({ app, mesh }) {
           return $host === domain
         }
       }
-    )
+    )) {
+      return false
+    } else {
+      return config?.targets instanceof Array && config.targets.some(
+        domain => {
+          if (domain.startsWith('*')) {
+            return $host.endsWith(domain.substring(1))
+          } else {
+            return $host === domain
+          }
+        }
+      )
+    }
   }
 
   function hasIP(config) {
-    return config?.targets instanceof Array && config.targets.some(
+    if (config?.exclusions instanceof Array && config.exclusions.some(
       mask => {
         try {
           var m = new IPMask(mask)
@@ -193,7 +205,20 @@ export default function ({ app, mesh }) {
           return false
         }
       }
-    )
+    )) {
+      return false
+    } else {
+      return config?.targets instanceof Array && config.targets.some(
+        mask => {
+          try {
+            var m = new IPMask(mask)
+            return m.contains($host)
+          } catch {
+            return false
+          }
+        }
+      )
+    }
   }
 
   getLocalConfig().then(applyConfig)
