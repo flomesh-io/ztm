@@ -28,10 +28,13 @@ export default function ({ api, utils }) {
             title: 'Configure an endpoint as a listening side and/or a forwarding side',
             usage: 'config',
             options: `
-              --set-listen    [[ip:]port]       Open/close the proxy port
-              --add-target    <domain|ip ...>   Add targets where traffic leaving from the endpoint can go
-                                                e.g. '*.example.com' and '8.88.0.0/16'
-              --remove-target <domain|ip ...>   Remove previously added targets
+              --set-listen        [[ip:]port]       Open/close the proxy port
+              --add-target        <domain|ip ...>   Add targets where traffic can go via the endpoint
+                                                    e.g. '*.example.com' and '8.88.0.0/16'
+              --remove-target     <domain|ip ...>   Remove previously added targets
+              --add-exclusion     <domain|ip ...>   Add excluded targets where traffic can't go via the endpoint
+                                                    e.g. '*.example.com' and '8.88.0.0/16'
+              --remove-exclusion  <domain|ip ...>   Remove previously added exclusions
             `,
             action: (args) => api.getEndpointConfig(endpoint.id).then(config => {
               var changed = false
@@ -58,6 +61,23 @@ export default function ({ api, utils }) {
                 changed = true
               }
 
+              if ('--add-exclusion' in args) {
+                if (!(config.exclusions instanceof Array)) config.exclusions = []
+                args['--add-exclusion'].forEach(target => {
+                  if (!config.exclusions.includes(target)) {
+                    config.exclusions.push(target)
+                  }
+                })
+                changed = true
+              }
+
+              if ('--remove-exclusion' in args && config.exclusions instanceof Array) {
+                args['--remove-exclusion'].forEach(target => {
+                  config.exclusions = config.exclusions.filter(t => t !== target)
+                })
+                changed = true
+              }
+
               if (changed) {
                 return api.setEndpointConfig(endpoint.id, config).then(
                   () => api.getEndpointConfig(endpoint.id).then(printConfig)
@@ -72,6 +92,10 @@ export default function ({ api, utils }) {
                 if (config.targets instanceof Array && config.targets.length > 0) {
                   output('Targets:\n')
                   config.targets.forEach(t => output(`  ${t}\n`))
+                  if (config.exclusions instanceof Array && config.exclusions.length > 0) {
+                    output('Excluded Targets:\n')
+                    config.exclusions.forEach(t => output(`  ${t}\n`))
+                  }
                 } else {
                   output('Targets: (not an exit)\n')
                 }
