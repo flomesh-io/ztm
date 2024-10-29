@@ -77,7 +77,7 @@ watch(() => today.value, () => {
 			<DatePicker v-model="today" inline class="w-full" />
 		</li>
 	</ul>
-	<VirtualScroller v-if="msgs&&msgs.length>0" :items="msgs" :itemSize="50" class="border border-surface-200 dark:border-surface-700 w-full" :style="`height:${viewHeight}px`">
+	<VirtualScroller :delay="50" v-if="msgs&&msgs.length>0" :items="msgs" :itemSize="50" class="border border-surface-200 dark:border-surface-700 w-full" :style="`height:${viewHeight}px`">
 	    <template v-slot:item="{ item, options }">
 	        <div class="flex p-3 " :class="[{ 'surface-ground': options.odd,'surface-html':!options.odd }]" >
 						<img :src="userSvg" width="16px" height="16px" />
@@ -90,7 +90,7 @@ watch(() => today.value, () => {
 									{{timeago(item?.time)}}
 								</div>
 							</div>
-							<div class="flex" v-if="item?.message?.type =='text'">
+							<div class="flex" style="word-break: break-all;" v-if="item?.message?.type =='text'">
 								{{item?.message?.content}}
 							</div>
 							<div class="flex" v-else>
