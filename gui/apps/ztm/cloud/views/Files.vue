@@ -360,10 +360,10 @@ const openQueue = () => {
 	emits('upload',[])
 }
 const doDownload = (item) => {
-	writeMobileFile('doDownloadStart.txt',item?.path||'');
+	// writeMobileFile('doDownloadStart.txt',item?.path||'');
 	if(item.path){
 		fileService.download(item.path).then((res)=>{
-			writeMobileFile('doDownloadSuccess.txt',res?.toString()||'');
+			// writeMobileFile('doDownloadSuccess.txt',res?.toString()||'');
 			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
 			emits('download',[item]);
 			selectedFile.value = item;
