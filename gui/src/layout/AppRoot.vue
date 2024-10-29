@@ -276,7 +276,7 @@ const toggleLeft = () => {
 onMounted(() => {
 	pipyInit();
 	timmer();
-	writeMobileFile('Readme.txt', `Welcome ZTM!`);
+	writeMobileFile('Readme.txt', `Welcome ZTM workspace!`);
 });
 </script>
 

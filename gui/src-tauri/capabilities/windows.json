@@ -291,6 +291,8 @@
 		{
 			"identifier": "fs:scope",
 			"allow": [
+				{ "path": "$DOCUMENT" }, 
+				{ "path": "$DOCUMENT/**" },
 				{ "path": "$APPDATA" }, 
 				{ "path": "$APPDATA/**" },
 				{ "path": "$HOME" },
