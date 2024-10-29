@@ -29,7 +29,11 @@ jobs:
       id: setup-ninja
       with:
         version: 1.11.1
-
+    - id: setup-rust
+      name: setup rust
+      uses: ningenMe/setup-rustup@v1.1.0
+      with:
+        rust-version: 1.81.0
     - name: Setup Rustup Target
       run: |
         rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
