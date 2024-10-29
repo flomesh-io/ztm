@@ -94,9 +94,12 @@ class FileHelper(private val context: Context) {
 			        val shortcutManager = context.getSystemService(ShortcutManager::class.java)
 			        // 生成指向私有文件夹的 Uri
 			        val privateDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-							val folderUri = Uri.fromFile(privateDirectory)
+							// val folderUri = Uri.fromFile(privateDirectory)
 							// val folderUri = Uri.parse(privateDirectory?.toString())
-							// val folderUri = Uri.parse("/storage/emulated/0/com.flomesh.ztm")
+							///storage/emulated/0/Android/data/com.flomesh.ztm/files/Documents
+							// val folderUri = Uri.parse("/storage/emulated/0/Android/data/com.flomesh.ztm/files/Documents")
+							val file = File(privateDirectory,"/")
+							val folderUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 							// 创建意图
 							val intent = Intent(Intent.ACTION_VIEW).apply {
 									// data = folderUri // 指向私有文件夹的 URI
