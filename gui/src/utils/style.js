@@ -38,32 +38,33 @@ const dragAndDrop = () => {
 
 const nameStyle = (user, isMobile) => {
 	const base = {"position":"absolute","width": isMobile?"50px":"70px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
+	const offset = isMobile?"-10px":"-20px";
 	if(isDrak()){
 		return {
 			default: {
-				"style": { ...base, "color": "white", "fontSize": "12px","left": "5px"}
+				"style": { ...base, "color": "white", "fontSize": "12px","left": offset}
 			},
 			user: {
 				"text": user,
-				"style": { ...base, "color": "white", "fontSize": "12px","right": "5px","left":"auto"}
+				"style": { ...base, "color": "white", "fontSize": "12px","right": offset,"left":"auto"}
 			},
 			system: {
 				"text": "System",
-				"style": { ...base, "color": "white", "fontSize": "12px","left": "5px"}
+				"style": { ...base, "color": "white", "fontSize": "12px","left": offset}
 			}
 		}
 	} else {
 		return {
 			default: {
-				"style": { ...base, "fontSize": "12px","left": "5px"}
+				"style": { ...base, "fontSize": "12px","left": offset}
 			},
 			user: {
 				"text": user,
-				"style": { ...base, "fontSize": "12px","right": "5px","left":"auto"}
+				"style": { ...base, "fontSize": "12px","right": offset,"left":"auto"}
 			},
 			system: {
 				"text": "System",
-				"style": { ...base, "fontSize": "12px","left": "5px"}
+				"style": { ...base, "fontSize": "12px","left": offset}
 			}
 		}
 	}
@@ -74,15 +75,35 @@ const messageStyles = () => {
 	if(isDrak()){
 		return {
 			"default": {
-				system: {"bubble": {"backgroundColor": "#545454", "color": "white"}},
-				user: {"bubble": {"backgroundColor": "#9855f7", "color": "white"}}
+				ai: {
+					"innerContainer": {"position": "relative"},
+					"bubble": {"backgroundColor": "#545454", "wordBreak": "break-all","color": "white"},
+				},
+				system: {
+					"innerContainer": {"position": "relative"},
+					"bubble": {"backgroundColor": "#545454", "wordBreak": "break-all","color": "white"},
+				},
+				user: {
+					"innerContainer": {"position": "relative"},
+					"bubble": {"backgroundColor": "#9855f7", "wordBreak": "break-all","color": "white"},
+				}
 			}
 		};
 	} else {
 		return {
 			"default": {
-				system: {"bubble": {"backgroundColor": "#f5f5f5",}},
-				user: {"bubble": {"backgroundColor": "#9855f7", "color": "white"}}
+				ai: {
+					"innerContainer": {"position": "relative"},
+					"bubble": {"backgroundColor": "#f5f5f5","wordBreak": "break-all"},
+				},
+				system: {
+					"innerContainer": {"position": "relative"},
+					"bubble": {"backgroundColor": "#f5f5f5","wordBreak": "break-all"},
+				},
+				user: {
+					"innerContainer": {"position": "relative"},
+					"bubble": {"backgroundColor": "#9855f7","wordBreak": "break-all", "color": "white"},
+				}
 			}
 		};
 	}
