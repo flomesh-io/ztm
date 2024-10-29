@@ -59,10 +59,10 @@ const getSavePath = (target, dft) => {
 		return decodeURI(target);
 	}
 }
-const androidRoot = "/storage/emulated/0/com.flomesh.ztm"
+// const androidRoot = "/storage/emulated/0/com.flomesh.ztm"
 const createFile = (name) => {
 	if(platform() == 'android'){
-		//Android forbidden path
+		//fix Android forbidden path
 		return create(name, {
 			write:true, 
 			create:true, 
