@@ -309,7 +309,7 @@ onActivated(()=>{
 			</div>
 		</div> -->
 		<div v-if="selectRoom" class="flex-item min-h-screen" style="flex: 3;">
-			<div class="shadow mobile-fixed min-h-screen" >
+			<div class="shadow mobile-fixed min-h-screen relative" style="z-index:2">
 				<Chat :endpointMap="endpointMap" v-model:room="selectRoom" @back="backList" @manager="() => manager = true"/>
 			</div>
 		</div>
