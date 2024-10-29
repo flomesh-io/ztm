@@ -233,7 +233,7 @@ const pay = () => {
 							For non-root users, get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> and send it to 'root' user to acquire a permit
 						</div>
 						
-						<div class="pl-2 mt-3" v-if="!permit && platform() == 'ios'">
+						<div class="pl-2 mt-3" v-if="!permit && platform() == 'ios' && false">
 							<div><i class="pi pi-cart-arrow-down relative" style="top: 1px;"/> Or, you can <Button @click="pay" class="p-0" label="<Buy>" link /> an AWS hub and received a root permit</div>
 						</div>
 					</div>
