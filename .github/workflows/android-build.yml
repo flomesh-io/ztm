@@ -52,6 +52,10 @@ jobs:
         ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename
         export NDK="$ANDROID_HOME/ndk/$(ls -d $ANDROID_HOME/ndk/* | sort -V | tail -n 1 | xargs basename)"
         yarn build-ztm-android
+    - name: fix tao android bug
+      run: |
+        cd gui/src-tauri
+        cargo update -p tao
     - name: Build apk
       run: |
         cd gui
