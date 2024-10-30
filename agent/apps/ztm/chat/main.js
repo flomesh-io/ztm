@@ -105,6 +105,32 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/files': {
+      'POST': responder((_, req) => {
+        return api.addFile(req.body).then(
+          hash => hash ? response(200, hash) : response(404)
+        )
+      }),
+    },
+
+    '/api/files/{owner}/{hash}': {
+      'GET': responder((params) => {
+        var owner = params.owner
+        var hash = params.hash
+        return api.getFile(owner, hash).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+
+      'DELETE': responder((params) => {
+        var owner = params.owner
+        var hash = params.hash
+        return api.delFile(owner, hash).then(
+          ret => response(ret ? 204 : 404)
+        )
+      }),
+    },
+
     '*': {
       'GET': responder((_, req) => {
         return Promise.resolve(gui.serve(req) || response(404))

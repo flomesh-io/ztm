@@ -272,7 +272,14 @@ export default function (rootDir, config) {
       return requestHub.spawn(
         new Message({ method: 'GET', path: os.path.join('/api/acl', pathname) + `?username=${user}` })
       ).then(
-        res => (res?.head?.status === 200)
+        res => {
+          if (res?.head?.status === 200) {
+            try { var access = JSON.decode(res.body) } catch {}
+            return access || true
+          } else {
+            return false
+          }
+        }
       )
     }
 
