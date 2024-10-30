@@ -71,20 +71,20 @@ const nameStyle = (user, isMobile) => {
 }
 
 const messageStyles = () => {
-	
+	const innerContainer = {"position": "relative","paddingTop":"5px","paddingBottom":"5px"};
 	if(isDrak()){
 		return {
 			"default": {
 				ai: {
-					"innerContainer": {"position": "relative"},
+					innerContainer,
 					"bubble": {"backgroundColor": "#545454", "wordBreak": "break-all","color": "white"},
 				},
 				system: {
-					"innerContainer": {"position": "relative"},
+					innerContainer,
 					"bubble": {"backgroundColor": "#545454", "wordBreak": "break-all","color": "white"},
 				},
 				user: {
-					"innerContainer": {"position": "relative"},
+					innerContainer,
 					"bubble": {"backgroundColor": "#9855f7", "wordBreak": "break-all","color": "white"},
 				}
 			}
@@ -93,15 +93,15 @@ const messageStyles = () => {
 		return {
 			"default": {
 				ai: {
-					"innerContainer": {"position": "relative"},
+					innerContainer,
 					"bubble": {"backgroundColor": "#f5f5f5","wordBreak": "break-all"},
 				},
 				system: {
-					"innerContainer": {"position": "relative"},
+					innerContainer,
 					"bubble": {"backgroundColor": "#f5f5f5","wordBreak": "break-all"},
 				},
 				user: {
-					"innerContainer": {"position": "relative"},
+					innerContainer,
 					"bubble": {"backgroundColor": "#9855f7","wordBreak": "break-all", "color": "white"},
 				}
 			}
