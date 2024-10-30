@@ -480,6 +480,12 @@ var checkACL = pipeline($=>$
       var pathname = '/' + URL.decodeComponent($params['*'])
       var username = url.searchParams.get('username')
       username = username ? URL.decodeComponent(username) : $ctx.username
+      if (username === $ctx.username) {
+        if (makeOwnerChecker(username)(pathname)) {
+          var access = acl[username]?.find?.(a => a.pathname === pathname) || {}
+          return response(200, access)
+        }
+      }
       return response(makeAccessChecker(username)(pathname) ? 200 : 403)
     }
   )

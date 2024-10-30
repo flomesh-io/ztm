@@ -59,18 +59,14 @@ export default function ({ app, mesh }) {
   //           /<username>
   //             /messages
   //               /<timestamp>.json
-  //             /files
-  //               /<hash>.json
-  //               /<hash>
   //         /groups
   //           /<creator>
   //             /<uuid>
   //               /info.json
   //               /messages
   //                 /<timestamp>.json
-  //               /files
-  //                 /<hash>.json
-  //                 /<hash>
+  //         /files
+  //           /<hash>
   //
 
   var matchPublishPeerMsgs = new http.Match('/shared/{sender}/publish/peers/{receiver}/messages/*')
@@ -330,6 +326,25 @@ export default function ({ app, mesh }) {
     )
   }
 
+  function addFile(data) {
+    var h = new crypto.Hash('sha256')
+    h.update(data)
+    h.update(data.size.toString())
+    var hash = h.digest().toString('hex')
+    return mesh.write(`/shared/${app.username}/publish/files/${hash}`, data).then(
+      () => hash
+    )
+  }
+
+  function getFile(owner, hash) {
+    return mesh.read(`/shared/${owner}/publish/files/${hash}`)
+  }
+
+  function delFile(owner, hash) {
+    mesh.erase(`/shared/${owner}/publish/files/${hash}`)
+    return Promise.resolve(true)
+  }
+
   return {
     allEndpoints,
     allUsers,
@@ -340,5 +355,8 @@ export default function ({ app, mesh }) {
     getGroup,
     setGroup,
     addGroupMessage,
+    addFile,
+    getFile,
+    delFile,
   }
 }
