@@ -107,15 +107,16 @@ const selectedNewChatUsers = ref({});
 const firstOpen = ref(false);
 const newChat = () => {
 	const users = Object.keys(selectedNewChatUsers.value);
-	const roomid = users.join(",");
 	let _room = null;
 	if(!!users && users.length > 1){
+		const members = users.concat([selectedMesh.value?.agent?.username]);
+		const roomid = members.join(",");
 		const roomname = roomid.length >20?`${roomid.substr(0,20)}...`:roomid;
 		selectedNewChatUsers.value = {};
 		visibleUserSelector.value = false;
 		chatService.newGroup({
 			name:roomname, 
-			members:users.concat([selectedMesh.value?.agent?.username]), 
+			members, 
 			callback(res){
 				_room = res;
 				chatService.newGroupMsg(res?.group, res?.creator, {
@@ -126,12 +127,12 @@ const newChat = () => {
 	} else {
 		selectedNewChatUsers.value = {};
 		visibleUserSelector.value = false;
-		const findroom = uniRooms.value.find(room => room.peer == roomid);
+		const findroom = uniRooms.value.find(room => room.peer == users[0]);
 		if(findroom){
 			_room = findroom;
 		}else{
 			_room = {
-				peer: roomid
+				peer: users[0]
 			}
 		}
 	}
