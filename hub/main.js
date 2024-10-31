@@ -98,7 +98,7 @@ var sessions = {}
 //
 // files[pathname] = {
 //   '#': '012345678abcdef',  // hash
-//   '$': 12345,              // size
+//   '$': 12345,              // size (-1 if deleted)
 //   'T': 1789012345678,      // time
 //   '+': 1789012345678,      // since
 //   '@': [],                 // sources
@@ -106,6 +106,8 @@ var sessions = {}
 //
 
 var files = {}
+var fileList = null
+var fileWatchers = []
 
 //
 // acl[username] = [
@@ -379,32 +381,57 @@ var getFilesystem = pipeline($=>$
     function (req) {
       var isAccessible = makeAccessChecker($ctx.username)
       var url = new URL(req.head.path)
-      var since = url.searchParams.get('since')
+      var params = url.searchParams.toObject()
+      var since = params['since']
       if (since) {
+        function findChanges(since, until) {
+          return getAllFiles().filter(
+            ([k, v]) => {
+              var t = v['+']
+              return since < t && t <= until && isAccessible(k)
+            }
+          ).map(
+            ([k, v]) => [
+              k, {
+                '#': v['#'],
+                '$': v['$'],
+                'T': v['T'],
+                '+': v['+'],
+              }
+            ]
+          )
+        }
+
         var since = Number.parseFloat(since)
         var until = Date.now()
-        return new Timeout(1.5).wait().then(
-          () => response(200, Object.fromEntries(
-            Object.entries(files).filter(
-              ([k, v]) => {
-                var t = v['+']
-                return since < t && t <= until && isAccessible(k)
-              }
-            ).map(
-              ([k, v]) => [
-                k, {
-                  '#': v['#'],
-                  '$': v['$'],
-                  'T': v['T'],
-                  '+': v['+'],
+
+        return new Timeout(0.5).wait().then(() => {
+          var list = findChanges(since, until)
+          if (list.length > 0 || !('wait' in params)) {
+            return response(200, Object.fromEntries(list))
+          }
+          return new Promise(resolve => {
+            fileWatchers.push(
+              function () {
+                var until = Date.now()
+                var list = findChanges(since, until)
+                if (list.length > 0) {
+                  new Timeout(0.5).wait().then(
+                    () => resolve(until)
+                  )
+                  return true
                 }
-              ]
+                return false
+              }
             )
-          ))
-        )
+          }).then(until => response(200, Object.fromEntries(
+            findChanges(since, until)
+          )))
+        })
+
       } else {
         return response(200, Object.fromEntries(
-          Object.entries(files).filter(
+          getAllFiles().filter(
             ([k, v]) => (v['$'] >= 0 && isAccessible(k))
           ).map(
             ([k, v]) => [
@@ -728,7 +755,7 @@ function clearOutdatedEndpoints() {
     )
     if (outdated.length > 0) {
       outdated = Object.fromEntries(outdated.map(ep => [ep, true]))
-      Object.values(files).forEach(file => {
+      getAllFiles().forEach(([_, file]) => {
         var sources = file['@']
         if (sources.some(ep => ep in outdated)) {
           file['@'] = sources.filter(ep => !(ep in outdated))
@@ -878,7 +905,10 @@ function makeFileInfo(hash, size, time, since) {
 function updateFileInfo(pathname, f, ep, update) {
   var e = files[pathname]
   if (e || update) {
-    if (!e) e = files[pathname] = makeFileInfo('', 0, 0, 0)
+    if (!e) {
+      e = files[pathname] = makeFileInfo('', 0, 0, 0)
+      fileList = null // mark as updated
+    }
     var t1 = e['T']
     var h1 = e['#']
     var t2 = f['T']
@@ -903,7 +933,15 @@ function updateFileInfo(pathname, f, ep, update) {
         since: e['+'],
       })
     }
+    fileWatchers = fileWatchers.filter(f => !f())
   }
+}
+
+function getAllFiles() {
+  if (!fileList) {
+    fileList = Object.entries(files)
+  }
+  return fileList
 }
 
 function canOperate(username, ep) {
