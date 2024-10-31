@@ -73,6 +73,8 @@ export default function ({ app, mesh }) {
   var matchPublishGroupInfo = new http.Match('/shared/{sender}/publish/groups/{creator}/{group}/info.json')
   var matchPublishGroupMsgs = new http.Match('/shared/{sender}/publish/groups/{creator}/{group}/messages/*')
 
+  mesh.acl(`/shared/${app.username}/publish`, { all: 'block' })
+
   mesh.list('/shared').then(paths => Promise.all(
     Object.keys(paths).map(path => readMessages(path, true))
   )).then(
@@ -126,11 +128,6 @@ export default function ({ app, mesh }) {
             if (info.name) chat.name = info.name
             if (info.members instanceof Array) chat.members = info.members
           } catch {}
-          return mesh.acl(
-            `/shared/${app.username}/publish/groups/${creator}/${group}`, {
-              users: chat.members
-            }
-          )
         }
       })
     }
@@ -143,14 +140,12 @@ export default function ({ app, mesh }) {
           var group = params.group
           var chat = findGroupChat(creator, group)
           if (!chat) chat = newGroupChat(creator, group)
-          if (chat.creator === app.username || chat.members.includes(app.username)) {
-            try {
-              var messages = JSON.decode(data)
-              messages.forEach(msg => msg.sender = sender)
-              mergeMessages(chat, messages)
-            } catch {}
-            if (initial) chat.newCount = 0
-          }
+          try {
+            var messages = JSON.decode(data)
+            messages.forEach(msg => msg.sender = sender)
+            mergeMessages(chat, messages)
+          } catch {}
+          if (initial) chat.newCount = 0
         }
       })
     }
@@ -279,7 +274,7 @@ export default function ({ app, mesh }) {
   function addPeerMessage(peer, message) {
     if (!peer) return Promise.resolve(false)
     var dirname = `/shared/${app.username}/publish/peers/${peer}/messages`
-    return mesh.acl(dirname, { users: [peer] }).then(
+    return mesh.acl(dirname, { users: { [peer]: 'readonly' }}).then(
       () => publishMessage(dirname, message)
     ).then(
       () => true
@@ -307,7 +302,7 @@ export default function ({ app, mesh }) {
     if (info.name) chat.name = info.name
     if (info.members instanceof Array) chat.members = info.members
     var dirname = `/shared/${creator}/publish/groups/${creator}/${group}`
-    return mesh.acl(dirname, { users: chat.members }).then(
+    return mesh.acl(dirname, { users: Object.fromEntries(chat.members.map(name => [name, 'readonly'])) }).then(
       () => mesh.write(os.path.join(dirname, 'info.json'), JSON.encode(chat))
     ).then(
       () => true
@@ -319,7 +314,7 @@ export default function ({ app, mesh }) {
     if (!chat) return Promise.resolve(false)
     if (app.username !== creator && !chat.members.includes(app.username)) return Promise.resolve(false)
     var dirname = `/shared/${app.username}/publish/groups/${creator}/${group}`
-    return mesh.acl(dirname, { users: chat.members }).then(
+    return mesh.acl(dirname, { users: Object.fromEntries(chat.members.map(name => [name, 'readonly'])) }).then(
       () => publishMessage(os.path.join(dirname, 'messages'), message)
     ).then(
       () => true
