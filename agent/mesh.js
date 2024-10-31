@@ -297,9 +297,12 @@ export default function (rootDir, config) {
       )
     }
 
-    function discoverFiles(since) {
+    function discoverFiles(since, wait) {
       var path = '/api/filesystem'
-      if (since || since === 0) path += `?since=${since}`
+      if (since || since === 0) {
+        path += `?since=${since}`
+        if (wait) path += '&wait'
+      }
       return requestHub.spawn(
         new Message({ method: 'GET', path })
       ).then(
@@ -782,8 +785,8 @@ export default function (rootDir, config) {
     return hubs[0].discoverEndpoints()
   }
 
-  function discoverFiles(since) {
-    return hubs[0].discoverFiles(since)
+  function discoverFiles(since, wait) {
+    return hubs[0].discoverFiles(since, wait)
   }
 
   function discoverApps(ep) {
@@ -1182,9 +1185,7 @@ export default function (rootDir, config) {
   }
 
   function startWatchingFiles() {
-    new Timeout(5).wait().then(
-      () => discoverFiles(fsLastChangeTime)
-    ).then(files => {
+    discoverFiles(fsLastChangeTime, true).then(files => {
       var paths = Object.keys(files)
       if (paths.length > 0) {
         fsLastChangeTime = Object.values(files).map(f => f.since).reduce(
