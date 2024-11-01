@@ -336,7 +336,7 @@ export default function ({ app, mesh }) {
   }
 
   function delFile(owner, hash) {
-    mesh.erase(`/shared/${owner}/publish/files/${hash}`)
+    mesh.unlink(`/shared/${owner}/publish/files/${hash}`)
     return Promise.resolve(true)
   }
 
