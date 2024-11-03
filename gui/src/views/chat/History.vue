@@ -90,11 +90,9 @@ watch(() => today.value, () => {
 									{{timeago(item?.time)}}
 								</div>
 							</div>
-							<div class="flex" style="word-break: break-all;" v-if="item?.message?.type =='text'">
-								{{item?.message?.content}}
-							</div>
-							<div class="flex" v-else>
-								[File]
+							<div class="flex" style="word-break: break-all;" >
+								<span v-if="item?.message?.files?.length>0">[{{item.message.files.length}} {{item.message.files.length>1?'Files':'File'}}]</span>
+								<span v-if="item?.message?.text">{{item?.message?.text}}</span>
 							</div>
 						</div>
 					</div>

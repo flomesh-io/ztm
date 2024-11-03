@@ -120,7 +120,7 @@ const newChat = () => {
 			callback(res){
 				_room = res;
 				chatService.newGroupMsg(res?.group, res?.creator, {
-					type: "text",content: `Hello everyone, the group chat has been created.`
+					text: `Hello everyone, the group chat has been created.`
 				})
 			}
 		});
@@ -252,7 +252,7 @@ onActivated(()=>{
 								<Button icon="pi pi-check" @click="newChat" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
 							</template>
 					</AppHeader>
-					<Tree :filter="true" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
+					<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
 						<template #nodeicon="slotProps">
 								<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
 						</template>
@@ -289,9 +289,11 @@ onActivated(()=>{
 												</div>
 												<div class="flex mt-1">
 													<div class="flex-item" >
-														<div class="w-10rem text-ellipsis" v-if="item.latest?.message?.type == 'text'">{{item.latest?.message?.content}}</div>
-														<div class="w-10rem text-ellipsis" v-else-if="item.latest?.message">[File]</div>
-														<div class="w-10rem text-ellipsis" v-else>&nbsp;</div>
+														<div class="w-10rem text-ellipsis" >
+															<span v-if="item.latest?.message?.files?.length>0">[{{item.latest.message.files.length}} {{item.latest.message.files.length>1?'Files':'File'}}]</span>
+															<span v-if="item.latest?.message?.text">{{item.latest?.message?.text}}</span>
+															&nbsp;
+														</div>
 													</div>
 													<div class="w-5rem text-right text-tip opacity-60" >
 														{{timeago(item.latest?.time)}}

@@ -109,10 +109,12 @@ const getConfig  = (config, params, method) => {
 			method,
 			header:{
 				"Content-Type": "application/json"
-			},
-			...config
+			}
 		}
-		const _header = config?.header || config?.headers || {};
+		if(config?.headers){
+			rtn.header = config?.headers
+		}
+		const _header = rtn?.header || {};
 		if(!_header["Content-Type"] || _header["Content-Type"] == "application/json"){
 			rtn.body = !!params?JSON.stringify(params):null;
 		} else {
@@ -147,7 +149,6 @@ async function request(url, method, params, config) {
 				});
 		  case METHOD.POST:
 		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
-					debugger
 					toastMessage(e);
 				});
 		  case METHOD.DELETE:
@@ -174,8 +175,8 @@ async function request(url, method, params, config) {
 		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
 		if(!!method && method != METHOD.GET){
 			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
-				console.log('response:')
-				console.log(res)
+				// console.log('response:')
+				// console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
 				} else if(typeof(res) == 'object' && !!res.body && isJson){
@@ -188,9 +189,9 @@ async function request(url, method, params, config) {
 				toastMessage(e);
 			});
 		} else {
-			console.log(getUrl(url))
+			// console.log(getUrl(url))
 			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
-				console.log(res)
+				// console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
 				} else if(typeof(res) == 'object' && !!res.body && isJson){
@@ -273,8 +274,8 @@ async function requestNM(url, method, params, config) {
 		const _header = config?.header || config?.headers || {};
 		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
 		return fetch(getUrl(url), getConfig(config,params, method)).then((res) => res.json()).then((res) => {
-			console.log('response:')
-			console.log(res)
+			// console.log('response:')
+			// console.log(res)
 			if(typeof(res) == 'object' && res.status >= 400){
 				return Promise.reject(res);
 			} else if(typeof(res) == 'object' && !!res.body && isJson){

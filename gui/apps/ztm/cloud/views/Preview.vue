@@ -38,11 +38,15 @@ onMounted(() => {
 const saving = ref(false);
 const saveAs = () => {
 	if(props?.item?.fileUrl){
-		saveFile(props.item.fileUrl,()=>{
-			saving.value = true;
-		},()=>{
-			saving.value = false;
-			toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
+		saveFile({
+			fileUrl: props.item.fileUrl,
+			before: ()=>{
+				saving.value = true;
+			},
+			after: ()=>{
+				saving.value = false;
+				toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
+			}
 		})
 	}
 }

@@ -21,6 +21,7 @@ import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
 import { requestMeta } from '@/service/common/request';
+import { extension } from "mime-types";
 
 function convertToUint8Array(input) {
   if (typeof input === 'string') {
@@ -144,6 +145,13 @@ const FileTypes = {
   // Add more supported formats as needed
 };
 
+const extIcon = (contentType) => {
+	if(contentType && contentType.split("/")[1]){
+		return ext[contentType.split("/")[1]] || ext.default
+	} else {
+		return ext.default;
+	}
+}
 const isImage = (val) => FileTypes.image.includes(val?.toLocaleLowerCase());
 const isVideo = (val) => FileTypes.video.includes(val?.toLocaleLowerCase());
 const isAudio = (val) => FileTypes.audio.includes(val?.toLocaleLowerCase());
@@ -178,6 +186,19 @@ const icons = (item)=>{
 		return checker(item);
 	}
 }
+function chatFileType(contentType) {
+    if (!contentType || typeof contentType !== 'string') {
+        return "any";
+    }
+    if (/^image\//.test(contentType)) {
+        return "image";
+    } else if (/^audio\//.test(contentType)) {
+        return "audio";
+    } else {
+        return "any";
+    }
+}
+
 const bitUnit = (value)=> {
 	if(isNaN(value)){
 		return "0B";
@@ -193,6 +214,16 @@ const bitUnit = (value)=> {
 		return (value*1).toFixed(0) + "B";
 	}
 }
+const downloadSpeed = (value)=> {
+	if(isNaN(value)){
+		return 99;
+	}else if(typeof(value) != 'number'){
+		return 99;
+	}else{
+		const mb = (value/(1024 * 1024)).toFixed(2);
+		return (100 / mb).toFixed(2) *1;
+	}
+}
 const openFile = (path) => {
 	//{ read: true, write: false, baseDir: BaseDirectory.Home }
 	if(isMobile()){
@@ -203,34 +234,41 @@ const openFile = (path) => {
 		open(path);
 	}
 }
-const saveFile = (fileUrl, before, after) => {
+const saveFile = ({fileUrl,name, before, after}) => {
+	if(!fileUrl){
+		return
+	}
 	const filePathAry = fileUrl.split("/");
-	const name = filePathAry[filePathAry.length-1];
-	const ext = name.split(".")[1];
+	const title = name||filePathAry[filePathAry.length-1];
+	const ext = title.split(".")[1];
 	
-	documentDir().then((defaultPath)=>{
+	documentDir().then((dir)=>{
+		const defaultPath = `${dir}/${title}`;
 		save({
-			defaultPath:`${defaultPath}/${name}`,
-			title: name,
+			defaultPath,
+			title,
 			canCreateDirectories: true,
 			filters: [{
-				name,
+				name: title,
 				extensions: ext?[ext]:[]
 			}]
 		}).then((targetUrl)=>{
-			if(!!before){
-				before()
+			if(targetUrl){
+				if(!!before){
+					before()
+				}
+				const saveUrl = getSavePath(targetUrl, defaultPath);
+				download(fileUrl, saveUrl).then((resp)=>{
+					if(!!after){
+						after(true)
+					}
+				}).catch((e2)=>{
+					writeMobileFile('downloadError.txt',e2.toString());
+					if(!!after){
+						after()
+					}
+				});
 			}
-			download(fileUrl, getSavePath(targetUrl, `${defaultPath}/${name}`)).then(()=>{
-				if(!!after){
-					after()
-				}
-			}).catch((e2)=>{
-				writeMobileFile('downloadError.txt',e2.toString());
-				if(!!after){
-					after()
-				}
-			});
 			// requestMeta(fileUrl)
 			// 	.then(arrayBuffer => {
 			// 		setTimeout(()=>{
@@ -288,22 +326,24 @@ const downloadFile = ({
 					extensions: ext?[ext]:[]
 				}]
 			}).then((targetUrl)=>{
-				let uint8Array = convertToUint8Array(data);
-				setTimeout(()=>{
-					create(getSavePath(targetUrl, newFileName), { 
-						write:true, 
-						create:true, 
-						baseDir: BaseDirectory.Document ,
-					}).then((file)=>{
-						
-						file.write(uint8Array).then(()=>{
-							file.close();
-							if(after){
-								after()
-							}
-						});
-					})
-				},300)
+				if(targetUrl){
+					let uint8Array = convertToUint8Array(data);
+					setTimeout(()=>{
+						create(getSavePath(targetUrl, newFileName), { 
+							write:true, 
+							create:true, 
+							baseDir: BaseDirectory.Document ,
+						}).then((file)=>{
+							
+							file.write(uint8Array).then(()=>{
+								file.close();
+								if(after){
+									after()
+								}
+							});
+						})
+					},300)
+				}
 				// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
 				// 	if(!!after)
 				// 	after()
@@ -388,6 +428,9 @@ export {
 	getSavePath,
 	downloadFile, 
 	importFiles,
+	downloadSpeed,
+	chatFileType,
+	extIcon,
 	isImage,
 	isVideo,
 	isAudio,

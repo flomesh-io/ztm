@@ -162,7 +162,7 @@ watch(() => props.room, () => {
 						<Button icon="pi pi-check" @click="appendGroupUsers" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
 					</template>
 			</AppHeader>
-			<Tree :filter="true" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
+			<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
 				<template #nodeicon="slotProps">
 						<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
 				</template>
