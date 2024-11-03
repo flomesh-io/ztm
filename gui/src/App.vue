@@ -9,6 +9,7 @@ import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
+import { AcceptFile } from "@/doms/AcceptFile";
 const store = useStore();
 const toast = useToast();
 const confirm = useConfirm();
@@ -23,10 +24,11 @@ const loadchats = () => {
 	store.dispatch('notice/rooms');
 	setTimeout(()=>{
 		loadchats();
-	},3000)
+	},1000)
 }
 onMounted(()=>{
 	loadchats()
+	customElements.define('accept-file', AcceptFile);
 })
 </script>
 <style scoped></style>

@@ -64,6 +64,7 @@
     "export-from-json": "^1.7.4",
     "js-cookie": "^2.2.1",
     "lodash": "^4.17.21",
+    "mime-types": "^2.1.35",
     "monaco-editor": "^0.50.0",
     "nprogress": "^0.2.0",
     "primeflex": "^3.3.1",

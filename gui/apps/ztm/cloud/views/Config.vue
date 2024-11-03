@@ -173,11 +173,15 @@ const doCancelDownload = (item) => {
 const saving = ref(false);
 const saveAs = (item) => {
 	if(item.fileUrl){
-		saveFile(item.fileUrl,()=>{
-			saving.value = true;
-		},()=>{
-			saving.value = false;
-			toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
+		saveFile({
+			fileUrl:item.fileUrl,
+			before:()=>{
+				saving.value = true;
+			},
+			after: ()=>{
+				saving.value = false;
+				toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
+			}
 		})
 	}
 }

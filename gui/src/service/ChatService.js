@@ -1,4 +1,4 @@
-import { mock, request, getUrl } from './common/request';
+import { mock, request, getUrl,merge } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { v4 as uuidv4 } from 'uuid';
@@ -7,24 +7,19 @@ import store from "@/store";
 
 export default class ChatService {
 	
-	getHeader(body) {
-		if(typeof(body) == 'string'){
+	getHeader(type) {
+		if(!!type){
 			return {
-				headers:{ "Content-Type": "text/plain" }
+				headers:{ "Content-Type": type }
 			}
 		} else {
 			return null;
 		}
 	}
-	getAppUrl({
-		mesh, provider, app
-	}) {
-		return getUrl(`/api/meshes/${mesh}/apps/${provider}/${app}`);
-	}
 	getMesh(){
 		return store.getters['account/selectedMesh'];
 	}
-	request(url, method, body){
+	request(url, method, body, config){
 		const mesh = this.getMesh();
 		if(!mesh?.name){
 			return 
@@ -35,14 +30,28 @@ export default class ChatService {
 			provider:'ztm',
 			app:'chat',
 		}
-		const base = this.getAppUrl(options);
+		const base = getUrl(`/api/meshes/${options?.mesh}/apps/${options?.provider}/${options?.app}`);
 		if(!!body){
-			return request(`${base}${url}`, method, body);
+			return request(`${base}${url}`, method, body, config);
 		}else{
 			return request(`${base}${url}`, method);
 		}
 	}
 	
+	getAppUrl(url){
+		const mesh = this.getMesh();
+		if(!mesh?.name){
+			return 
+		}
+		const options = {
+			mesh:mesh?.name,
+			ep:mesh?.agent?.id,
+			provider:'ztm',
+			app:'chat',
+		}
+		const base = getUrl(`/api/meshes/${options?.mesh}/apps/${options?.provider}/${options?.app}`);
+		return `${base}${url}`;
+	}
 	getUsers() {
 		return this.request(`/api/users`, "GET");
 	}
@@ -197,8 +206,92 @@ export default class ChatService {
 		}
 		return this.request(`/api/groups/${creator}/${group}/messages${append}`, "GET");
 	}
-	newGroupMsg(group, creator, body) {
-		return this.request(`/api/groups/${creator}/${group}/messages`, "POST", body);
+	buildMsgBody(message, callback) {
+		const body = {};
+		if(!!message.text){
+			body.text = message.text
+		}
+		if(!!message.files){
+			body.files = [];
+			const reqs = [];
+			message.files.forEach((file)=>{
+				reqs.push(this.uploadFile(file).then((hash)=> {
+					return {
+						hash,
+						name: file.name,
+						lastModified: file.lastModified,
+						size: file.size,
+						contentType: file.type,
+					}
+				}).catch((e)=>{}));
+					
+			})
+			merge(reqs).then((resp)=>{
+				if(resp){
+					resp.forEach((file)=>{
+						body.files.push(file);
+					})
+				}
+				if(!!callback){
+					callback(body)
+				}
+			})
+		} else {
+			if(!!callback){
+				callback(body)
+			}
+		}
+	}
+	uploadFile(file, callback) {
+		const contentType = file.type;
+		// return file.arrayBuffer().then((body)=>{
+		// 	return this.request(`/api/files`, "POST", body, this.getHeader(contentType))
+		// })
+		return this.request(`/api/files`, "POST", file, this.getHeader(contentType))
+	}
+	getFile(file,user) {
+		return this.request(`/api/files/${user}/${file?.hash}`, "GET", body, this.getHeader(file?.contentType));
+	}
+	
+	getFileUrl(file,user) {
+		return this.getAppUrl(`/api/files/${user}/${file?.hash}`);
+	}
+	/*
+	message:
+	{
+		text: "Hey, how are you?", 
+		files: [{
+			src: "data:image/gif;base64...",
+			ref: null,//File{...}
+			type: "image"
+		},{
+			src: "npm.txt",
+			ref: null,//File{...}
+			type: "any"
+		}]
+	}
+	
+	body:
+	{
+		text: "Hey, how are you?",
+		time: new Date().getTime(),
+		files: [{
+			hash,
+			name: file.ref.name,
+			size: file.ref.size,
+			contentType: file.ref.type,
+			type: message.type,
+		}]
+	}
+	*/
+	newGroupMsg(group, creator, message, callback) {
+		this.buildMsgBody(message, (body)=>{
+			this.request(`/api/groups/${creator}/${group}/messages`, "POST", body).then((resp)=>{
+				if(callback){
+					callback(body)
+				}
+			});
+		});
 	}
 	/*
 	[
@@ -226,8 +319,14 @@ export default class ChatService {
 		}
 		return this.request(`/api/peers/${user}/messages${append}`, "GET");
 	}
-	newPeerMsg(user, body) {
-		return this.request(`/api/peers/${user}/messages`, "POST", body);
+	newPeerMsg(user, message, callback) {
+		this.buildMsgBody(message, (body)=>{
+			this.request(`/api/peers/${user}/messages`, "POST", body).then((resp)=>{
+				if(callback){
+					callback(body)
+				}
+			});
+		});
 	}
 	getHistory({
 		group, 

@@ -2,7 +2,7 @@
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import FileService from '../service/FileService';
-import { checker, bitUnit, openFile, isImage, saveFile, writeMobileFile,labels, colors,icons } from '@/utils/file';
+import { checker, bitUnit, openFile, isImage, writeMobileFile,labels, colors,icons } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { platform } from '@/utils/platform';

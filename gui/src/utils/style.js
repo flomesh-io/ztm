@@ -1,9 +1,38 @@
+import { ext, bitUnit, extIcon } from "./file.js";
+
 const top = "13px";
 const iconwidth = "2.2em";
 const svgwidth = "1.3em";
 
 const isDrak = () => {
 	return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+const templates = {
+	initClass(deepChat){
+		const shadowRoot = deepChat.shadowRoot;
+		if (shadowRoot) {
+		  const style = document.createElement('style');
+		  style.textContent = `
+		    .any-file-message-bubble,.any-file-message-bubble+.name,.any-file-message-bubble+.name+.avatar-container{
+					display:none
+				}
+		  `;
+		  shadowRoot.appendChild(style);
+		}
+	},
+	acceptFile({file, src}){
+		const contentType = file?.contentType || file?.type;
+		const id = new Date().getTime()
+		return `
+			<accept-file id="accept-${id}" src="${src}" size="${file?.size}" contentType="${contentType}" fileName="${file.name}">
+				<img slot="icon" src="${extIcon(contentType)}" width="40px" height="40px"/>
+				<div slot="title">${file.name}</div>
+				<div style="font-size:8pt;opacity:0.7" slot="attrs">
+					${bitUnit(file.size)}
+				</div>
+			</accept-file>
+		`
+	}
 }
 const chatTheme = (viewHeight) => {
 	if(isDrak()){
@@ -71,21 +100,25 @@ const nameStyle = (user, isMobile) => {
 }
 
 const messageStyles = () => {
-	const innerContainer = {"position": "relative","paddingTop":"5px","paddingBottom":"5px"};
+	const innerContainer = {"position": "relative"}//,"paddingTop":"5px","paddingBottom":"5px"};
+	const bubbleStyle = {
+		"wordBreak": "break-all",
+		// "marginTop":"15px","marginBottom":"15px"
+	}
 	if(isDrak()){
 		return {
 			"default": {
 				ai: {
 					innerContainer,
-					"bubble": {"backgroundColor": "#545454", "wordBreak": "break-all","color": "white"},
+					"bubble": {"backgroundColor": "#545454", "color": "white", ...bubbleStyle},
 				},
 				system: {
 					innerContainer,
-					"bubble": {"backgroundColor": "#545454", "wordBreak": "break-all","color": "white"},
+					"bubble": {"backgroundColor": "#545454", "color": "white", ...bubbleStyle},
 				},
 				user: {
 					innerContainer,
-					"bubble": {"backgroundColor": "#9855f7", "wordBreak": "break-all","color": "white"},
+					"bubble": {"backgroundColor": "#9855f7", "color": "white", ...bubbleStyle},
 				}
 			}
 		};
@@ -94,15 +127,15 @@ const messageStyles = () => {
 			"default": {
 				ai: {
 					innerContainer,
-					"bubble": {"backgroundColor": "#f5f5f5","wordBreak": "break-all"},
+					"bubble": {"backgroundColor": "#f5f5f5", ...bubbleStyle},
 				},
 				system: {
 					innerContainer,
-					"bubble": {"backgroundColor": "#f5f5f5","wordBreak": "break-all"},
+					"bubble": {"backgroundColor": "#f5f5f5", ...bubbleStyle},
 				},
 				user: {
 					innerContainer,
-					"bubble": {"backgroundColor": "#9855f7","wordBreak": "break-all", "color": "white"},
+					"bubble": {"backgroundColor": "#9855f7", "color": "white", ...bubbleStyle},
 				}
 			}
 		};
@@ -381,7 +414,15 @@ const inputStyle = (isMobile) => {
 	}
 }
 
-const avatarStyle = {"avatar":{"position":"relative","width": "30px","height": "30px","top":"-10px"}};
+const avatarStyle = {"avatar":{
+	
+	// "marginTop": "15px",
+	"marginBottom": "10px",
+	"position":"relative",
+	"width": "30px",
+	"height": "30px",
+	"top":"-10px",
+}};
 
 export default{
 	submitStyle, 
@@ -397,5 +438,6 @@ export default{
 	nameStyle,
 	messageStyles,
 	attachmentContainerStyle,
-	chatTheme
+	chatTheme,
+	templates
 }

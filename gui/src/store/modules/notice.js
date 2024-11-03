@@ -27,13 +27,13 @@ export default {
 						const _key = `${room?.peer}-${room?.latest?.sender}-${room?.time}`;
 						if(!_pushed[_key]){
 							commit('setPushedByKey',_key);
-							send(room?.peer, room?.latest?.message?.type == 'text'?`${room?.latest?.message?.content}`:`[File]`)
+							send(room?.peer, room?.latest?.message?.text?`${room?.latest?.message?.text}`:`[${room?.latest?.message?.files?.length>1?'Files':'File'}]`)
 						}
 					}else {
 						const _key = `${room?.group}-${room?.latest?.sender}-${room?.time}`;
 						if(!_pushed[_key]){
 							commit('setPushedByKey',_key);
-							send(room?.name, room?.latest?.message?.type == 'text'?`${room?.latest?.sender}:${room?.latest?.message?.content}`:`${room?.latest?.sender}:[File]`)
+							send(room?.name, room?.latest?.message?.text?`${room?.latest?.sender}:${room?.latest?.message?.text}`:`${room?.latest?.sender}:[${room?.latest?.message?.files?.length>1?'Files':'File'}]`)
 						}
 					}
 				}
