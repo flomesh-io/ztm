@@ -244,21 +244,20 @@ const request = ref({
 					}
 				}
 				
-				// let html = "";
-				// message?.files.forEach((file)=>{
-				// 	const type = chatFileType(file.type);
-				// 	if(type == 'any'){
-				// 		html += style.templates.acceptFile({
-				// 			file,
-				// 			src:''
-				// 		})
-				// 	}
-				// })
-				// if(!!html){
-				// 	signals.onResponse({role: 'user',html:html,overwrite: true});
-				// } else {
-				// 	signals.onResponse({files:[],overwrite: true});
-				// }
+				let html = "";
+				message?.files.forEach((file)=>{
+					const type = chatFileType(file.type);
+					if(type == 'any'){
+						html += style.templates.acceptFile({
+							file,
+							src:''
+						})
+					}
+				})
+				signals.onResponse({files:[],overwrite: true});
+				if(!!html){
+					chat.value.addMessage({role: 'user',html:html},false);
+				}
 				
 				postMessage(message,(body)=>{
 					let html2 = "";
@@ -271,10 +270,10 @@ const request = ref({
 							})
 						}
 					})
-					signals.onResponse({files:[],overwrite: true});
+					// signals.onResponse({files:[],overwrite: true});
 					if(!!html2){
 						// signals.onResponse({role: 'user',html:html2,overwrite: true});
-						chat.value.addMessage({role: 'user',html:html2},false);
+						chat.value.addMessage({role: 'user',html:html2,overwrite: true},true);
 					}
 				});
 			}else if(body?.messages){
