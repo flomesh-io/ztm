@@ -308,6 +308,17 @@
 		"dialog:default",
 		"dialog:allow-open",
 		"log:default",
-		"notification:default"
+		"notification:default",
+		"notification:allow-request-permission",
+		"notification:allow-show",
+		"notification:allow-register-listener",
+		"notification:allow-register-action-types",
+		"notification:allow-register-action-types",
+		"notification:allow-permission-state",
+		"notification:allow-notify",
+		"notification:allow-list-channels",
+		"notification:allow-is-permission-granted",
+		"notification:allow-create-channel",
+		"notification:allow-check-permissions"
   ]
 }
