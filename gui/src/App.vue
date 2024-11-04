@@ -10,6 +10,7 @@ import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { AcceptFile } from "@/doms/AcceptFile";
+import { reg } from "@/utils/notification";
 const store = useStore();
 const toast = useToast();
 const confirm = useConfirm();
@@ -27,6 +28,7 @@ const loadchats = () => {
 	},1000)
 }
 onMounted(()=>{
+	reg();
 	loadchats()
 	customElements.define('accept-file', AcceptFile);
 })
