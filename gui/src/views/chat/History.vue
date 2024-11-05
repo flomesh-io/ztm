@@ -3,6 +3,7 @@ import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vu
 import { useStore } from 'vuex';
 import ChatService from '@/service/ChatService';
 import userSvg from "@/assets/img/user.png";
+import { chatFileType, bitUnit, extIcon } from '@/utils/file';
 import _ from 'lodash';
 import { dayjs, extend } from '@/utils/dayjs';
 extend()
@@ -48,7 +49,15 @@ const timeago = computed(() => (ts) => {
 	const date = new Date(ts);
 	return dayjs(date).fromNow();
 })
-
+const getUrl = computed(()=> (file, sender) => {
+	const type = chatFileType(file.contentType);
+	const src = chatService.getFileUrl(file, sender);
+	if(chatService.isBlob(type)){
+		return `${src}.${file.contentType.split("/")[1]}`;
+	} else {
+		return src;
+	}
+})
 watch(() => props.room, () => {
 	getHistory()
 },{
@@ -91,8 +100,19 @@ watch(() => today.value, () => {
 								</div>
 							</div>
 							<div class="flex" style="word-break: break-all;" >
-								<span v-if="item?.message?.files?.length>0">[{{item.message.files.length}} {{item.message.files.length>1?'Files':'File'}}]</span>
 								<span v-if="item?.message?.text">{{item?.message?.text}}</span>
+								<span v-if="item?.message?.files?.length>0" v-for="(file,idx) in item?.message?.files">
+									<img v-if="chatFileType(file.contentType) == 'image'" :src="getUrl(file, item?.sender)"></img>
+									<audio v-else-if="chatFileType(file.contentType) == 'audio'" :src="getUrl(file, item?.sender)" class="audio-player" controls></audio>
+									<video v-else-if="chatFileType(file.contentType) == 'video'" :src="getUrl(file, item?.sender)" width="400px" controls></video>
+									<accept-file v-else :src="getUrl(file, item?.sender)" :size="file?.size" :contentType="file.contentType" :fileName="file.name">
+										<img slot="icon" :src="extIcon(file.contentType)" width="40px" height="40px"/>
+										<div slot="title">{{file.name}}</div>
+										<div style="font-size:8pt;opacity:0.7" slot="attrs">
+											{{bitUnit(file.size)}}
+										</div>
+									</accept-file>
+								</span>
 							</div>
 						</div>
 					</div>
