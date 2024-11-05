@@ -56,6 +56,7 @@
     "@tauri-apps/plugin-upload": "2.0.0",
     "@vee-validate/rules": "4.12.7",
     "axios": "^0.28.0",
+    "blob-util": "^2.0.2",
     "chart.js": "3.3.2",
     "clipboardy": "^4.0.0",
     "dayjs": "^1.11.10",

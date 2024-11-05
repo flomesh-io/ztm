@@ -258,6 +258,7 @@ const saveFile = ({fileUrl,name, before, after}) => {
 					before()
 				}
 				const saveUrl = getSavePath(targetUrl, defaultPath);
+				debugger
 				download(fileUrl, saveUrl).then((resp)=>{
 					if(!!after){
 						after(true)
@@ -402,7 +403,6 @@ const labels = (item, undownload)=>{
 		return item?.state||''
 	}
 }
-
 const colors = {
 	new:'warn',
 	changed:'warn',
