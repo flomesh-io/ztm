@@ -255,10 +255,9 @@ export default class ChatService {
 		return this.getAppUrl(`/api/files/${user}/${file?.hash}`);
 	}
 	
-	isBlob(file) {
-		const type = file?.contentType || file?.type;
-		const mimeTypes = ['audio'];
-		if(mimeTypes.indexOf(type) >= 0){
+	isBlob(contentType) {
+		const mimeTypes = ['audio','video'];
+		if(mimeTypes.indexOf(contentType) >= 0){
 			return true;
 		} else {
 			return false;
@@ -266,8 +265,8 @@ export default class ChatService {
 	}
 	getBlobSrc(file) {
 		const urls = store.getters['blob/urls'];
-		if(urls[file.src]){
-			return urls[file.src]
+		if(urls[file.hash]){
+			return urls[file.hash]
 		} else {
 			return null
 		}
@@ -288,7 +287,7 @@ export default class ChatService {
 					var url = URL.createObjectURL(_file);
 					// const _file = new File([buffer], file.name, { type: file.contentType });
 					// const url = URL.createObjectURL(_file);
-					store.commit('blob/setUrl', [file.src,url]);
+					store.commit('blob/setUrl', [file.hash, url]);
 					if(callback) {
 						callback(url)
 					}
@@ -304,10 +303,9 @@ export default class ChatService {
 			.then(resp => {
 				resp.blob().then((blob)=>{
 					var url = URL.createObjectURL(blob);
-					debugger
 					// const _file = new File([buffer], file.name, { type: file.contentType });
 					// const url = URL.createObjectURL(_file);
-					store.commit('blob/setUrl', [file.src,url]);
+					store.commit('blob/setUrl', [file.hash,url]);
 					if(callback) {
 						callback(url)
 					}

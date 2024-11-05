@@ -194,6 +194,8 @@ function chatFileType(contentType) {
         return "image";
     } else if (/^audio\//.test(contentType)) {
         return "audio";
+    } else if ((platform() != 'macos' && platform() != 'ios') && /^video\//.test(contentType)) {
+        return "video";
     } else {
         return "any";
     }

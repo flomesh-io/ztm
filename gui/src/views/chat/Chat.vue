@@ -112,6 +112,27 @@ const buildMessage = (item) => {
 					file, 
 					src: chatService.getFileUrl(file, item.sender)
 				})
+			} else if(type == 'video'){
+				const srcName = chatService.getFileUrl(file, item.sender);
+				file.src = `${srcName}.${file.contentType.split("/")[1]}`;
+				_msg.html += style.templates.video({ file, src: file.src });
+				// const url = chatService.getBlobSrc(file);
+				// if(url){
+				// 	_msg.html += style.templates.video({ file, src: url })
+				// } else {
+				// 	_msg.html += style.templates.video({ file, src: file.src })
+				// 	chatService.reqBlobSrc(file,(_url)=>{
+				// 		const doms = document.querySelector('deep-chat').shadowRoot.querySelectorAll(type);
+				// 		doms.forEach((dom)=>{
+				// 			if(dom.src.indexOf(file.src)>-1){
+				// 				dom.src = _url
+				// 			}
+				// 			if(dom.currentSrc.indexOf(file.src)>-1){
+				// 				// dom.currentSrc = _url
+				// 			}
+				// 		})
+				// 	});
+				// }
 			} else {
 				const src = chatService.getFileUrl(file, item.sender);
 				const _n = {
@@ -119,27 +140,8 @@ const buildMessage = (item) => {
 					name: file.name,
 					src,
 				};
-				if(chatService.isBlob(_n)){
+				if(chatService.isBlob(file.contentType)){
 					_n.src = `${_n.src}.${file.contentType.split("/")[1]}`;
-					// const url = chatService.getBlobSrc(_n);
-					// if(url){
-					// 	_n.src = url;
-					// } else {
-					// 	chatService.reqBlobSrc({
-					// 		..._n,
-					// 		contentType: file.contentType
-					// 	},(_url)=>{
-					// 		const doms = document.querySelector('deep-chat').shadowRoot.querySelectorAll(_n.type);
-					// 		doms.forEach((dom)=>{
-					// 			if(dom.src.indexOf(src)>-1){
-					// 				dom.src = _url
-					// 			}
-					// 			if(dom.currentSrc.indexOf(src)>-1){
-					// 				// dom.currentSrc = _url
-					// 			}
-					// 		})
-					// 	});
-					// }
 				}
 				_msg.files.push(_n)
 			}
@@ -246,10 +248,6 @@ const chatRender = (e)=>{
 	style.templates.initClass(chat.value);
 }
 const requestInterceptor = (requestDetails) => {
-  // console.log(requestDetails); // printed above
-	//requestDetails.body.messages[0].text
-	// requestDetails.body.messages[0].html="xxxxxxx"
-  // requestDetails.body = {prompt: "asd"}; // custom body
   return requestDetails;
 };
 
@@ -276,7 +274,12 @@ const request = ref({
 							file,
 							src:''
 						})
-					}
+					} else if(type == 'video'){
+						html += style.templates.video({
+							file,
+							src:''
+						})
+					} 
 				})
 				signals.onResponse({files:[],overwrite: true});
 				if(!!html){
@@ -287,11 +290,17 @@ const request = ref({
 					let html2 = "";
 					body?.files.forEach((file)=>{
 						const type = chatFileType(file.contentType);
-						if(type == 'any' && file.hash){
-							html2 += style.templates.acceptFile({
-								file,
-								src:chatService.getFileUrl(file, user.value)
-							})
+						if(file.hash){
+							if(type == 'any'){
+								html2 += style.templates.acceptFile({
+									file,
+									src:chatService.getFileUrl(file, user.value)
+								})
+							} else if(type == 'video'){
+								const srcName = chatService.getFileUrl(file, user.value);
+								const src = `${srcName}.${file.contentType.split("/")[1]}`;
+								html2 += style.templates.video({ file, src });
+							}
 						}
 					})
 					// signals.onResponse({files:[],overwrite: true});

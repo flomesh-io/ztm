@@ -20,6 +20,13 @@ const templates = {
 		  shadowRoot.appendChild(style);
 		}
 	},
+	video({file, src}){
+		return `
+		<video src="${src}" controls width="600">
+		    Not support <video>。
+		</video>
+		`
+	},
 	acceptFile({file, src}){
 		const contentType = file?.contentType || file?.type;
 		const id = new Date().getTime()
