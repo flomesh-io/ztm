@@ -223,6 +223,10 @@ const submitStyle = (position, space)=>{
 }
 const micStyle= (position, space)=>{
 	return {
+    "files": {
+      "format": "mp3",
+      "acceptedFormats": ".mp3"
+    },
 		"button": {
 			"default": {
 				"container": {"default": {
