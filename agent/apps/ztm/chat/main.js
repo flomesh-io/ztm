@@ -116,7 +116,8 @@ export default function ({ app, mesh, utils }) {
     '/api/files/{owner}/{hash}': {
       'GET': responder((params) => {
         var owner = params.owner
-        var hash = params.hash
+				// Fix safari <audio> need file extension
+        var hash = params.hash.split(".")[0]
         return api.getFile(owner, hash).then(
           ret => ret ? response(200, ret) : response(404)
         )

@@ -70,7 +70,7 @@ class AcceptFile extends HTMLElement {
 					</div>
 				</div>
 				<div class="state download">
-					<svg t="1730616449487" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="10987" width="30" height="30"><path d="M640 473.35424v-95.88736h-268.288v95.88736h-118.25152L506.88 726.77376l253.41952-253.41952H640zM371.712 276.21376h268.288v46.34624h-268.288zM371.712 194.82624h268.288v41.96352h-268.288z" fill="#ffffff" p-id="10988" data-spm-anchor-id="a313x.search_index.0.i13.a9e13a81DL4NdQ" class="selected"></path><path d="M146.432 806.912h720.896v40.96h-720.896z" fill="#ffffff" p-id="10989" data-spm-anchor-id="a313x.search_index.0.i14.a9e13a81DL4NdQ" class="selected"></path></svg>
+					<svg t="1730720588146" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="29082" width="30" height="30"><path d="M490.666667 490.666667m-490.666667 0a490.666667 490.666667 0 1 0 981.333333 0 490.666667 490.666667 0 1 0-981.333333 0Z" fill="#82529d" p-id="29083" data-spm-anchor-id="a313x.search_index.0.i25.a9e13a81DL4NdQ" class=""></path><path d="M647.381333 473.002667a26.88 26.88 0 0 0-24.917333-17.877334h-53.632c-0.298667 0-0.341333-0.512-0.341333-0.810666V327.125333a28.714667 28.714667 0 0 0-27.093334-29.610666h-78.592a28.501333 28.501333 0 0 0-26.922666 29.610666v127.146667c0 0.298667-0.298667 0.853333-0.554667 0.853333H382.506667a26.794667 26.794667 0 0 0-24.917334 17.834667 30.762667 30.762667 0 0 0 5.845334 31.744l120.021333 129.877333a25.6 25.6 0 0 0 38.4 0l120.021333-129.834666a30.72 30.72 0 0 0 5.504-31.744z" fill="#ffffff" p-id="29084"></path><path d="M661.077333 667.690667H343.808a13.269333 13.269333 0 1 0 0 26.496h317.269333a13.269333 13.269333 0 1 0 0-26.496z" fill="#ffffff" p-id="29085"></path></svg>
 				</div>
 				<div class="state loading">
 					<div class="spinner"></div>
@@ -79,7 +79,7 @@ class AcceptFile extends HTMLElement {
 					<div class="uploader"></div>
 				</div>
 				<div class="state done">
-					<svg t="1730621033625" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="18207" width="26" height="26"><path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#D5F7E0" p-id="18208"></path><path d="M407.552 586.752L239.616 455.68 163.84 515.072l292.864 294.912c51.2-126.976 208.896-376.832 403.456-555.008l-18.432-40.96c-210.944 126.976-364.544 290.816-434.176 372.736z" fill="#0AAD06" p-id="18209"></path></svg>
+					<svg t="1730621033625" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="18207" width="26" height="26"><path d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z" fill="#D5F7E0" p-id="18208"></path><path d="M407.552 586.752L239.616 455.68 163.84 515.072l292.864 294.912c51.2-126.976 208.896-376.832 403.456-555.008l-18.432-40.96c-210.944 126.976-364.544 290.816-434.176 372.736z" fill="#0AAD06" p-id="18209"></path></svg>
 				</div>
 			</div>
 		`;
@@ -102,7 +102,7 @@ class AcceptFile extends HTMLElement {
 				name:this.getAttribute('fileName'),
 				fileUrl:this.getAttribute('src'),
 				before:()=>{
-					this.setAttribute('progress',0);
+					this.setAttribute('progress',5);
 					this.updateProgress();
 				},
 				after:(resp)=>{
@@ -134,9 +134,9 @@ class AcceptFile extends HTMLElement {
 	updateProgress() {
 		this.updateElement('loading');
 		setTimeout(()=>{
-			const progress = (this.getAttribute('progress')||0)*1;
+			const progress = (this.getAttribute('progress')||5)*1;
 			const speed = downloadSpeed(this.getAttribute('size')*1);
-			if(progress < 99){
+			if(progress>0 && progress < 99){
 				const next = (progress + speed) >= 100 ? 99 :(progress + speed);
 				debugger
 				this.setAttribute('progress', next);
@@ -150,7 +150,7 @@ class AcceptFile extends HTMLElement {
 		this.updateElement('loading');
 	}
 	resetProgress() {
-		this.setAttribute('progress','');
+		this.setAttribute('progress',0);
 		const download = this.shadowRoot.querySelector('.download');
 		download.style.display = "block";
 		const loading = this.shadowRoot.querySelector('.loading');

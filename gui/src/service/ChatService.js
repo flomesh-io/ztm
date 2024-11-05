@@ -4,6 +4,8 @@ import confirm from "@/utils/confirm";
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 import store from "@/store";
+import { binaryStringToBlob,createObjectURL } from 'blob-util'
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
 export default class ChatService {
 	
@@ -31,11 +33,7 @@ export default class ChatService {
 			app:'chat',
 		}
 		const base = getUrl(`/api/meshes/${options?.mesh}/apps/${options?.provider}/${options?.app}`);
-		if(!!body){
-			return request(`${base}${url}`, method, body, config);
-		}else{
-			return request(`${base}${url}`, method);
-		}
+		return request(`${base}${url}`, method, body, config);
 	}
 	
 	getAppUrl(url){
@@ -250,11 +248,84 @@ export default class ChatService {
 		return this.request(`/api/files`, "POST", file, this.getHeader(contentType))
 	}
 	getFile(file,user) {
-		return this.request(`/api/files/${user}/${file?.hash}`, "GET", body, this.getHeader(file?.contentType));
+		return this.request(`/api/files/${user}/${file?.hash}`, "GET", null, this.getHeader(file?.contentType));
 	}
 	
 	getFileUrl(file,user) {
 		return this.getAppUrl(`/api/files/${user}/${file?.hash}`);
+	}
+	
+	isBlob(file) {
+		const type = file?.contentType || file?.type;
+		const mimeTypes = ['audio'];
+		if(mimeTypes.indexOf(type) >= 0){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	getBlobSrc(file) {
+		const urls = store.getters['blob/urls'];
+		if(urls[file.src]){
+			return urls[file.src]
+		} else {
+			return null
+		}
+	}
+	reqBlobSrc(file,callback) {
+		//'application/octet-stream'
+		//file.contentType
+		if(!!window.__TAURI_INTERNALS__){
+			tauriFetch(file.src, {
+			  method: 'GET', 
+			  headers: {
+			    'Content-Type': file.contentType,
+			  }
+			})
+			.then(resp => {
+				resp.blob().then((blob)=>{
+					const _file = new File([blob], file.name, { type: blob.type });
+					var url = URL.createObjectURL(_file);
+					// const _file = new File([buffer], file.name, { type: file.contentType });
+					// const url = URL.createObjectURL(_file);
+					store.commit('blob/setUrl', [file.src,url]);
+					if(callback) {
+						callback(url)
+					}
+				})
+			})
+		} else {
+			fetch(file.src, {
+			  method: 'GET', // 或 'POST'、'PUT'、'DELETE' 等
+			  headers: {
+			    'Content-Type': 'application/octet-stream',
+			  }
+			})
+			.then(resp => {
+				resp.blob().then((blob)=>{
+					var url = URL.createObjectURL(blob);
+					debugger
+					// const _file = new File([buffer], file.name, { type: file.contentType });
+					// const url = URL.createObjectURL(_file);
+					store.commit('blob/setUrl', [file.src,url]);
+					if(callback) {
+						callback(url)
+					}
+				})
+			})
+		}
+		
+		// request(file.src, "GET", null, this.getHeader('application/octet-stream')).then((resp)=>{
+		// 	var blob = binaryStringToBlob(resp);
+		// 	var url = createObjectURL(blob);
+		// 	debugger
+		// 	// const _file = new File([buffer], file.name, { type: file.contentType });
+		// 	// const url = URL.createObjectURL(_file);
+		// 	store.commit('blob/setUrl', [file.src,url]);
+		// 	if(callback) {
+		// 		callback(url)
+		// 	}
+		// })
 	}
 	/*
 	message:

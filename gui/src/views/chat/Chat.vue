@@ -113,11 +113,35 @@ const buildMessage = (item) => {
 					src: chatService.getFileUrl(file, item.sender)
 				})
 			} else {
-				_msg.files.push({
+				const src = chatService.getFileUrl(file, item.sender);
+				const _n = {
 					type,
 					name: file.name,
-					src:chatService.getFileUrl(file, item.sender),
-				})
+					src,
+				};
+				if(chatService.isBlob(_n)){
+					_n.src = `${_n.src}.${file.contentType.split("/")[1]}`;
+					// const url = chatService.getBlobSrc(_n);
+					// if(url){
+					// 	_n.src = url;
+					// } else {
+					// 	chatService.reqBlobSrc({
+					// 		..._n,
+					// 		contentType: file.contentType
+					// 	},(_url)=>{
+					// 		const doms = document.querySelector('deep-chat').shadowRoot.querySelectorAll(_n.type);
+					// 		doms.forEach((dom)=>{
+					// 			if(dom.src.indexOf(src)>-1){
+					// 				dom.src = _url
+					// 			}
+					// 			if(dom.currentSrc.indexOf(src)>-1){
+					// 				// dom.currentSrc = _url
+					// 			}
+					// 		})
+					// 	});
+					// }
+				}
+				_msg.files.push(_n)
 			}
 		})
 	}
@@ -204,7 +228,7 @@ const submitStyle = computed(() => style.submitStyle)
 const micStyle= computed(()=>style.micStyle)
 const menuStyle = computed(()=>style.menuStyle)
 const inputStyle = computed(() => style.inputStyle(isMobile.value))
-const hasMediaDevices = computed(() => false);
+const hasMediaDevices = computed(() => true);
 const postMessage = (message, callback) => {
 	if(props.room?.peer){
 		chatService.newPeerMsg(props.room?.peer, message, callback);
