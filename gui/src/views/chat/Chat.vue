@@ -140,7 +140,7 @@ const buildMessage = (item) => {
 					name: file.name,
 					src,
 				};
-				if(chatService.isBlob(file.contentType)){
+				if(chatService.isBlob(type)){
 					_n.src = `${_n.src}.${file.contentType.split("/")[1]}`;
 				}
 				_msg.files.push(_n)
