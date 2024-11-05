@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import style from '@/utils/style';
-import { chatFileType } from '@/utils/file';
+import { chatFileType, writeMobileFile } from '@/utils/file';
 import ChatService from '@/service/ChatService';
 import userSvg from "@/assets/img/user.png";
 import systemSvg from "@/assets/img/system.png";
@@ -106,44 +106,46 @@ const buildMessage = (item) => {
 	if(!!item.message?.files?.length){
 		_msg.files = []
 		item.message.files.forEach((file)=>{
-			const type = chatFileType(file.contentType);
-			if(type == 'any'){
-				_msg.html += style.templates.acceptFile({
-					file, 
-					src: chatService.getFileUrl(file, item.sender)
-				})
-			} else if(type == 'video'){
-				const srcName = chatService.getFileUrl(file, item.sender);
-				file.src = `${srcName}.${file.contentType.split("/")[1]}`;
-				_msg.html += style.templates.video({ file, src: file.src });
-				// const url = chatService.getBlobSrc(file);
-				// if(url){
-				// 	_msg.html += style.templates.video({ file, src: url })
-				// } else {
-				// 	_msg.html += style.templates.video({ file, src: file.src })
-				// 	chatService.reqBlobSrc(file,(_url)=>{
-				// 		const doms = document.querySelector('deep-chat').shadowRoot.querySelectorAll(type);
-				// 		doms.forEach((dom)=>{
-				// 			if(dom.src.indexOf(file.src)>-1){
-				// 				dom.src = _url
-				// 			}
-				// 			if(dom.currentSrc.indexOf(file.src)>-1){
-				// 				// dom.currentSrc = _url
-				// 			}
-				// 		})
-				// 	});
-				// }
-			} else {
-				const src = chatService.getFileUrl(file, item.sender);
-				const _n = {
-					type,
-					name: file.name,
-					src,
-				};
-				if(chatService.isBlob(type)){
-					_n.src = `${_n.src}.${file.contentType.split("/")[1]}`;
+			if(file && file.size>0){
+				const type = chatFileType(file.contentType);
+				if(type == 'any'){
+					_msg.html += style.templates.acceptFile({
+						file, 
+						src: chatService.getFileUrl(file, item.sender)
+					})
+				} else if(type == 'video'){
+					const srcName = chatService.getFileUrl(file, item.sender);
+					file.src = `${srcName}.${file.contentType.split("/")[1]}`;
+					_msg.html += style.templates.video({ file, src: file.src });
+					// const url = chatService.getBlobSrc(file);
+					// if(url){
+					// 	_msg.html += style.templates.video({ file, src: url })
+					// } else {
+					// 	_msg.html += style.templates.video({ file, src: file.src })
+					// 	chatService.reqBlobSrc(file,(_url)=>{
+					// 		const doms = document.querySelector('deep-chat').shadowRoot.querySelectorAll(type);
+					// 		doms.forEach((dom)=>{
+					// 			if(dom.src.indexOf(file.src)>-1){
+					// 				dom.src = _url
+					// 			}
+					// 			if(dom.currentSrc.indexOf(file.src)>-1){
+					// 				// dom.currentSrc = _url
+					// 			}
+					// 		})
+					// 	});
+					// }
+				} else {
+					const src = chatService.getFileUrl(file, item.sender);
+					const _n = {
+						type,
+						name: file.name,
+						src,
+					};
+					if(chatService.isBlob(type)){
+						_n.src = `${_n.src}.${file.contentType.split("/")[1]}`;
+					}
+					_msg.files.push(_n)
 				}
-				_msg.files.push(_n)
 			}
 		})
 	}
@@ -254,13 +256,14 @@ const requestInterceptor = (requestDetails) => {
 const request = ref({
 	handler: (body, signals) => {
 		try {
-			console.log("%%%%%%%")
 			if (body instanceof FormData) {
 				const message = { overwrite: true, files:[] }
 				for (const [key, value] of body.entries()) {
 				  console.log(`${key}: ${value}`);
 					if(key == 'files'){
-						message.files.push(value)
+						if(value && value?.size>0){
+							message.files.push(value)
+						}
 					}else if(key == 'message1'){
 						message['text'] = value;
 					}
@@ -268,6 +271,7 @@ const request = ref({
 				
 				let html = "";
 				message?.files.forEach((file)=>{
+					// writeMobileFile('beforePostMessageType.txt',`${file.name}/${file.type}`);
 					const type = chatFileType(file.type);
 					if(type == 'any'){
 						html += style.templates.acceptFile({
@@ -283,23 +287,25 @@ const request = ref({
 				})
 				signals.onResponse({files:[],overwrite: true});
 				if(!!html){
+					// writeMobileFile('postMessageHTML.txt',html);
 					chat.value.addMessage({role: 'user',html:html},false);
 				}
 				
 				postMessage(message,(body)=>{
 					let html2 = "";
 					body?.files.forEach((file)=>{
+						// writeMobileFile('postMessageType.txt',`${file.name}/${file.contentType}`);
 						const type = chatFileType(file.contentType);
 						if(file.hash){
+							const src = chatService.getFileUrl(file, user.value);
+							writeMobileFile('postMessage.txt',src);
 							if(type == 'any'){
 								html2 += style.templates.acceptFile({
 									file,
-									src:chatService.getFileUrl(file, user.value)
+									src
 								})
 							} else if(type == 'video'){
-								const srcName = chatService.getFileUrl(file, user.value);
-								const src = `${srcName}.${file.contentType.split("/")[1]}`;
-								html2 += style.templates.video({ file, src });
+								html2 += style.templates.video({ file, src: `${src}.${file.contentType.split("/")[1]}` });
 							}
 						}
 					})

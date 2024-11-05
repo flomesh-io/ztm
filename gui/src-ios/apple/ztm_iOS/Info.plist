@@ -19,9 +19,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.3.8</string>
+	<string>0.3.9</string>
 	<key>CFBundleVersion</key>
-	<string>0.3.81</string>
+	<string>0.3.93</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
@@ -31,6 +31,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>ZTM Requires camera access in order to capture and transmit video</string>
 	<key>NSFileProtectionComplete</key>
 	<true/>
 	<key>NSLiveActivityUsageDescription</key>
@@ -39,6 +41,8 @@
 	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ZTM Requires microphone access in order to capture and transmit audio</string>
 	<key>NSPushNotificationsUsageDescription</key>
 	<string>ZTM will run in the background</string>
 	<key>NSSupportsLiveActivities</key>

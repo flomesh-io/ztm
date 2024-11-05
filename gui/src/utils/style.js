@@ -174,11 +174,11 @@ const submitStyle = (position, space)=>{
 						"right": (position=='inside-right' || position=='outside-right') ? space : 'auto',
 						"width": iconwidth,
 						"height": iconwidth,
-						"borderRadius": "25px",
+						"borderRadius": "3px",
 						
 					},
-					"hover": {"backgroundColor": "#555555","boxShadow": "0px 0.3px 0.9px rgba(0, 0, 0, 0.12), 0px 1.6px 3.6px rgba(0, 0, 0, 0.16)"},
-					"click": {"backgroundColor": "#555555","boxShadow": "0px 0.3px 0.9px rgba(0, 0, 0, 0.12), 0px 1.6px 3.6px rgba(0, 0, 0, 0.16)"}
+					"hover": {"backgroundColor": "#555555","boxShadow": "none"},
+					"click": {"backgroundColor": "#555555","boxShadow": "none"}
 				},
 				"svg": {
 					"styles": {
@@ -203,11 +203,11 @@ const submitStyle = (position, space)=>{
 						"right": (position=='inside-right' || position=='outside-right') ? space : 'auto',
 						"width": iconwidth,
 						"height": iconwidth,
-						"borderRadius": "25px",
+						"borderRadius": "3px",
 						
 					},
-					"hover": {"backgroundColor": "#f4f3ff","boxShadow": "0px 0.3px 0.9px rgba(0, 0, 0, 0.12), 0px 1.6px 3.6px rgba(0, 0, 0, 0.16)"},
-					"click": {"backgroundColor": "#f4f3ff","boxShadow": "0px 0.3px 0.9px rgba(0, 0, 0, 0.12), 0px 1.6px 3.6px rgba(0, 0, 0, 0.16)"}
+					"hover": {"backgroundColor": "#f4f3ff","boxShadow": "none"},
+					"click": {"backgroundColor": "#f4f3ff","boxShadow": "none"}
 				},
 				"svg": {
 					"styles": {
@@ -222,19 +222,53 @@ const submitStyle = (position, space)=>{
 	}
 }
 const micStyle= (position, space)=>{
+	let filter = "";
+	if(isDrak()){
+		filter = "brightness(0) saturate(100%) invert(100%) sepia(99%) saturate(1%) hue-rotate(343deg) brightness(100%) contrast(101%)"
+	} else {
+		filter = "brightness(0) saturate(100%) invert(1%) sepia(99%) saturate(1%) hue-rotate(343deg) brightness(100%) contrast(101%)"
+	} 
 	return {
-    "files": {
-      "format": "mp3",
-      "acceptedFormats": ".mp3"
-    },
+    // "files": {
+    //   "format": "mp3",
+    //   "acceptedFormats": ".mp3"
+    // },
 		"button": {
 			"default": {
-				"container": {"default": {
-					top,
-					"left": (position=='inside-left' || position=='outside-left') ? space : 'auto',
-					"right": (position=='inside-right' || position=='outside-right') ? space : 'auto',
-					"borderRadius": "20px", "width": iconwidth, "height": iconwidth}},
-				"svg": {"styles": {"default": {"fontSize": svgwidth}}}
+				"container": {
+					"default": {
+						top,
+						"left": (position=='inside-left' || position=='outside-left') ? space : 'auto',
+						"right": (position=='inside-right' || position=='outside-right') ? space : 'auto',
+						"borderRadius": "3px", "width": iconwidth, "height": iconwidth,
+					},
+				},
+				"svg": {
+					"styles": {
+						"default": {
+							"fontSize": svgwidth,
+							filter
+						},
+					},
+				}
+			},
+			"active": {
+				"container": {
+					"default": {
+						"right": "10px",
+						"zIndex": 10,
+						"backgroundColor": "#9855f7"
+					},
+					"hover": {"backgroundColor": "#7855c7"},
+					"click": {"backgroundColor": "#7855c7"}
+				},
+				"svg": {
+					"styles": {
+						"default": {
+							"filter": "brightness(0) saturate(100%) invert(100%) sepia(99%) saturate(1%) hue-rotate(343deg) brightness(100%) contrast(101%)"
+						}
+					}
+				}
 			},
 			position
 		}
