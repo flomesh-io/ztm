@@ -73,7 +73,7 @@ const dragAndDrop = () => {
 }
 
 const nameStyle = (user, isMobile) => {
-	const base = {"position":"absolute","width": isMobile?"50px":"70px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
+	const base = {"position":"absolute","width": isMobile?"70px":"90px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
 	const offset = isMobile?"-10px":"-20px";
 	if(isDrak()){
 		return {
@@ -463,6 +463,8 @@ const avatarStyle = {"avatar":{
 	
 	// "marginTop": "15px",
 	"marginBottom": "10px",
+	"marginLeft": "10px",
+	"marginRight": "10px",
 	"position":"relative",
 	"width": "30px",
 	"height": "30px",

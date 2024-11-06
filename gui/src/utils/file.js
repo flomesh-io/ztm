@@ -16,7 +16,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import { platform } from '@/utils/platform';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
-import { create, copyFile, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
+import { create, remove, copyFile, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
@@ -45,17 +45,17 @@ const isMobile = () => {
 const getSavePath = (target, dft) => {
 	if(!target){
 		return dft;
-	} else if(isMobile()){
-		const newName = target.split("/")[target.split("/").length-1];
-		const oldName = dft?dft.split("/")[dft.split("/").length-1]:'';
-		// if(target.toLowerCase().indexOf('library/cache')>-1 || target.toLowerCase().indexOf('libraries/cache')>-1){
-		// 	return decodeURI(target)
-		// }else 
-		if(!!oldName && newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
-			return dft;
-		}else{
-			return decodeURI(newName);
-		}
+	// } else if(isMobile()){
+	// 	const newName = target.split("/")[target.split("/").length-1];
+	// 	const oldName = dft?dft.split("/")[dft.split("/").length-1]:'';
+	// 	// if(target.toLowerCase().indexOf('library/cache')>-1 || target.toLowerCase().indexOf('libraries/cache')>-1){
+	// 	// 	return decodeURI(target)
+	// 	// }else 
+	// 	if(!!oldName && newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
+	// 		return dft;
+	// 	}else{
+	// 		return decodeURI(newName);
+	// 	}
 	} else {
 		return decodeURI(target);
 	}
@@ -260,17 +260,29 @@ const saveFile = ({fileUrl,name, before, after}) => {
 					before()
 				}
 				const saveUrl = getSavePath(targetUrl, defaultPath);
-				debugger
-				download(fileUrl, saveUrl).then((resp)=>{
-					if(!!after){
-						after(true)
-					}
-				}).catch((e2)=>{
-					writeMobileFile('downloadError.txt',e2.toString());
-					if(!!after){
-						after()
-					}
-				});
+				remove(saveUrl).then(()=>{
+					download(fileUrl, saveUrl).then((resp)=>{
+						if(!!after){
+							after(true)
+						}
+					}).catch((e2)=>{
+						writeMobileFile('downloadError.txt',e2.toString());
+						if(!!after){
+							after()
+						}
+					});
+				}).catch(()=>{
+					download(fileUrl, saveUrl).then((resp)=>{
+						if(!!after){
+							after(true)
+						}
+					}).catch((e2)=>{
+						writeMobileFile('downloadError.txt',e2.toString());
+						if(!!after){
+							after()
+						}
+					});
+				})
 			}
 			// requestMeta(fileUrl)
 			// 	.then(arrayBuffer => {
@@ -332,18 +344,34 @@ const downloadFile = ({
 				if(targetUrl){
 					let uint8Array = convertToUint8Array(data);
 					setTimeout(()=>{
-						create(getSavePath(targetUrl, newFileName), { 
-							write:true, 
-							create:true, 
-							baseDir: BaseDirectory.Document ,
-						}).then((file)=>{
-							
-							file.write(uint8Array).then(()=>{
-								file.close();
-								if(after){
-									after()
-								}
-							});
+						const saveUrl = getSavePath(targetUrl, newFileName);
+						remove(saveUrl).then(()=>{
+							create(saveUrl, { 
+								write:true, 
+								create:true, 
+								baseDir: BaseDirectory.Document ,
+							}).then((file)=>{
+								
+								file.write(uint8Array).then(()=>{
+									file.close();
+									if(after){
+										after()
+									}
+								});
+							})
+						}).catch(()=>{
+							create(saveUrl, {
+								write:true, 
+								create:true, 
+								baseDir: BaseDirectory.Document ,
+							}).then((file)=>{
+								file.write(uint8Array).then(()=>{
+									file.close();
+									if(after){
+										after()
+									}
+								});
+							})
 						})
 					},300)
 				}

@@ -138,7 +138,6 @@ class AcceptFile extends HTMLElement {
 			const speed = downloadSpeed(this.getAttribute('size')*1);
 			if(progress>0 && progress < 99){
 				const next = (progress + speed) >= 100 ? 99 :(progress + speed);
-				debugger
 				this.setAttribute('progress', next);
 				this.updateProgress();
 			}
