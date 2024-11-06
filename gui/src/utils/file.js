@@ -22,6 +22,7 @@ import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
 import { requestMeta } from '@/service/common/request';
 import { extension } from "mime-types";
+import { invoke } from '@tauri-apps/api/core';
 
 function convertToUint8Array(input) {
   if (typeof input === 'string') {
@@ -45,17 +46,16 @@ const isMobile = () => {
 const getSavePath = (target, dft) => {
 	if(!target){
 		return dft;
-	// } else if(isMobile()){
-	// 	const newName = target.split("/")[target.split("/").length-1];
-	// 	const oldName = dft?dft.split("/")[dft.split("/").length-1]:'';
-	// 	// if(target.toLowerCase().indexOf('library/cache')>-1 || target.toLowerCase().indexOf('libraries/cache')>-1){
-	// 	// 	return decodeURI(target)
-	// 	// }else 
-	// 	if(!!oldName && newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
-	// 		return dft;
-	// 	}else{
-	// 		return decodeURI(newName);
-	// 	}
+	} else if(isMobile()){
+		const newAry = target.split("/");
+		const newName = newAry[newAry.length-1];
+		const oldName = dft?dft.split("/")[dft.split("/").length-1]:'';
+		if(!!oldName && newName.split(".")[0].split('%20')[0] == oldName.split(".")[0]){
+			newAry[newAry.length-1] = oldName;
+			return decodeURI(newAry.join("/"));
+		}else{
+			return decodeURI(newName);
+		}
 	} else {
 		return decodeURI(target);
 	}
@@ -228,7 +228,9 @@ const downloadSpeed = (value)=> {
 }
 const openFile = (path) => {
 	//{ read: true, write: false, baseDir: BaseDirectory.Home }
-	if(isMobile()){
+	if(platform() == 'ios'){
+		invoke('shareFile', { url: path })
+	} else if(platform() == 'android'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to the Files App: /ztm/ztmCloud folder to open it.`, life: 3000 });
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
@@ -242,9 +244,8 @@ const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) =>
 			progressHandler(progress, total)
 		}
 	},headers).then((resp)=>{
-		debugger
 		if(!!after){
-			after(true)
+			after(saveUrl)
 		}
 	}).catch((e2)=>{
 		writeMobileFile('downloadError.txt',e2.toString());
@@ -253,10 +254,8 @@ const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) =>
 		}
 	});
 }
-const saveFile = ({fileUrl,name, before,progressHandler,headers, after}) => {
-	if(!fileUrl){
-		return
-	}
+const saveFilePc = ({fileUrl,name, before,progressHandler,headers, after}) => {
+	
 	const filePathAry = fileUrl.split("/");
 	const title = name||filePathAry[filePathAry.length-1];
 	const ext = title.split(".")[1];
@@ -277,11 +276,7 @@ const saveFile = ({fileUrl,name, before,progressHandler,headers, after}) => {
 					before()
 				}
 				const saveUrl = getSavePath(targetUrl, defaultPath);
-				remove(saveUrl).then(()=>{
-					saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
-				}).catch(()=>{
-					saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
-				})
+				saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
 			}
 			// requestMeta(fileUrl)
 			// 	.then(arrayBuffer => {
@@ -317,6 +312,32 @@ const saveFile = ({fileUrl,name, before,progressHandler,headers, after}) => {
 			// 	});
 		})
 	});
+}
+
+const saveFileMobile = ({fileUrl,name, before,progressHandler,headers, after}) => {
+	
+	const filePathAry = fileUrl.split("/");
+	const title = name||filePathAry[filePathAry.length-1];
+	const ext = title.split(".")[1];
+	
+	documentDir().then((dir)=>{
+		const defaultPath = `${dir}/chats/${title}`;
+		if(!!before){
+			before()
+		}
+		saveFileDownload({fileUrl, saveUrl:defaultPath,progressHandler,headers, after})
+	});
+}
+
+const saveFile = ({fileUrl,name, before,progressHandler,headers, after}) => {
+	if(!fileUrl){
+		return
+	}
+	if(platform() == 'ios'){
+		saveFileMobile({fileUrl,name, before,progressHandler,headers, after})
+	} else {
+		saveFilePc({fileUrl,name, before,progressHandler,headers, after})
+	}
 }
 const downloadFile = ({
 	ext, data, fileName, after

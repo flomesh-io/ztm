@@ -4,6 +4,7 @@ import { merge } from '@/service/common/request';
 import FileService from '../service/FileService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
+import { platform } from '@/utils/platform';
 import { useStore } from 'vuex';
 import { checker, bitUnit, openFile, isImage, saveFile } from '@/utils/file';
 import _ from "lodash"
@@ -58,19 +59,20 @@ const moreItems = computed(()=>{
 	];
 	if(!!hasTauri.value){
 		actions.push({
-				label: 'Open',
+			label: (platform() == 'ios' || platform() == 'android')?'Share':'Open',
+			command(){
+				openFile(`${props?.dir}${props?.item?.path}`);
+			}
+		})
+	}
+	if(platform() != 'ios'){
+		actions.push({
+				label: 'Save As',
 				command(){
-					openFile(`${props?.dir}${props?.item?.path}`);
+					saveAs()
 				}
 		})
 	}
-	
-	actions.push({
-			label: 'Save As',
-			command(){
-				saveAs()
-			}
-	})
 	return actions
 });
 

@@ -1,4 +1,6 @@
-import { saveFile, downloadSpeed } from '@/utils/file';
+import { saveFile, downloadSpeed, openFile } from '@/utils/file';
+import { platform } from '@/utils/platform';
+import { invoke } from '@tauri-apps/api/core';
 class AcceptFile extends HTMLElement {
   constructor() {
     super();
@@ -20,8 +22,8 @@ class AcceptFile extends HTMLElement {
 				}
 				.done{
 					position: absolute;
-					top:10px;
-					left:10px;
+					top:12px;
+					left:12px;
 					opacity:0.9;
 					z-index:3;
 				}
@@ -30,15 +32,15 @@ class AcceptFile extends HTMLElement {
 				}
 				.progress{
 					position: absolute;
-				  width: 32px;
-				  height: 32px;
+				  width: 30px;
+				  height: 30px;
 					text-align: center;
 					font-size:8pt;
 					opacity:0.8;
-					line-height:32px;
+					line-height:30px;
 				}
 				.spinner {
-					--size: 32px; 
+					--size: 30px; 
 					--progress-color: #4E315F; 
 					--background-color: #82529D;
 					--progress: 0; 
@@ -121,7 +123,7 @@ class AcceptFile extends HTMLElement {
 							<div class="spinner-half spinner-right"></div>
 					</div>
 					<div class="done">
-						<svg t="1730889960198" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="51051" width="22" height="22"><path d="M0 0h1024v1024H0z" fill="#D8D8D8" fill-opacity="0" p-id="51052"></path><path d="M895.561143 181.833143a52.809143 52.809143 0 0 1 78.116571 71.094857l-539.940571 593.188571a52.809143 52.809143 0 0 1-76.946286 1.316572L51.492571 533.577143A52.809143 52.809143 0 1 1 127.268571 459.922286l266.093715 273.554285 502.198857-551.643428z" fill="#44BB55" p-id="51053"></path></svg>
+						<svg t="1730900409120" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="73357" width="18" height="18"><path d="M947.3 434.1L609.7 96.4c-11.8-9.6-31.8-0.9-32.5 14.5v2.1l0.1 143c-296.6 31.7-478 190.5-508.1 530-0.2 2.4-0.4 4.9-0.6 7.3 1.3 12.9 17.1 21.4 28.5 16 1.8-1.3 3.7-2.6 5.5-3.9 137.7-97 296.3-164 475-165.6l0.1 142v4.7c1.7 14.6 20.7 22.4 32.2 13.4l3.5-3.5L946.6 463c0.1-0.1 0.2-0.1 0.2-0.2l0.9-0.9c0.1-0.1 0.1-0.2 0.2-0.2 7.2-9.3 7-18.5-0.6-27.6z" p-id="73358" data-spm-anchor-id="a313x.search_index.0.i59.a9e13a81DL4NdQ" class="selected" fill="#ffffff"></path><path d="M576.1 111v2-2zM608.7 96.4l3 3c-0.9-1.1-1.9-2.1-3-3z" fill="#22B573" p-id="73359"></path></svg>
 					</div>
 				</div>
 				<div class="state uploading">
@@ -133,7 +135,7 @@ class AcceptFile extends HTMLElement {
 	
 	// 监听自定义属性变化
 	static get observedAttributes() {
-		return ['content','state','progress','src','fileName','contentType','size'];
+		return ['content','state','progress','src','fileName','contentType','size','url'];
 	}
 
 	// 当属性变化时调用
@@ -151,10 +153,14 @@ class AcceptFile extends HTMLElement {
 					this.setAttribute('progress',5);
 					this.updateElement('loading');
 				},
-				after:(resp)=>{
+				after:(url)=>{
 					setTimeout(()=>{
-						if(resp){
+						if(url){
+							this.setAttribute('url',url);
 							this.doneProgress();
+							if(platform() == 'ios'){
+								invoke('shareFile', { url })
+							}
 						} else {
 							this.resetProgress()
 						}
@@ -185,7 +191,18 @@ class AcceptFile extends HTMLElement {
 			this.save(e)
 		});
 		this.shadowRoot.querySelector('.done').addEventListener('click', (e) => {
-			this.resetProgress();
+			const url = this.getAttribute('url');
+			if(url){
+				if(platform() == 'ios'){
+					invoke('shareFile', { url })
+				} else if (platform() == 'android'){
+					//todo
+				} else {
+					openFile(url)
+				}
+			} else {
+				this.resetProgress();
+			}
 		});
 	}
 	doneProgress() {

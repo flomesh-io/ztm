@@ -349,7 +349,7 @@ const actions = computed(()=>{
 		}
 	}
 	
-	if(!!props.file?.fileUrl && !props.file?.error){
+	if(!!props.file?.fileUrl && !props.file?.error && platform() != 'ios'){
 		_actions.push({
 			label: 'Save As',
 			icon: 'pi pi-save',
@@ -361,17 +361,28 @@ const actions = computed(()=>{
 		})
 	}
 	
-	if(props.file?.ext != '/' && isPC.value &&!!props.file?.state &&  props.file?.state != 'missing' && !props.file?.error){
-		
-		_actions.push({
-			label: 'Open',
-			icon: 'pi pi-external-link',
-			disabled: !props.file?.path,
-			// shortcut: '⌘+O',
-			command(){
-				openPreviewFile(props.file)
-			}
-		})
+	if(props.file?.ext != '/' &&!!props.file?.state &&  props.file?.state != 'missing' && !props.file?.error){
+		if(platform() == 'ios'){
+			_actions.push({
+				label: 'Share',
+				icon: 'pi pi-external-link',
+				disabled: !props.file?.path,
+				// shortcut: '⌘+O',
+				command(){
+					openPreviewFile(props.file)
+				}
+			})
+		} else if(isPC.value) {
+			_actions.push({
+				label: 'Open',
+				icon: 'pi pi-external-link',
+				disabled: !props.file?.path,
+				// shortcut: '⌘+O',
+				command(){
+					openPreviewFile(props.file)
+				}
+			})
+		}
 	} else if(props.file?.ext != '/' && !!props.file?.state &&  props.file?.state != 'new' && !props.file?.error){
 		
 		_actions.push({
