@@ -354,6 +354,7 @@ pub fn run() {
 				.plugin(tauri_plugin_fs::init())				
 				.plugin(tauri_plugin_deep_link::init())
 				.plugin(tauri_plugin_notification::init())
+				.plugin(tauri_plugin_persisted_scope::init())
 				.plugin(tauri_plugin_clipboard_manager::init())
 				// .plugin(tauri_plugin_log::Builder::new().build())
 				.plugin(tauri_plugin_log::Builder::new().targets([

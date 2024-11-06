@@ -236,7 +236,24 @@ const openFile = (path) => {
 		open(path);
 	}
 }
-const saveFile = ({fileUrl,name, before, after}) => {
+const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) => {
+	download(fileUrl, saveUrl, (progress, total) => {
+		if(progressHandler){
+			progressHandler(progress, total)
+		}
+	},headers).then((resp)=>{
+		debugger
+		if(!!after){
+			after(true)
+		}
+	}).catch((e2)=>{
+		writeMobileFile('downloadError.txt',e2.toString());
+		if(!!after){
+			after()
+		}
+	});
+}
+const saveFile = ({fileUrl,name, before,progressHandler,headers, after}) => {
 	if(!fileUrl){
 		return
 	}
@@ -261,27 +278,9 @@ const saveFile = ({fileUrl,name, before, after}) => {
 				}
 				const saveUrl = getSavePath(targetUrl, defaultPath);
 				remove(saveUrl).then(()=>{
-					download(fileUrl, saveUrl).then((resp)=>{
-						if(!!after){
-							after(true)
-						}
-					}).catch((e2)=>{
-						writeMobileFile('downloadError.txt',e2.toString());
-						if(!!after){
-							after()
-						}
-					});
+					saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
 				}).catch(()=>{
-					download(fileUrl, saveUrl).then((resp)=>{
-						if(!!after){
-							after(true)
-						}
-					}).catch((e2)=>{
-						writeMobileFile('downloadError.txt',e2.toString());
-						if(!!after){
-							after()
-						}
-					});
+					saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
 				})
 			}
 			// requestMeta(fileUrl)
