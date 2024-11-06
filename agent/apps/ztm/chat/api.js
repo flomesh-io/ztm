@@ -152,8 +152,23 @@ export default function ({ app, mesh }) {
     return Promise.resolve()
   }
 
+  var publishQueue = []
+  var isPublishing = false
+
   function publishMessage(dirname, message) {
-    return mesh.dir(dirname).then(filenames => {
+    publishQueue.push([dirname, message])
+    if (!isPublishing) {
+      isPublishing = true
+      publishNext()
+    }
+  }
+
+  function publishNext() {
+    if (publishQueue.length === 0) return (isPublishing = false)
+    var item = publishQueue.shift();
+    var dirname = item[0]
+    var message = item[1]
+    mesh.dir(dirname).then(filenames => {
       var timestamps = filenames.filter(
         name => name.endsWith('.json')
       ).map(
@@ -189,7 +204,7 @@ export default function ({ app, mesh }) {
           return mesh.write(filename, JSON.encode(list))
         }
       )
-    })
+    }).then(() => publishNext())
   }
 
   function allEndpoints() {

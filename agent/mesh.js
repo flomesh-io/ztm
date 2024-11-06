@@ -1134,14 +1134,16 @@ export default function (rootDir, config) {
   }
 
   function syncFile(pathname) {
+    pathname = os.path.normalize(pathname)
+    var st = fs.stat(pathname)
     return findFile(pathname).then(meta => {
-      if (!meta || meta.size < 0) return null
-      pathname = os.path.normalize(pathname)
+      if (!meta) return st ? fs.raw(st.hash) : null
+      if (meta.size < 0) return st?.time > meta.time ? fs.raw(st.hash) : null
 
       var hash = meta.hash
-      var st = fs.stat(pathname)
+      var time = meta.time
       if (st?.hash === hash) return fs.raw(hash)
-      if (st?.time > meta.time) return fs.raw(hash)
+      if (st?.time > time) return fs.raw(st.hash)
 
       var sources = [...meta.sources]
       return pickOne()
@@ -1159,7 +1161,7 @@ export default function (rootDir, config) {
             logError(`Download of file ${hash} from ep ${ep} is corrupted`)
             return pickOne()
           }
-          fs.write(pathname, data)
+          fs.write(pathname, data, time)
           advertiseFilesystem()
           return data
         }).catch(ret => {
@@ -1319,6 +1321,7 @@ export default function (rootDir, config) {
         if (globalPath) {
           fs.write(globalPath, data)
           advertiseFilesystem()
+          return syncFile(globalPath)
         }
       }
       return Promise.resolve()

@@ -87,9 +87,9 @@ export default function(storeDir) {
     } catch {}
   }
 
-  function write(filename, data) {
+  function write(filename, data, time) {
     var path = os.path.normalize(filename)
-    var t = Date.now()
+    var t = time || Date.now()
     var h = hash(path, data)
     var meta = { pathname: path, timestamp: t }
     os.write(os.path.join(storeDir, h), data)
