@@ -46,6 +46,7 @@ log = "0.4"
 
 [target."cfg(any(target_os = \"ios\"))".dependencies]
 objc = "0.2.7"
+objc-foundation = "0.1.1"
 
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]

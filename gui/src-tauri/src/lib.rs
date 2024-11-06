@@ -22,6 +22,8 @@ extern crate objc;
 use objc::runtime::{Class, Object};
 #[cfg(target_os = "ios")]
 use objc::{msg_send, sel, sel_impl};
+#[cfg(target_os = "ios")]
+use objc_foundation::{INSString, NSString};
 // use oslog::{OsLogger};
 
 // #[link(name = "pipy", kind = "framework")]
@@ -334,6 +336,28 @@ fn purchase_product() -> Result<String, String> {
 // 		Ok(())
 // }
 
+
+#[command]
+fn shareFile(url: String) -> Result<String, String> {
+    let handle = thread::spawn(move || -> Result<(), String> {
+        #[cfg(target_os = "ios")]
+        unsafe {
+            warn!("share in");
+            let cls = Class::get("ShareHandler").expect("ShareHandler class not found");
+            let shared_manager: *mut Object = msg_send![cls, sharedManager];
+            
+            // 将字符串转换为 NSURL 对象
+            let ns_url: *mut Object = msg_send![class!(NSURL), URLWithString:NSString::from_str(&url)];
+            let _: () = msg_send![shared_manager, shareFile: ns_url];
+            
+            warn!("share end");
+        }
+        Ok(())
+    });
+    let thread_id_str = format!("{:?}", handle.thread().id());
+    Ok(thread_id_str)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	
@@ -364,7 +388,7 @@ pub fn run() {
         ]).build())
 				// .plugin(tauri_plugin_sharesheet::init())
 				.invoke_handler(tauri::generate_handler![
-					pipylib,create_proxy_webview,create_wry_webview,purchase_product
+					pipylib,create_proxy_webview,create_wry_webview,purchase_product,shareFile
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");
