@@ -199,7 +199,7 @@ const loaddataCore = (callback) => {
 			})
 		}
 		if(!!chatReady.value){
-			since.value = Date.now()-(3*1000);
+			since.value = Date.now()-(30*1000);
 			// chat.value.refreshMessages();
 		}
 		if(callback){
