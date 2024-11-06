@@ -37,9 +37,9 @@ const sendMessage = (e) => {
 			messages.value[`${e.detail.message?.role}-${e.detail.message?.text}`] = true;
 		}
 		if(e.detail.message?.files){
-			e.detail.message.files.forEach((file)=>{
-				messages.value[`${e.detail.message?.role}-${file?.ref?.name}`] = true;
-			})
+			// e.detail.message.files.forEach((file)=>{
+			// 	messages.value[`${e.detail.message?.role}-${file?.ref?.name}`] = true;
+			// })
 		}
 	}
 }
@@ -186,16 +186,16 @@ const loaddataCore = (callback) => {
 				if(!!_msg?.key && messages.value[`${_msg?.role}-${_msg?.key}`]){
 					messages.value[`${_msg?.role}-${_msg?.key}`] = false;
 					messages.value[`${_msg?.role}-${_msg?.id}`] = true;
-				} else if(!!_msg?.files && !!_msg.files[0] && messages.value[`${_msg?.role}-${_msg.files[0]?.name}`]){
-					messages.value[`${_msg?.role}-${_msg.files[0]?.name}`] = false;
+				} else if(!!item.message?.files && !!item.message?.files[0] && messages.value[`${_msg?.role}-${item.message?.files[0]?.name}`]){
+					messages.value[`${_msg?.role}-${item.message?.files[0]?.name}`] = false;
 					messages.value[`${_msg?.role}-${_msg?.id}`] = true;
 				} else if(!messages.value[`${_msg?.role}-${_msg?.id}`]){
 					messages.value[`${_msg?.role}-${_msg?.id}`] = true;
 					_messages.push(_msg)
 				}
 			})
-			_messages.forEach((item)=>{
-				chat.value.addMessage(item);
+			_messages.forEach((msg)=>{
+				chat.value.addMessage(msg);
 			})
 		}
 		if(!!chatReady.value){
@@ -270,6 +270,7 @@ const request = ref({
 				}
 				
 				let html = "";
+				let firstFile =  null;
 				message?.files.forEach((file)=>{
 					// writeMobileFile('beforePostMessageType.txt',`${file.name}/${file.type}`);
 					const type = chatFileType(file.type);
@@ -278,18 +279,31 @@ const request = ref({
 							file,
 							src:''
 						})
+						if(!firstFile){
+							firstFile = file
+						}
 					} else if(type == 'video'){
 						html += style.templates.video({
 							file,
 							src:''
 						})
+						if(!firstFile){
+							firstFile = file
+						}
 					} 
 				})
 				signals.onResponse({files:[],overwrite: true});
+				if(message?.files?.length>0){
+					messages.value[`user-${message?.files[0].name}`] = true;
+				}
 				if(!!html){
+					if(firstFile){
+						messages.value[`user-${firstFile.name}`] = true;
+					}
 					// writeMobileFile('postMessageHTML.txt',html);
 					chat.value.addMessage({role: 'user',html:html},false);
 				}
+				
 				
 				postMessage(message,(body)=>{
 					let html2 = "";
