@@ -15,7 +15,7 @@ export default {
 	actions: {
 		async rooms({ commit, getters }) {
 			const res = await chatService.getRooms();
-			commit('setRooms',res || []);
+			commit('setRooms',(res || []).sort((a, b) => b.time - a.time));
 			const news = (res || []).filter((room)=>!!room.updated) || [];
 			let _unread = 0;
 			news.forEach((room)=>{
