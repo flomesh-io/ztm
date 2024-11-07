@@ -3,6 +3,8 @@ import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vu
 import { useStore } from 'vuex';
 import ChatService from '@/service/ChatService';
 import _ from 'lodash';
+import { openFolder } from '@/utils/file';
+import { platform } from '@/utils/platform';
 import userSvg from "@/assets/img/user.png";
 const store = useStore();
 const chatService = new ChatService();
@@ -13,6 +15,10 @@ const selectedMesh = computed(() => {
 });
 const visibleUserSelector = ref(false);
 
+const isPC = computed(()=>{
+	const pm = platform();
+	return pm != 'ios' && pm != 'android' && pm != 'web';
+})
 const usersTree = computed(()=>{
 	const users = _.union(props?.users || [], props?.room?.members || []);
 	const _users = [];
@@ -86,6 +92,11 @@ const saveName = () => {
 const history = () => {
 	emits('history');
 }
+const openBox = () => {
+	const mesh = selectedMesh.value?.name;
+	const base = props.room?.peer || props.room?.group;
+	openFolder(`ztmChat/${mesh}/${base}`)
+}
 watch(() => props.room, () => {
 	newName.value = props.room?.name || '';
 },{
@@ -143,6 +154,12 @@ watch(() => props.room, () => {
 				
 			</div>
 			<i class="pi pi-angle-right"/>
+		</li>
+		<li v-if="isPC" class="nav-li flex" @click="openBox">
+			<b class="opacity-70">Files</b>
+			<div class="flex-item">
+			</div>
+			<i class="pi pi-external-link"/>
 		</li>
 	</ul>
 	<ul class="nav-ul mt-2" v-if="props.room.group">

@@ -1,4 +1,4 @@
-import { saveFile, downloadSpeed, openFile } from '@/utils/file';
+import { saveFileMobile, downloadSpeed, openFile, existsFile } from '@/utils/file';
 import { platform } from '@/utils/platform';
 import { invoke } from '@tauri-apps/api/core';
 class AcceptFile extends HTMLElement {
@@ -135,7 +135,7 @@ class AcceptFile extends HTMLElement {
 	
 	// 监听自定义属性变化
 	static get observedAttributes() {
-		return ['content','state','progress','src','fileName','contentType','size','url'];
+		return ['base', 'mesh', 'content','state','progress','src','fileName','contentType','size','url'];
 	}
 
 	// 当属性变化时调用
@@ -145,44 +145,36 @@ class AcceptFile extends HTMLElement {
 		}
 	}
 	save() {
-		if(!!window.__TAURI_INTERNALS__){
-			saveFile({
-				name:this.getAttribute('fileName'),
-				fileUrl:this.getAttribute('src'),
-				before:()=>{
-					this.setAttribute('progress',5);
-					this.updateElement('loading');
-				},
-				after:(url)=>{
-					setTimeout(()=>{
-						if(url){
-							this.setAttribute('url',url);
-							this.doneProgress();
-							if(platform() == 'ios'){
-								invoke('shareFile', { url })
-							}
-						} else {
-							this.resetProgress()
-						}
-					},600)
-				},
-				progressHandler:(resp)=>{
-					const size = this.getAttribute('size') * 1;
-					const percent = Math.floor((resp?.progress * 100)/size);
-					this.setAttribute('progress',percent<5?5:percent);
-					this.updateElement('loading');
-				},
-				headers: {
-					"Content-type": this.getAttribute('contentType')
-				}
-			})
-		} else {
-			const link = document.createElement('a');
-			link.href = this.getAttribute('src');
-			link.download = this.getAttribute('fileName'); 
-			document.body.appendChild(link);
-			link.click();
-		}
+		const mesh = this.getAttribute('mesh');
+		const base = this.getAttribute('base');
+		saveFileMobile({
+			base:`ztmChat/${mesh}/${base}`,
+			name:this.getAttribute('fileName'),
+			fileUrl:this.getAttribute('src'),
+			before:()=>{
+				this.setAttribute('progress',5);
+				this.updateElement('loading');
+			},
+			after:(url)=>{
+				setTimeout(()=>{
+					if(url){
+						this.setAttribute('url',url);
+						this.doneProgress();
+					} else {
+						this.resetProgress()
+					}
+				},600)
+			},
+			progressHandler:(resp)=>{
+				const size = this.getAttribute('size') * 1;
+				const percent = Math.floor((resp?.progress * 100)/size);
+				this.setAttribute('progress',percent<5?5:percent);
+				this.updateElement('loading');
+			},
+			headers: {
+				"Content-type": this.getAttribute('contentType')
+			}
+		})
 	}
 	// 初始化或更新元素内容和样式
 	connectedCallback() {
@@ -193,17 +185,31 @@ class AcceptFile extends HTMLElement {
 		this.shadowRoot.querySelector('.done').addEventListener('click', (e) => {
 			const url = this.getAttribute('url');
 			if(url){
-				if(platform() == 'ios'){
-					invoke('shareFile', { url })
-				} else if (platform() == 'android'){
-					//todo
-				} else {
-					openFile(url)
-				}
+				openFile(url)
 			} else {
 				this.resetProgress();
 			}
 		});
+		const mesh = this.getAttribute('mesh');
+		const base = this.getAttribute('base');
+		if(!this.getAttribute('url') && mesh && base){
+			existsFile(`ztmChat/${mesh}/${base}`,this.getAttribute('fileName'),(url,folder)=>{
+				if(url){
+					this.setAttribute('url',url);
+					this.setAttribute('progress',100);
+					const spinner = this.shadowRoot.querySelector('.spinner');
+					spinner.style.setProperty("--progress", 100);
+					const download = this.shadowRoot.querySelector('.download');
+					download.style.display = "none";
+					const loading = this.shadowRoot.querySelector('.loading');
+					loading.style.display = "block";
+					
+					const done = this.shadowRoot.querySelector('.done');
+					done.style.display = "block";
+				}
+			})
+		}
+		
 	}
 	doneProgress() {
 		this.setAttribute('progress',100);
@@ -235,7 +241,6 @@ class AcceptFile extends HTMLElement {
 				spinner.style.setProperty("--progress",progress<5?5:Math.floor(progress));
 			} else if (progress>=100){
 				const loading = this.shadowRoot.querySelector('.loading');
-				loading.style.setProperty("--progress", 100);
 				loading.style.display = "block";
 				const done = this.shadowRoot.querySelector('.done');
 				done.style.display = "block";

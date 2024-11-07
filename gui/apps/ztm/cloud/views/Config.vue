@@ -174,6 +174,7 @@ const saving = ref(false);
 const saveAs = (item) => {
 	if(item.fileUrl){
 		saveFile({
+			base:'ztmDownloads',
 			fileUrl:item.fileUrl,
 			before:()=>{
 				saving.value = true;
@@ -349,7 +350,7 @@ const actions = computed(()=>{
 		}
 	}
 	
-	if(!!props.file?.fileUrl && !props.file?.error && platform() != 'ios'){
+	if(!!props.file?.fileUrl && !props.file?.error){
 		_actions.push({
 			label: 'Save As',
 			icon: 'pi pi-save',
@@ -364,7 +365,7 @@ const actions = computed(()=>{
 	if(props.file?.ext != '/' &&!!props.file?.state &&  props.file?.state != 'missing' && !props.file?.error){
 		if(platform() == 'ios'){
 			_actions.push({
-				label: 'Share',
+				label: 'Open',
 				icon: 'pi pi-external-link',
 				disabled: !props.file?.path,
 				// shortcut: '⌘+O',

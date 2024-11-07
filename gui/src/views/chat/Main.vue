@@ -47,8 +47,7 @@ const uniRooms = computed(() => {
 			peer: selectedMesh.value?.agent?.username,
 			latest:{
 				message:{
-					type: "text",
-					content:'My Room.',
+					text:'My Room.',
 				},
 				time: Date.now()
 			}

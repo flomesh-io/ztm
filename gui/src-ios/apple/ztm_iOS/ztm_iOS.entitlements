@@ -20,5 +20,9 @@
 	<array>
 		<string>group.com.flomesh.ztm</string>
 	</array>
+	<key>com.apple.developer.shared-with-you</key>
+	<true/>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
 </dict>
 </plist>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import style from '@/utils/style';
-import { chatFileType, writeMobileFile } from '@/utils/file';
+import { chatFileType, writeMobileFile,folderInit } from '@/utils/file';
 import ChatService from '@/service/ChatService';
 import userSvg from "@/assets/img/user.png";
 import systemSvg from "@/assets/img/system.png";
@@ -24,6 +24,9 @@ const store = useStore();
 const chatService = new ChatService();
 const props = defineProps(['room','endpointMap']);
 const emits = defineEmits(['back','peer','manager','update:room']);
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
 const user = computed(() => {
 	return store.getters["account/selectedMesh"]?.agent?.username
 });
@@ -111,7 +114,9 @@ const buildMessage = (item) => {
 				if(type == 'any'){
 					_msg.html += style.templates.acceptFile({
 						file, 
-						src: chatService.getFileUrl(file, item.sender)
+						src: chatService.getFileUrl(file, item.sender),
+						mesh: selectedMesh.value?.name, 
+						base: props.room?.peer || props.room?.group
 					})
 				} else if(type == 'video'){
 					const srcName = chatService.getFileUrl(file, item.sender);
@@ -316,7 +321,9 @@ const request = ref({
 							if(type == 'any'){
 								html2 += style.templates.acceptFile({
 									file,
-									src
+									src,
+									mesh: selectedMesh.value?.name, 
+									base: props.room?.peer || props.room?.group
 								})
 							} else if(type == 'video'){
 								html2 += style.templates.video({ file, src: `${src}.${file.contentType.split("/")[1]}` });
@@ -368,6 +375,7 @@ const openPeer = () => {
 onMounted(()=>{
 	// loaddata()
 	getRoom();
+	folderInit(['ztmChat',selectedMesh.value?.name], props.room?.peer || props.room?.group);
 })
 
 onBeforeUnmount(()=>{
