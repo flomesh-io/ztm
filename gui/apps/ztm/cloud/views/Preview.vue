@@ -39,7 +39,8 @@ onMounted(() => {
 const saving = ref(false);
 const saveAs = () => {
 	if(props?.item?.fileUrl){
-		saveFile({
+		base({
+			app:'ztmDownloads',
 			fileUrl: props.item.fileUrl,
 			before: ()=>{
 				saving.value = true;
@@ -75,7 +76,9 @@ const moreItems = computed(()=>{
 	}
 	return actions
 });
-
+const open = () => {
+	openFile(`${props?.dir}${props?.item?.path}`);
+}
 const moreToggle = (event) => {
     moreMenu.value.toggle(event);
 };
@@ -89,14 +92,16 @@ const moreToggle = (event) => {
 					 <b>{{props?.item?.name}}</b> 
 				</template>
 				<template #end> 
-					<Button icon="pi pi-ellipsis-v" @click="moreToggle" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
+					<Button v-tooltip="'Save As'" icon="pi pi-save" @click="saveAs" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
+					</Button>
+					<Button v-tooltip="'Open'" icon="pi pi-external-link" @click="open" :severity="'secondary'" aria-haspopup="true" aria-controls="more_menu">
 					</Button>
 					<!-- <Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/> -->
 				</template>
 		</AppHeader>
 		<Menu ref="moreMenu" id="more_menu" :model="moreItems" :popup="true" />
 		<ScrollPanel class="absolute-scroll-panel" style="bottom: 0;">
-			<FilePreview v-if="props?.item?.fileUrl" class="w-full" :src="props.item.fileUrl" />
+			<FilePreview v-if="props?.item?.fileUrl" class="w-full" :file="props.item" />
 			<Empty v-else />
 		</ScrollPanel>
 	</div>

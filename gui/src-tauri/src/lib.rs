@@ -346,10 +346,10 @@ fn shareFile(url: String) -> Result<String, String> {
             let cls = Class::get("ShareHandler").expect("ShareHandler class not found");
             let shared_manager: *mut Object = msg_send![cls, sharedManager];
             
-            // 将字符串转换为 NSURL 对象
-            let ns_url: *mut Object = msg_send![class!(NSURL), URLWithString:NSString::from_str(&url)];
-            let _: () = msg_send![shared_manager, shareFile: ns_url];
-            
+						let ns_url_class = Class::get("NSURL").expect("NSURL class not found");
+						let ns_url: *mut Object = msg_send![ns_url_class, URLWithString: NSString::from_str(&url)];
+						let _: () = msg_send![shared_manager, shareFile: ns_url];
+						
             warn!("share end");
         }
         Ok(())

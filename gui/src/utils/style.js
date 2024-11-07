@@ -27,11 +27,11 @@ const templates = {
 		</video>
 		`
 	},
-	acceptFile({file, src}){
+	acceptFile({mesh, base, file, src}){
 		const contentType = file?.contentType || file?.type;
 		const id = new Date().getTime()
 		return `
-			<accept-file id="accept-${id}" src="${src}" size="${file?.size}" contentType="${contentType}" fileName="${file.name}">
+			<accept-file id="accept-${id}" mesh="${mesh}" base="${base}" src="${src}" size="${file?.size}" contentType="${contentType}" fileName="${file.name}">
 				<img slot="icon" src="${extIcon(contentType)}" width="40px" height="40px"/>
 				<div slot="title">${file.name}</div>
 				<div style="font-size:8pt;opacity:0.7" slot="attrs">

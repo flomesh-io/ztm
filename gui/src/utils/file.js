@@ -16,7 +16,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import { platform } from '@/utils/platform';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
-import { create, remove, copyFile, writeFile as fsWriteFile, BaseDirectory } from "@tauri-apps/plugin-fs";
+import { create, remove, copyFile, writeFile as fsWriteFile, exists,mkdir, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
@@ -226,6 +226,16 @@ const downloadSpeed = (value)=> {
 		return (100 / mb).toFixed(2) *1;
 	}
 }
+const openFolder = (path) => {
+	documentDir().then((dir)=>{
+		if(platform() == 'ios'){
+		} else if(platform() == 'android'){
+		} else if(platform() == 'web'){
+		} else {
+			open(`${dir}/${path}`);
+		}
+	})
+}
 const openFile = (path) => {
 	//{ read: true, write: false, baseDir: BaseDirectory.Home }
 	if(platform() == 'ios'){
@@ -245,10 +255,11 @@ const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) =>
 		}
 	},headers).then((resp)=>{
 		if(!!after){
-			after(saveUrl)
+			after(saveUrl);
+			openFile(saveUrl);
 		}
 	}).catch((e2)=>{
-		writeMobileFile('downloadError.txt',e2.toString());
+		writeMobileFile('downloadError.txt',`error:${e2.toString()}\nurl:${fileUrl}\nsaveUrl:${saveUrl}`);
 		if(!!after){
 			after()
 		}
@@ -256,85 +267,102 @@ const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) =>
 }
 const saveFilePc = ({fileUrl,name, before,progressHandler,headers, after}) => {
 	
-	const filePathAry = fileUrl.split("/");
-	const title = name||filePathAry[filePathAry.length-1];
-	const ext = title.split(".")[1];
-	
-	documentDir().then((dir)=>{
-		const defaultPath = `${dir}/${title}`;
-		save({
-			defaultPath,
-			title,
-			canCreateDirectories: true,
-			filters: [{
-				name: title,
-				extensions: ext?[ext]:[]
-			}]
-		}).then((targetUrl)=>{
-			if(targetUrl){
-				if(!!before){
-					before()
+	if(!!window.__TAURI_INTERNALS__){
+		const filePathAry = fileUrl.split("/");
+		const title = name||filePathAry[filePathAry.length-1];
+		const ext = title.split(".")[1];
+		
+		documentDir().then((dir)=>{
+			const defaultPath = `${dir}/${title}`;
+			save({
+				defaultPath,
+				title,
+				canCreateDirectories: true,
+				filters: [{
+					name: title,
+					extensions: ext?[ext]:[]
+				}]
+			}).then((targetUrl)=>{
+				if(targetUrl){
+					if(!!before){
+						before()
+					}
+					const saveUrl = getSavePath(targetUrl, defaultPath);
+					saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
 				}
-				const saveUrl = getSavePath(targetUrl, defaultPath);
-				saveFileDownload({fileUrl, saveUrl,progressHandler,headers, after})
+				// requestMeta(fileUrl)
+				// 	.then(arrayBuffer => {
+				// 		setTimeout(()=>{
+				// 			create(getSavePath(targetUrl, name), {
+				// 				write:true, 
+				// 				create:true, 
+				// 				baseDir: BaseDirectory.Document ,
+				// 			}).then((file)=>{
+				// 				file.write(convertToUint8Array(arrayBuffer)).then(()=>{
+				// 					file.close();
+				// 					if(!!after){
+				// 						after()
+				// 					}
+				// 				});
+				// 			}).catch((e2)=>{
+				// 				writeMobileFile('saveFileReqError2.txt',e2.toString());
+				// 				if(!!after){
+				// 					after()
+				// 				}
+				// 			});
+				// 		},300)
+				// 		// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
+				// 		// 	if(!!after){
+				// 		// 		after()
+				// 		// 	}
+				// 		// });
+				// 	}).catch((e)=>{
+				// 		writeMobileFile('saveFileReqError.txt',e.toString());
+				// 		if(!!after){
+				// 			after()
+				// 		}
+				// 	});
+			})
+		});
+	} else {
+		const link = document.createElement('a');
+		link.href = fileUrl;
+		link.download = name; 
+		document.body.appendChild(link);
+		link.click();
+	}
+}
+
+const saveFileMobile = ({fileUrl,name,base, before,progressHandler,headers, after}) => {
+	
+	if(!!window.__TAURI_INTERNALS__){
+		const filePathAry = fileUrl.split("/");
+		const title = name||filePathAry[filePathAry.length-1];
+		const ext = title.split(".")[1];
+		
+		documentDir().then((dir)=>{
+			const defaultPath = `${dir}/${base}/${title}`;
+			// const defaultPath = `${dir}/${title}`;
+			if(!!before){
+				before()
 			}
-			// requestMeta(fileUrl)
-			// 	.then(arrayBuffer => {
-			// 		setTimeout(()=>{
-			// 			create(getSavePath(targetUrl, name), {
-			// 				write:true, 
-			// 				create:true, 
-			// 				baseDir: BaseDirectory.Document ,
-			// 			}).then((file)=>{
-			// 				file.write(convertToUint8Array(arrayBuffer)).then(()=>{
-			// 					file.close();
-			// 					if(!!after){
-			// 						after()
-			// 					}
-			// 				});
-			// 			}).catch((e2)=>{
-			// 				writeMobileFile('saveFileReqError2.txt',e2.toString());
-			// 				if(!!after){
-			// 					after()
-			// 				}
-			// 			});
-			// 		},300)
-			// 		// fsWriteFile(targetUrl, uint8Array, { baseDir: BaseDirectory.Document }).then(()=>{
-			// 		// 	if(!!after){
-			// 		// 		after()
-			// 		// 	}
-			// 		// });
-			// 	}).catch((e)=>{
-			// 		writeMobileFile('saveFileReqError.txt',e.toString());
-			// 		if(!!after){
-			// 			after()
-			// 		}
-			// 	});
-		})
-	});
+			saveFileDownload({fileUrl, saveUrl:defaultPath,progressHandler,headers, after})
+		});
+	} else {
+		const link = document.createElement('a');
+		link.href = fileUrl;
+		link.download = name; 
+		document.body.appendChild(link);
+		link.click();
+	}
 }
 
-const saveFileMobile = ({fileUrl,name, before,progressHandler,headers, after}) => {
-	
-	const filePathAry = fileUrl.split("/");
-	const title = name||filePathAry[filePathAry.length-1];
-	const ext = title.split(".")[1];
-	
-	documentDir().then((dir)=>{
-		const defaultPath = `${dir}/chats/${title}`;
-		if(!!before){
-			before()
-		}
-		saveFileDownload({fileUrl, saveUrl:defaultPath,progressHandler,headers, after})
-	});
-}
-
-const saveFile = ({fileUrl,name, before,progressHandler,headers, after}) => {
+const saveFile = ({fileUrl,name,base, before,progressHandler,headers, after}) => {
 	if(!fileUrl){
 		return
 	}
 	if(platform() == 'ios'){
-		saveFileMobile({fileUrl,name, before,progressHandler,headers, after})
+		saveFileMobile({fileUrl,name,base, before,progressHandler,headers, after})
 	} else {
 		saveFilePc({fileUrl,name, before,progressHandler,headers, after})
 	}
@@ -463,11 +491,62 @@ const colors = {
 	missing: 'secondary',
 	outdated: 'secondary'
 }
+const fsInit = () => {
+	writeMobileFile('Readme.txt', `Welcome ZTM workspace!`);
+	
+	exists('ztmChat', { baseDir: BaseDirectory.Document }).then((has)=>{
+		if(!has){
+			mkdir('ztmChat', { baseDir: BaseDirectory.Document });
+		}
+	})
+	
+	exists('ztmDownloads', { baseDir: BaseDirectory.Document }).then((has)=>{
+		if(!has){
+			mkdir('ztmDownloads', { baseDir: BaseDirectory.Document });
+		}
+	})
+}
+
+const folderInit = (pathAry, base) => {
+	const rootPath = pathAry.join("/");
+	exists(rootPath, { baseDir: BaseDirectory.Document }).then((has2)=>{
+		if(!has2){
+			mkdir(rootPath, { baseDir: BaseDirectory.Document }).then(()=>{
+				exists(`${rootPath}/${base}`, { baseDir: BaseDirectory.Document }).then((has)=>{
+					if(!has){
+						mkdir(`${rootPath}/${base}`, { baseDir: BaseDirectory.Document });
+					}
+				})
+			})
+		} else {
+			exists(`${rootPath}/${base}`, { baseDir: BaseDirectory.Document }).then((has)=>{
+				if(!has){
+					mkdir(`${rootPath}/${base}`, { baseDir: BaseDirectory.Document });
+				}
+			})
+		}
+	})
+}
+const existsFile = (path, name, callback) => {
+	exists(`${path}/${name}`, { baseDir: BaseDirectory.Document }).then((has)=>{
+		if(has){
+			documentDir().then((dir)=>{
+				callback(`${dir}/${path}/${name}`,`${dir}/${path}`)
+			})
+		}	else {
+			callback("")
+		}
+	})
+}
 export {
+	fsInit,
+	folderInit,
+	existsFile,
 	ext, 
 	checker, 
 	bitUnit, 
 	openFile, 
+	openFolder,
 	icons,
 	labels,
 	colors,
@@ -475,6 +554,7 @@ export {
 	convertToUint8Array,
 	writeFile, 
 	saveFile, 
+	saveFileMobile,
 	getSavePath,
 	downloadFile, 
 	importFiles,
