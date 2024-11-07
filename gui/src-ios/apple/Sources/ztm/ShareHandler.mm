@@ -18,6 +18,58 @@
     return sharedInstance;
 }
 
+
+NSString* getPath(NSURL *fileURL) {
+    
+    NSString *filePath = [fileURL path];
+    
+    // 如果路径以 "/private" 开头，则移除这个前缀
+    if ([filePath hasPrefix:@"/private"]) {
+        filePath = [filePath stringByReplacingOccurrencesOfString:@"/private" withString:@""];
+    }
+    
+    
+    NSString *homeDirectory = NSHomeDirectory();
+        
+        // 将沙盒路径部分替换为 "./"
+    NSString *relativePath = [filePath stringByReplacingOccurrencesOfString:homeDirectory withString:@""];
+    if ([relativePath hasPrefix:@"/"]) {
+        // 如果路径以 "/" 开头，移除第一个字符
+        relativePath = [relativePath substringFromIndex:1];
+    }
+    
+    
+    NSString *path = [NSHomeDirectory() stringByAppendingPathComponent:relativePath];
+   
+    NSLog(@"相对路径2: %@", path);
+    
+    // 检查文件是否存在
+    if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        NSLog(@"文件不存在: %@", path);
+        return nil;
+    }
+    
+    
+    return path;
+}
+
+
+NSData* getDataFromPath(NSURL *fileURL) {
+    
+    NSString *path = getPath(fileURL);
+    // 尝试从指定路径加载数据
+    NSError *error = nil;
+    NSData *data = [NSData dataWithContentsOfFile:path options:NSDataReadingMappedIfSafe error:&error];
+    
+    if (error) {
+        NSLog(@"加载文件出错: %@", error.localizedDescription);
+        return nil;
+    }
+    
+    return data;
+}
+
+
 - (void)shareFile:(NSURL *)fileURL {
     if (!fileURL) {
         NSLog(@"Error: fileURL is nil.");
@@ -25,58 +77,34 @@
     }
 
     dispatch_async(dispatch_get_main_queue(), ^{
-            
-            // 检查文件是否存在
-            if (![[NSFileManager defaultManager] fileExistsAtPath:fileURL.path]) {
-                NSLog(@"Error: File does not exist at path: %@", fileURL.path);
-                return;
-            }
-            
-            // 准备分享内容
-            NSMutableArray *activityItems = [NSMutableArray array];
+        // 检查文件是否存在
+        if (![[NSFileManager defaultManager] fileExistsAtPath:fileURL.path]) {
+            NSLog(@"Error: File does not exist at path: %@", fileURL.path);
+            return;
+        }
         
-            [activityItems addObject:fileURL];
-//
-//            // 根据文件扩展名选择处理方式
-//            NSString *fileExtension = fileURL.pathExtension.lowercaseString;
-//            
-//            if ([fileExtension isEqualToString:@"pdf"]) {
-//                // PDF 文件
-//                NSData *pdfData = [NSData dataWithContentsOfURL:fileURL];
-//                if (pdfData) {
-//                    [activityItems addObject:pdfData];
-//                }
-//            } else if ([fileExtension isEqualToString:@"jpg"] || [fileExtension isEqualToString:@"jpeg"] || [fileExtension isEqualToString:@"png"]) {
-//                // 图片文件
-//                UIImage *image = [UIImage imageWithContentsOfFile:fileURL.path];
-//                if (image) {
-//                    [activityItems addObject:image];
-//                }
-//            } else if ([fileExtension isEqualToString:@"txt"] || [fileExtension isEqualToString:@"md"]) {
-//                // 文本文件
-//                NSString *text = [NSString stringWithContentsOfURL:fileURL encoding:NSUTF8StringEncoding error:nil];
-//                if (text) {
-//                    [activityItems addObject:text];
-//                }
-//            } else {
-//                // 其他文件类型直接读取为 NSData
-//                NSData *fileData = [NSData dataWithContentsOfURL:fileURL];
-//                if (fileData) {
-//                    [activityItems addObject:fileData];
-//                }
-//            }
-            
-            // 初始化 UIActivityViewController
-            UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
-            
-            // 配置排除的活动类型（可选）
-            activityVC.excludedActivityTypes = @[
-                    UIActivityTypePrint
-            ];
-            
-            // 显示分享视图控制器
-            UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+        // 准备分享内容
+        NSMutableArray *activityItems = [NSMutableArray array];
+
+//        [activityItems addObject:getDataFromPath(fileURL)];
+        
+        NSString *path = getPath(fileURL);
+        NSURL *relativeURL = [NSURL fileURLWithPath:path];
+        [activityItems addObject:relativeURL];
+        
+        // 初始化 UIActivityViewController
+        UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
+
+        // 移除排除的活动类型
+        // activityVC.excludedActivityTypes = @[];
+
+        // 显示分享视图控制器
+        UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+        if (rootVC) {
             [rootVC presentViewController:activityVC animated:YES completion:nil];
+        } else {
+            NSLog(@"Error: rootVC is nil.");
+        }
     });
 }
 
