@@ -90,5 +90,7 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>ZTM Request documents</string>
 </dict>
 </plist>
