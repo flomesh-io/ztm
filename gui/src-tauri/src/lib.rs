@@ -13,6 +13,7 @@ use url::Url;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_log::{Target, TargetKind};
+use tauri_plugin_share::ShareExt;
 use log::{trace, debug, info, warn, error};
 
 
@@ -338,7 +339,7 @@ fn purchase_product() -> Result<String, String> {
 
 
 #[command]
-fn shareFile(url: String) -> Result<String, String> {
+fn shareFile(url: String, mimeType: String) -> Result<String, String> {
     let handle = thread::spawn(move || -> Result<(), String> {
         #[cfg(target_os = "ios")]
         unsafe {
@@ -350,6 +351,19 @@ fn shareFile(url: String) -> Result<String, String> {
 						let ns_url: *mut Object = msg_send![ns_url_class, URLWithString: NSString::from_str(&url)];
 						let _: () = msg_send![shared_manager, shareFile: ns_url];
 						
+            warn!("share end");
+        }
+		#[cfg(target_os = "android")]
+        unsafe {
+            warn!("share in");
+			let url_s: Option<String> = Some(url);
+			let mimeType_s: Option<String> = Some(mimeType);
+
+			// let shared_manager = tauri_plugin_share::ShareRequest {
+			// 	path: url_s,
+			// 	mimeType: mimeType_s,
+			// };	
+			// app.share().share(url_s, mimeType_s);
             warn!("share end");
         }
         Ok(())

@@ -22,7 +22,6 @@ import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
 import { requestMeta } from '@/service/common/request';
 import { invoke } from '@tauri-apps/api/core';
-import { share } from 'tauri-plugin-share-api'
 
 function convertToUint8Array(input) {
   if (typeof input === 'string') {
@@ -472,13 +471,15 @@ const openFile = (path) => {
 	} else if(platform() == 'android'){
 		const ext = path.split('.').pop().toLowerCase()
 		const mimeType = mimeTypes[ext];
-		share(path, mimeType).then((res) => {
-			console.log("share ok")
-			console.log(res)
-		}).catch((res) => {
-			console.log("share err")
-			console.log(res)
-		})
+
+		invoke('shareFile', { url: path, mimeType: mimeType })
+		// share(path, mimeType).then((res) => {
+		// 	console.log("share ok")
+		// 	console.log(res)
+		// }).catch((res) => {
+		// 	console.log("share err")
+		// 	console.log(res)
+		// })
 		//toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to the Files App: /ztm/ztmCloud folder to open it.`, life: 3000 });
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
