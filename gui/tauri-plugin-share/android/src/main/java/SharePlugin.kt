@@ -38,7 +38,7 @@ class SharePlugin(private val activity: Activity): Plugin(activity) {
 			)
 		val intent = Intent(Intent.ACTION_SEND)
 		intent.setDataAndType(uri, args.mimeType)
-		//intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+		intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		context.startActivity(intent)
     }
