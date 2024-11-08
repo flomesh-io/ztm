@@ -21,6 +21,11 @@ jobs:
         security list-keychains -d user -s temp.keychain
         security unlock-keychain -p actions temp.keychain
         security set-key-partition-list -S apple-tool:,apple: -s -k actions temp.keychain
+    - name: Build child plugin
+      run: |
+        cd gui/tauri-plugin-share
+        yarn install
+        yarn build
     - name: Build child app
       run: |
         cd gui
