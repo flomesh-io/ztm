@@ -339,7 +339,7 @@ fn purchase_product() -> Result<String, String> {
 
 
 #[command]
-fn shareFile(url: String, mimeType: String) -> Result<String, String> {
+fn shareFile(app: tauri::AppHandle, url: String, mimeType: String) -> Result<String, String> {
     let handle = thread::spawn(move || -> Result<(), String> {
         #[cfg(target_os = "ios")]
         unsafe {
@@ -359,11 +359,11 @@ fn shareFile(url: String, mimeType: String) -> Result<String, String> {
 			let url_s: Option<String> = Some(url);
 			let mimeType_s: Option<String> = Some(mimeType);
 
-			// let shared_manager = tauri_plugin_share::ShareRequest {
-			// 	path: url_s,
-			// 	mimeType: mimeType_s,
-			// };	
-			// app.share().share(url_s, mimeType_s);
+			let shared_manager = tauri_plugin_share::ShareRequest {
+				path: url_s,
+				mimeType: mimeType_s,
+			};	
+			app.share().share(shared_manager);
             warn!("share end");
         }
         Ok(())
