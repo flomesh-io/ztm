@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, useSlots, watch } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute, onBeforeRouteUpdate } from 'vue-router';
 import AppService from '@/service/AppService';
 import { apps, appMapping } from '@/utils/app-store'
 import { openWebview } from '@/utils/webview';
@@ -12,6 +12,7 @@ import AppManage from './AppManage.vue';
 
 const slots = useSlots();
 const router = useRouter();
+const route = useRoute();
 const store = useStore();
 const appService = new AppService();
 const props = defineProps(['layout','noInners','theme'])
@@ -171,8 +172,25 @@ const close = () => {
 	resize(455,570,false);
 	selectApp.value = null;
 }
+const hasTauri = ref(!!window.__TAURI_INTERNALS__);
+const routeApp = (app) => {
+	if(!hasTauri.value){
+		router.push(`/mesh/app/${app.provider||'ztm'}/${app.name}`);
+	} else {
+		openAppContent(app)
+	}
+	
+}
 onMounted(()=>{
 	resize(455,570,false);
+	if(!hasTauri.value && !!route?.params?.name && !!selectedMesh.value?.name){
+		openAppContent(route?.params)
+	}
+})
+onBeforeRouteUpdate(()=>{
+	if(!hasTauri.value && !!route?.params?.name && !!selectedMesh.value?.name){
+		openAppContent(route?.params)
+	}
 })
 watch(()=>manage,()=>{
 	loaddata();
@@ -232,7 +250,7 @@ watch(()=>selectedMesh,()=>{
 						<div  
 							v-for="(app) in mergeApps"
 							:class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" 
-							@click="openAppContent(app)" 
+							@click="routeApp(app)" 
 							class="py-4 relative text-center col-3 md:col-2" >
 							<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 							<Badge class="absolute opacity-90" v-if="`${app?.provider||''}/${app.name}` == 'ztm/chat' && unread>0" style="margin-left: -10px;margin-top: -10px;" :value="unread" severity="danger"/>

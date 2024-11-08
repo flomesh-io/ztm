@@ -19,6 +19,11 @@ const mesh = {
 				component: () => import('@/views/apps/AppStore.vue')
 		},
 		{
+				path: '/mesh/app/:provider/:name',
+				name: 'app',
+				component: () => import('@/views/apps/AppStore.vue')
+		},
+		{
 				path: '/mesh/log',
 				name: 'ep log',
 				component: () => import('@/views/log/EpLog.vue')
