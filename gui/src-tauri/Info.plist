@@ -6,13 +6,5 @@
 	<string>ZTM Requires camera access in order to capture and transmit video</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>ZTM Requires microphone access in order to capture and transmit audio</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Need Request Photo Library</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Need Request Photo Library</string>
-	<key>NSPushNotificationsUsageDescription</key>
-	<string>ZTM will run in the background</string>
-	<key>NSDocumentsFolderUsageDescription</key>
-	<string>ZTM Request documents</string>
 </dict>
 </plist>
