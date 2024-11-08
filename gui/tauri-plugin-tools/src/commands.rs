@@ -15,7 +15,7 @@ pub(crate) async fn ping<R: Runtime>(
 #[command]
 pub(crate) async fn share<R: Runtime>(
     app: AppHandle<R>,
-    payload: PingRequest,
+    payload: ShareRequest,
 ) -> Result<PingResponse> {
     app.tools().share(payload)
 }

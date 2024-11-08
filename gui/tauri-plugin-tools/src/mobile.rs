@@ -15,7 +15,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   api: PluginApi<R, C>,
 ) -> crate::Result<Tools<R>> {
   #[cfg(target_os = "android")]
-  let handle = api.register_android_plugin("com.plugin.tools", "ExamplePlugin")?;
+  let handle = api.register_android_plugin("com.plugin.tools", "ToolPlugin")?;
   #[cfg(target_os = "ios")]
   let handle = api.register_ios_plugin(init_plugin_tools)?;
   Ok(Tools(handle))
@@ -34,7 +34,7 @@ impl<R: Runtime> Tools<R> {
 }
 
 impl<R: Runtime> Tools<R> {
-  pub fn share(&self, payload: PingRequest) -> crate::Result<PingResponse> {
+  pub fn share(&self, payload: ShareRequest) -> crate::Result<PingResponse> {
     self
       .0
       .run_mobile_plugin("share", payload)

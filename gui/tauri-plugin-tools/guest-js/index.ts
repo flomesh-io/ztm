@@ -8,10 +8,11 @@ export async function ping(value: string): Promise<string | null> {
   }).then((r) => (r.value ? r.value : null));
 }
 
-export async function share(value: string): Promise<string | null> {
+export async function share(path: string, mimeType: string): Promise<string | null> {
   return await invoke<{value?: string}>('plugin:tools|share', {
     payload: {
-      value,
+      path,
+      mimeType
     },
   }).then((r) => (r.value ? r.value : null));
 }

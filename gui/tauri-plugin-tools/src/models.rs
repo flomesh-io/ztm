@@ -11,3 +11,10 @@ pub struct PingRequest {
 pub struct PingResponse {
   pub value: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShareRequest {
+  pub path: Option<String>,
+  pub mimeType: Option<String>,
+}
