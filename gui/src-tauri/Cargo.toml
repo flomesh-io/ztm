@@ -43,6 +43,7 @@ wry = "0.46.3"
 # tao = "0.28.1"
 # oslog = "0.2.0"
 log = "0.4"
+tauri-plugin-tools = { path = "../tauri-plugin-tools/" }
 
 [target."cfg(any(target_os = \"ios\"))".dependencies]
 objc = "0.2.7"
