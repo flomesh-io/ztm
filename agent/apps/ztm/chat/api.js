@@ -74,6 +74,7 @@ export default function ({ app, mesh }) {
   var matchPublishGroupMsgs = new http.Match('/shared/{sender}/publish/groups/{creator}/{group}/messages/*')
 
   mesh.acl(`/shared/${app.username}/publish`, { all: 'block' })
+  mesh.acl(`/shared/${app.username}/publish/files`, { all: 'readonly' })
 
   mesh.list('/shared').then(paths => Promise.all(
     Object.keys(paths).map(path => readMessages(path, true))
