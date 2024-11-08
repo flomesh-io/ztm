@@ -71,7 +71,6 @@
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primevue": "4.1.1",
-    "tauri-plugin-share-api": "file:./tauri-plugin-share/",
     "uuid": "^10.0.0",
     "vee-validate": "4.12.8",
     "vite-plugin-monaco-editor": "^1.1.0",

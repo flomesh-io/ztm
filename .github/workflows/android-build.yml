@@ -37,11 +37,6 @@ jobs:
     - name: Setup Rustup Target
       run: |
         rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-    - name: Build child plugin
-      run: |
-        cd gui/tauri-plugin-share
-        yarn install
-        yarn build
     - name: Build child app
       run: |
         cd gui
