@@ -22,6 +22,11 @@ jobs:
                                 libsoup-3.0-dev \
                                 libwebkit2gtk-4.1-dev
 
+    - name: Build child plugin
+      run: |
+        cd gui/tauri-plugin-share
+        yarn install
+        NODE_OPTIONS="--max-old-space-size=4096" yarn build
     - name: build child app
       run: |
         cd gui

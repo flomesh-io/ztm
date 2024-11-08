@@ -21,6 +21,11 @@ jobs:
     - run: npm install -g win-node-env
     - name: Install NASM
       uses: ilammy/setup-nasm@v1
+    - name: Build child plugin
+      run: |
+        cd gui/tauri-plugin-share
+        yarn install
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build
     - name: build child app
       run: |
         cd gui
