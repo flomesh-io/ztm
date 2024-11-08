@@ -8,7 +8,7 @@ import mp4 from "@/assets/img/files/mp4.png";
 import pdf from "@/assets/img/files/pdf.png";
 import ppt from "@/assets/img/files/ppt.png";
 import mirror from "@/assets/img/files/mirror.png";
-import share from "@/assets/img/files/share.png";
+import sharePng from "@/assets/img/files/share.png";
 import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
@@ -23,6 +23,7 @@ import exportFromJSON from 'export-from-json';
 import { requestMeta } from '@/service/common/request';
 import { extension } from "mime-types";
 import { invoke } from '@tauri-apps/api/core';
+import { share } from 'tauri-plugin-share-api'
 
 function convertToUint8Array(input) {
   if (typeof input === 'string') {
@@ -110,7 +111,7 @@ const ext = {
 	default: file,
 	folder,
 	userfolder,
-	share,
+	//share: sharePng,
 	xls: excel,
 	xlsx: excel,
 	doc: word,
@@ -241,6 +242,13 @@ const openFile = (path) => {
 	if(platform() == 'ios'){
 		invoke('shareFile', { url: path })
 	} else if(platform() == 'android'){
+		console.log(path)
+		share(path, "text/plain").then((res) => {
+			console.log(res)
+		}).catch((res) => {
+			console.log(1)
+			console.log(res)
+		})
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to the Files App: /ztm/ztmCloud folder to open it.`, life: 3000 });
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });

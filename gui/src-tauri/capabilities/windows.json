@@ -322,6 +322,7 @@
 		"notification:allow-list-channels",
 		"notification:allow-is-permission-granted",
 		"notification:allow-create-channel",
-		"notification:allow-check-permissions"
+		"notification:allow-check-permissions",
+    "share:default"
   ]
 }

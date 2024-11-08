@@ -5,9 +5,9 @@ use crate::Result;
 use crate::ShareExt;
 
 #[command]
-pub(crate) async fn ping<R: Runtime>(
+pub(crate) async fn share<R: Runtime>(
     app: AppHandle<R>,
-    payload: PingRequest,
-) -> Result<PingResponse> {
-    app.share().ping(payload)
+    payload: ShareRequest,
+) -> Result<ShareResponse> {
+    app.share().share(payload)
 }
