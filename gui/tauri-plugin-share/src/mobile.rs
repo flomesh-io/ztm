@@ -15,7 +15,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
   api: PluginApi<R, C>,
 ) -> crate::Result<Share<R>> {
   #[cfg(target_os = "android")]
-  let handle = api.register_android_plugin("com.plugin.share", "ExamplePlugin")?;
+  let handle = api.register_android_plugin("com.plugin.share", "SharePlugin")?;
   #[cfg(target_os = "ios")]
   let handle = api.register_ios_plugin(init_plugin_share)?;
   Ok(Share(handle))
@@ -24,11 +24,12 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 /// Access to the share APIs.
 pub struct Share<R: Runtime>(PluginHandle<R>);
 
+
 impl<R: Runtime> Share<R> {
-  pub fn ping(&self, payload: PingRequest) -> crate::Result<PingResponse> {
+  pub fn share(&self, payload: ShareRequest) -> crate::Result<ShareResponse> {
     self
       .0
-      .run_mobile_plugin("ping", payload)
+      .run_mobile_plugin("share", payload)
       .map_err(Into::into)
   }
 }

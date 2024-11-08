@@ -629,3 +629,4 @@ shell:deny-kill,
 shell:deny-open, 
 shell:deny-spawn, 
 shell:deny-stdin-write
+share:default
