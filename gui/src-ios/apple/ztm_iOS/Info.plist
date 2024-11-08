@@ -2,8 +2,45 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.flomesh.ztm.pipy</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.3.2</string>
+	<key>CFBundleVersion</key>
+	<string>0.3.2</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>ZTM Requires camera access in order to capture and transmit video</string>
+	<key>NSFileProtectionComplete</key>
+	<true/>
+	<key>NSLiveActivityUsageDescription</key>
+	<string>ZTM will run in the background</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>ZTM Requires microphone access in order to capture and transmit audio</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
@@ -12,6 +49,47 @@
 	<string>Need Request Photo Library</string>
 	<key>NSPushNotificationsUsageDescription</key>
 	<string>ZTM will run in the background</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSUbiquitousContainerIdentifier</key>
+	<string>iCloud.com.flomesh.ztm</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>com.flomesh.ztm</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>location</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+		<string>metal</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>ZTM Request documents</string>
 </dict>
