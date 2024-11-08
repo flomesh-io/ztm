@@ -71,13 +71,13 @@
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primevue": "4.1.1",
+    "tauri-plugin-share-api": "file:./tauri-plugin-share/",
     "uuid": "^10.0.0",
     "vee-validate": "4.12.8",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vue": "^3.2.41",
     "vue-router": "^4.1.5",
-    "vuex": "^4.0.2",
-    "tauri-plugin-share-api": "file:./tauri-plugin-share/"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.4",
