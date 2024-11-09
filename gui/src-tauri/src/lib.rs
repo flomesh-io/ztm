@@ -353,19 +353,6 @@ fn shareFile(app: tauri::AppHandle, url: String, mimeType: String) -> Result<Str
 						
             warn!("share end");
         }
-		#[cfg(target_os = "android")]
-        unsafe {
-            warn!("share in");
-			let url_s: Option<String> = Some(url);
-			let mimeType_s: Option<String> = Some(mimeType);
-
-			let shared_manager = tauri_plugin_share::ShareRequest {
-				path: url_s,
-				mimeType: mimeType_s,
-			};	
-			app.share().share(shared_manager);
-            warn!("share end");
-        }
         Ok(())
     });
     let thread_id_str = format!("{:?}", handle.thread().id());
