@@ -42,7 +42,6 @@ codesign --deep --force --verify --verbose --options runtime --timestamp --sign 
 codesign --deep --force --verify --verbose --options runtime --timestamp --sign "$MACOS_IDENTITY" "$TMP_DIR/ztm.app/Contents/MacOS/ztmctl"
 codesign --deep --force --verify --verbose --options runtime --timestamp --sign "$MACOS_IDENTITY" "$TMP_DIR/ztm.app"
 
-
 # recreate DMG
 hdiutil create -volname "$VOLUME_NAME" -srcfolder "$TMP_DIR" -ov -format UDZO "$NEW_DMG_PATH"
 
