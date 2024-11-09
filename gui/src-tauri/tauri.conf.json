@@ -22,15 +22,18 @@
     ],
     "security": {
 			"csp": null,
-			"assetProtocol": {
-				"enable": false,
-				"scope": []
-			},
 			"dangerousDisableAssetCspModification": false,
 			"freezePrototype": false,
+			"assetProtocol": {
+				"enable": true,
+				"scope": {
+					"allow": ["$APPDATA/**", "$HOME/**", "$RESOURCE/**", "$DOCUMENT/**"]
+				}
+			},
       "capabilities": ["main-capability"]
     },
-		"withGlobalTauri": true
+		"withGlobalTauri": true,
+		"macOSPrivateApi": true
   },
   "bundle": {
     "active": true,
