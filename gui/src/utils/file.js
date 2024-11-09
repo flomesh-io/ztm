@@ -472,14 +472,8 @@ const openFile = (path) => {
 		const ext = path.split('.').pop().toLowerCase()
 		const mimeType = mimeTypes[ext];
 
-		invoke('shareFile', { url: path, mimeType: mimeType })
-		// share(path, mimeType).then((res) => {
-		// 	console.log("share ok")
-		// 	console.log(res)
-		// }).catch((res) => {
-		// 	console.log("share err")
-		// 	console.log(res)
-		// })
+		//invoke('shareFile', { url: path, mimeType: mimeType })
+		invoke('plugin:share|share', {payload: { path: path, mimeType: mimeType }})
 		//toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to the Files App: /ztm/ztmCloud folder to open it.`, life: 3000 });
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
