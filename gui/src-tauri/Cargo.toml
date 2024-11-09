@@ -17,7 +17,7 @@ tauri-build = { version = "=2.0.2", features = [] }
 # tauri = { version = "=2.0.2", features = ["devtools"] }
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri = { version = "=2.0.6", features = ["macos-proxy", "unstable"] }
+tauri = { version = "=2.0.6", features = [ "protocol-asset", "macos-proxy", "macos-private-api", "image-ico", "image-png", "tray-icon", "unstable"] }
 tauri-utils = "=2.0.2"
 tauri-runtime = "=2.1.1"
 tauri-plugin-shell = "=2.0.2"
@@ -32,7 +32,6 @@ tauri-plugin-persisted-scope = "=2.0.3"
 tauri-plugin-deep-link = "=2.0.1"
 tauri-plugin-clipboard-manager = "=2.0.1"
 tauri-plugin-log = "=2.0.1"
-# tauri-plugin-sharesheet = { git = "https://github.com/buildyourwebapp/tauri-plugin-sharesheet" }
 tauri-plugin-share = { path = "../src-plugin/tauri-plugin-share/" }
 lazy_static = "1.4"
 serde = { version = "1", features = ["derive"] }
