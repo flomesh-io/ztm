@@ -33,7 +33,7 @@ tauri-plugin-deep-link = "=2.0.1"
 tauri-plugin-clipboard-manager = "=2.0.1"
 tauri-plugin-log = "=2.0.1"
 # tauri-plugin-sharesheet = { git = "https://github.com/buildyourwebapp/tauri-plugin-sharesheet" }
-tauri-plugin-share = { path = "../tauri-plugin-share/" }
+tauri-plugin-share = { path = "../src-plugin/tauri-plugin-share/" }
 lazy_static = "1.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -19,7 +19,7 @@ import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
 import { getPort } from '@/service/common/request';
 import { openWebview } from '@/utils/webview';
-import { openFile, fsInit, downloadFile } from '@/utils/file';
+import { fsInit, downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 import toast from "@/utils/toast";
 

@@ -10,7 +10,7 @@ mod desktop;
 #[cfg(mobile)]
 mod mobile;
 
-mod commands;
+// mod commands;
 mod error;
 mod models;
 
@@ -34,8 +34,9 @@ impl<R: Runtime, T: Manager<R>> crate::ShareExt<R> for T {
 
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
+	
+	// .invoke_handler(tauri::generate_handler![commands::share])
   Builder::new("share")
-    .invoke_handler(tauri::generate_handler![commands::share])
     .setup(|app, api| {
       #[cfg(mobile)]
       let share = mobile::init(app, api)?;

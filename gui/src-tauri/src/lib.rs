@@ -65,25 +65,6 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 						// 调用外部函数
 					 pipy_main(argc, c_argv_ptr);
 					 
-					 // 调用外部函数并检查返回值
-					 // let result = std::panic::catch_unwind(|| {
-						// 	 pipy_main(argc, c_argv_ptr)
-					 // });
-
-					 // match result {
-						// 	 Ok(code) => {
-						// 			 if code != 0 {
-						// 					 let error_message = format!("pipy_main returned error code: {}", code);
-						// 					 error!("{}", error_message);
-						// 					 return Err(error_message);
-						// 			 }
-						// 	 }
-						// 	 Err(_) => {
-						// 			 let error_message = "pipy_main panicked".to_string();
-						// 			 error!("{}", error_message);
-						// 			 return Err(error_message);
-						// 	 }
-					 // }
 				 }
 				 Ok(())
 			});
@@ -94,28 +75,6 @@ fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> 
 			
 }
 
-
-// #[command]
-// fn logto(lib: String, arg: String) -> Result<String, String> {
-// 			let handle = thread::spawn(move || -> Result<(), String> {
-// 				unsafe {
-// 					let c_arg: CString = CString::new(arg.as_str()).unwrap();
-// 					let lib = Library::new(&lib).map_err(|e| {
-// 							let error_message = format!("Failed to load logto from path {}: {}", lib, e);
-// 							error_message
-// 					})?;
-					
-// 					let logto: Symbol<unsafe extern "C" fn(*const c_char)> = lib.get(b"logto\0")
-// 					            .map_err(|e| e.to_string())?;
-// 					 logto(c_arg.as_ptr());
-// 				 }
-// 				 Ok(())
-// 			});
-		
-// 		let thread_id_str = format!("{:?}", handle.thread().id());
-//      Ok(thread_id_str)
-			
-// }
 #[command]
 async fn create_wry_webview(
 	app: tauri::AppHandle,
@@ -242,18 +201,6 @@ fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> 
 }
 
 
-// fn request_products() {
-//     unsafe {
-//         // 获取 InAppPayHandler 的类对象
-//         let cls = Class::get("InAppPayHandler").expect("InAppPayHandler class not found");
-
-//         // 获取单例实例 sharedManager
-//         let shared_manager: *mut Object = msg_send![cls, sharedManager];
-
-//         // 调用 requestProducts 方法
-//         let _: () = msg_send![shared_manager, requestProducts];
-//     }
-// }
 
 
 #[command]
@@ -341,18 +288,18 @@ fn purchase_product() -> Result<String, String> {
 #[command]
 fn shareFile(app: tauri::AppHandle, url: String, mimeType: String) -> Result<String, String> {
     let handle = thread::spawn(move || -> Result<(), String> {
-        #[cfg(target_os = "ios")]
-        unsafe {
-            warn!("share in");
-            let cls = Class::get("ShareHandler").expect("ShareHandler class not found");
-            let shared_manager: *mut Object = msg_send![cls, sharedManager];
+      //   #[cfg(target_os = "ios")]
+      //   unsafe {
+      //       warn!("share in");
+      //       let cls = Class::get("ShareHandler").expect("ShareHandler class not found");
+      //       let shared_manager: *mut Object = msg_send![cls, sharedManager];
             
-						let ns_url_class = Class::get("NSURL").expect("NSURL class not found");
-						let ns_url: *mut Object = msg_send![ns_url_class, URLWithString: NSString::from_str(&url)];
-						let _: () = msg_send![shared_manager, shareFile: ns_url];
+						// let ns_url_class = Class::get("NSURL").expect("NSURL class not found");
+						// let ns_url: *mut Object = msg_send![ns_url_class, URLWithString: NSString::from_str(&url)];
+						// let _: () = msg_send![shared_manager, shareFile: ns_url];
 						
-            warn!("share end");
-        }
+      //       warn!("share end");
+      //   }
         Ok(())
     });
     let thread_id_str = format!("{:?}", handle.thread().id());
@@ -362,13 +309,6 @@ fn shareFile(app: tauri::AppHandle, url: String, mimeType: String) -> Result<Str
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	
-	// if cfg!(target_os = "ios") {
-	// 	OsLogger::new("com.flomesh.ztm")
-	// 	        .level_filter(LevelFilter::Debug)
-	// 	        .category_level_filter("Settings", LevelFilter::Trace)
-	// 	        .init()
-	// 	        .unwrap();
-	// }
 		tauri::Builder::default()
 				.plugin(tauri_plugin_os::init())
 				.plugin(tauri_plugin_http::init())

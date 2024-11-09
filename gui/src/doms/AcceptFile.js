@@ -185,7 +185,7 @@ class AcceptFile extends HTMLElement {
 		this.shadowRoot.querySelector('.done').addEventListener('click', (e) => {
 			const url = this.getAttribute('url');
 			if(url){
-				openFile(url)
+				openFile(url, this.getAttribute('contentType'))
 			} else {
 				this.resetProgress();
 			}

@@ -53,23 +53,6 @@ NSString* getPath(NSURL *fileURL) {
     return path;
 }
 
-
-NSData* getDataFromPath(NSURL *fileURL) {
-    
-    NSString *path = getPath(fileURL);
-    // 尝试从指定路径加载数据
-    NSError *error = nil;
-    NSData *data = [NSData dataWithContentsOfFile:path options:NSDataReadingMappedIfSafe error:&error];
-    
-    if (error) {
-        NSLog(@"加载文件出错: %@", error.localizedDescription);
-        return nil;
-    }
-    
-    return data;
-}
-
-
 - (void)shareFile:(NSURL *)fileURL {
     if (!fileURL) {
         NSLog(@"Error: fileURL is nil.");
@@ -86,17 +69,12 @@ NSData* getDataFromPath(NSURL *fileURL) {
         // 准备分享内容
         NSMutableArray *activityItems = [NSMutableArray array];
 
-//        [activityItems addObject:getDataFromPath(fileURL)];
-        
         NSString *path = getPath(fileURL);
         NSURL *relativeURL = [NSURL fileURLWithPath:path];
         [activityItems addObject:relativeURL];
         
         // 初始化 UIActivityViewController
         UIActivityViewController *activityVC = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
-
-        // 移除排除的活动类型
-        // activityVC.excludedActivityTypes = @[];
 
         // 显示分享视图控制器
         UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
