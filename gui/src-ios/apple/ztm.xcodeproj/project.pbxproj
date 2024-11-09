@@ -12,7 +12,6 @@
 		39F1D7B0B487944FE880D319 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = ED8D1C268714DC53353C119F /* assets */; };
 		3DFE09095AA9C7FB81919411 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 398C217B7264372C10D6F203 /* Metal.framework */; };
 		56A49FC056F25BDBF49B3349 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 409E0E5DA6371DAF782D41B5 /* UIKit.framework */; };
-		676495A22CDBB0F3005BA6DB /* ShareHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = 676495A12CDBB0F3005BA6DB /* ShareHandler.mm */; };
 		676495A42CDC660A005BA6DB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */; };
 		67DB4AB92CBBAA0100914832 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67DB4AB82CBBAA0100914832 /* StoreKit.framework */; };
 		67DB4ABD2CBCC23400914832 /* InAppPayHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = 67DB4ABC2CBCC23400914832 /* InAppPayHandler.mm */; };
@@ -81,7 +80,6 @@
 		398EB7452B105AF6BFE14E73 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		409E0E5DA6371DAF782D41B5 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		43D056594147C9369E8B973D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		676495A12CDBB0F3005BA6DB /* ShareHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ShareHandler.mm; sourceTree = "<group>"; };
 		676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		67DB4AB42CB9165C00914832 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
 		67DB4AB82CBBAA0100914832 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
@@ -200,7 +198,6 @@
 				67E60F522C98286D002E4B6B /* ActivityHelper.swift */,
 				67E60F512C98286D002E4B6B /* LocationManager.swift */,
 				398EB7452B105AF6BFE14E73 /* main.mm */,
-				676495A12CDBB0F3005BA6DB /* ShareHandler.mm */,
 				67DB4ABC2CBCC23400914832 /* InAppPayHandler.mm */,
 				D81231D61674189943B293FC /* bindings */,
 				67E60F502C98286D002E4B6B /* ztm_iOS-Bridging-Header.h */,
@@ -435,7 +432,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				676495A22CDBB0F3005BA6DB /* ShareHandler.mm in Sources */,
 				67E60F552C98296A002E4B6B /* RunnerWidgetLiveActivity.swift in Sources */,
 				67DB4ABD2CBCC23400914832 /* InAppPayHandler.mm in Sources */,
 				67E60F532C98286D002E4B6B /* LocationManager.swift in Sources */,

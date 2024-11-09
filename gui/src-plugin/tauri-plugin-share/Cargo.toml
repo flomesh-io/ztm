@@ -5,7 +5,7 @@ authors = [ "You" ]
 description = ""
 edition = "2021"
 rust-version = "1.77.2"
-exclude = ["/examples", "/webview-dist", "/webview-src", "/node_modules"]
+exclude = ["/shares", "/webview-dist", "/webview-src", "/node_modules"]
 links = "tauri-plugin-share"
 
 [dependencies]
