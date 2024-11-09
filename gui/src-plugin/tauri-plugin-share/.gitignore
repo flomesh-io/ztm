@@ -1,0 +1,10 @@
+/.tauri
+.tauri
+target
+node_modules
+dist-js
+dist
+.idea
+.vscode
+.gradle
+**/capabilities/schemas
