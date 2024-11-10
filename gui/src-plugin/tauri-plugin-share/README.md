@@ -1,4 +1,4 @@
-# Tauri Plugin share
+# Tauri Plugin Share
 
 ## First
 ```typescript
@@ -13,7 +13,7 @@ invoke('plugin:share|share_file', {
 })
 ```
 
-## Get file from others app shared
+## From others app shared
 ### Get files path from other app shared 
 ```typescript
 invoke('plugin:share|get_shared_files_path', {
