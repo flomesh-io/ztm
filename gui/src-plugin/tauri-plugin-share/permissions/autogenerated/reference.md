@@ -2,7 +2,9 @@
 
 Default permissions for the plugin
 
-- `allow-share`
+- `allow-share-file`
+- `allow-get-shared-files`
+- `allow-get-shared-files-path`
 
 ## Permission Table
 
@@ -16,12 +18,12 @@ Default permissions for the plugin
 <tr>
 <td>
 
-`share:allow-share`
+`share:allow-get-shared-files`
 
 </td>
 <td>
 
-Enables the share command without any pre-configured scope.
+Enables the get_shared_files command without any pre-configured scope.
 
 </td>
 </tr>
@@ -29,12 +31,64 @@ Enables the share command without any pre-configured scope.
 <tr>
 <td>
 
-`share:deny-share`
+`share:deny-get-shared-files`
 
 </td>
 <td>
 
-Denies the share command without any pre-configured scope.
+Denies the get_shared_files command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share:allow-get-shared-files-path`
+
+</td>
+<td>
+
+Enables the get_shared_files_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share:deny-get-shared-files-path`
+
+</td>
+<td>
+
+Denies the get_shared_files_path command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share:allow-share-file`
+
+</td>
+<td>
+
+Enables the share_file command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`share:deny-share-file`
+
+</td>
+<td>
+
+Denies the share_file command without any pre-configured scope.
 
 </td>
 </tr>

@@ -23,11 +23,19 @@ use mobile::Share;
 
 /// Extensions to [`tauri::App`], [`tauri::AppHandle`] and [`tauri::Window`] to access the share APIs.
 pub trait ShareExt<R: Runtime> {
-  fn share(&self) -> &Share<R>;
+  fn share_file(&self) -> &Share<R>;
+  fn get_shared_files(&self) -> &Share<R>;
+  fn get_shared_files_path(&self) -> &Share<R>;
 }
 
 impl<R: Runtime, T: Manager<R>> crate::ShareExt<R> for T {
-  fn share(&self) -> &Share<R> {
+  fn share_file(&self) -> &Share<R> {
+    self.state::<Share<R>>().inner()
+  }
+  fn get_shared_files(&self) -> &Share<R> {
+    self.state::<Share<R>>().inner()
+  }
+  fn get_shared_files_path(&self) -> &Share<R> {
     self.state::<Share<R>>().inner()
   }
 }

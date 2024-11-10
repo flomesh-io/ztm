@@ -16,13 +16,14 @@ import android.util.Log
 class ShareOptions {
     var path: String = ""
     var mimeType: String = "text/plain"
+    var group: String = ""
 }
 
 @TauriPlugin
 class SharePlugin(private val activity: Activity): Plugin(activity) {
 
     @Command
-    fun share(invoke: Invoke) {
+    fun shareFile(invoke: Invoke) {
         val args = invoke.parseArgs(ShareOptions::class.java)
         Log.i("ztmshare", args.path)
         Log.i("ztmshare", args.mimeType)
