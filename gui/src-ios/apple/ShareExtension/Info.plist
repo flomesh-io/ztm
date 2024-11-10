@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>NSExtensionActivationRule</key>
+			<string>TRUEPREDICATE</string>
+			<key>NSExtensionActivationSupportsFileWithContentUTI</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>NSExtensionItemThumbnailImageName</key>
+			<string>paperplane</string>
+		</dict>
+		<key>NSExtensionMainStoryboard</key>
+		<string>MainInterface</string>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.share-services</string>
+	</dict>
+	<key>NSExtensionDisplayName</key>
+	<string>Share To ZTM</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>NSPhotoLibraryUsageDescription</string>
+	<key>NSFileAccessUsageDescription</key>
+	<string>NSFileAccessUsageDescription</string>
+</dict>
+</plist>

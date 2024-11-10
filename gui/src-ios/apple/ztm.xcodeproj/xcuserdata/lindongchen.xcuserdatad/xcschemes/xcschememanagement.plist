@@ -14,10 +14,33 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>ShareExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>ztm_iOS.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>676495AA2CDF8EF8005BA6DB</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>67E60F272C98280A002E4B6B</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>7E6F12527796DEEAB78B87F8</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>

@@ -22,7 +22,7 @@ const templates = {
 	},
 	video({file, src}){
 		return `
-		<video src="${src}" controls width="400" playsInline muted>
+		<video src="${src}" controls width="400" autoPlay playsInline muted>
 		    Not support <video>。
 		</video>
 		`

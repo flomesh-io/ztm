@@ -295,14 +295,34 @@
       "type": "string",
       "oneOf": [
         {
-          "description": "Enables the share command without any pre-configured scope.",
+          "description": "Enables the get_shared_files command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-share"
+          "const": "allow-get-shared-files"
         },
         {
-          "description": "Denies the share command without any pre-configured scope.",
+          "description": "Denies the get_shared_files command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-share"
+          "const": "deny-get-shared-files"
+        },
+        {
+          "description": "Enables the get_shared_files_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-shared-files-path"
+        },
+        {
+          "description": "Denies the get_shared_files_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-shared-files-path"
+        },
+        {
+          "description": "Enables the share_file command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-share-file"
+        },
+        {
+          "description": "Denies the share_file command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-share-file"
         },
         {
           "description": "Default permissions for the plugin",

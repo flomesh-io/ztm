@@ -16,8 +16,32 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Any Document</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+	    <dict>
+	        <key>CFBundleURLName</key>
+	        <string>com.flomesh.ztm</string>
+	        <key>CFBundleURLSchemes</key>
+	        <array>
+	            <string>ztm</string>
+	        </array>
+	    </dict>
+	</array>
 	<key>CFBundleShortVersionString</key>
 	<string>0.3.2</string>
 	<key>CFBundleVersion</key>
@@ -38,9 +62,9 @@
 	<key>NSLiveActivityUsageDescription</key>
 	<string>ZTM will run in the background</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
+	<string>ZTM wants to access your location, it&apos;s only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
+	<string>ZTM wants to access your location, it&apos;s only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>ZTM Requires microphone access in order to capture and transmit audio</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

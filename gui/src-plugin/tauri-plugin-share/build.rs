@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["share"];
+const COMMANDS: &[&str] = &["share_file","get_shared_files","get_shared_files_path"];
 
 fn main() {
   tauri_plugin::Builder::new(COMMANDS)

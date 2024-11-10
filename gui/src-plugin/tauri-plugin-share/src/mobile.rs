@@ -26,10 +26,22 @@ pub struct Share<R: Runtime>(PluginHandle<R>);
 
 
 impl<R: Runtime> Share<R> {
-  pub fn share(&self, payload: ShareRequest) -> crate::Result<ShareResponse> {
+  pub fn share_file(&self, payload: ShareRequest) -> crate::Result<ShareResponse> {
     self
       .0
-      .run_mobile_plugin("share", payload)
+      .run_mobile_plugin("share_file", payload)
+      .map_err(Into::into)
+  }
+  pub fn get_shared_files(&self, payload: ShareRequest) -> crate::Result<ShareResponse> {
+    self
+      .0
+      .run_mobile_plugin("get_shared_files", payload)
+      .map_err(Into::into)
+  }
+  pub fn get_shared_files_path(&self, payload: ShareRequest) -> crate::Result<ShareResponse> {
+    self
+      .0
+      .run_mobile_plugin("get_shared_files_path", payload)
       .map_err(Into::into)
   }
 }

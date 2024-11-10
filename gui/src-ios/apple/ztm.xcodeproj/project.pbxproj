@@ -13,6 +13,9 @@
 		3DFE09095AA9C7FB81919411 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 398C217B7264372C10D6F203 /* Metal.framework */; };
 		56A49FC056F25BDBF49B3349 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 409E0E5DA6371DAF782D41B5 /* UIKit.framework */; };
 		676495A42CDC660A005BA6DB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */; };
+		676495AE2CDF8EF8005BA6DB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676495AD2CDF8EF8005BA6DB /* ShareViewController.swift */; };
+		676495B12CDF8EF8005BA6DB /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 676495B02CDF8EF8005BA6DB /* Base */; };
+		676495B52CDF8EF8005BA6DB /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 676495AB2CDF8EF8005BA6DB /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };		
 		67DB4AB92CBBAA0100914832 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67DB4AB82CBBAA0100914832 /* StoreKit.framework */; };
 		67DB4ABD2CBCC23400914832 /* InAppPayHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = 67DB4ABC2CBCC23400914832 /* InAppPayHandler.mm */; };
 		67E60F2A2C98280A002E4B6B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67E60F292C98280A002E4B6B /* WidgetKit.framework */; };
@@ -52,6 +55,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		676495B32CDF8EF8005BA6DB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B67C9A0E910A3A15168A351A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 676495AA2CDF8EF8005BA6DB;
+			remoteInfo = ShareExtension;
+		};
 		67E60F372C98280B002E4B6B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B67C9A0E910A3A15168A351A /* Project object */;
@@ -68,6 +78,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				676495B52CDF8EF8005BA6DB /* ShareExtension.appex in Embed Foundation Extensions */,
 				67E60F392C98280B002E4B6B /* RunnerWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -81,6 +92,11 @@
 		409E0E5DA6371DAF782D41B5 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		43D056594147C9369E8B973D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		676495AB2CDF8EF8005BA6DB /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		676495AD2CDF8EF8005BA6DB /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		676495B02CDF8EF8005BA6DB /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
+		676495B22CDF8EF8005BA6DB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		676495B92CDF972C005BA6DB /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		67DB4AB42CB9165C00914832 /* PassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PassKit.framework; path = System/Library/Frameworks/PassKit.framework; sourceTree = SDKROOT; };
 		67DB4AB82CBBAA0100914832 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		67DB4ABC2CBCC23400914832 /* InAppPayHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = InAppPayHandler.mm; sourceTree = "<group>"; };
@@ -129,6 +145,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		676495A82CDF8EF8005BA6DB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		67E60F252C98280A002E4B6B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -187,6 +210,7 @@
 				80658884A41C507FD12F719E /* src */,
 				24CFA19DAE6CC803B54B5A10 /* ztm_iOS */,
 				67E60F2D2C98280A002E4B6B /* RunnerWidget */,
+				676495AC2CDF8EF8005BA6DB /* ShareExtension */,
 				4AABE3AF54F5F671A99566CF /* Frameworks */,
 				58A6362F02B4925FEC52A8EB /* Products */,
 			);
@@ -254,8 +278,20 @@
 			children = (
 				E8BA843B02DE7A83E68CEE02 /* ztm.app */,
 				67E60F282C98280A002E4B6B /* RunnerWidgetExtension.appex */,
+				676495AB2CDF8EF8005BA6DB /* ShareExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		676495AC2CDF8EF8005BA6DB /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				676495B92CDF972C005BA6DB /* ShareExtension.entitlements */,
+				676495AD2CDF8EF8005BA6DB /* ShareViewController.swift */,
+				676495AF2CDF8EF8005BA6DB /* MainInterface.storyboard */,
+				676495B22CDF8EF8005BA6DB /* Info.plist */,
+			);
+			path = ShareExtension;
 			sourceTree = "<group>";
 		};
 		67E60F2D2C98280A002E4B6B /* RunnerWidget */ = {
@@ -306,6 +342,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		676495AA2CDF8EF8005BA6DB /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 676495B62CDF8EF8005BA6DB /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				676495A72CDF8EF8005BA6DB /* Sources */,
+				676495A82CDF8EF8005BA6DB /* Frameworks */,
+				676495A92CDF8EF8005BA6DB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			productName = ShareExtension;
+			productReference = 676495AB2CDF8EF8005BA6DB /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		67E60F272C98280A002E4B6B /* RunnerWidgetExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 67E60F3D2C98280B002E4B6B /* Build configuration list for PBXNativeTarget "RunnerWidgetExtension" */;
@@ -337,6 +390,7 @@
 			);
 			dependencies = (
 				67E60F382C98280B002E4B6B /* PBXTargetDependency */,
+				676495B42CDF8EF8005BA6DB /* PBXTargetDependency */,
 			);
 			name = ztm_iOS;
 			productName = ztm_iOS;
@@ -354,6 +408,9 @@
 				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					676495AA2CDF8EF8005BA6DB = {
+						CreatedOnToolsVersion = 15.4;
+					};
 					67E60F272C98280A002E4B6B = {
 						CreatedOnToolsVersion = 15.4;
 					};
@@ -376,6 +433,7 @@
 			targets = (
 				7E6F12527796DEEAB78B87F8 /* ztm_iOS */,
 				67E60F272C98280A002E4B6B /* RunnerWidgetExtension */,
+				676495AA2CDF8EF8005BA6DB /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -389,6 +447,14 @@
 				CEB5B073E287F82C663058BE /* LaunchScreen.storyboard in Resources */,
 				676495A42CDC660A005BA6DB /* PrivacyInfo.xcprivacy in Resources */,
 				39F1D7B0B487944FE880D319 /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		676495A92CDF8EF8005BA6DB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				676495B12CDF8EF8005BA6DB /* Base in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,6 +506,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		676495A72CDF8EF8005BA6DB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				676495AE2CDF8EF8005BA6DB /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		67E60F242C98280A002E4B6B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -453,12 +527,28 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		676495B42CDF8EF8005BA6DB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 676495AA2CDF8EF8005BA6DB /* ShareExtension */;
+			targetProxy = 676495B32CDF8EF8005BA6DB /* PBXContainerItemProxy */;
+		};
 		67E60F382C98280B002E4B6B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 67E60F272C98280A002E4B6B /* RunnerWidgetExtension */;
 			targetProxy = 67E60F372C98280B002E4B6B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		676495AF2CDF8EF8005BA6DB /* MainInterface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				676495B02CDF8EF8005BA6DB /* Base */,
+			);
+			name = MainInterface.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		4ABD243B7E9B77144813B7F0 /* debug */ = {
@@ -524,6 +614,169 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = debug;
+		};
+		676495B72CDF8EF8005BA6DB /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = H38KYFAJ64;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flomesh.ztm.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = debug;
+		};
+		676495B82CDF8EF8005BA6DB /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = H38KYFAJ64;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flomesh.ztm.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = release;
 		};
 		67E60F3B2C98280B002E4B6B /* debug */ = {
 			isa = XCBuildConfiguration;
@@ -893,6 +1146,15 @@
 			buildConfigurations = (
 				4ABD243B7E9B77144813B7F0 /* debug */,
 				FBCAC3D3E497337310881C65 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		676495B62CDF8EF8005BA6DB /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				676495B72CDF8EF8005BA6DB /* debug */,
+				676495B82CDF8EF8005BA6DB /* release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = debug;

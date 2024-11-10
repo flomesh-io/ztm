@@ -239,16 +239,47 @@ const openFolder = (path) => {
 }
 const openFile = (path, contentType) => {
 	const _ext = path.split('.').pop().toLowerCase()
-	if(platform() == 'ios'){
+	if(platform() == 'ios' || platform() == 'android'){
 		// invoke('shareFile', { url: path })
-		invoke('plugin:share|share', {path, mimeType: contentType || mimeTypes[_ext] })
-	} else if(platform() == 'android'){
-		invoke('plugin:share|share', {path, mimeType: contentType || mimeTypes[_ext] })
+		invoke('plugin:share|share_file', {path, mimeType: contentType || mimeTypes[_ext] })
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
 	} else {
 		open(path);
 	}
+}
+const getSharedFiles = (isFile, callback) => {
+	if(platform() == 'ios'){
+		if(!isFile){
+			writeMobileFile('getSharedFilesPathBefore.txt',`invoke`);
+			invoke('plugin:share|get_shared_files_path', {group:'group.com.flomesh.ztm', path: "temp" }).then((paths)=>{
+				if(paths && paths.length>0){
+					writeMobileFile('getSharedFilesPath.txt',`${paths.join(";")}`);
+				}else {
+					writeMobileFile('getSharedFilesPathAfter.txt',`empty`);
+				}
+				if(callback){
+					callback(paths)
+				}
+			})
+		} else {
+			writeMobileFile('getSharedFilesBefore.txt',`invoke`);
+			invoke('plugin:share|get_shared_files', {group:'group.com.flomesh.ztm', path: "temp" }).then((files)=>{
+				if(files && files.length>0){
+					let str = "";
+					files.forEach((f)=>{
+						str+= `${f.name},${f.size},${f.mime}`;
+					})
+					writeMobileFile('getSharedFiles.txt',str);
+				}else{
+					writeMobileFile('getSharedFilesAfter.txt',`empty`);
+				}
+				if(callback){
+					callback(files)
+				}
+			})
+		}
+	} 
 }
 const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) => {
 	download(fileUrl, saveUrl, (progress, total) => {
@@ -561,6 +592,7 @@ export {
 	downloadFile, 
 	importFiles,
 	downloadSpeed,
+	getSharedFiles,
 	chatFileType,
 	extIcon,
 	isImage,
