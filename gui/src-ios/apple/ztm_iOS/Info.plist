@@ -21,6 +21,8 @@
 		<dict>
 			<key>CFBundleTypeName</key>
 			<string>Any Document</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>public.data</string>
