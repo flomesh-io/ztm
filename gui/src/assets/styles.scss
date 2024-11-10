@@ -1316,6 +1316,18 @@ fieldset{
 	min-height: 36px;
 	border:none !important;
 }
+.p-button:focus-visible{
+	outline: none !important;
+}
+.p-drawer{
+	border: none !important;
+	.p-drawer-content{
+		padding: 0;
+	}
+	.p-drawer-header{
+		padding: 5px 5px 5px 15px;
+	}
+}
 @media screen and (max-width: 768px){
 		
 	.block-content,.p-tabview .p-tabview-panels,.block-section{
