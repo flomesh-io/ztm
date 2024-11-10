@@ -137,7 +137,7 @@ const hideSender = () => {
 	<Button :loading="fileLoading || sending" @click="openSender" class="absolute" v-if="!!hasFile && !visible" icon="pi pi-send" aria-label="Send" style="right:10px; bottom: 70px;" />
 	<Drawer class="relative" @hide="hideSender" v-model:visible="visible" header="Forward" position="bottom" style="height: 80%;">
 		<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top': (`${45}px`)}">
-		<div class="flex flex-col message-item pointer" :key="index">
+		<div class="flex message-item pointer" :key="index">
 			<div v-for="(file,index) in files" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 				<div class="md:w-40 relative">
 					<img :src="checker({name:file?.name})" height="40" />
