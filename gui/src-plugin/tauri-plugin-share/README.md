@@ -13,7 +13,7 @@ invoke('plugin:share|share_file', {
 })
 ```
 
-## Share from others app
+## Get file from others app shared
 ### Get files path from other app shared 
 ```typescript
 invoke('plugin:share|get_shared_files_path', {
