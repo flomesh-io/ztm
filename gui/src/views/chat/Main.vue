@@ -7,8 +7,6 @@ import History from './History.vue'
 import { dayjs, extend } from '@/utils/dayjs';
 import { useRouter } from 'vue-router'
 import ChatService from '@/service/ChatService';
-import EndpointDetail from '../mesh/EndpointDetail.vue'
-import ZtmService from '@/service/ZtmService';
 import gptSvg from "@/assets/img/gpt.png";
 import { resize, position } from "@/utils/window";
 import _ from "lodash";
@@ -19,7 +17,6 @@ const emits = defineEmits(['close'])
 const store = useStore();
 const router = useRouter();
 const chatService = new ChatService();
-const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -63,28 +60,6 @@ const isMobile = computed(() => windowWidth.value<=768);
 const read = (updated) => {
 	const _unread = unread.value - updated
 	store.commit('notice/setUnread',_unread >0?_unread:0);
-}
-
-const endpointMap = ref({});
-const endpoints = ref([]);
-const getEndpoints = () => {
-	endpointMap.value = {};
-	ztmService.getEndpoints(selectedMesh.value?.name)
-		.then(res => {
-			res.forEach(ep=>{
-				endpointMap.value[ep.id] = ep;
-			});
-			endpoints.value = res || [];
-			endpoints.value.forEach((ep,ei)=>{
-				ep.key = ep.id;
-				ep.index = ei;
-				ep.type = "ep";
-				ep.label = `${ep?.name} (${ep?.username})`;
-				ep.icon = "pi pi-user";
-				ep.loading = false;
-			});
-		})
-		.catch(err => console.log('Request Failed', err)); 
 }
 
 const loadrooms = () => {
@@ -209,7 +184,6 @@ const backhistory = () => {
 }
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
-		getEndpoints();
 		loadrooms();
 		loadusers();
 	}
@@ -218,7 +192,6 @@ watch(()=>selectedMesh,()=>{
 	immediate:true
 })
 onActivated(()=>{
-	getEndpoints();
 	loadrooms();
 	loadusers();
 })
@@ -305,14 +278,9 @@ onActivated(()=>{
 				</DataView>
 			</ScrollPanel>
 		</div>
-	<!-- 	<div class="flex-item" v-if="!!selectPeer">
-			<div class="shadow mobile-fixed">
-				<EndpointDetail @back="() => selectPeer=false" :ep="selectPeer"/>
-			</div>
-		</div> -->
 		<div v-if="selectRoom" class="flex-item min-h-screen" style="flex: 3;">
 			<div class="shadow mobile-fixed min-h-screen relative" style="z-index:2">
-				<Chat :endpointMap="endpointMap" v-model:room="selectRoom" @back="backList" @manager="() => manager = true"/>
+				<Chat v-model:room="selectRoom" @back="backList" @manager="() => manager = true"/>
 			</div>
 		</div>
 		<div v-if="manager && history" class="flex-item min-h-screen " style="flex: 2;">

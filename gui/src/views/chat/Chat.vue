@@ -22,7 +22,7 @@ import { useStore } from 'vuex';
 */
 const store = useStore();
 const chatService = new ChatService();
-const props = defineProps(['room','endpointMap']);
+const props = defineProps(['room']);
 const emits = defineEmits(['back','peer','manager','update:room']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -429,12 +429,12 @@ onBeforeUnmount(()=>{
 	</div>
 </template>
 
-<style lang="scss">
-	#container{
-		height: 100%;
-	}
-	.outside-left{
-		bottom: 1em !important;
-	}
+<style lang="scss" >
+	// #container{
+	// 	height: 100%;
+	// }
+	// .outside-left{
+	// 	bottom: 1em !important;
+	// }
 	
 </style>

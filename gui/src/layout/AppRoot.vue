@@ -98,8 +98,9 @@ const loaddata = (reload) => {
 				meshes.value = res;
 				store.commit('account/setMeshes', res);
 			}
-			if(storeMesh.value && !meshes.value.find((mesh)=> mesh?.name == storeMesh.value?.name)){
-				store.commit('account/setSelectedMesh', null);
+			if(!!res && res.length>0 && (!storeMesh.value || !meshes.value.find((mesh)=> mesh?.name == storeMesh.value?.name))){
+				store.commit('account/setSelectedMesh', res[0]);
+				selectedMesh.value = res[0];
 			}
 		})
 		.catch(err => {

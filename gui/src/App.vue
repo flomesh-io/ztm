@@ -2,6 +2,7 @@
 	<Toast />
 	<ConfirmDialog></ConfirmDialog>
 	<router-view />
+	<Forward v-model:open="open" v-model:paths="paths" />
 </template>
 <script setup>
 import { onMounted, ref, computed } from "vue";
@@ -26,18 +27,15 @@ store.commit('notice/setConfirm', confirm);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
-const sharedTimer = ref(true)
+const open = ref(false);
+const paths = ref()
 const timmer = () => {
 	store.dispatch('notice/rooms');
-	if(sharedTimer.value){
-		getSharedFiles(false, (paths)=>{
-			if(paths && paths.length>0){
-				sharedTimer.value = false;
-				getSharedFiles(true, (files)=>{
-					if(files && files.length>0){
-						sharedTimer.value = true;
-					}
-				})
+	if(!paths.value){
+		getSharedFiles(false, (res)=>{
+			if(res && res.length>0){
+				open.value = true;
+				paths.value = res;
 			}
 		})
 	}

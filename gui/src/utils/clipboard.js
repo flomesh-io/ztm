@@ -6,7 +6,7 @@ const copy = (text)=>{
 		clipboard.write(text).then(()=>{
 			toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
 		});
-	} else {console.log(text)
+	} else {
 		writeText(text).then(()=>{
 			toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
 		})
