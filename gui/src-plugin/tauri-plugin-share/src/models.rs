@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct ShareRequest {
   pub path: Option<String>,
-  pub mimeType: Option<String>,
+  pub mime: Option<String>,
   pub group: Option<String>,
 }
 
