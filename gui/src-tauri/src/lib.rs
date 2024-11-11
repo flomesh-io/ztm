@@ -285,26 +285,26 @@ fn purchase_product() -> Result<String, String> {
 // }
 
 
-#[command]
-fn shareFile(app: tauri::AppHandle, url: String, mimeType: String) -> Result<String, String> {
-    let handle = thread::spawn(move || -> Result<(), String> {
-      //   #[cfg(target_os = "ios")]
-      //   unsafe {
-      //       warn!("share in");
-      //       let cls = Class::get("ShareHandler").expect("ShareHandler class not found");
-      //       let shared_manager: *mut Object = msg_send![cls, sharedManager];
+// #[command]
+// fn shareFile(app: tauri::AppHandle, url: String, mimeType: String) -> Result<String, String> {
+//     let handle = thread::spawn(move || -> Result<(), String> {
+//         #[cfg(target_os = "ios")]
+//         unsafe {
+//             warn!("share in");
+//             let cls = Class::get("ShareHandler").expect("ShareHandler class not found");
+//             let shared_manager: *mut Object = msg_send![cls, sharedManager];
             
-						// let ns_url_class = Class::get("NSURL").expect("NSURL class not found");
-						// let ns_url: *mut Object = msg_send![ns_url_class, URLWithString: NSString::from_str(&url)];
-						// let _: () = msg_send![shared_manager, shareFile: ns_url];
+// 						let ns_url_class = Class::get("NSURL").expect("NSURL class not found");
+// 						let ns_url: *mut Object = msg_send![ns_url_class, URLWithString: NSString::from_str(&url)];
+// 						let _: () = msg_send![shared_manager, shareFile: ns_url];
 						
-      //       warn!("share end");
-      //   }
-        Ok(())
-    });
-    let thread_id_str = format!("{:?}", handle.thread().id());
-    Ok(thread_id_str)
-}
+//             warn!("share end");
+//         }
+//         Ok(())
+//     });
+//     let thread_id_str = format!("{:?}", handle.thread().id());
+//     Ok(thread_id_str)
+// }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -321,8 +321,7 @@ pub fn run() {
 				.plugin(tauri_plugin_notification::init())
 				.plugin(tauri_plugin_persisted_scope::init())
 				.plugin(tauri_plugin_clipboard_manager::init())
-				// .plugin(tauri_plugin_log::Builder::new().build())
-        		.plugin(tauri_plugin_share::init())
+				.plugin(tauri_plugin_share::init())
 				.plugin(tauri_plugin_log::Builder::new().targets([
             Target::new(TargetKind::Stdout),
             Target::new(TargetKind::LogDir { file_name: None }),
@@ -330,7 +329,7 @@ pub fn run() {
         ]).build())
 				// .plugin(tauri_plugin_sharesheet::init())
 				.invoke_handler(tauri::generate_handler![
-					pipylib,create_proxy_webview,create_wry_webview,purchase_product,shareFile
+					pipylib,create_proxy_webview,create_wry_webview,purchase_product
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");
