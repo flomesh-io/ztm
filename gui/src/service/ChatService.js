@@ -256,8 +256,8 @@ export default class ChatService {
 	}
 	
 	isBlob(contentType) {
-		const mimeTypes = ['audio','video'];
-		if(mimeTypes.indexOf(contentType) >= 0){
+		const types = ['audio','video'];
+		if(types.indexOf(contentType) >= 0){
 			return true;
 		} else {
 			return false;
