@@ -49,3 +49,9 @@ jobs:
           ./gui/src-tauri/target/release/bundle/rpm/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.rpm
           ./gui/src-tauri/target/release/bundle/deb/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.deb
           ./gui/src-tauri/target/release/bundle/appimage/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.AppImage
+  
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ztm-lib-v${{ vars.APP_VERSION }}-generic_linux
+        path: |
+          ./bin/ztm
