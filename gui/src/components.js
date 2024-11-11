@@ -10,7 +10,7 @@ import Badge from 'primevue/badge';
 import BlockUI from 'primevue/blockui';
 import Button from 'primevue/button';
 import Breadcrumb from 'primevue/breadcrumb';
-import Drawer from 'primevue/Drawer';
+import Drawer from 'primevue/drawer';
 import Calendar from 'primevue/calendar';
 import Chart from 'primevue/chart';
 import CascadeSelect from 'primevue/cascadeselect';
