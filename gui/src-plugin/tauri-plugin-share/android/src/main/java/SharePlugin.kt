@@ -31,15 +31,14 @@ class SharePlugin(private val activity: Activity): Plugin(activity) {
         val context = activity.applicationContext
        
         val file = File(args.path)
-        // val file = File("/storage/emulated/0/Android/data/com.flomesh.ztm/files/Documents/Readme.txt")
 		val uri = FileProvider.getUriForFile(
 				context,
 				"${context.packageName}.fileprovider",
 				file
 			)
 		val intent = Intent(Intent.ACTION_SEND)
-		intent.setDataAndType(uri, args.mime)
-		intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.setType(args.mime);
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		context.startActivity(intent)
     }
