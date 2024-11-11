@@ -8,7 +8,7 @@ import UniformTypeIdentifiers
 
 class ShareArgs: Decodable {
   let path: String
-  let mimeType: String?
+  let mime: String?
   let group: String?
 }
 

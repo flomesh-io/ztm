@@ -15,7 +15,7 @@ import android.util.Log
 @InvokeArg
 class ShareOptions {
     var path: String = ""
-    var mimeType: String = "text/plain"
+    var mime: String = "text/plain"
     var group: String = ""
 }
 
@@ -26,7 +26,7 @@ class SharePlugin(private val activity: Activity): Plugin(activity) {
     fun shareFile(invoke: Invoke) {
         val args = invoke.parseArgs(ShareOptions::class.java)
         Log.i("ztmshare", args.path)
-        Log.i("ztmshare", args.mimeType)
+        Log.i("ztmshare", args.mime)
 
         val context = activity.applicationContext
        
@@ -38,7 +38,7 @@ class SharePlugin(private val activity: Activity): Plugin(activity) {
 				file
 			)
 		val intent = Intent(Intent.ACTION_SEND)
-		intent.setDataAndType(uri, args.mimeType)
+		intent.setDataAndType(uri, args.mime)
 		intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		context.startActivity(intent)

@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 
-export async function shareFile(path: string, mimeType: string): Promise<string | null> {
+export async function shareFile(path: string, mime: string): Promise<string | null> {
   return await invoke<{value?: string}>('plugin:share|share_file', {
 		path,
-		mimeType
+		mime
   }).then((r) => (r.value ? r.value : null));
 }
 
