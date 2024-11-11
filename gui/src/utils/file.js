@@ -241,7 +241,7 @@ const openFile = (path, contentType) => {
 	const _ext = path.split('.').pop().toLowerCase()
 	if(platform() == 'ios' || platform() == 'android'){
 		// invoke('shareFile', { url: path })
-		invoke('plugin:share|share_file', {path, mimeType: contentType || mimeTypes[_ext] })
+		invoke('plugin:share|share_file', {path, mime: contentType || mimeTypes[_ext] })
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
 	} else {
