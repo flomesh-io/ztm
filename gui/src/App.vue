@@ -12,7 +12,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { AcceptFile } from "@/doms/AcceptFile";
 import { reg } from "@/utils/notification";
-import { getSharedFiles } from '@/utils/file';
+import { getShared } from '@/utils/file';
 const store = useStore();
 const toast = useToast();
 const confirm = useConfirm();
@@ -32,7 +32,7 @@ const paths = ref()
 const timmer = () => {
 	store.dispatch('notice/rooms');
 	if(!paths.value){
-		getSharedFiles(false, (res)=>{
+		getShared(false, (res)=>{
 			if(res && res.length>0){
 				open.value = true;
 				paths.value = res;

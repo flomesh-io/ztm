@@ -4,7 +4,7 @@ import { useStore } from 'vuex';
 import ChatService from '@/service/ChatService';
 import gptSvg from "@/assets/img/gpt.png";
 import { resize, position } from "@/utils/window";
-import { getSharedFiles, checker, bitUnit } from '@/utils/file';
+import { getShared, checker, bitUnit } from '@/utils/file';
 import confirm from "@/utils/confirm";
 import { send } from "@/utils/notification";
 import _ from "lodash";
@@ -41,14 +41,12 @@ const hasFile = ref(false);
 const files = ref()
 const loadfiles = () => {
 	fileLoading.value = true;
-	getSharedFiles(true, (res)=>{
-		// size, mime, name
+	getShared(true, (res)=>{
 		fileLoading.value = false;
 		if(res && res.length>0){
 			files.value = res;
 			hasFile.value = true;
 		} else {
-			// files.value = null;
 			hasFile.value = false;
 		}
 	})
@@ -153,7 +151,7 @@ const hideSender = () => {
 							{{bitUnit(file?.size *1)}}
 						</div>
 						<div v-if="file?.mime" class="text-right text-tip opacity-60" >
-							<Tag severity="secondary">{{file?.mime}}</Tag>
+							<Tag class="text-ellipsis px-1 text-left" severity="secondary" style="max-width: 140px;">{{file?.mime}}</Tag>
 						</div>
 					</div>
 				</div>

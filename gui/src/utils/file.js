@@ -23,8 +23,7 @@ import exportFromJSON from 'export-from-json';
 import { requestMeta } from '@/service/common/request';
 import { invoke } from '@tauri-apps/api/core';
 import { mimeTypes } from "@/utils/mime";
-
-
+import { shareFile, getSharedFiles, getSharedFilesPath } from 'tauri-plugin-share';
 function convertToUint8Array(input) {
   if (typeof input === 'string') {
 		//.buffer
@@ -241,18 +240,17 @@ const openFile = (path, contentType) => {
 	const _ext = path.split('.').pop().toLowerCase()
 	if(platform() == 'ios' || platform() == 'android'){
 		// invoke('shareFile', { url: path })
-		invoke('plugin:share|share_file', {path, mime: contentType || mimeTypes[_ext] })
+		shareFile(path, contentType || mimeTypes[_ext]);
 	} else if(platform() == 'web'){
 		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Please go to ${path} to open it.`, life: 3000 });
 	} else {
 		open(path);
 	}
 }
-const getSharedFiles = (isFile, callback) => {
+const getShared = (isFile, callback) => {
 	if(platform() == 'ios'){
 		if(!isFile){
-			writeMobileFile('getSharedFilesPathBefore.txt',`invoke`);
-			invoke('plugin:share|get_shared_files_path', {group:'group.com.flomesh.ztm', path: "temp" }).then((paths)=>{
+			getSharedFilesPath("temp", 'group.com.flomesh.ztm').then((paths)=>{
 				if(paths && paths.length>0){
 					writeMobileFile('getSharedFilesPath.txt',`${paths.join(";")}`);
 				}else {
@@ -263,8 +261,7 @@ const getSharedFiles = (isFile, callback) => {
 				}
 			})
 		} else {
-			writeMobileFile('getSharedFilesBefore.txt',`invoke`);
-			invoke('plugin:share|get_shared_files', {group:'group.com.flomesh.ztm', path: "temp" }).then((files)=>{
+			getSharedFiles("temp", 'group.com.flomesh.ztm').then((files)=>{
 				if(files && files.length>0){
 					let str = "";
 					files.forEach((f)=>{
@@ -592,7 +589,7 @@ export {
 	downloadFile, 
 	importFiles,
 	downloadSpeed,
-	getSharedFiles,
+	getShared,
 	chatFileType,
 	extIcon,
 	isImage,
