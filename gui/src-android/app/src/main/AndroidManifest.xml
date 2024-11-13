@@ -37,6 +37,14 @@
         </activity>
         <activity android:name=".CopyBinaryActivity" />
         <activity android:name=".SAFActivity" />
+
+        <activity android:name=".ReceiveFileActivity" android:exported="true">
+          <intent-filter>
+              <action android:name="android.intent.action.SEND" />
+              <category android:name="android.intent.category.DEFAULT" />
+              <data android:mimeType="*/*" />
+          </intent-filter>
+        </activity>
 				
         <service 
 					android:name=".FloatingWindowService" 
