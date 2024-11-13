@@ -1406,3 +1406,18 @@ fieldset{
 		font-size: 14px !important;
 	}
 }
+
+.grid-menu{
+	background-color: var(--surface-ground);
+	transition: .3s all;
+	cursor: pointer;
+	border-radius: 10px;
+	width: 80px;
+	height: 80px;
+	opacity: 1;
+	margin: 15px auto;
+}
+.grid-menu:hover{
+	background: var(--primary-color) !important;
+	color: var(--primary-color-text) !important;
+}

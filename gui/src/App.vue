@@ -2,7 +2,7 @@
 	<Toast />
 	<ConfirmDialog></ConfirmDialog>
 	<router-view />
-	<Forward v-model:open="open" v-model:paths="paths" />
+	<WatchShared v-model:open="open" v-model:paths="paths" />
 </template>
 <script setup>
 import { onMounted, ref, computed } from "vue";
