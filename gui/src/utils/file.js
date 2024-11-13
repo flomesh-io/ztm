@@ -276,7 +276,9 @@ const getShared = (isFile, callback) => {
 				}
 			})
 		}
-	} 
+	} else if(platform() == 'android'){
+		
+	}
 }
 const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) => {
 	download(fileUrl, saveUrl, (progress, total) => {
