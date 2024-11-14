@@ -4,6 +4,7 @@ export default {
     let timer = null;
 
     const start = (event) => {
+			debugger
       if ((event.type === 'mousedown' || event.type === 'touchstart') && event?.button != 2) {
         timer = setTimeout(() => {
           event.preventDefault();

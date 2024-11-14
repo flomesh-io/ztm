@@ -11,6 +11,13 @@ class AcceptFile extends HTMLElement {
 		this.shadowRoot.innerHTML = `
 			<style>
 				/* 内部样式 */
+								
+				.noSelect {
+					-webkit-user-select: none;
+					-moz-user-select: none;
+					-ms-user-select: none;
+					user-select: none;
+				}
 				.file-inner {
 					padding:2px 6px;
 					line-height:18px;
@@ -106,7 +113,7 @@ class AcceptFile extends HTMLElement {
 				  }
 				}
 			</style>
-			<div class="download-button" style="display:flex;padding-top:3px">
+			<div class="accept-file download-button noSelect" style="display:flex;padding-top:3px">
 				<slot name="icon"></slot>
 				<div style="flex:1">
 					<div class="file-inner">
@@ -132,13 +139,9 @@ class AcceptFile extends HTMLElement {
 			</div>
 		`;
   }
-	
-	// 监听自定义属性变化
 	static get observedAttributes() {
-		return ['base', 'mesh', 'content','state','progress','src','fileName','contentType','size','url'];
+		return ['hash', 'base', 'mesh', 'content','state','progress','src','fileName','contentType','size','url'];
 	}
-
-	// 当属性变化时调用
 	attributeChangedCallback(name, oldValue, newValue) {
 		if (oldValue !== newValue) {
 			this.updateElement();
@@ -176,20 +179,44 @@ class AcceptFile extends HTMLElement {
 			}
 		})
 	}
-	// 初始化或更新元素内容和样式
 	connectedCallback() {
 		this.updateElement();
-		this.shadowRoot.querySelector('.download').addEventListener('click', (e) => {
+		const downloadDom = this.shadowRoot.querySelector('.download');
+		const downloadFun = (e) => {
 			this.save(e)
-		});
-		this.shadowRoot.querySelector('.done').addEventListener('click', (e) => {
+		}
+		if(downloadDom._downloadFun){
+			downloadDom.removeEventListener('click', downloadDom._downloadFun);
+		}
+		downloadDom._downloadFun = downloadFun;
+		downloadDom.addEventListener('click', downloadFun);
+		
+		const doneDom = this.shadowRoot.querySelector('.done');
+		const doneFun = (e) => {
 			const url = this.getAttribute('url');
 			if(url){
-				openFile(url, this.getAttribute('contentType'))
+				const customEvent = new CustomEvent('forward', {
+					bubbles: true,  
+					composed: true,
+					detail: {
+						url,
+						contentType: this.getAttribute('contentType'),
+						name: this.getAttribute('fileName'),
+						size: this.getAttribute('size')*1,
+						hash: this.getAttribute('hash')
+					}
+				});
+				this.getRootNode().host.dispatchEvent(customEvent)
 			} else {
 				this.resetProgress();
 			}
-		});
+		}
+		if(doneDom._doneFun){
+			doneDom.removeEventListener('click', doneDom._doneFun);
+		}
+		doneDom._doneFun = doneFun;
+		doneDom.addEventListener('click', doneFun);
+		
 		const mesh = this.getAttribute('mesh');
 		const base = this.getAttribute('base');
 		if(!this.getAttribute('url') && mesh && base){

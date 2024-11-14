@@ -210,30 +210,37 @@ export default class ChatService {
 			body.text = message.text
 		}
 		if(!!message.files){
-			body.files = [];
-			const reqs = [];
-			message.files.forEach((file)=>{
-				reqs.push(this.uploadFile(file).then((hash)=> {
-					return {
-						hash,
-						name: file.name,
-						lastModified: file.lastModified,
-						size: file.size,
-						contentType: file.type,
-					}
-				}).catch((e)=>{}));
-					
-			})
-			merge(reqs).then((resp)=>{
-				if(resp){
-					resp.forEach((file)=>{
-						body.files.push(file);
-					})
-				}
+			if(message.files[0] && message.files[0]?.hash){
+				body.files = message.files;
 				if(!!callback){
 					callback(body)
 				}
-			})
+			} else {
+				body.files = [];
+				const reqs = [];
+				message.files.forEach((file)=>{
+					reqs.push(this.uploadFile(file).then((hash)=> {
+						return {
+							hash,
+							name: file.name,
+							lastModified: file.lastModified,
+							size: file.size,
+							contentType: file.type,
+						}
+					}).catch((e)=>{}));
+						
+				})
+				merge(reqs).then((resp)=>{
+					if(resp){
+						resp.forEach((file)=>{
+							body.files.push(file);
+						})
+					}
+					if(!!callback){
+						callback(body)
+					}
+				})
+			}
 		} else {
 			if(!!callback){
 				callback(body)

@@ -115,6 +115,8 @@ import FileImportSelector from '@/components/common/FileImportSelector.vue';
 import FilePreview from '@/components/common/FilePreview.vue';
 import MeshSelector from '@/components/mesh/MeshSelector.vue';
 import Forward from '@/components/share/Forward.vue';
+import WatchShared from '@/components/share/WatchShared.vue';
+import DrawMenu from '@/components/common/DrawMenu.vue';
 import FloatLabel from 'primevue/floatlabel';
 
 import { Field, Form, ErrorMessage } from 'vee-validate';
@@ -240,4 +242,6 @@ export function useComponent(app){
 	app.component('Empty', Empty);
 	app.component('Drawer', Drawer);
 	app.component('Forward', Forward);
+	app.component('WatchShared', WatchShared);
+	app.component('DrawMenu', DrawMenu);
 }
