@@ -336,7 +336,7 @@ export default class AppService {
 	openWV(url, width, height , listen) {
 		const webviewOptions = {
 			url,
-			name:url.replace(/.*\/\//,"").replaceAll("/","_").replaceAll(".","_").replaceAll("-","_"),
+			name:url.replace(/.*\/\//,"").split("/")[0].replaceAll(".","_").replaceAll("-","_"),
 			width:width||1280,
 			height:height||860,
 			proxy: !!listen?`socks5://${listen}`:''

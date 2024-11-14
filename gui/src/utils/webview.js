@@ -45,46 +45,41 @@ const openWebview = (app)=>{
 			// getCurrentDL().then((urls)=>{
 			// 	console.log(urls)
 			// })
-		}	else if(platform=='windows'){
+		}	else if(platform=='windows' || true){
+			
+			const pluginOption = {
+									name: app.name,
+									label: `${app.name}_webview`,
+									curl: options.url,
+									proxy: options?.proxyUrl || ''
+			 }
+			 invoke('create_proxy_webview', pluginOption);
+			 
 			// windows API not available on mobile
-			options.parent = getCurrentWindow();
-			delete options.proxyUrl;
-			const appWindow = new Window(`${app.name}-window`,options);
+			// options.parent = getCurrentWindow();
+			// const proxyUrl = options?.proxyUrl;
+			// delete options.proxyUrl;
+			// const appWindow = new Window(app.name, options);
 			 
-			appWindow.once('tauri://created', function (win) {
-				 options.x = 0;
-				 options.y = 0;
-				 if(!options.height){
-					 options.height = 800;
-				 }
-				 const label = `${app.name}-webview`;
-				  invoke('create_proxy_webview', {
-						windowLabel: appWindow.label,
-						label,
-						curl: options.url,
-						proxyUrl: ''//options.proxyUrl
-				  });
-			});
-			appWindow.once('tauri://error', function (e) {
-				 console.log('Window://error')
-			});
-			 
-			 // invoke('create_wry_webview', {
-			 // 						windowLabel: appWindow.label,
-			 // 						label,
-			 // 						curl: options.url,
-			 // 						proxyHost: app?.port?.listen?.ip||'127.0.0.1',
-			 // 						proxyPort: `${app?.port?.listen?.port}`
-			 // });
-			  // const webview = new Webview(appWindow, label, options);
-			  // webview.once('tauri://created', function (d) {
-			  // 	console.log('Webview://created')
-			  // 	console.log(d)
-			  // });
-			  // webview.once('tauri://error', function (e) {
-			  // 	console.log('Webview://error')
-			  // 	console.log(e)
-			  // });
+			// appWindow.once('tauri://created', function (win) {
+			// 	 options.x = 0;
+			// 	 options.y = 0;
+			// 	 if(!options.height){
+			// 		 options.height = 800;
+			// 	 }
+				
+			// 	 const pluginOption = {
+			// 			name: app.name,
+			// 			label: `${app.name}_webview`,
+			// 			curl: options.url,
+			// 			proxy: proxyUrl || ''
+			// 	  }
+			// 	  invoke('create_proxy_webview', pluginOption);
+				 
+			// });
+			// appWindow.once('tauri://error', function (e) {
+			// 	 console.log(e)
+			// });
 			 // window successfully created
 		} else {
 			if(!options.proxyUrl){
@@ -94,6 +89,10 @@ const openWebview = (app)=>{
 			webview.once('tauri://created', function (d) {
 				console.log('WebviewWindow://created')
 				console.log(options)
+				debugger
+				webview.listen("click", ({ event, payload }) => {
+					debugger
+				});
 			// webview successfully created
 			});
 			webview.once('tauri://error', function (e) {
