@@ -248,58 +248,38 @@ const openFile = (path, contentType) => {
 	}
 }
 const getShared = (isFile, callback) => {
-	if(platform() == 'ios'){
-		if(!isFile){
-			getSharedFilesPath("temp", 'group.com.flomesh.ztm').then((paths)=>{
-				if(paths && paths.length>0){
-					writeMobileFile('getSharedFilesPath.txt',`${paths.join(";")}`);
-				}else {
-					writeMobileFile('getSharedFilesPathAfter.txt',`empty`);
-				}
-				if(callback){
-					callback(paths)
-				}
-			})
-		} else {
-			getSharedFiles("temp", 'group.com.flomesh.ztm').then((files)=>{
-				if(files && files.length>0){
-					let str = "";
-					files.forEach((f)=>{
-						str+= `${f.name},${f.size},${f.mime}`;
-					})
-					writeMobileFile('getSharedFiles.txt',str);
-				}else{
-					writeMobileFile('getSharedFilesAfter.txt',`empty`);
-				}
-				if(callback){
-					callback(files)
-				}
-			})
-		}
-	} else if(platform() == 'android'){
-		if(!isFile){
-			getSharedFilesPath("/tmp").then((paths)=>{
+	if(!isFile){
+		getSharedFilesPath("temp", 'group.com.flomesh.ztm').then((paths)=>{
+			if (platform() == 'android') {
 				paths = paths.split(";")
-				console.log(1, paths)
-				if(callback){
-					callback(paths)
-				}
-			})
-		} else {
-			getSharedFiles("/tmp").then((files)=>{
+			}
+			if(paths && paths.length>0){
+				writeMobileFile('getSharedFilesPath.txt',`${paths.join(";")}`);
+			}else {
+				writeMobileFile('getSharedFilesPathAfter.txt',`empty`);
+			}
+			if(callback){
+				callback(paths)
+			}
+		})
+	} else {
+		getSharedFiles("temp", 'group.com.flomesh.ztm').then((files)=>{
+			if (platform() == 'android') {
 				files = JSON.parse(files)
-				if(files && files.length>0){
-					let str = "";
-					files.forEach((f)=>{
-						str+= `${f.name},${f.size},${f.mime}`;
-					})
-				}else{
-				}
-				if(callback){
-					callback(files)
-				}
-			})
-		}
+			}
+			if(files && files.length>0){
+				let str = "";
+				files.forEach((f)=>{
+					str+= `${f.name},${f.size},${f.mime}`;
+				})
+				writeMobileFile('getSharedFiles.txt',str);
+			}else{
+				writeMobileFile('getSharedFilesAfter.txt',`empty`);
+			}
+			if(callback){
+				callback(files)
+			}
+		})
 	}
 }
 const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) => {

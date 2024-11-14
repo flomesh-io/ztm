@@ -50,7 +50,7 @@ class ReceiveFileActivity : AppCompatActivity() {
 
         inputStream?.use { input ->
             val appDir = context.filesDir
-            val tmpDir = File(appDir, "tmp")
+            val tmpDir = File(appDir, "temp")
             if (!tmpDir.exists()) {
                 tmpDir.mkdirs() // 创建目录（包括任何必要的但不存在的父目录）
             } else {
