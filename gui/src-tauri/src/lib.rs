@@ -113,66 +113,121 @@ async fn create_wry_webview(
 async fn create_proxy_webview(
 	app: tauri::AppHandle,
 	label: String,
-	window_label: String,
-	proxy_url: String,
-	curl: String,
-) -> Result<(),()> {
-	#[cfg(target_os = "windows")]
-	{
-		create_proxy_webview_core(app.clone(), label.to_string(), window_label.to_string(), proxy_url.to_string(), curl);
-	}
-	Ok(())
-}
-
-#[cfg(target_os = "windows")]
-fn create_proxy_webview_core(
-	app: tauri::AppHandle,
-	label: String,
-	window_label: String,
-	proxy_url: String,
+	name: String,
+	proxy: String,
 	curl: String,
 ) -> Result<(),()> {
 	unsafe {
 
-		let mut options = WindowConfig {
-				label: label.to_string(),
-				url: WebviewUrl::App(curl.parse().unwrap()),
-				fullscreen: true,
-				..Default::default()
-		};
+		// let mut options = WindowConfig {
+		// 		label: label.to_string(),
+		// 		url: WebviewUrl::App(curl.parse().unwrap()),
+		// 		fullscreen: true,
+		// 		..Default::default()
+		// };
 
-		if !proxy_url.is_empty() {
-			let proxy_url_ops: Option<Url> = Some(
-			        Url::parse(&proxy_url)
-			            .expect("Failed to parse URL"),
-			    );
-			options.proxy_url = proxy_url_ops
-		}
 		println!("builder!");
 
-		let builder = tauri::WebviewBuilder::from_config(&options).on_navigation(|url| {
-		    // allow the production URL or localhost on dev
-			println!("on_navigation!");
-			if url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "ipc" {
-				println!("{}",url);
-				// create_proxy_webview_core(app, url.to_string(), url.to_string(), proxy_url.to_string(), url.to_string());
-			}
-			true
-		});
-    let window = app
-        .get_window(&window_label)
-        .expect("Failed to find window by label");
 
-		let webview = window.add_child(
-			builder,
-			tauri::LogicalPosition::new(0, 0),
-			window.inner_size().unwrap(),
-		).unwrap();
+		let js_code = format!(r#"
+			document.addEventListener('click', function(event) {{
+					const target = event.target;
+					if (target.tagName === 'A' && target.href) {{
+						event.preventDefault();
+						const name = target.href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
+						
+						if(target.target == '_blank'){{
+							const pluginOption = {{
+									name: name,
+									label: name + `_webview`,
+									curl: target.href,
+									proxy: "{}"
+							 }}
+							 window.__TAURI__.core.invoke('create_proxy_webview', pluginOption);
+						}} else {{
+							const pluginOption = {{
+									name: "{}",
+									label: "{}",
+									curl: target.href,
+									proxy: "{}"
+							 }}
+							 window.__TAURI__.core.invoke('create_proxy_webview', pluginOption);
+						}}
+					}}
+			}});
+		"#, &proxy,&name,&label, &proxy);
+			
+		let dom_code = format!(r#"
+		window.addEventListener('DOMContentLoaded', function() {{
+			{}
+		}})
+		"#, &js_code);
+			
+		// let builder = tauri::WebviewBuilder::from_config(&options).on_navigation(|url| {
+		//     // allow the production URL or localhost on dev
+		// 	println!("on_navigation!");
+		// 	if url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "ipc" {
+		// 		println!("{}",url);
+		// 		// create_proxy_webview_core(app, url.to_string(), url.to_string(), proxy_url.to_string(), url.to_string());
+		// 	}
+		// 	true
+		// });
+		let window = match app.get_window(&name) {
+				Some(window) => window, 
+				None => {
+						let width = 1000.;
+						let height = 800.;
+						tauri::window::WindowBuilder::new(&app, &name)
+								.inner_size(width, height)
+								.title(name)
+								.build()
+								.expect("Failed to create a new window")
+				}
+		};
+  //   let window = app
+  //       .get_window(&name)
+  //       .expect("Failed to find window by label");
+				
+		// let width = 1000.;
+		// let height = 800.;
+		// let window = tauri::window::WindowBuilder::new(&app, &name)
+		//         .inner_size(width, height).title(&name)
+		//         .build().unwrap();
+				
+		// app.get_webview("main")
 		
+		
+		if let Some(mut old_webview) = app.get_webview(&label) {
+				// old_webview.eval(&js_code).unwrap();
+				old_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
+				std::thread::sleep(std::time::Duration::from_secs(1));
+				let webviews = window.webviews();
+				for webview in &webviews {
+					webview.eval(&js_code).unwrap();
+				}
+				// if let Some(old2_webview) = app.get_webview(&label) {
+				// 	old2_webview.eval(&js_code).unwrap();
+				// }
+		} else {
+				
+			let mut builder = tauri::WebviewBuilder::new(&label, WebviewUrl::App(curl.parse().unwrap())).on_navigation(|url| {
+					// allow the production URL or localhost on dev
+					url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "tauri" || (cfg!(dev) && url.host_str() == Some("localhost"))
+				});
+			if !proxy.is_empty() {
+				builder = builder.proxy_url(Url::parse(&proxy).expect("Invalid URL"));
+			}
+			let webview = window.add_child(
+				builder,
+				tauri::LogicalPosition::new(0, 0),
+				window.inner_size().unwrap(),
+			).unwrap();
+			webview.eval(&dom_code).unwrap();
+		}
 	}
 	Ok(())
 }
-	
+
 #[command]
 fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> Result<(),()> {
 	#[cfg(target_os = "android")]

@@ -309,6 +309,7 @@
 		"upload:allow-upload",
 		"dialog:default",
 		"dialog:allow-open",
+		"dialog:allow-ask",
 		"log:default",
 		"notification:default",
 		"notification:allow-request-permission",

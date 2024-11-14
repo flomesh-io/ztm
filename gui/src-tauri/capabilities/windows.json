@@ -11,7 +11,6 @@
   "permissions": [
 		"clipboard-manager:allow-write-text",
     "core:path:default",
-    "core:path:default",
     "core:path:allow-basename",
     "core:path:allow-dirname",
     "core:path:allow-extname",
@@ -310,6 +309,7 @@
 		"upload:allow-upload",
 		"dialog:default",
 		"dialog:allow-open",
+		"dialog:allow-ask",
 		"log:default",
 		"notification:default",
 		"notification:allow-request-permission",
