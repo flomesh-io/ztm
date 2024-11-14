@@ -23,11 +23,16 @@ class CopyBinaryActivity : AppCompatActivity() {
     }
 
     private fun copyBinaryToPrivateDir(context: Context, fileName: String) {
-        var inputStream: InputStream? = null
+        val outFile = File(context.filesDir, fileName)
+				// Check if the file already exists
+				if (outFile.exists()) {
+						return // If the file exists, exit the function
+				}
+				
+				var inputStream: InputStream? = null
         var outputStream: OutputStream? = null
         try {
             inputStream = context.assets.open(fileName)
-            val outFile = File(context.filesDir, fileName)
             outputStream = FileOutputStream(outFile)
 
             val buffer = ByteArray(1024)

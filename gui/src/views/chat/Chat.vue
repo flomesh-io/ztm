@@ -1,10 +1,11 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import style from '@/utils/style';
-import { chatFileType, writeMobileFile,folderInit } from '@/utils/file';
+import { chatFileType, writeMobileFile,folderInit,openFile,openFolder } from '@/utils/file';
 import ChatService from '@/service/ChatService';
 import userSvg from "@/assets/img/user.png";
 import systemSvg from "@/assets/img/system.png";
+import { platform } from '@/utils/platform';
 import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
@@ -80,6 +81,7 @@ const htmlClassUtilities = () => {
 				default: {display: 'none'},
 			}
 		},
+		
 		['download-button']: {
 			events: {
 				click: (event) => (
@@ -116,7 +118,7 @@ const buildMessage = (item) => {
 						file, 
 						src: chatService.getFileUrl(file, item.sender),
 						mesh: selectedMesh.value?.name, 
-						base: props.room?.peer || props.room?.group
+						base: props.room?.peer || props.room?.group,
 					})
 				} else if(type == 'video'){
 					const srcName = chatService.getFileUrl(file, item.sender);
@@ -245,6 +247,8 @@ const postMessage = (message, callback) => {
 		chatService.newGroupMsg(props.room?.group, props.room?.creator, message, callback);
 	}
 }
+const forwardTarget = ref();
+const menuOpen = ref(false);
 const chatRender = (e)=>{
 	chat.value.scrollToBottom();
 	chat.value.focusInput();
@@ -253,7 +257,50 @@ const chatRender = (e)=>{
 		loaddata();
 	}
 	style.templates.initClass(chat.value);
+	chat.value.addEventListener('forward', (e)=>{
+		forwardTarget.value = e.detail;
+		menuOpen.value = true;
+	});
 }
+const forwardOpen = ref(false);
+const forwardMessage = ref({})
+const menus = computed(()=>{
+	return [{
+		label: (platform() == 'ios' || platform() == 'android') ? 'Share':'Open',
+		icon: 'pi pi-external-link',
+		click(){
+			menuOpen.value = false;
+			openFile(forwardTarget.value.url, forwardTarget.value.contentType)
+		}
+	},{
+		label: 'Folder',
+		hide: platform() == 'ios' || platform() == 'android' || platform() == 'web' || !platform(),
+		icon: 'pi pi-folder-open',
+		click(){
+			menuOpen.value = false;
+			const mesh = selectedMesh.value?.name;
+			const base = props.room?.peer || props.room?.group;
+			openFolder(`ztmChat/${mesh}/${base}`)
+		}
+	},{
+		label: 'Forward',
+		icon: 'pi pi-reply',
+		click(){
+			menuOpen.value = false;
+			forwardMessage.value = {
+				files:[{
+					name: forwardTarget.value.name,
+					size: forwardTarget.value.size,
+					contentType: forwardTarget.value.contentType,
+					hash: forwardTarget.value.hash,
+				}]
+			};
+			setTimeout(()=>{
+				forwardOpen.value = true;
+			},300)
+		}
+	}]
+})
 const requestInterceptor = (requestDetails) => {
   return requestDetails;
 };
@@ -381,6 +428,7 @@ onMounted(()=>{
 onBeforeUnmount(()=>{
 	timer.value = false;
 })
+
 </script>
 
 <template>
@@ -398,35 +446,37 @@ onBeforeUnmount(()=>{
 			</template>
 	</AppHeader>
 	<div class="w-full flex" style="height: calc(100vh - 37px);flex: 1;margin: 0;flex-direction: column;">
-	<deep-chat
-		:textToSpeech='{"volume": 0.9}'
-		ref="chat"
-		:names="names"
-		@render="chatRender"
-		@new-message="sendMessage"
-		:attachmentContainerStyle='style.attachmentContainerStyle()'
-		:avatars='avatars'
-		:dragAndDrop='style.dragAndDrop()'
-		:style='style.chatTheme(viewHeight)'
-	  v-model:history="history"
-		:displayLoadingBubble="false"
-		:htmlClassUtilities="htmlClassUtilities()"
-		:messageStyles='style.messageStyles()'
-		:inputAreaStyle='style.inputAreaStyle()'
-		:textInput="inputStyle"
-		:auxiliaryStyle="style.auxiliaryStyle()"
-		:dropupStyles='style.dropupStyles()'
-		:demo='{"displayLoadingBubble": false}'
-		:stream="false"
-		:connect="request"
-		:requestInterceptor="requestInterceptor"
-		:submitButtonStyles="submitStyle('inside-right','10px')"
-		:microphone="hasMediaDevices?micStyle('inside-right','40px'):false"
-		:mixedFiles="menuStyle('inside-left','40px')"
-		:images="menuStyle('inside-left','10px')"
-		:camera="hasMediaDevices?menuStyle('inside-left','70px'):false"
-	  />
+		<deep-chat
+			:textToSpeech='{"volume": 0.9}'
+			ref="chat"
+			:names="names"
+			@render="chatRender"
+			@new-message="sendMessage"
+			:attachmentContainerStyle='style.attachmentContainerStyle()'
+			:avatars='avatars'
+			:dragAndDrop='style.dragAndDrop()'
+			:style='style.chatTheme(viewHeight)'
+			v-model:history="history"
+			:displayLoadingBubble="false"
+			:htmlClassUtilities="htmlClassUtilities()"
+			:messageStyles='style.messageStyles()'
+			:inputAreaStyle='style.inputAreaStyle()'
+			:textInput="inputStyle"
+			:auxiliaryStyle="style.auxiliaryStyle()"
+			:dropupStyles='style.dropupStyles()'
+			:demo='{"displayLoadingBubble": false}'
+			:stream="false"
+			:connect="request"
+			:requestInterceptor="requestInterceptor"
+			:submitButtonStyles="submitStyle('inside-right','10px')"
+			:microphone="hasMediaDevices?micStyle('inside-right','40px'):false"
+			:mixedFiles="menuStyle('inside-left','40px')"
+			:images="menuStyle('inside-left','10px')"
+			:camera="hasMediaDevices?menuStyle('inside-left','70px'):false"
+			/>
 	</div>
+	<DrawMenu :menus="menus" v-model:open="menuOpen" :title="forwardTarget?.name"/>
+	<Forward v-model:open="forwardOpen" :message="forwardMessage" />
 </template>
 
 <style lang="scss" >
