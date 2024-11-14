@@ -277,7 +277,29 @@ const getShared = (isFile, callback) => {
 			})
 		}
 	} else if(platform() == 'android'){
-		
+		if(!isFile){
+			getSharedFilesPath("/tmp").then((paths)=>{
+				paths = paths.split(";")
+				console.log(1, paths)
+				if(callback){
+					callback(paths)
+				}
+			})
+		} else {
+			getSharedFiles("/tmp").then((files)=>{
+				files = JSON.parse(files)
+				if(files && files.length>0){
+					let str = "";
+					files.forEach((f)=>{
+						str+= `${f.name},${f.size},${f.mime}`;
+					})
+				}else{
+				}
+				if(callback){
+					callback(files)
+				}
+			})
+		}
 	}
 }
 const saveFileDownload = ({fileUrl, saveUrl, progressHandler,headers, after}) => {

@@ -13,6 +13,7 @@ import { useStore } from 'vuex';
 import { AcceptFile } from "@/doms/AcceptFile";
 import { reg } from "@/utils/notification";
 import { getShared } from '@/utils/file';
+import { platform } from '@/utils/platform';
 const store = useStore();
 const toast = useToast();
 const confirm = useConfirm();
@@ -40,7 +41,9 @@ const timmer = () => {
 		})
 	}
 	setTimeout(()=>{
-		timmer();
+		//if (platform() == 'ios') {
+			timmer();
+		//}
 	},1000)
 }
 onMounted(()=>{
