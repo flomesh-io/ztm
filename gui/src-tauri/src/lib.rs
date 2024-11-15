@@ -130,13 +130,19 @@ async fn create_proxy_webview(
 
 
 		let js_code = format!(r#"
+			setTimeout(()=>{{
+				document.querySelectorAll('a[target="_blank"]').forEach(link => {{
+					link.removeAttribute('target');
+					link.setAttribute('tauri-target','_blank');
+				}});
+			}},1000)
 			document.addEventListener('click', function(event) {{
 					const target = event.target;
 					if (target.tagName === 'A' && target.href) {{
 						event.preventDefault();
 						const name = target.href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
 						
-						if(target.target == '_blank'){{
+						if(target.target == '_blank' || target.getAttribute('tauri-target') == '_blank'){{
 							const pluginOption = {{
 									name: name,
 									label: name + `_webview`,
