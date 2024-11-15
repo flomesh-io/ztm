@@ -117,6 +117,7 @@ async fn create_proxy_webview(
 	proxy: String,
 	curl: String,
 ) -> Result<(),()> {
+	#[cfg(not(any(target_os = "ios", target_os = "android")))]
 	unsafe {
 
 		// let mut options = WindowConfig {

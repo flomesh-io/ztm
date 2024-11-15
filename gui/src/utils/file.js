@@ -250,10 +250,8 @@ const openFile = (path, contentType) => {
 const getShared = (isFile, callback) => {
 	if(!isFile){
 		getSharedFilesPath("temp", 'group.com.flomesh.ztm').then((paths)=>{
-			if (platform() == 'android' && paths) {
-				paths = paths.split(";")
-			}
 			if(paths && paths.length>0){
+				debugger
 				writeMobileFile('getSharedFilesPath.txt',`${paths.join(";")}`);
 			}else {
 				writeMobileFile('getSharedFilesPathAfter.txt',`empty`);
@@ -264,10 +262,8 @@ const getShared = (isFile, callback) => {
 		})
 	} else {
 		getSharedFiles("temp", 'group.com.flomesh.ztm').then((files)=>{
-			if (platform() == 'android' && files) {
-				files = JSON.parse(files)
-			}
 			if(files && files.length>0){
+				debugger
 				let str = "";
 				files.forEach((f)=>{
 					str+= `${f.name},${f.size},${f.mime}`;
