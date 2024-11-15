@@ -89,10 +89,6 @@ const openWebview = (app)=>{
 			webview.once('tauri://created', function (d) {
 				console.log('WebviewWindow://created')
 				console.log(options)
-				debugger
-				webview.listen("click", ({ event, payload }) => {
-					debugger
-				});
 			// webview successfully created
 			});
 			webview.once('tauri://error', function (e) {
