@@ -95,6 +95,11 @@ function main(listen) {
       'GET': function () {
         return response(200, api.getIdentity())
       },
+
+      'POST': function (_, req) {
+        api.setIdentity(req.body.toString())
+        return response(201, api.getIdentity())
+      },
     },
 
     //

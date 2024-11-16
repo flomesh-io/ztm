@@ -26,6 +26,11 @@ function init(dirname, listen) {
   )
 }
 
+function setIdentity(pem) {
+  var key = new crypto.PrivateKey(pem)
+  db.setKey('agent', key.toPEM().toString())
+}
+
 function getIdentity() {
   var keyData = db.getKey('agent')
   var key = keyData ? new crypto.PrivateKey(keyData) : new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
@@ -218,6 +223,7 @@ function getEndpointStats(mesh, ep) {
 
 export default {
   init,
+  setIdentity,
   getIdentity,
   allMeshes,
   getMesh,
