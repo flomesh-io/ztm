@@ -31,6 +31,21 @@ use objc_foundation::{INSString, NSString};
 // extern {
 //     fn pipy_main(argc: i32, argv: *const *const c_char) -> i32;
 // }
+use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
+use rsa::pkcs1::{EncodeRsaPrivateKey, LineEnding};
+use rand::thread_rng;
+
+#[command]
+fn create_private_key() -> Result<String, String> {
+	let mut rng = rand::thread_rng();
+	let bits = 2048;
+	let priv_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
+	// Convert private key to PEM
+	match priv_key.to_pkcs1_pem(LineEnding::LF) {
+		Ok(pem) => Ok(pem.to_string()),
+		Err(e) => Err(format!("Failed to convert private key to PEM: {}", e)),
+	}
+}
 
 #[command]
 fn pipylib(lib: String, argv: Vec<String>, argc: i32) -> Result<String, String> {
@@ -383,6 +398,7 @@ pub fn run() {
 				.plugin(tauri_plugin_notification::init())
 				.plugin(tauri_plugin_persisted_scope::init())
 				.plugin(tauri_plugin_clipboard_manager::init())
+				.plugin(tauri_plugin_store::Builder::default().build())
 				.plugin(tauri_plugin_share::init())
 				.plugin(tauri_plugin_log::Builder::new().targets([
             Target::new(TargetKind::Stdout),
@@ -391,7 +407,7 @@ pub fn run() {
         ]).build())
 				// .plugin(tauri_plugin_sharesheet::init())
 				.invoke_handler(tauri::generate_handler![
-					pipylib,create_proxy_webview,create_wry_webview,purchase_product
+					pipylib,create_proxy_webview,create_wry_webview,purchase_product,create_private_key
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");

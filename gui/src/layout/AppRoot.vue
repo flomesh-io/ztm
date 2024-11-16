@@ -85,6 +85,7 @@ const timmer = () => {
 		loaddata(true);
 	},6000)
 }
+const merged = ref(false)
 const loaddata = (reload) => {
 	if(!reload){
 		loading.value = true;
@@ -101,6 +102,11 @@ const loaddata = (reload) => {
 			if(!!res && res.length>0 && (!storeMesh.value || !meshes.value.find((mesh)=> mesh?.name == storeMesh.value?.name))){
 				store.commit('account/setSelectedMesh', res[0]);
 				selectedMesh.value = res[0];
+			}
+			if(!merged.value && playing.value && (res.length == 0 || true)){
+				merged.value = true;
+				ztmService.mergePrivateKey(()=>{
+				})
 			}
 		})
 		.catch(err => {

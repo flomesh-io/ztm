@@ -28,11 +28,17 @@ store.commit('notice/setConfirm', confirm);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+
+const isMobile = computed(()=>{
+	const pm = platform();
+	return pm == 'ios' || pm == 'android';
+})
+
 const open = ref(false);
 const paths = ref()
 const timmer = () => {
 	store.dispatch('notice/rooms');
-	if(!paths.value){
+	if(!paths.value && isMobile.value){
 		getShared(false, (res)=>{
 			if(res && res.length>0){
 				open.value = true;
