@@ -33,6 +33,7 @@ tauri-plugin-deep-link = "=2.0.1"
 tauri-plugin-clipboard-manager = "=2.0.1"
 tauri-plugin-log = "=2.0.1"
 tauri-plugin-share = "=2.0.5"
+tauri-plugin-store = "=2.1.0"
 # tauri-plugin-share = { path = "../src-plugin/tauri-plugin-share/" }
 lazy_static = "1.4"
 serde = { version = "1", features = ["derive"] }
@@ -44,6 +45,9 @@ wry = "0.46.3"
 # tao = "0.28.1"
 # oslog = "0.2.0"
 log = "0.4"
+rsa = "0.9.6"
+rand = "0.8"
+rust-argon2 = "2.1.0"
 
 [target."cfg(any(target_os = \"ios\"))".dependencies]
 objc = "0.2.7"

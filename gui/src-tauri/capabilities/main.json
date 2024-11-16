@@ -323,6 +323,14 @@
 		"notification:allow-is-permission-granted",
 		"notification:allow-create-channel",
 		"notification:allow-check-permissions",
-    "share:default"
+    "share:default",
+		"store:allow-get",
+		"store:allow-set",
+		"store:allow-reset",
+		"store:allow-has",
+		"store:allow-entries",
+		"store:allow-clear",
+		"store:allow-save",
+		"store:allow-load"
   ]
 }

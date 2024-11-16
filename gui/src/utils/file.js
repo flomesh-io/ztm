@@ -86,6 +86,13 @@ const writeMobileFile = (name, append) => {
 		})
 	}
 }
+const writeTxtFile = (name, append) => {
+	createFile(name).then((file)=>{
+		file.write(new TextEncoder().encode(append)).then(()=>{
+			file.close();
+		});
+	})
+}
 
 const writeFile = (file, target, after) => {
 	const reader = new FileReader();
