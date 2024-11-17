@@ -2,6 +2,7 @@ import { request } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { invoke } from '@tauri-apps/api/core';
+import { platform } from '@/utils/platform';
 import {
 	initStore, getItem, setItem, encryptPEM, decryptPEM
 } from "@/utils/store";
@@ -21,34 +22,48 @@ export default class ZtmService {
 			"Content-Type": "text/plain"
 		}});
 	}
+	createPrivateKey(callback) {
+		
+		invoke('create_private_key',{}).then((newPrivatekey)=>{
+			console.log('newPrivatekey')
+			encryptPEM(newPrivatekey).then((code)=>{
+				setItem('privatekey', code);
+				const pm = platform();
+				if(pm == 'ios' || pm == 'android'){
+					//call tauri-plugin-keychain
+					invoke('plugin:keychain|save_item',{ key: 'privatekey', password: code })
+				}
+			});
+			this.pushPrivateKey(newPrivatekey).then((identity)=>{
+				setItem('identity', identity);
+				callback(identity)
+			})
+		});
+	}
 	mergePrivateKey(callback) {
 		initStore().then(()=>{
 			getItem('privatekey').then((r)=>{
 				// no privatekey
 				if(!r?.value){
 					//keychain service checking
-					if(false){
-						let keychain_privatekey = "xxxx";
-						// keychain privatekey
-						setItem('privatekey', keychain_privatekey);
-						decryptPEM(privatekey?.value).then((code)=>{
-							this.pushPrivateKey(code).then((identity)=>{
-								setItem('identity', identity);
-								callback(identity)
-							})
+					const pm = platform();
+					if(pm == 'ios' || pm == 'android'){
+						//call tauri-plugin-keychain
+						invoke('plugin:keychain|get_item',{ key: 'privatekey'}).then((keychain_privatekey)=>{
+							if(!!keychain_privatekey){
+								setItem('privatekey', keychain_privatekey);
+								decryptPEM(keychain_privatekey).then((code)=>{
+									this.pushPrivateKey(code).then((identity)=>{
+										setItem('identity', identity);
+										callback(identity)
+									})
+								})
+							} else {
+								this.createPrivateKey(callback);
+							}
 						})
 					} else {
-						// new privatekey
-						invoke('create_private_key',{}).then((newPrivatekey)=>{
-							console.log('newPrivatekey')
-							encryptPEM(newPrivatekey).then((code)=>{
-								setItem('privatekey', code);
-							});
-							this.pushPrivateKey(newPrivatekey).then((identity)=>{
-								setItem('identity', identity);
-								callback(identity)
-							})
-						});
+						this.createPrivateKey(callback);
 					}
 				} else {
 					this.identity().then(identity => {
@@ -58,7 +73,7 @@ export default class ZtmService {
 									console.log('privatekey right')
 							} else {
 								// reset privateKey
-								decryptPEM(privatekey?.value).then((code)=>{
+								decryptPEM(r?.value).then((code)=>{
 									this.pushPrivateKey(code).then((res)=>{
 										setItem('identity', res);
 										console.log('reset privatekey')

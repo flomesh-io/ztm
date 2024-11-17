@@ -400,6 +400,7 @@ pub fn run() {
 				.plugin(tauri_plugin_clipboard_manager::init())
 				.plugin(tauri_plugin_store::Builder::default().build())
 				.plugin(tauri_plugin_share::init())
+				//.plugin(tauri_plugin_keychain::init())
 				.plugin(tauri_plugin_log::Builder::new().targets([
             Target::new(TargetKind::Stdout),
             Target::new(TargetKind::LogDir { file_name: None }),
