@@ -67,7 +67,6 @@ export default class ZtmService {
 	}
 	createPrivateKey(callback) {
 		invoke('create_private_key',{}).then((newPrivatekey)=>{
-			
 			this.setPrivatekey(newPrivatekey, () => {});
 			this.pushPrivateKey(newPrivatekey).then((identity)=>{
 				setItem('identity', identity);
@@ -76,7 +75,6 @@ export default class ZtmService {
 		});
 	}
 	mergePrivateKey(callback) {
-		writeMobileFile('mergePrivateKeyStart.txt','true');
 		initStore().then(()=>{
 			// request identity
 			this.identity().then(identity => {
