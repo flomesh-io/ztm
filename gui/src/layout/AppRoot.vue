@@ -105,8 +105,7 @@ const loaddata = (reload) => {
 			}
 			if(!merged.value && playing.value && (res.length == 0 || true)){
 				merged.value = true;
-				ztmService.mergePrivateKey(()=>{
-				})
+				ztmService.mergePrivateKey(()=>{})
 			}
 		})
 		.catch(err => {
