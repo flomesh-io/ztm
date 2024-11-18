@@ -47,7 +47,6 @@ export default class ZtmService {
 		if(pm == 'ios' || pm == 'android'){
 			invoke('plugin:keychain|get_item',{ key: 'privatekey'}).then((keychain_resp)=>{
 				const keychain_privatekey = keychain_resp?.password;
-				writeMobileFile('getKeychainAfter.txt',keychain_privatekey);
 				callback(keychain_privatekey)
 			}).catch((e)=>{
 				writeMobileFile('getKeychainError.txt',e.toString());
@@ -83,7 +82,7 @@ export default class ZtmService {
 			this.identity().then(identity => {
 				// get store identity
 				getItem('identity').then((identity2)=>{
-					if(!!identity && identity == identity2.value){
+					if(!!identity && identity == identity2?.value){
 						writeMobileFile('identityRight.txt','true');
 						console.log('identityRight')
 						callback()
