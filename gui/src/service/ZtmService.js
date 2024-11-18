@@ -74,6 +74,18 @@ export default class ZtmService {
 			})
 		});
 	}
+	resetPrivateKey(callback) {
+		confirm.custom({
+				message: `If reset the private key, your permit will be expire.`,
+				header: 'Tips',
+				icon: 'pi pi-refresh',
+				accept: () => {
+					this.createPrivateKey(callback)
+				},
+				reject: () => {
+				}
+		});
+	}
 	mergePrivateKey(callback) {
 		initStore().then(()=>{
 			// request identity
