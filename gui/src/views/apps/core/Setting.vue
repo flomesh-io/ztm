@@ -68,13 +68,13 @@ onMounted(()=>{
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="font-medium font-bold w-3 text-white">DB</div>
-						<div v-if="platform != 'ios' && platform != 'android'" class="text-white flex-item" v-tooltip="db">
+						<div v-if="platform() != 'ios' && platform() != 'android'" class="text-white flex-item" v-tooltip="db">
 							{{db}}
 						</div>
 						<div v-else class="text-white flex-item" v-tooltip="db">
 							$DOCUMENT/ztmdb
 						</div>
-						<div v-if="platform != 'ios' && platform != 'android'">
+						<div v-if="platform() != 'ios' && platform() != 'android'">
 							<Button @click="openFinder" icon="pi pi-folder-open" />
 						</div>
 				</li>
