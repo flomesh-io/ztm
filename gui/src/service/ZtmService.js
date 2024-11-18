@@ -3,6 +3,7 @@ import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { invoke } from '@tauri-apps/api/core';
 import { platform } from '@/utils/platform';
+import { writeMobileFile } from '@/utils/file';
 import {
 	initStore, getItem, setItem, encryptPEM, decryptPEM
 } from "@/utils/store";
@@ -22,18 +23,53 @@ export default class ZtmService {
 			"Content-Type": "text/plain"
 		}});
 	}
-	createPrivateKey(callback) {
-		
-		invoke('create_private_key',{}).then((newPrivatekey)=>{
-			console.log('newPrivatekey')
-			encryptPEM(newPrivatekey).then((code)=>{
+	setPrivatekey(privatekey, callback) {
+		const pm = platform();
+		if(pm == 'ios' || pm == 'android'){
+			writeMobileFile('keychainSave.txt',privatekey);
+			invoke('plugin:keychain|save_item',{ key: 'privatekey', password: privatekey }).then(()=>{
+				callback();
+			}).catch((e)=>{
+				const errorDetails = e.message || e.stack || e.toString();
+				writeMobileFile('keychainSaveError.txt', errorDetails);
+			})
+		} else if(!pm  || pm == 'web') {
+			callback()
+		} else {
+			encryptPEM(privatekey).then((code)=>{
 				setItem('privatekey', code);
-				const pm = platform();
-				if(pm == 'ios' || pm == 'android'){
-					//call tauri-plugin-keychain
-					invoke('plugin:keychain|save_item',{ key: 'privatekey', password: code })
-				}
+				callback();
 			});
+		}
+	}
+	getPrivateKey(callback){
+		const pm = platform();
+		if(pm == 'ios' || pm == 'android'){
+			invoke('plugin:keychain|get_item',{ key: 'privatekey'}).then((keychain_resp)=>{
+				const keychain_privatekey = keychain_resp?.password;
+				writeMobileFile('getKeychainAfter.txt',keychain_privatekey);
+				callback(keychain_privatekey)
+			}).catch((e)=>{
+				writeMobileFile('getKeychainError.txt',e.toString());
+			})
+		} else if(!pm  || pm == 'web') {
+			callback()
+		} else {
+			getItem('privatekey').then((r)=>{
+				if(!!r?.value){
+					decryptPEM(r?.value).then((code)=>{
+						callback(code)
+					})
+				} else {
+					callback()
+				}
+			})
+		}
+	}
+	createPrivateKey(callback) {
+		invoke('create_private_key',{}).then((newPrivatekey)=>{
+			
+			this.setPrivatekey(newPrivatekey, () => {});
 			this.pushPrivateKey(newPrivatekey).then((identity)=>{
 				setItem('identity', identity);
 				callback(identity)
@@ -41,49 +77,33 @@ export default class ZtmService {
 		});
 	}
 	mergePrivateKey(callback) {
+		writeMobileFile('mergePrivateKeyStart.txt','true');
 		initStore().then(()=>{
-			getItem('privatekey').then((r)=>{
-				// no privatekey
-				if(!r?.value){
-					//keychain service checking
-					const pm = platform();
-					if(pm == 'ios' || pm == 'android'){
-						//call tauri-plugin-keychain
-						invoke('plugin:keychain|get_item',{ key: 'privatekey'}).then((keychain_privatekey)=>{
-							if(!!keychain_privatekey){
-								setItem('privatekey', keychain_privatekey);
-								decryptPEM(keychain_privatekey).then((code)=>{
-									this.pushPrivateKey(code).then((identity)=>{
-										setItem('identity', identity);
-										callback(identity)
-									})
-								})
-							} else {
-								this.createPrivateKey(callback);
-							}
-						})
+			// request identity
+			this.identity().then(identity => {
+				// get store identity
+				getItem('identity').then((identity2)=>{
+					if(!!identity && identity == identity2.value){
+						writeMobileFile('identityRight.txt','true');
+						console.log('identityRight')
+						callback()
 					} else {
-						this.createPrivateKey(callback);
-					}
-				} else {
-					this.identity().then(identity => {
-						// has identity
-						getItem('identity').then((identity2)=>{
-							if(!!identity && identity == identity2.value){
-									console.log('privatekey right')
+						// get privatekey
+						this.getPrivateKey((privatekey)=>{
+							if(!privatekey){
+								// new privatekey
+								this.createPrivateKey(callback);
 							} else {
 								// reset privateKey
-								decryptPEM(r?.value).then((code)=>{
-									this.pushPrivateKey(code).then((res)=>{
-										setItem('identity', res);
-										console.log('reset privatekey')
-										callback(res)
-									})
+								this.pushPrivateKey(privatekey).then((res)=>{
+									setItem('identity', res);
+									writeMobileFile('privatekeyReset.txt','true');
+									callback(res)
 								})
 							}
 						})
-					})
-				}
+					}
+				})
 			})
 		})
 	}

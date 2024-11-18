@@ -1,17 +1,18 @@
 #import <Foundation/Foundation.h>
 #import <StoreKit/StoreKit.h>
 
-// 确保使用 @import StoreKit 以加载 StoreKit 2 API
-// @import StoreKit;
-
-@interface InAppPayHandler : NSObject
+@interface InAppPayHandler : NSObject <SKProductsRequestDelegate, SKPaymentTransactionObserver>
 
 + (instancetype)sharedManager;
+// - (void)requestProducts;
 - (void)purchaseProductWithID;
+- (void)restorePurchases;
 
 @end
 
-@implementation InAppPayHandler
+@implementation InAppPayHandler {
+    NSArray<SKProduct *> *_products;
+}
 
 + (instancetype)sharedManager {
     static InAppPayHandler *sharedManager = nil;
@@ -25,72 +26,87 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        // 初始化逻辑
+        _products = [NSArray array];
     }
     return self;
 }
 
+// 请求产品列表
+// - (void)requestProducts {
+//     NSSet *productIdentifiers = [NSSet setWithArray:@[@"com.flomesh.ztm.sub.awshub"]];
+//     SKProductsRequest *request = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
+//     request.delegate = self;
+//     [request start];
+// }
+
+// - (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response {
+//     _products = response.products;
+//     for (SKProduct *product in _products) {
+//         NSLog(@"Product available: %@ for %@", product.localizedTitle, product.price);
+//     }
+// }
+
 - (void)purchaseProductWithID {
-    NSString *productIdentifier = @"com.flomesh.ztm.sub.awshub";
+    // 发起SKProductsRequest，仅请求指定的productIdentifier
 		NSLog(@"start purchaseProductWithID.");
-    // 使用现代化的 StoreKit 2 API 来请求产品信息
-    [self fetchProductWithID:productIdentifier completion:^(Product *product) {
-        if (product) {
-            // 找到产品后进行购买
-            [self purchaseProduct:product];
-        } else {
-            NSLog(@"Product not found.");
-        }
-    }];
+    NSArray *productIdentifiers = @[
+			@"com.flomesh.ztm.sub.awshub"
+		];
+    SKProductsRequest *productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithArray:productIdentifiers]];
+    productsRequest.delegate = self;
+    [productsRequest start];
 }
 
-// 使用 StoreKit 2 的方式获取产品
-- (void)fetchProductWithID:(NSString *)productIdentifier completion:(void (^)(Product *))completion {
-    NSSet *productIdentifiers = [NSSet setWithObject:productIdentifier];
-    
-    NSLog(@"start fetchProductWithID.");
-    // 从商店获取产品
-    [Product productsFor:productIdentifiers completionHandler:^(NSArray<Product *> *products, NSError *error) {
-        if (error == nil && products.count > 0) {
-						NSLog(@"get products.");
-            Product *product = products.firstObject;
-            completion(product);
-        } else {
-            completion(nil);
-        }
-    }];
-}
-
-}
-
-// 使用 StoreKit 2 发起购买操作
-- (void)purchaseProduct:(Product *)product {
-    if (@available(iOS 15.0, *)) {
-        // 发起异步购买请求
-        [product purchaseWithCompletion:^(StoreKit.Transaction *transaction, NSError *purchaseError) {
-            if (transaction) {
-                switch (transaction.transactionState) {
-                    case StoreKit.TransactionStatePurchased:
-                        NSLog(@"Purchase successful!");
-                        // 完成购买，标记为已处理
-                        [transaction finish];
-                        break;
-
-                    case StoreKit.TransactionStateFailed:
-                        NSLog(@"Purchase failed: %@", purchaseError.localizedDescription);
-                        [transaction finish];
-                        break;
-
-                    default:
-                        break;
-                }
-            } else {
-                NSLog(@"Purchase failed: %@", purchaseError.localizedDescription);
-            }
-        }];
-    } else {
-        NSLog(@"StoreKit 2 is not available on this device.");
+// SKProductsRequestDelegate方法，处理产品信息并发起购买
+- (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response {
+    SKProduct *product = nil;
+		NSLog(@"start productsRequest.");
+    for (SKProduct *prod in response.products) {
+			NSLog(@"start productsRequest item: %@ ", prod.productIdentifier);
+			if ([prod.productIdentifier isEqualToString:@"com.flomesh.ztm.sub.awshub"]) {
+					product = prod;
+					break;
+			}
     }
+
+    if (product) {
+        if ([SKPaymentQueue canMakePayments]) {
+            SKPayment *payment = [SKPayment paymentWithProduct:product];
+            [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+            [[SKPaymentQueue defaultQueue] addPayment:payment];
+        } else {
+            NSLog(@"In-app purchases are not allowed.");
+        }
+    } else {
+        NSLog(@"Product not found3.");
+    }
+}
+
+// SKPaymentTransactionObserver - 处理交易状态
+- (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray<SKPaymentTransaction *> *)transactions {
+    for (SKPaymentTransaction *transaction in transactions) {
+        switch (transaction.transactionState) {
+            case SKPaymentTransactionStatePurchased:
+                NSLog(@"Purchase successful!");
+                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                break;
+            case SKPaymentTransactionStateFailed:
+                NSLog(@"Purchase failed: %@", transaction.error.localizedDescription);
+                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                break;
+            case SKPaymentTransactionStateRestored:
+                NSLog(@"Purchase restored.");
+                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+// 恢复购买
+- (void)restorePurchases {
+    [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
 }
 
 @end

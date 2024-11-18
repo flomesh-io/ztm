@@ -324,6 +324,7 @@
 		"notification:allow-create-channel",
 		"notification:allow-check-permissions",
     "share:default",
+    "keychain:default",
 		"store:allow-get",
 		"store:allow-set",
 		"store:allow-reset",
