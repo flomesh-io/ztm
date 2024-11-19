@@ -48,10 +48,11 @@ const openWebview = (app)=>{
 		}	else if(platform=='windows' || true){
 			
 			const pluginOption = {
-									name: app.name,
-									label: `${app.name}_webview`,
-									curl: options.url,
-									proxy: options?.proxyUrl || ''
+				name: app.name,
+				label: `${app.name}_webview`,
+				curl: options.url,
+				proxy: options?.proxyUrl || '',
+				eval: options.url.indexOf("/#/") != 0
 			 }
 			 invoke('create_proxy_webview', pluginOption);
 			 
