@@ -50,7 +50,8 @@ export default class ZtmService {
 			getKeychainItem('privatekey').then((keychain_privatekey)=>{
 				callback(keychain_privatekey)
 			}).catch((e)=>{
-				writeMobileFile('getKeychainError.txt',e.toString());
+				const errorDetails = e.message || e.stack || e.toString();
+				writeMobileFile('getKeychainError.txt',errorDetails);
 			})
 		} else if(!pm  || pm == 'web') {
 			callback()
