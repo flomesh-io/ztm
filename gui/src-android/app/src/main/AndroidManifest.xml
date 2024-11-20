@@ -19,7 +19,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.ztm"
-        android:extractNativeLibs = "true"
 				android:supportsRtl="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
         <activity

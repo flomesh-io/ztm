@@ -5,7 +5,7 @@ import { getCurrentWindow, Window } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 // import { getCurrent as getCurrentDL } from '@tauri-apps/plugin-deep-link';
 
-const openWebview = (app)=>{
+const openWebview = (app, broswer)=>{
 	try{
 		const platform = store.getters['account/platform'];
 		if(!window.__TAURI_INTERNALS__  ){
@@ -46,12 +46,12 @@ const openWebview = (app)=>{
 			// 	console.log(urls)
 			// })
 		}	else if(platform=='windows' || true){
-			
 			const pluginOption = {
-									name: app.name,
-									label: `${app.name}_webview`,
-									curl: options.url,
-									proxy: options?.proxyUrl || ''
+				name: app.name,
+				label: `${app.name}_webview`,
+				curl: options.url,
+				proxy: options?.proxyUrl || '',
+				eval: !!broswer
 			 }
 			 invoke('create_proxy_webview', pluginOption);
 			 
