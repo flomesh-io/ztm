@@ -3,7 +3,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import toast from "@/utils/toast";
+import { platform } from '@/utils/platform';
 import ShellService from '@/service/ShellService';
+import ZtmService from '@/service/ZtmService';
+import confirm from "@/utils/confirm";
 import PipyVersion from '@/components/mesh/PipyVersion.vue';
 import { getPort, setPort } from '@/service/common/request';
 
@@ -12,6 +15,7 @@ const saving = ref(false);
 const isRunning = ref(false);
 
 const shellService = new ShellService();
+const ztmService = new ZtmService();
 const openFinder = () => {
 	shellService.openFinder();
 }
@@ -28,7 +32,9 @@ const save = () => {
 const close = () => {
 	emits('close');
 }
-
+const reset = () => {
+	ztmService.resetPrivateKey(()=>{})
+}
 onMounted(()=>{
 	loaddata();
 });
@@ -62,14 +68,19 @@ onMounted(()=>{
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="font-medium font-bold w-3 text-white">DB</div>
-						<div class="text-white flex-item" v-tooltip="db">
+						<div v-if="platform() != 'ios' && platform() != 'android'" class="text-white flex-item" v-tooltip="db">
 							{{db}}
+						</div>
+						<div v-else class="text-white flex-item" v-tooltip="db">
+							$DOCUMENT/ztmdb
+						</div>
+						<div v-if="platform() != 'ios' && platform() != 'android'">
+							<Button @click="openFinder" icon="pi pi-folder-open" />
 						</div>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-						<div class="font-medium font-bold w-3 text-white"></div>
 						<div class="flex-item">
-							<Button  class="w-12rem" @click="openFinder">Show in finder <i class="pi pi-box ml-2"></i></Button>
+							<Button severity="secondary" variant="outlined" icon="pi pi-refresh" class="w-full opacity-70" @click="reset" label="Reset Private Key" />
 						</div>
 				</li>
 			</ul>

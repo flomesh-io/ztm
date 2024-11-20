@@ -339,9 +339,9 @@ export default class AppService {
 			name:url.replace(/.*\/\//,"").split("/")[0].replaceAll(".","_").replaceAll("-","_"),
 			width:width||1280,
 			height:height||860,
-			proxy: !!listen?`socks5://${listen}`:''
+			proxy: !!listen?`socks5://${listen}`:'',
 		}
-		openWebview(webviewOptions)
+		openWebview(webviewOptions, true)
 	}
 	invokeAppApi({
 		base,

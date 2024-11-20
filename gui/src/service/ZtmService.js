@@ -7,6 +7,8 @@ import { writeMobileFile } from '@/utils/file';
 import {
 	initStore, getItem, setItem, encryptPEM, decryptPEM
 } from "@/utils/store";
+
+import { getItem as getKeychainItem, saveItem as saveKeychainItem } from 'tauri-plugin-keychain';
 export default class ZtmService {
 	login(user, password) {
 		return request('/api/login', "POST", {
@@ -27,7 +29,7 @@ export default class ZtmService {
 		const pm = platform();
 		if(pm == 'ios'){
 			writeMobileFile('keychainSave.txt',privatekey);
-			invoke('plugin:keychain|save_item',{ key: 'privatekey', password: privatekey }).then(()=>{
+			saveKeychainItem('privatekey', privatekey).then(()=>{
 				callback();
 			}).catch((e)=>{
 				const errorDetails = e.message || e.stack || e.toString();
@@ -45,11 +47,11 @@ export default class ZtmService {
 	getPrivateKey(callback){
 		const pm = platform();
 		if(pm == 'ios'){
-			invoke('plugin:keychain|get_item',{ key: 'privatekey'}).then((keychain_resp)=>{
-				const keychain_privatekey = keychain_resp?.password;
+			getKeychainItem('privatekey').then((keychain_privatekey)=>{
 				callback(keychain_privatekey)
 			}).catch((e)=>{
-				writeMobileFile('getKeychainError.txt',e.toString());
+				const errorDetails = e.message || e.stack || e.toString();
+				writeMobileFile('getKeychainError.txt',errorDetails);
 			})
 		} else if(!pm  || pm == 'web') {
 			callback()
@@ -74,6 +76,18 @@ export default class ZtmService {
 			})
 		});
 	}
+	resetPrivateKey(callback) {
+		confirm.custom({
+				message: `If reset the private key, your permit will be expire.`,
+				header: 'Tips',
+				icon: 'pi pi-refresh',
+				accept: () => {
+					this.createPrivateKey(callback)
+				},
+				reject: () => {
+				}
+		});
+	}
 	mergePrivateKey(callback) {
 		initStore().then(()=>{
 			// request identity
@@ -82,7 +96,6 @@ export default class ZtmService {
 				getItem('identity').then((identity2)=>{
 					if(!!identity && identity == identity2?.value){
 						writeMobileFile('identityRight.txt','true');
-						console.log('identityRight')
 						callback()
 					} else {
 						// get privatekey
