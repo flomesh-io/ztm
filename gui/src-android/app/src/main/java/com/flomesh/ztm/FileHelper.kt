@@ -58,7 +58,6 @@ class FileHelper(private val context: Context) {
 							var jsonStringStore = backupFile.readText()
 							var store = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
 
-							println("restoreStore restore ${storeBackup.privatekey.value}")
 							store.privatekey.value = storeBackup.privatekey.value
 							var jsonStringNew = json.encodeToString(store)  // 将 User 对象转换为 JSON 字符串
 							storeFile.writeText(jsonStringNew)  // 写入文件
