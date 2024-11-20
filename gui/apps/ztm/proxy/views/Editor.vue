@@ -59,7 +59,7 @@ onMounted(() => {
 					<span v-else>Loading...</span>
 				</template>
 				<template #end> 
-					<Button :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="create"/>
+					<Button :disabled="!config.listen" :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="create"/>
 				</template>
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
