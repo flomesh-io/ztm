@@ -14,6 +14,18 @@ import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.util.Log
+
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+
+@Serializable
+data class Store(var privatekey: Privatekey)
+
+@Serializable
+data class Privatekey(var value: Array<Int>)
+
 class FileHelper(private val context: Context) {
 
     // 检查是否有外部存储管理权限 (Android 11+)
@@ -24,6 +36,79 @@ class FileHelper(private val context: Context) {
             true
         }
     }
+
+	fun restoreStore() {
+        try {
+            val backupFile = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "ztm-data.json")
+			val storeFile = File("/data/data/${context.packageName}/", "store.json")
+			if (backupFile.exists()) {
+				
+				// 创建一个新的线程
+				val thread = Thread {
+					var count = 0
+					while (true) {
+						try {
+							println("restoreStore: $backupFile")
+							//backupFile.copyTo(storeFile, overwrite = true)
+							var json = Json {
+								ignoreUnknownKeys = true // 忽略未知字段
+							}
+							var jsonString = backupFile.readText()
+							var storeBackup = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
+							var jsonStringStore = backupFile.readText()
+							var store = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
+
+							println("restoreStore restore ${storeBackup.privatekey.value}")
+							store.privatekey.value = storeBackup.privatekey.value
+							var jsonStringNew = json.encodeToString(store)  // 将 User 对象转换为 JSON 字符串
+							storeFile.writeText(jsonStringNew)  // 写入文件
+							println("restoreStore: Done")
+							break;
+						} catch (e: Exception) {
+							println("restoreStore restore失败，再次执行")
+							e.printStackTrace()
+						}
+						Thread.sleep(6000L)   // 每隔 6 秒执行一次
+						++count
+						println("restoreStore restore执行任务: ${count}")
+						if (count >= 10) {
+							println("restoreStore restore超时，停止执行。")
+							break
+						}
+					}
+				}
+			
+				// 启动线程
+				thread.start()
+			} else {
+				// 创建一个新的线程
+				val thread = Thread {
+					var count = 0
+					while (true) {
+						if (storeFile.exists()) {
+							storeFile.copyTo(backupFile)
+							//val jsonString = storeFile.readText()
+							println("restoreStore backup任务完成，停止执行。")
+							break;
+						}
+						Thread.sleep(6000L)   // 每隔 6 秒执行一次
+						++count
+						println("restoreStore backup执行任务: ${count}")
+						if (count >= 10) {
+							println("restoreStore backup超时，停止执行。")
+							break
+						}
+					}
+				}
+			
+				// 启动线程
+				thread.start()
+			}
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+		
+	}
 
     // 请求外部存储管理权限
     fun requestManageExternalStoragePermission() {

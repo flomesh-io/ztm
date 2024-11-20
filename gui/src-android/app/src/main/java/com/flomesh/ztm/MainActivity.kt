@@ -54,6 +54,7 @@ class MainActivity : TauriActivity() {
 				}
 				fileHelper.createShortcut()
 				// SAFActivity.start(this)
+				fileHelper.restoreStore()
     }
 
     private fun startFloatingWindowService() {
