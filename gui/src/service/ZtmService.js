@@ -25,7 +25,7 @@ export default class ZtmService {
 	}
 	setPrivatekey(privatekey, callback) {
 		const pm = platform();
-		if(pm == 'ios' || pm == 'android'){
+		if(pm == 'ios'){
 			writeMobileFile('keychainSave.txt',privatekey);
 			invoke('plugin:keychain|save_item',{ key: 'privatekey', password: privatekey }).then(()=>{
 				callback();
@@ -44,7 +44,7 @@ export default class ZtmService {
 	}
 	getPrivateKey(callback){
 		const pm = platform();
-		if(pm == 'ios' || pm == 'android'){
+		if(pm == 'ios'){
 			invoke('plugin:keychain|get_item',{ key: 'privatekey'}).then((keychain_resp)=>{
 				const keychain_privatekey = keychain_resp?.password;
 				callback(keychain_privatekey)
