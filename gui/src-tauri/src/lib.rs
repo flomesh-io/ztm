@@ -19,8 +19,7 @@ use log::{trace, debug, info, warn, error};
 mod binary;
 mod pay;
 mod broswer;
-
-
+mod store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -50,7 +49,10 @@ pub fn run() {
 					binary::create_private_key,
 					broswer::create_proxy_webview,
 					broswer::create_wry_webview,
-					pay::purchase_product
+					pay::purchase_product,
+					store::push_store_list,
+					store::get_store_list,
+					store::set_store_list
 				])
 				.run(tauri::generate_context!())
 				.expect("error while running tauri application");

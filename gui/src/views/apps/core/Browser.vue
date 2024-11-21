@@ -4,6 +4,8 @@ import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import AppService from '@/service/AppService';
 import toast from "@/utils/toast";
+import confirm from "@/utils/confirm";
+import { invoke } from '@tauri-apps/api/core';
 
 const router = useRouter();
 const store = useStore();
@@ -25,6 +27,12 @@ const openbrowser = () => {
 		url: browser.value.url, 
 		proxy:proxy.value
 	})
+}
+const historys = ref([])
+const loadHistory = () => {
+	invoke('get_store_list',{ key: 'history' }).then((list)=>{
+		historys.value = list;
+	});
 }
 const closebrowser = () => {
 	emits('close');
@@ -103,11 +111,50 @@ const start = (app) => {
 onMounted(()=>{
 	getApp();
 	getListen();
+	loadHistory();
 })
 const op = ref();
 const toggle = (event) => {
 	browser.value.name = "";
 	op.value.toggle(event);
+}
+
+const responsiveOptions = ref([
+    {
+        breakpoint: '1400px',
+        numVisible: 2,
+        numScroll: 1
+    },
+    {
+        breakpoint: '1199px',
+        numVisible: 3,
+        numScroll: 1
+    },
+    {
+        breakpoint: '767px',
+        numVisible: 2,
+        numScroll: 1
+    },
+    {
+        breakpoint: '575px',
+        numVisible: 1,
+        numScroll: 1
+    }
+]);
+const removeStar = (node) => {
+	confirm.remove(() => {
+		const _store_history = historys.value || [];
+		const idx = _store_history.findIndex((n) => n.href == node.href);
+		if(idx>=0){
+			_store_history.splice(idx,1);
+		}
+		invoke('set_store_list', {
+			key: 'history',
+			value: _store_history
+		}).then((res)=>{
+			historys.value = _store_history;
+		});
+	});
 }
 </script>
 
@@ -158,6 +205,21 @@ const toggle = (event) => {
 					<InputText size="small" placeholder="As Name" v-model="browser.name"  class="w-20rem"></InputText>
 					<Button size="small" icon="pi pi-save" class="ml-2"  @click="addShortcut"></Button>
 			</Popover>
+			<Carousel class="mt-6" :value="historys" :numVisible="1" :numScroll="1" :responsiveOptions="responsiveOptions">
+			    <template #item="slotProps">
+			        <div class="border border-surface-200 dark:border-surface-700 rounded m-2 p-4 " style="background:rgba(255,255,255,0.8);border-radius: 10px;">
+			            <div class="mb-4 font-medium flex">
+										<b class="flex-item">{{ slotProps.data.title }}</b>
+										<Button @click="removeStar(slotProps.data)" style="color:orange" icon="pi pi-star-fill" size="small" severity="secondary"/>
+									</div>
+			            <div class="flex justify-between items-center pointer">
+			              <div class="mt-0 font-semibold text-sm flex-item multiline-ellipsis" style="word-break: break-all;">
+											<a >{{ slotProps.data.href }}</a>
+										</div>
+			            </div>
+			        </div>
+			    </template>
+			</Carousel>
 		</div>		
 	</div>									
 </template>

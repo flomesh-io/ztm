@@ -153,14 +153,16 @@ pub async fn create_proxy_webview(
 				border: none;
 				background-color: transparent;
 				cursor: pointer;
-				border-radius: 15px;
+				border-radius: 6px;
 				transition: .3s all;
 				width:28px;
 				height:28px;
 				line-height:28px;
 				text-align:center;
 			}}
-							
+			.ztm-container button svg {{
+				margin-top:4px;
+			}}
 			.ztm-container button:hover {{
 				background-color: #f5f5f5;
 			}}
@@ -190,7 +192,33 @@ pub async fn create_proxy_webview(
 				font-size:8pt;
 				border-radius: 20px;
 			}}
-			
+			.go-star-full{{
+				display:none;
+			}}
+			.ztm-history {{
+				position: fixed;
+				background-color: white;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				padding: 0px;
+				border-radius: 6px;
+				right:0px;
+				top:50px;
+				overflow:hidden;
+			}}
+			.ztm-history ul {{
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}}
+			.ztm-history ul li {{
+				padding: 8px 16px;
+				cursor: pointer;
+				background-color: #ffffff;
+				transition: .3s all;
+			}}
+			.ztm-history ul li:hover {{
+				background-color: #f0f0f0;
+			}}
 			@media (prefers-color-scheme: dark) {{
 				
 				.ztm-show {{
@@ -215,6 +243,15 @@ pub async fn create_proxy_webview(
 				.ztm-icon{{
 					fill: #eeeeee;
 				}}
+				.ztm-history {{
+					background-color: #2B2B29;
+				}}
+				.ztm-history ul li {{
+					background-color: #2B2B29;
+				}}
+				.ztm-history ul li:hover {{
+					background-color: #444444;
+				}}
 			}}
 		"#);
 		let html_code = format!(r#" 
@@ -236,13 +273,73 @@ pub async fn create_proxy_webview(
 					<input type="text" placeholder="" value="${{location.href}}" />
 				</div>
 				<div class="ztm-left">
+					<button class="go-star-empty">
+						<svg t="1732170774781" class="ztm-icon" viewBox="0 0 1025 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1294" width="18" height="18"><path d="M778.47986 1002.496c-12.288 0-24.576-3.072-37.888-10.24L533.74386 883.712c-5.12-3.072-12.288-5.12-20.48-5.12-7.168 0-15.36 2.048-20.48 4.096L286.95986 992.256c-12.288 7.168-24.576 10.24-38.912 10.24-24.576 0-48.128-11.264-64.512-29.696-16.384-18.432-22.528-43.008-18.432-67.584l39.936-229.376c2.048-14.336-3.072-28.672-13.312-38.912L25.83986 476.16C2.28786 453.632-5.90414 420.864 4.33586 390.144c10.24-30.72 35.84-52.224 67.584-57.344l229.376-33.792c14.336-2.048 27.648-11.264 33.792-23.552l102.4-208.896c14.336-28.672 43.008-46.08 74.752-46.08 31.744 0 60.416 17.408 74.752 46.08l102.4 208.896c7.168 13.312 19.456 21.504 33.792 23.552L952.55986 332.8c31.744 5.12 57.344 26.624 67.584 56.32 10.24 30.72 2.048 63.488-20.48 86.016L834.79986 636.928c-11.264 10.24-15.36 24.576-13.312 38.912l38.912 228.352c4.096 24.576-2.048 49.152-18.432 67.584-15.36 19.456-38.912 30.72-63.488 30.72z m-13.312-62.464c5.12 2.048 9.216 3.072 12.288 3.072 7.168 0 14.336-3.072 19.456-9.216 5.12-6.144 6.144-14.336 5.12-19.456L763.11986 686.08c-6.144-32.768 5.12-68.608 29.696-91.136l164.864-162.816c6.144-6.144 8.192-15.36 6.144-25.6-3.072-9.216-10.24-15.36-20.48-16.384l-229.376-33.792c-33.792-5.12-63.488-25.6-77.824-56.32L533.74386 92.16c-4.096-9.216-12.288-13.312-21.504-13.312-9.216 0-17.408 5.12-22.528 14.336l-102.4 206.848c-14.336 29.696-44.032 51.2-77.824 56.32L80.11086 390.144c-9.216 2.048-16.384 8.192-19.456 16.384v1.024c-3.072 9.216-1.024 17.408 6.144 24.576l165.888 162.816c24.576 23.552 34.816 57.344 29.696 91.136L223.47086 914.432c-1.024 5.12-1.024 12.288 5.12 18.432 5.12 6.144 12.288 9.216 19.456 9.216 5.12 0 8.192-1.024 11.264-2.048l206.848-108.544c13.312-8.192 29.696-12.288 47.104-12.288 15.36 0 31.744 4.096 47.104 12.288l204.8 108.544z" p-id="1295"></path></svg>
+					</button>
+					<button class="go-star-full">
+						<svg style="fill: orange;margin-top:3px" t="1732179247794" class="ztm-icon" viewBox="0 0 1426 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1440" width="22" height="22"><path d="M985.6 1022.976c-14.848 0-31.744-4.096-47.104-12.288L716.288 899.584l-223.744 111.104c-14.336 7.68-30.208 11.776-47.104 11.776-21.504 0-42.496-6.656-59.392-19.456-31.232-23.552-47.104-64-39.936-101.376l45.568-237.056-175.616-163.328c-27.136-27.648-37.376-67.072-27.136-104.448l0.512-1.024c12.8-38.4 44.544-65.024 82.944-70.144l243.712-44.544L625.152 58.88C642.56 23.552 678.4 1.024 716.288 1.024c39.424 0 76.288 23.552 91.648 58.368l109.056 221.696 243.712 42.496c38.4 5.632 70.656 33.28 81.408 71.168 12.288 36.864 2.048 77.312-25.6 104.96l-0.512 0.512-174.592 164.864 44.032 237.568c7.168 37.888-8.192 76.288-39.424 100.352-17.92 12.8-38.912 19.968-60.416 19.968z" p-id="1441"></path></svg>
+					</button>
 					<button class="go-hide">
 						<svg style="margin-top:3px" t="1732161039831" class="ztm-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1320" width="22" height="22"><path d="M332.8 729.6l34.133333-34.133333c42.666667 12.8 93.866667 21.333333 145.066667 21.333333 162.133333 0 285.866667-68.266667 375.466667-213.333333-46.933333-72.533333-102.4-128-166.4-162.133334l29.866666-29.866666c72.533333 42.666667 132.266667 106.666667 183.466667 192-98.133333 170.666667-243.2 256-426.666667 256-59.733333 4.266667-119.466667-8.533333-174.933333-29.866667z m-115.2-64c-51.2-38.4-93.866667-93.866667-132.266667-157.866667 98.133333-170.666667 243.2-256 426.666667-256 38.4 0 76.8 4.266667 110.933333 12.8l-34.133333 34.133334c-25.6-4.266667-46.933333-4.266667-76.8-4.266667-162.133333 0-285.866667 68.266667-375.466667 213.333333 34.133333 51.2 72.533333 93.866667 115.2 128l-34.133333 29.866667z m230.4-46.933333l29.866667-29.866667c8.533333 4.266667 21.333333 4.266667 29.866666 4.266667 46.933333 0 85.333333-38.4 85.333334-85.333334 0-12.8 0-21.333333-4.266667-29.866666l29.866667-29.866667c12.8 17.066667 17.066667 38.4 17.066666 64 0 72.533333-55.466667 128-128 128-17.066667-4.266667-38.4-12.8-59.733333-21.333333zM384 499.2c4.266667-68.266667 55.466667-119.466667 123.733333-123.733333 0 4.266667-123.733333 123.733333-123.733333 123.733333zM733.866667 213.333333l29.866666 29.866667-512 512-34.133333-29.866667L733.866667 213.333333z" p-id="1321"></path></svg>
 					</button>
+					<button class="go-more">
+						<svg t="1732180054163" class="ztm-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1500" width="18" height="18"><path d="M426.666667 810.666667a85.333333 85.333333 0 1 1 170.666666 0 85.333333 85.333333 0 0 1-170.666666 0z m0-298.666667a85.333333 85.333333 0 1 1 170.666666 0 85.333333 85.333333 0 0 1-170.666666 0z m0-298.666667a85.333333 85.333333 0 1 1 170.666666 0 85.333333 85.333333 0 0 1-170.666666 0z" p-id="1501"></path></svg>
+					</button>
 				</div>
 			</div>
+			<div class="ztm-history" style="display:none"></div>
 		"#);
 		let dom_code = format!(r#"
+			const toggleStarIcon = () => {{
+				const _store_history = window.store_history || [];
+				const _href = location.href;
+				const starEmptyElement = document.querySelector('.ztm-container .go-star-empty');
+				const starFullElement = document.querySelector('.ztm-container .go-star-full');
+				if(_store_history.findIndex((n) => n.href == _href )>=0){{
+					starEmptyElement.style.display = "none";
+					starFullElement.style.display = "block";
+				}} else {{
+					starEmptyElement.style.display = "block";
+					starFullElement.style.display = "none";
+				}}
+			}}
+			const renderHistory = () => {{
+				const _store_history = window.store_history || [];
+				const _ary = [];
+				_store_history.forEach((n)=>{{
+					const name = n.href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
+					_ary.push(`<li data-href="${{n.href}}" title="${{n.title}}" >${{n.title}}</li>`)
+				}})
+				let _html = `<ul>${{_ary.join("")}}</ul>`
+				const historyMenu = document.querySelector('.ztm-history');
+				historyMenu.innerHTML = _html;
+			}}
+			const loadHistory = () => {{
+				window.__TAURI__.core.invoke('get_store_list', {{
+					key: 'history'
+				}}).then((res)=>{{
+					window.store_history = res;
+					toggleStarIcon();
+					renderHistory();
+				}});
+			}}
+			const removeHistory = (href) => {{
+				const _store_history = window.store_history || [];
+				const idx = _store_history.findIndex((n) => n.href == href);
+				if(idx>=0){{
+					_store_history.splice(idx,1);
+				}}
+			
+				window.__TAURI__.core.invoke('set_store_list', {{
+					key: 'history',
+					value: _store_history
+				}}).then((res)=>{{
+					window.store_history = _store_history;
+					toggleStarIcon();
+					renderHistory();
+				}});
+				
+			}}
 			const loadDom = () => {{
 				if(!document?.body || !!document.querySelector('.ztm-root')) {{
 					return;
@@ -288,6 +385,28 @@ pub async fn create_proxy_webview(
 							ztmNav("{}", "{}", location.href)
 						}});
 					}}
+					
+					
+					const starEmptyElement = document.querySelector('.ztm-container .go-star-empty');
+					if(starEmptyElement){{
+						starEmptyElement.addEventListener('click', function (event) {{
+							window.__TAURI__.core.invoke('push_store_list', {{
+								key: 'history',
+								value: {{
+									href: location.href,
+									title: document.title
+								}}
+							}}).then(() => {{
+								loadHistory();
+							}});
+						}});
+					}}
+					const starFullElement = document.querySelector('.ztm-container .go-star-full');
+					if(starFullElement){{
+						starFullElement.addEventListener('click', function (event) {{
+							removeHistory(location.href);
+						}});
+					}}
 					const hideElement = document.querySelector('.ztm-container .go-hide');
 					if(hideElement){{
 						hideElement.addEventListener('click', function (event) {{
@@ -302,7 +421,25 @@ pub async fn create_proxy_webview(
 							showIcon.style.display="none";
 						}});
 					}}
-				}},600)
+					const moreElement = document.querySelector('.ztm-container .go-more');
+					if(moreElement){{
+						moreElement.addEventListener('click', function (event) {{
+							const historyMenu = document.querySelector('.ztm-history');
+							historyMenu.style.display=historyMenu.style.display=="none"?"block":"none";
+						}});
+					}}
+					const historyElement = document.querySelector('.ztm-history');
+					if(historyElement){{
+						historyElement.addEventListener('click', function (event) {{
+							const href = event.target.dataset?.href;
+							if(!!href){{
+								const name = href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
+								ztmNav(`${{name}}_new`, `${{name}}_webview_new`, href);
+							}}
+						}});
+					}}
+				}},600);
+				loadHistory();
 			}}
 		"#,&css_code, &html_code,&name,&label,&name,&label);
 		let js_code = format!(r#"
@@ -331,11 +468,9 @@ pub async fn create_proxy_webview(
 				
 			}})();
 			const loadFilter = () => {{
-			
 				if(!!document.querySelector('.ztm-root')) {{
 					return;
 				}}
-				console.log(9)
 				setTimeout(()=>{{
 					document.querySelectorAll('a[target="_blank"]').forEach(link => {{
 						link.removeAttribute('target');
