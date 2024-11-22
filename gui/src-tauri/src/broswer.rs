@@ -126,7 +126,7 @@ pub async fn create_proxy_webview(
 				background-color: #f5f5f5;
 			}}
 			.ztm-container {{
-				background-color: rgba(255, 255, 255, 0.7);
+				background-color: rgba(255, 255, 255, 0.9);
 				backdrop-filter: blur(10px);
 				z-index:10000;
 				position:fixed;
@@ -363,7 +363,7 @@ pub async fn create_proxy_webview(
 								const href = inputElement.value||'';
 								const url = href.indexOf('http')==0?href:`http://${{href}}`
 								const name = url.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
-								ztmNav("{}", "{}", url)
+								ztmNav(url)
 							}}
 						}});
 					}}
@@ -382,7 +382,7 @@ pub async fn create_proxy_webview(
 					const reloadElement = document.querySelector('.ztm-container .go-reload');
 					if(reloadElement){{
 						reloadElement.addEventListener('click', function (event) {{
-							ztmNav("{}", "{}", location.href)
+							ztmNav(location.href)
 						}});
 					}}
 					
@@ -434,19 +434,19 @@ pub async fn create_proxy_webview(
 							const href = event.target.dataset?.href;
 							if(!!href){{
 								const name = href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
-								ztmNav(`${{name}}_new`, `${{name}}_webview_new`, href);
+								ztmNav(href, `${{name}}_new`, `${{name}}_webview_new`);
 							}}
 						}});
 					}}
 				}},600);
 				loadHistory();
 			}}
-		"#,&css_code, &html_code,&name,&label,&name,&label);
+		"#,&css_code, &html_code);
 		let js_code = format!(r#"
-			const ztmNav = (name, label, curl) => {{
+			const ztmNav = (curl, name, label) => {{
 				const pluginOption = {{
-						name,
-						label,
+						name: name || "{}",
+						label: label || "{}",
 						curl,
 						proxy: "{}",
 						eval: true,
@@ -458,15 +458,25 @@ pub async fn create_proxy_webview(
 				
 				window.location.assign = function(url) {{
 					
-					ztmNav("{}", "{}",url)
+					ztmNav(url)
 				}};
 			
 				window.location.replace = function(url) {{
 					
-					ztmNav("{}", "{}",url)
+					ztmNav(url)
 				}};
 				
 			}})();
+			const doLinkClick = (target) => {{
+				if(target?.href){{
+					const name = target.href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
+					if(target.target == '_blank' || target.getAttribute('tauri-target') == '_blank'){{
+						ztmNav(target.href, name, name + `_webview`)
+					}} else {{
+						ztmNav(target.href)
+					}}
+				}}
+			}}
 			const loadFilter = () => {{
 				if(!!document.querySelector('.ztm-root')) {{
 					return;
@@ -479,19 +489,28 @@ pub async fn create_proxy_webview(
 				}},1000)
 				document.addEventListener('click', function(event) {{
 						const target = event.target;
-						if (target.tagName === 'A' && target.href) {{
+						if (target?.tagName === 'A') {{
 							event.preventDefault();
-							const name = target.href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
-							
-							if(target.target == '_blank' || target.getAttribute('tauri-target') == '_blank'){{
-								ztmNav(name, name + `_webview`,target.href)
-							}} else {{
-								ztmNav("{}", "{}",target.href)
-							}}
+							doLinkClick(target)
+						}} else if (target?.parentNode?.tagName === 'A') {{
+							event.preventDefault();
+							doLinkClick(target.parentNode)
+						}} else if (target?.parentNode?.parentNode?.tagName === 'A') {{
+							event.preventDefault();
+							doLinkClick(target.parentNode.parentNode)
+						}} else if (target?.parentNode?.parentNode?.parentNode?.tagName === 'A') {{
+							event.preventDefault();
+							doLinkClick(target.parentNode.parentNode.parentNode)
+						}} else if (target?.parentNode?.parentNode?.parentNode?.parentNode?.tagName === 'A') {{
+							event.preventDefault();
+							doLinkClick(target.parentNode.parentNode.parentNode.parentNode)
+						}} else if (target?.parentNode?.parentNode?.parentNode?.parentNode?.parentNode?.tagName === 'A') {{
+							event.preventDefault();
+							doLinkClick(target.parentNode.parentNode.parentNode.parentNode.parentNode)
 						}}
 				}});
 			}}
-		"#, &proxy,&name,&label,&name,&label,&name,&label);
+		"#, &name,&label,&proxy);
 			
 		let init_code = format!(r#"
 		{}
