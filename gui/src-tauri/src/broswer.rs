@@ -522,66 +522,76 @@ pub async fn create_proxy_webview(
 		// 	}
 		// 	true
 		// });
-		let window = match app.get_window(&name) {
-				Some(window) => window, 
-				None => {
-						let width = 1000.;
-						let height = 800.;
-						#[cfg(not(any(target_os = "ios", target_os = "android")))] {
-							tauri::window::WindowBuilder::new(&app, &name)
-									.inner_size(width, height)
-									.title(name)
-									.build()
-									.expect("Failed to create a new window")
-						}
-						
-						#[cfg(any(target_os = "ios", target_os = "android"))] {
-							tauri::window::WindowBuilder::new(&app, &name)
-									.build()
-									.expect("Failed to create a new window")
-						}
-				}
-		};
 		
 		
 		// 	std::thread::sleep(std::time::Duration::from_secs(1));
 		if let Some(mut old_webview) = app.get_webview(&label) {
 			old_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
-				
 		} else {
-			let mut builder = tauri::WebviewBuilder::new(&label, WebviewUrl::App(curl.parse().unwrap()))
-				.on_navigation(|url| {
-					// allow the production URL or localhost on dev
-					url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "tauri" || (cfg!(dev) && url.host_str() == Some("localhost"))
-				})
-				.on_page_load({
-					let eval = eval;
-					let init_code = init_code.to_string(); 
-					move |webview, payload| {
-							match payload.event() {
-									PageLoadEvent::Started => {
-									}
-									PageLoadEvent::Finished => {
-											if eval {
-													webview.eval(&init_code).unwrap();
-											}
-									}
-							}
-					}
-				});
-			if !proxy.is_empty() {
-				builder = builder.proxy_url(Url::parse(&proxy).expect("Invalid URL"));
-			}
 			#[cfg(not(any(target_os = "ios", target_os = "android")))] {
-				let webview = window.add_child(
-					builder,
-					tauri::LogicalPosition::new(0, 0),
-					window.inner_size().unwrap(),
-				).unwrap();
+				let mut webview_builder = tauri::WebviewBuilder::new(&label, WebviewUrl::App(curl.parse().unwrap()))
+					.on_navigation(|url| {
+						// allow the production URL or localhost on dev
+						url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "tauri" || (cfg!(dev) && url.host_str() == Some("localhost"))
+					})
+					.on_page_load({
+						let eval = eval;
+						let init_code = init_code.to_string(); 
+						move |webview, payload| {
+								match payload.event() {
+										PageLoadEvent::Started => {
+										}
+										PageLoadEvent::Finished => {
+												if eval {
+														webview.eval(&init_code).unwrap();
+												}
+										}
+								}
+						}
+					});
+					
+				if !proxy.is_empty() {
+					webview_builder = webview_builder.proxy_url(Url::parse(&proxy).expect("Invalid URL"));
+				}
+			
+				if let Some(mut old_window) = app.get_window(&name) {
+						let webview = old_window.add_child(
+							webview_builder,
+							tauri::LogicalPosition::new(0, 0),
+							old_window.inner_size().unwrap(),
+						).unwrap();
+				} else {
+					let width = 1000.;
+					let height = 800.;
+					let window = tauri::window::WindowBuilder::new(&app, &name)
+							.inner_size(width, height)
+							.title(name)
+							.build()
+							.expect("Failed to create a new window");
+							
+					let webview = window.add_child(
+						webview_builder,
+						tauri::LogicalPosition::new(0, 0),
+						window.inner_size().unwrap(),
+					).unwrap();
+					
+				}
 			}
 			
 			#[cfg(any(target_os = "ios", target_os = "android"))] {
-				
+				if let Some(mut main_webview) = app.get_webview("main") {
+					main_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
+					std::thread::sleep(std::time::Duration::from_secs(1));
+					main_webview.eval(&init_code).unwrap();
+					std::thread::sleep(std::time::Duration::from_secs(3));
+					main_webview.eval(&init_code).unwrap();
+					std::thread::sleep(std::time::Duration::from_secs(3));
+					main_webview.eval(&init_code).unwrap();
+					std::thread::sleep(std::time::Duration::from_secs(3));
+					main_webview.eval(&init_code).unwrap();
+					std::thread::sleep(std::time::Duration::from_secs(3));
+					main_webview.eval(&init_code).unwrap();
+				}
 			}
 		}
 	}
