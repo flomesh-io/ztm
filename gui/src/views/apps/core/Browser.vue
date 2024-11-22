@@ -86,7 +86,7 @@ const appOption = computed(() => ({
 const isRunning = ref(false);
 const getApp = ()=>{
 	appService.getApp(appOption.value).then((res)=>{
-		if(!!res.isRunning){
+		if(!!res?.isRunning){
 			setTimeout(()=>{
 				isRunning.value = true;
 			},300)
@@ -95,8 +95,10 @@ const getApp = ()=>{
 }
 const getListen = () => {
 	appService.getProxyListen(selectedMesh.value).then((res)=>{
-		listens.value = res?[res.listen]:[];
-		browser.value.listen = res.listen;
+		if(res?.listen){
+			listens.value = res?[res.listen]:[];
+			browser.value.listen = res.listen;
+		}
 	});
 }
 const saving = ref(false);

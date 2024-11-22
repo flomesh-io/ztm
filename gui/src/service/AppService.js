@@ -317,7 +317,7 @@ export default class AppService {
 	openbrowser({mesh, url, width, height, proxy, ep}) {
 		if(proxy){
 			this.getProxyListen(mesh).then((res)=>{
-				if(!!res.listen){
+				if(!!res?.listen){
 					this.openWV(url, width, height, res.listen)
 				} else {
 					this.openWV(url, width, height);
