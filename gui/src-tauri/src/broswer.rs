@@ -11,34 +11,7 @@ use url::Url;
 use tauri::Manager;
 use tauri::command;
 use log::{trace, debug, info, warn, error};
-
-
-#[command]
-pub fn load_webview_with_proxy(url: String, proxy_host: String, proxy_port: i32) -> Result<(),()> {
-	#[cfg(target_os = "android")]
-	let handle = thread::spawn(move || -> Result<(), String> {
-				
-		unsafe {
-			
-			use j4rs::{Instance, InvocationArg, Jvm, JvmBuilder};
-			let jvm = Jvm::attach_thread_with_no_detach_on_drop().unwrap();
-			// 准备参数
-			let jurl = InvocationArg::try_from(url).unwrap();
-			let jproxy_host = InvocationArg::try_from(proxy_host).unwrap();
-			let jproxy_port = InvocationArg::try_from(proxy_port).unwrap();
-			
-			let args: [&InvocationArg; 3] = [&jurl, &jproxy_host, &jproxy_port];
-			jvm.invoke_static(
-				"com.flomesh.ztm.MainActivity",     // The Java class to invoke
-				"startWebViewActivity",    // The static method of the Java class to invoke
-				&args // The `InvocationArg`s to use for the invocation - empty for this example
-			);
-			
-		 }
-		 Ok(())
-	});
-	Ok(())
-}
+pub use tauri_runtime::webview::PageLoadEvent;
 
 #[command]
 pub async fn create_wry_webview(
@@ -83,7 +56,7 @@ pub async fn create_proxy_webview(
 	curl: String,
 	eval: bool,
 ) -> Result<(),()> {
-	#[cfg(not(any(target_os = "ios", target_os = "android")))]
+	
 	unsafe {
 
 		// let mut options = WindowConfig {
@@ -554,71 +527,61 @@ pub async fn create_proxy_webview(
 				None => {
 						let width = 1000.;
 						let height = 800.;
-						tauri::window::WindowBuilder::new(&app, &name)
-								.inner_size(width, height)
-								.title(name)
-								.build()
-								.expect("Failed to create a new window")
+						#[cfg(not(any(target_os = "ios", target_os = "android")))] {
+							tauri::window::WindowBuilder::new(&app, &name)
+									.inner_size(width, height)
+									.title(name)
+									.build()
+									.expect("Failed to create a new window")
+						}
+						
+						#[cfg(any(target_os = "ios", target_os = "android"))] {
+							tauri::window::WindowBuilder::new(&app, &name)
+									.build()
+									.expect("Failed to create a new window")
+						}
 				}
 		};
-  //   let window = app
-  //       .get_window(&name)
-  //       .expect("Failed to find window by label");
-				
-		// let width = 1000.;
-		// let height = 800.;
-		// let window = tauri::window::WindowBuilder::new(&app, &name)
-		//         .inner_size(width, height).title(&name)
-		//         .build().unwrap();
-				
-		// app.get_webview("main")
 		
 		
+		// 	std::thread::sleep(std::time::Duration::from_secs(1));
 		if let Some(mut old_webview) = app.get_webview(&label) {
-				// old_webview.eval(&js_code).unwrap();
-				old_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
-				if eval {
-					std::thread::sleep(std::time::Duration::from_secs(1));
-					let webviews = window.webviews();
-					for webview in &webviews {
-						webview.eval(&init_code).unwrap();
-					}
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					for webview in &webviews {
-						webview.eval(&init_code).unwrap();
-					}
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					for webview in &webviews {
-						webview.eval(&init_code).unwrap();
-					}
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					for webview in &webviews {
-						webview.eval(&init_code).unwrap();
-					}
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					for webview in &webviews {
-						webview.eval(&init_code).unwrap();
-					}
-				}
-				// if let Some(old2_webview) = app.get_webview(&label) {
-				// 	old2_webview.eval(&js_code).unwrap();
-				// }
-		} else {
+			old_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
 				
-			let mut builder = tauri::WebviewBuilder::new(&label, WebviewUrl::App(curl.parse().unwrap())).on_navigation(|url| {
+		} else {
+			let mut builder = tauri::WebviewBuilder::new(&label, WebviewUrl::App(curl.parse().unwrap()))
+				.on_navigation(|url| {
 					// allow the production URL or localhost on dev
 					url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "tauri" || (cfg!(dev) && url.host_str() == Some("localhost"))
+				})
+				.on_page_load({
+					let eval = eval;
+					let init_code = init_code.to_string(); 
+					move |webview, payload| {
+							match payload.event() {
+									PageLoadEvent::Started => {
+									}
+									PageLoadEvent::Finished => {
+											if eval {
+													webview.eval(&init_code).unwrap();
+											}
+									}
+							}
+					}
 				});
 			if !proxy.is_empty() {
 				builder = builder.proxy_url(Url::parse(&proxy).expect("Invalid URL"));
 			}
-			let webview = window.add_child(
-				builder,
-				tauri::LogicalPosition::new(0, 0),
-				window.inner_size().unwrap(),
-			).unwrap();
-			if eval {
-				webview.eval(&init_code).unwrap();
+			#[cfg(not(any(target_os = "ios", target_os = "android")))] {
+				let webview = window.add_child(
+					builder,
+					tauri::LogicalPosition::new(0, 0),
+					window.inner_size().unwrap(),
+				).unwrap();
+			}
+			
+			#[cfg(any(target_os = "ios", target_os = "android"))] {
+				
 			}
 		}
 	}
