@@ -9,6 +9,8 @@ import {
 } from "@/utils/store";
 
 import { getItem as getKeychainItem, saveItem as saveKeychainItem } from 'tauri-plugin-keychain';
+
+const VITE_APP_PUB_HUB = import.meta.env.VITE_APP_PUB_HUB;
 export default class ZtmService {
 	login(user, password) {
 		return request('/api/login', "POST", {
@@ -142,6 +144,9 @@ export default class ZtmService {
 	}
 	getMesh(name) {
 		return request(`/api/meshes/${name}`);
+	}
+	getPermit(PublicKey, UserName) {
+		return request(`${VITE_APP_PUB_HUB}/permit`,"POST",{PublicKey, UserName});
 	}
 	joinMesh(name, config) {
 		if(config.bootstraps){

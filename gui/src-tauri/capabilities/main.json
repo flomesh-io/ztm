@@ -101,11 +101,6 @@
     "core:resources:allow-close",
     "core:menu:default",
     "core:tray:default",
-		"http:default",
-		"http:allow-fetch",
-		"http:allow-fetch-cancel",
-		"http:allow-fetch-read-body",
-		"http:allow-fetch-send",
     "core:webview:default",
     "core:webview:allow-create-webview",
     "core:webview:allow-create-webview-window",
@@ -251,7 +246,7 @@
     {
       "identifier": "http:allow-fetch",
       "allow": [
-        "http://127.0.0.1:*/*"
+        "http://*:*/*","https://*:*/*"
       ]
     },
     "http:allow-fetch-cancel",
