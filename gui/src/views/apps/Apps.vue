@@ -171,8 +171,10 @@ onMounted(()=>{
 	}
 })
 onBeforeRouteUpdate(()=>{
-	if(!hasTauri.value && !!route?.params?.name && !!selectedMesh.value?.name){
-		openAppContent(route?.params)
+	if(!hasTauri.value){
+		if(!!route?.params?.name && !!selectedMesh.value?.name){
+			openAppContent(route?.params)
+		}
 	}
 })
 watch(()=>manage,()=>{

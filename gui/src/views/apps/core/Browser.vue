@@ -195,7 +195,7 @@ onMounted(()=>{
 						</div>
 				</div>
 			</div>
-			<div class="grid p-2 mt-1">
+			<div class="grid p-2">
 				<div v-for="(history,idx) in historys" class="p-2 col-6 md:col-4" >
 					<div class="p-3 rounded history-card" >
 						<div class="mb-4 font-medium flex">

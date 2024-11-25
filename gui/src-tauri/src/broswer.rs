@@ -487,12 +487,14 @@ pub async fn create_proxy_webview(
 			}}
 		"#,&css_code, &html_code);
 		let js_code = format!(r#"
+			const proxy = "{}";
+			console.log(proxy);
 			const ztmNav = (curl, name, label) => {{
 				const pluginOption = {{
 						name: name || "{}",
 						label: label || "{}",
 						curl,
-						proxy: "{}",
+						proxy,
 						eval: true,
 				 }}
 				 window.__TAURI__.core.invoke('create_proxy_webview', pluginOption);
@@ -554,7 +556,7 @@ pub async fn create_proxy_webview(
 						}}
 				}});
 			}}
-		"#, &name,&label,&proxy);
+		"#,&proxy, &name,&label);
 			
 		let init_code = format!(r#"
 		{}
