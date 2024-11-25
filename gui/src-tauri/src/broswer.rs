@@ -251,10 +251,12 @@ pub async fn create_proxy_webview(
 				}}
 				.ztm-pop ul li {{
 					background-color: #2B2B29;
+					color: #eeeeee !important;
 				}}
 				.ztm-pop ul li:hover {{
 					background-color: #444444;
 				}}
+				
 			}}
 		"#);
 		let html_code = format!(r#" 
