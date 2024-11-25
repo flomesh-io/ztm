@@ -172,6 +172,7 @@ onMounted(() => {
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
+						<Button v-if="!!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="'Live Sample'" icon="pi pi-sparkles" text @click="openTryMesh" />
 						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>
@@ -215,11 +216,11 @@ onMounted(() => {
 			<div>
 				<div class="flex mt-2 w-full">
 					<InputText size="small" placeholder="Username" v-model="username"  class="flex-item"></InputText>
-					<Button size="small" :disabled="!username || username == 'root'" label="Join" class="ml-2"  @click="tryMesh"></Button>
+					<Button :loading="tryLoading" size="small" :disabled="!username || username == 'root'" label="Join" class="ml-2"  @click="tryMesh"></Button>
 				</div>
 				<div class="pt-2 opacity-70 text-sm">
 					<i class="pi pi-info-circle relative" style="top: 1px;"/> Join to the testing hub server, <br/>
-					only for sample app functionality
+					only for experience ztm
 				</div>
 			</div>
 		</Dialog>
