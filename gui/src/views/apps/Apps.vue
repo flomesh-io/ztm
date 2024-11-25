@@ -28,23 +28,6 @@ const selectedMesh = computed(() => {
 const unread = computed(() => {
 	return store.getters["notice/unread"];
 });
-const shortcutApps = computed(() => {
-	// let shortcuts = []
-	// try{
-	// 	shortcuts = JSON.parse(localStorage.getItem("SHORTCUT")||"[]");
-	// }catch(e){
-	// 	shortcuts = []
-	// }
-	let shortcuts = store.getters["account/shortcuts"];
-	shortcuts.forEach((shortcut)=>{
-		shortcut.icon = shortcut.icon || shortcutIcon;
-		shortcut.shortcut = true;
-	})
-	console.log("shortcutApps")
-	console.log(JSON.parse(localStorage.getItem("SHORTCUT")||"[]"))
-	return shortcuts;
-});
-
 const innerApps = ref(apps);
 const meshApps = ref([]);
 const uninstallApps = ref([]);
@@ -90,7 +73,7 @@ const loaddata = () => {
 const appLoading = ref({})
 const manage = ref(false);
 const mergeApps = computed(()=>{
-	return (!props.noInners?innerApps.value:innerApps.value).concat(meshApps.value||[]).concat(shortcutApps.value).concat(uninstallApps.value);
+	return (!props.noInners?innerApps.value:innerApps.value).concat(meshApps.value||[]).concat(uninstallApps.value);
 })
 
 const installAPP = (app, options, base) => {
@@ -227,8 +210,7 @@ watch(()=>selectedMesh,()=>{
 		</AppHeader>
 		<div v-else class="flex actions transparent-header">
 			<div class="flex-item">
-				<Button icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="'Close'"  severity="help" text  aria-label="Filter" @click="hide" >
-				</Button>
+				<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="'Back'"  variant="text" severity="help" text @click="hide" ></Button>
 			</div>
 			<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
 				<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />

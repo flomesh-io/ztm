@@ -4,7 +4,6 @@ export default {
     let timer = null;
 
     const start = (event) => {
-			debugger
       if ((event.type === 'mousedown' || event.type === 'touchstart') && event?.button != 2) {
         timer = setTimeout(() => {
           event.preventDefault();
@@ -20,7 +19,6 @@ export default {
       }
     };
 
-    // 阻止右键菜单
     const preventContextMenu = (event) => {
       event.preventDefault();
 			binding.value(event);
