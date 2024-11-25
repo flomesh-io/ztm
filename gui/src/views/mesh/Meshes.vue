@@ -173,7 +173,7 @@ onMounted(() => {
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
 						<Button v-if="!!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="'Live Sample'" icon="pi pi-sparkles" text @click="openTryMesh" />
-						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  label="Join" @click="() => visibleEditor = true"/>
+						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="'Join'" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
