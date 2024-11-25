@@ -5,10 +5,12 @@ import ZtmService from '@/service/ZtmService';
 import MeshJoin from './MeshJoin.vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
+import { useToast } from "primevue/usetoast";
 const store = useStore();
 const router = useRouter();
 const confirm = useConfirm();
 const ztmService = new ZtmService();
+const toast = useToast();
 const meshes = computed(() => {
 	return store.getters['account/meshes'] || []
 });
@@ -91,6 +93,55 @@ const select = (mesh) => {
 const loaddata = () => {
 	store.dispatch('account/meshes');
 }
+const visibleTry = ref(false);
+const username = ref("");
+const tryLoading = ref(false);
+const tryMesh = () => {
+	ztmService.identity().then((PublicKey)=>{
+		if(!!PublicKey){
+			tryLoading.value = true;
+			ztmService.getPermit(PublicKey,username.value).then((permit)=>{
+				if(!!permit){
+					let saveData = {
+						name: "",
+						ca: "",
+						agent: {
+							name: "",
+							certificate: "",
+							privateKey: null,
+						},
+						bootstraps: []
+					}
+					
+					try{
+						const permitJSON = JSON.parse(permit);
+						saveData = {...saveData, ...permitJSON};
+						saveData.name = "Sample";
+						saveData.agent.name = username.value
+						ztmService.joinMesh(joinName, saveData)
+						.then(res => {
+							tryLoading.value = false;
+							if(!!res){
+								visibleTry.value = false;
+								toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
+								loaddata();
+							}
+						})
+						.catch(err => {
+							tryLoading.value = false;
+							console.log('Request Failed', err)
+						});
+					}catch(e){
+						tryLoading.value = false;
+					}
+				}
+			});
+		}
+	})
+}
+const openTryMesh = () => {
+	visibleTry.value = true;
+}
 watch(()=> meshes, ()=>{
 	if(selectedMesh.value && !meshes.value.find((mesh)=> mesh?.name == selectedMesh.value?.name)){
 		store.commit('account/setSelectedMesh', null);
@@ -148,7 +199,7 @@ onMounted(() => {
 				</div>
 			</div>
 			</ScrollPanel>
-			<Empty v-else :title="emptyMsg" button="Join Mesh" @primary="() => visibleEditor = true"/>
+			<Empty v-else :title="emptyMsg" cancelButton="Live Sample" @cancel="openTryMesh" button="Join Mesh" @primary="() => visibleEditor = true"/>
 		</div>
 		<div class="flex-item h-full" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
@@ -159,6 +210,19 @@ onMounted(() => {
 					@back="() => {selectedMenu=null;visibleEditor=false;}"/>
 			</div>
 		</div>
+		
+		<Dialog header="Live Sample" v-model:visible="visibleTry" modal :dismissableMask="true">
+			<div>
+				<div class="flex mt-2 w-full">
+					<InputText size="small" placeholder="Username" v-model="username"  class="flex-item"></InputText>
+					<Button size="small" :disabled="!username || username == 'root'" label="Join" class="ml-2"  @click="tryMesh"></Button>
+				</div>
+				<div class="pt-2 opacity-70 text-sm">
+					<i class="pi pi-info-circle relative" style="top: 1px;"/> Join to the testing hub server, <br/>
+					only for sample app functionality
+				</div>
+			</div>
+		</Dialog>
 	</div>
 </template>
 

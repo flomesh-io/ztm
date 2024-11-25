@@ -320,7 +320,8 @@ onMounted(() => {
 				:placeholder="placeholder" 
 				class="transparent">
 				    <template #dropdownicon>
-							<i v-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
+							<i @click="joinMesh" v-if="!meshes || meshes.length == 0" v-tooltip.left="errorMsg||'Join Mesh'" class="pi pi-plus text-white-alpha-70 text-xl" />
+							<i v-else-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
 							<i v-else v-tooltip="placeholder" class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
 				    </template>
 				    <template #option="slotProps">
