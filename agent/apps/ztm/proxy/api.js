@@ -1,8 +1,31 @@
+import initCertGen from './cert-gen.js'
+
 export default function ({ app, mesh }) {
+  var certGen = null
+
+  var currentConfig = null
   var currentListen = ''
+  var currentLogger = null
 
   function allEndpoints() {
     return mesh.discover()
+  }
+
+  function getEndpointCA(ep) {
+    if (ep === app.endpoint.id) {
+      if (certGen) {
+        return Promise.resolve(certGen.getCA().toPEM().toString())
+      } else {
+        return Promise.resolve('')
+      }
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: '/api/ca',
+        }
+      )).then(res => res?.body?.toString?.() || '')
+    }
   }
 
   function getEndpointConfig(ep) {
@@ -12,7 +35,7 @@ export default function ({ app, mesh }) {
       return mesh.request(ep, new Message(
         {
           method: 'GET',
-          path: `/api/config`,
+          path: '/api/config',
         }
       )).then(res => res ? JSON.decode(res.body) : null)
     }
@@ -48,6 +71,8 @@ export default function ({ app, mesh }) {
   }
 
   function applyConfig(config) {
+    currentConfig = config
+
     if (config.listen !== currentListen) {
       if (currentListen) pipy.listen(currentListen, null)
       currentListen = config.listen || ''
@@ -63,28 +88,114 @@ export default function ({ app, mesh }) {
         )
       }
     }
+
+    if (config.generateCert) {
+      certGen ??= initCertGen({ app, mesh })
+    } else {
+      certGen = null
+    }
+
+    if (config.log) {
+      currentLogger = new logging.JSONLogger('ztm-proxy')
+      if (config.log.splunk) {
+        currentLogger.toHTTP(
+          `http://${config.log.splunk.address}/services/collector/event`, {
+            method: 'POST',
+            headers: {
+              'Agent': 'ZTM Proxy',
+              'Content-Type': 'application/json',
+              'Authorization': 'Splunk ' + config.log.splunk.token,
+            }
+          }
+        )
+      }
+    } else {
+      currentLogger = null
+    }
   }
 
   var matchPathTargets = new http.Match('/api/targets/*')
 
+  var $ctx
+  var $requestHead
+  var $requestTime
+
   var acceptPeer = pipeline($=>$
+    .onStart(c => { $ctx = c })
     .acceptHTTPTunnel(req => {
       var params = matchPathTargets(req.head.path)
       if (params) {
         $target = params['*']
+        if (IP.isV4($target) || IP.isV6($target)) {
+          if (!hasIP(currentConfig, $target)) return new Message({ status: 403 })
+        } else {
+          if (!hasDomain(currentConfig, $target)) return new Message({ status: 403 })
+        }
         app.log(`Forward to ${$target}`)
         return new Message({ status: 200 })
       } else {
         return new Message({ status: 404 })
       }
     }).to($=>$
-      .connect(() => $target)
+      .detectProtocol(proto => $proto = proto)
+      .pipe(
+        function() {
+          if ($proto === undefined) return
+          if ($proto === 'TLS' && certGen) return proxyTLS
+          return proxyTCP
+        }
+      )
+    )
+  )
+
+
+  var observe = pipeline($=>$
+    .fork().to($=>$
+      .decodeHTTPRequest()
+      .handleMessageStart(
+        (msg) => {
+          $requestHead = msg.head
+          $requestTime = new Date
+        }
+      )
+      .handleMessageEnd(
+        (msg) => {
+          currentLogger?.log?.({
+            time: $requestTime.toUTCString(),
+            username: $ctx.peer.username,
+            endpoint: $ctx.peer.id,
+            ip: $ctx.peer.ip,
+            target: $target,
+            method: $requestHead.method,
+            path: $requestHead.path,
+            headers: $requestHead.headers,
+            size: msg.tail.headSize + msg.tail.bodySize,
+          })
+        }
+      )
+    )
+  )
+
+  var proxyTCP = pipeline($=>$
+    .pipe(observe)
+    .connect(() => $target)
+  )
+
+  var proxyTLS = pipeline($=>$
+    .acceptTLS({
+      certificate: sni => sni ? certGen.generateCertificate(sni) : undefined,
+    }).to($=>$
+      .pipe(observe)
+      .connectTLS().to($=>$
+        .connect(() => $target)
+      )
     )
   )
 
   var $host
   var $target
   var $targetEP
+  var $proto
 
   var connectPeer = pipeline($=>$
     .onStart(
@@ -98,9 +209,9 @@ export default function ({ app, mesh }) {
             ).then(res => {
               var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
               if (IP.isV4($host) || IP.isV6($host)) {
-                if (hasIP(config)) return ep
+                if (hasIP(config, $host)) return ep
               } else {
-                if (hasDomain(config)) return ep
+                if (hasDomain(config, $host)) return ep
               }
               throw null
             })
@@ -171,13 +282,13 @@ export default function ({ app, mesh }) {
     ).to(connectPeer)
   )
 
-  function hasDomain(config) {
+  function hasDomain(config, host) {
     if (config?.exclusions instanceof Array && config.exclusions.some(
       domain => {
         if (domain.startsWith('*')) {
-          return $host.endsWith(domain.substring(1))
+          return host.endsWith(domain.substring(1))
         } else {
-          return $host === domain
+          return host === domain
         }
       }
     )) {
@@ -186,21 +297,21 @@ export default function ({ app, mesh }) {
       return config?.targets instanceof Array && config.targets.some(
         domain => {
           if (domain.startsWith('*')) {
-            return $host.endsWith(domain.substring(1))
+            return host.endsWith(domain.substring(1))
           } else {
-            return $host === domain
+            return host === domain
           }
         }
       )
     }
   }
 
-  function hasIP(config) {
+  function hasIP(config, host) {
     if (config?.exclusions instanceof Array && config.exclusions.some(
       mask => {
         try {
           var m = new IPMask(mask)
-          return m.contains($host)
+          return m.contains(host)
         } catch {
           return false
         }
@@ -212,7 +323,7 @@ export default function ({ app, mesh }) {
         mask => {
           try {
             var m = new IPMask(mask)
-            return m.contains($host)
+            return m.contains(host)
           } catch {
             return false
           }
@@ -225,6 +336,7 @@ export default function ({ app, mesh }) {
 
   return {
     allEndpoints,
+    getEndpointCA,
     getEndpointConfig,
     setEndpointConfig,
     acceptPeer,
