@@ -51,7 +51,9 @@ const openWebview = (app, broswer)=>{
 				label: `${app.name}_webview`,
 				curl: options.url,
 				proxy: options?.proxyUrl || '',
-				eval: !!broswer
+				eval: !!broswer,
+				width: options.width,
+				height:	options.height,
 			 }
 			 invoke('create_proxy_webview', pluginOption);
 			 

@@ -42,8 +42,8 @@ const defaultApp = [{
 		name: "EPLog",
 		label: "EP Log",
 		url:'/#/mesh/log',
-		width:455,
-		height:600,
+		width:1280,
+		height:860,
 		icon: eplog,
 	},{
 		name: "browser",

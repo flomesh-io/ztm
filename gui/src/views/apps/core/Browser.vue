@@ -219,7 +219,7 @@ onMounted(()=>{
 					</div>
 					</div>
 				</div>
-				<div  class="text-center opacity-60 mt-6 mx-2 text-white-alpha-80" style="background:rgba(255,255,255,0.3);border-radius: 15px;min-height: 300px;line-height: 300px;font-size: 20px;">
+				<div  class="text-center opacity-60 mx-2 text-white-alpha-80" style="border-radius: 15px;font-size: 20px;margin-top: 30%;">
 					<i class="pi pi-star-fill text-orange-300 text-2xl"/> No Favorites
 				</div>
 			</div>
