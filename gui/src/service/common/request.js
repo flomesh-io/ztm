@@ -82,8 +82,10 @@ const setPort = (port) => {
 	localStorage.setItem("VITE_APP_API_PORT",port);
 }
 const toastMessage = (e) => {
-	if(!!e.status && !!e.message){
-		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}]${e.message}`, life: 3000 });
+	if(!!e?.response?.status && !!e?.response?.data){
+		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.response.status}] ${e.response.data}`, life: 3000 });
+	} else if(!!e.status && !!e.message){
+		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}] ${e.message}`, life: 3000 });
 	} else if(!!e.message){
 		toast.add({ severity: 'error', summary: 'Tips', detail: `${e.message}`, life: 3000 });
 	} else if(!!e.statusText && !!e.status && !!e.url){
@@ -98,7 +100,7 @@ const getConfig  = (config, params, method) => {
 	} else if(!method || method == METHOD.GET){
 		return {
 			method,
-			header:{
+			headers:{
 				"Content-Type": "application/json"
 			},
 			// body: !!params?JSON.stringify(params):null,
@@ -107,15 +109,15 @@ const getConfig  = (config, params, method) => {
 	} else {
 		const rtn = {
 			method,
-			header:{
+			headers:{
 				"Content-Type": "application/json"
 			}
 		}
 		if(config?.headers){
-			rtn.header = config?.headers
+			rtn.headers = config?.headers
 		}
-		const _header = rtn?.header || {};
-		if(!_header["Content-Type"] || _header["Content-Type"] == "application/json"){
+		const _headers = rtn?.headers || {};
+		if(!_headers["Content-Type"] || _headers["Content-Type"] == "application/json"){
 			rtn.body = !!params?JSON.stringify(params):null;
 		} else {
 			rtn.body = !!params?params:null;
@@ -150,14 +152,17 @@ async function request(url, method, params, config) {
 		  case METHOD.POST:
 		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
 					toastMessage(e);
+					throw e;
 				});
 		  case METHOD.DELETE:
 		    return axios.delete(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
 					toastMessage(e);
+					throw e;
 				});
 		  case METHOD.PUT:
 		    return axios.put(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
 					toastMessage(e);
+					throw e;
 				});
 		  default:
 		    return axios.get(getUrl(url), { params, ...config }).then((res) => {
@@ -171,12 +176,10 @@ async function request(url, method, params, config) {
 				});
 		}
 	} else {
-		const _header = config?.header || config?.headers || {};
+		const _header = config?.headers || {};
 		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
 		if(!!method && method != METHOD.GET){
 			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
-				// console.log('response:')
-				// console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
 				} else if(typeof(res) == 'object' && !!res.body && isJson){
@@ -187,6 +190,7 @@ async function request(url, method, params, config) {
 			}).catch((e)=>{
 				console.log(e)
 				toastMessage(e);
+				throw e;
 			});
 		} else {
 			// console.log(getUrl(url))
