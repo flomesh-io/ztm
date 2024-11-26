@@ -119,6 +119,7 @@ pub async fn create_proxy_webview(
 				opacity:0.8;
 				cursor:pointer;
 				transition:.3s all;
+				z-index: 10000;
 			}}
 			.ztm-show:hover{{
 				opacity:1;
@@ -586,17 +587,7 @@ pub async fn create_proxy_webview(
 		}})
 		"#,&dom_code, &js_code);
 			
-		// let builder = tauri::WebviewBuilder::from_config(&options).on_navigation(|url| {
-		//     // allow the production URL or localhost on dev
-		// 	println!("on_navigation!");
-		// 	if url.scheme() == "http" || url.scheme() == "https" || url.scheme() == "ipc" {
-		// 		println!("{}",url);
-		// 		// create_proxy_webview_core(app, url.to_string(), url.to_string(), proxy_url.to_string(), url.to_string());
-		// 	}
-		// 	true
-		// });
-		
-		
+		// let builder = tauri::WebviewBuilder::from_config(&options)
 		// 	std::thread::sleep(std::time::Duration::from_secs(1));
 		if let Some(mut old_webview) = app.get_webview(&label) {
 			old_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
@@ -652,18 +643,51 @@ pub async fn create_proxy_webview(
 			}
 			
 			#[cfg(any(target_os = "ios", target_os = "android"))] {
-				if let Some(mut main_webview) = app.get_webview("main") {
-					main_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
-					std::thread::sleep(std::time::Duration::from_secs(1));
-					main_webview.eval(&init_code).unwrap();
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					main_webview.eval(&init_code).unwrap();
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					main_webview.eval(&init_code).unwrap();
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					main_webview.eval(&init_code).unwrap();
-					std::thread::sleep(std::time::Duration::from_secs(3));
-					main_webview.eval(&init_code).unwrap();
+				if proxy.is_empty() {
+					if let Some(mut main_webview) = app.get_webview("main") {
+						main_webview.navigate(Url::parse(&curl).expect("Invalid URL"));
+						std::thread::sleep(std::time::Duration::from_secs(1));
+						main_webview.eval(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						main_webview.eval(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						main_webview.eval(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						main_webview.eval(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						main_webview.eval(&init_code).unwrap();
+					}
+				} else {
+					//TODO window__ TAURI__ not support
+					if let Some(mut main_window) = app.get_window("main") {
+						let mut builder = wry::WebViewBuilder::new().with_url(curl);
+						
+						// set proxy
+						let parts: Vec<&str> = proxy.split(':').collect();
+						// Access the parts safely
+						let proxy_host = parts.get(0).unwrap_or(&"");
+						let proxy_port = parts.get(1).unwrap_or(&"");
+						let proxy_config = wry::ProxyConfig::Socks5(wry::ProxyEndpoint {
+							host: proxy_host.to_string(),
+							port: proxy_port.to_string()
+						});
+						
+						builder = builder.with_proxy_config(proxy_config);
+						// set proxy end
+						
+						let webview = builder.build_as_child(&main_window).unwrap();
+							
+						std::thread::sleep(std::time::Duration::from_secs(1));
+						webview.evaluate_script(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						webview.evaluate_script(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						webview.evaluate_script(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						webview.evaluate_script(&init_code).unwrap();
+						std::thread::sleep(std::time::Duration::from_secs(3));
+						webview.evaluate_script(&init_code).unwrap();
+					}
 				}
 			}
 		}
