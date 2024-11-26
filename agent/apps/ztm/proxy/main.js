@@ -53,6 +53,12 @@ export default function ({ app, mesh, utils }) {
   })
 
   var servePeer = utils.createServer({
+    '/api/ca': {
+      'GET': responder(() => api.getEndpointCA(app.endpoint.id).then(
+        ret => ret ? response(200, ret) : response(404)
+      )),
+    },
+
     '/api/config': {
       'GET': responder(() => api.getEndpointConfig(app.endpoint.id).then(
         ret => ret ? response(200, ret) : response(404)
@@ -65,7 +71,7 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/targets/*': {
-      'CONNECT': api.acceptPeer,
+      'CONNECT': pipeline($=>$.pipe(api.acceptPeer, () => $ctx)),
     },
   })
 

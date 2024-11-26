@@ -35,6 +35,10 @@ export default function ({ api, utils }) {
               --add-exclusion     <domain|ip ...>   Add excluded targets where traffic can't go via the endpoint
                                                     e.g. '*.example.com' and '8.88.0.0/16'
               --remove-exclusion  <domain|ip ...>   Remove previously added exclusions
+              --gen-cert          <on|off>          Enable/disable certificate generation
+              --set-log           <splunk|off>      Enable/disable logging
+              --log-address       <host:port>       Set the address of the logging service, used with --set-log
+              --log-token         <token>           Set the authentication token for the logging service, used with --set-log
             `,
             action: (args) => api.getEndpointConfig(endpoint.id).then(config => {
               var changed = false
@@ -78,6 +82,33 @@ export default function ({ api, utils }) {
                 changed = true
               }
 
+              if ('--gen-cert' in args) {
+                switch (args['--gen-cert']) {
+                  case 'on': config.generateCert = true; break
+                  case 'off': config.generateCert = false; break
+                  default: throw `option --gen-cert must be one of: on, off`
+                }
+                changed = true
+              }
+
+              if ('--set-log' in args) {
+                switch (args['--set-log']) {
+                  case 'splunk':
+                    config.log = {
+                      splunk: {
+                        address: args['--log-address'],
+                        token: args['--log-token'],
+                      }
+                    }
+                    break
+                  case 'off':
+                    config.log = null
+                    break
+                  default: throw `option --set-log must be one of: splunk, off`
+                }
+                changed = true
+              }
+
               if (changed) {
                 return api.setEndpointConfig(endpoint.id, config).then(
                   () => api.getEndpointConfig(endpoint.id).then(printConfig)
@@ -99,6 +130,25 @@ export default function ({ api, utils }) {
                 } else {
                   output('Targets: (not an exit)\n')
                 }
+                output(`Generate Certificate: ${config.generateCert ? 'On' : 'Off'}\n`)
+                if (config.log?.splunk) {
+                  output(`Logging:\n`)
+                  output(`  Target: Splunk\n`)
+                  output(`  Address: ${config.log.splunk.address}\n`)
+                  output(`  Token: ${config.log.splunk.token}\n`)
+                } else {
+                  output(`Logging: Off\n`)
+                }
+              }
+            })
+          },
+
+          {
+            title: 'Print the CA certificate used for issuing MITM certificates',
+            usage: 'ca',
+            action: () => api.getEndpointCA(endpoint.id).then(cert => {
+              if (cert) {
+                output(cert)
               }
             })
           }
