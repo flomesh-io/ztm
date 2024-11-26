@@ -179,7 +179,7 @@ onMounted(()=>{
 				</div>
 			</div> -->
 			<div class="terminal_body pt-2" >
-				<div class="grid text-center" >
+				<div class="grid text-center" v-if="shortcutApps && shortcutApps.length>0">
 						<div  
 							v-for="(shortcut,idx) in shortcutApps"
 							@click="routeApp(shortcut)" 
@@ -195,7 +195,7 @@ onMounted(()=>{
 						</div>
 				</div>
 			</div>
-			<div class="grid p-2">
+			<div v-if="historys && historys.length>0" class="grid p-2">
 				<div v-for="(history,idx) in historys" class="p-2 col-6 md:col-4" >
 					<div class="p-3 rounded history-card" >
 						<div class="mb-4 font-medium flex">
@@ -210,6 +210,17 @@ onMounted(()=>{
 							</div>
 						</div>
 					</div>
+				</div>
+			</div>
+			<div class="mt-4" v-if="(!shortcutApps || shortcutApps.length==0) && (!historys || historys.length==0)">
+				<div class="text-center opacity-60 flex text-white-alpha-20" >
+					<div v-for="() in 4"  class="flex-item">
+					<div style="font-size: 30px;width: 60px;height: 60px;line-height: 56px;border: 3px dashed rgba(255,255,255,0.6);border-radius: 10px;margin: auto;">
+					</div>
+					</div>
+				</div>
+				<div  class="text-center opacity-60 mt-6 mx-2 text-white-alpha-80" style="background:rgba(255,255,255,0.3);border-radius: 15px;min-height: 300px;line-height: 300px;font-size: 20px;">
+					<i class="pi pi-star-fill text-orange-300 text-2xl"/> No Favorites
 				</div>
 			</div>
 		</div>		

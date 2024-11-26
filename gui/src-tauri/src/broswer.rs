@@ -68,7 +68,7 @@ pub async fn create_proxy_webview(
 
 		println!("builder!");
 		let css_code = format!(r#"
-			.ztm-root {{
+			.ztm-browser-bar {{
 				width: 100%; 
 				z-index:10000;
 				position:relative;
@@ -377,7 +377,7 @@ pub async fn create_proxy_webview(
 				
 			}}
 			const loadDom = () => {{
-				if(!document?.body || !!document.querySelector('.ztm-root')) {{
+				if(!document?.body || !!document.querySelector('.ztm-browser-bar')) {{
 					return;
 				}}
 				const style = document.createElement('style');
@@ -387,7 +387,7 @@ pub async fn create_proxy_webview(
 				showIcon.className = 'ztm-show';
 				showIcon.innerHTML = `<svg style="margin-top:4px" t="1732161342634" class="ztm-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1466" width="22" height="22"><path d="M512 298.666667c-162.133333 0-285.866667 68.266667-375.466667 213.333333 89.6 145.066667 213.333333 213.333333 375.466667 213.333333s285.866667-68.266667 375.466667-213.333333c-89.6-145.066667-213.333333-213.333333-375.466667-213.333333z m0 469.333333c-183.466667 0-328.533333-85.333333-426.666667-256 98.133333-170.666667 243.2-256 426.666667-256s328.533333 85.333333 426.666667 256c-98.133333 170.666667-243.2 256-426.666667 256z m0-170.666667c46.933333 0 85.333333-38.4 85.333333-85.333333s-38.4-85.333333-85.333333-85.333333-85.333333 38.4-85.333333 85.333333 38.4 85.333333 85.333333 85.333333z m0 42.666667c-72.533333 0-128-55.466667-128-128s55.466667-128 128-128 128 55.466667 128 128-55.466667 128-128 128z" p-id="1467"></path></svg>`;
 				const newDiv = document.createElement('div');
-				newDiv.className = 'ztm-root';
+				newDiv.className = 'ztm-browser-bar';
 				newDiv.innerHTML = `{}`;
 				document.body.prepend(newDiv);
 				document.body.prepend(showIcon);
@@ -525,7 +525,7 @@ pub async fn create_proxy_webview(
 				}}
 			}}
 			const loadFilter = () => {{
-				if(!!document.querySelector('.ztm-root')) {{
+				if(!!document.querySelector('.ztm-browser-bar')) {{
 					return;
 				}}
 				setTimeout(()=>{{
@@ -563,7 +563,7 @@ pub async fn create_proxy_webview(
 		{}
 		{}
 		const timmer = () => {{
-			if(!!document && !!document?.body && !document.querySelector('.ztm-root')) {{
+			if(!!document && !!document?.body && !document.querySelector('.ztm-browser-bar')) {{
 				loadFilter();
 				loadDom();
 			}} else {{
@@ -574,13 +574,13 @@ pub async fn create_proxy_webview(
 		}}
 		timmer();
 		window.addEventListener('DOMContentLoaded', function() {{
-			if(!!document && !!document?.body && !document.querySelector('.ztm-root')) {{
+			if(!!document && !!document?.body && !document.querySelector('.ztm-browser-bar')) {{
 				loadFilter();
 				loadDom();
 			}}
 		}})
 		window.addEventListener('load', function() {{
-			if(!!document && !!document?.body && !document.querySelector('.ztm-root')) {{
+			if(!!document && !!document?.body && !document.querySelector('.ztm-browser-bar')) {{
 				loadFilter();
 				loadDom();
 			}}
