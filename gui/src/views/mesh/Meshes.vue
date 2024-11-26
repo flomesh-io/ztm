@@ -100,8 +100,8 @@ const tryMesh = () => {
 	ztmService.identity().then((PublicKey)=>{
 		if(!!PublicKey){
 			tryLoading.value = true;
-			ztmService.getPermit(PublicKey,username.value).then((permit)=>{
-				if(!!permit){
+			ztmService.getPermit(PublicKey,username.value).then((permitJSON)=>{
+				if(!!permitJSON){
 					let saveData = {
 						name: "",
 						ca: "",
@@ -113,29 +113,25 @@ const tryMesh = () => {
 						bootstraps: []
 					}
 					
-					try{
-						const permitJSON = JSON.parse(permit);
-						saveData = {...saveData, ...permitJSON};
-						saveData.name = "Sample";
-						saveData.agent.name = username.value
-						ztmService.joinMesh(joinName, saveData)
-						.then(res => {
-							tryLoading.value = false;
-							if(!!res){
-								visibleTry.value = false;
-								toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
-								loaddata();
-							}
-						})
-						.catch(err => {
-							tryLoading.value = false;
-							console.log('Request Failed', err)
-						});
-					}catch(e){
+					saveData = {...saveData, ...permitJSON};
+					saveData.name = "Sample";
+					saveData.agent.name = username.value
+					ztmService.joinMesh(saveData.name, saveData)
+					.then(res => {
 						tryLoading.value = false;
-					}
+						if(!!res){
+							visibleTry.value = false;
+							toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
+							loaddata();
+						}
+					})
+					.catch(err => {
+						tryLoading.value = false;
+						console.log('Request Failed', err)
+					});
 				}
 			}).catch((e)=>{
+				debugger
 				tryLoading.value = false;
 			});
 		}
