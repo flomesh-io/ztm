@@ -135,6 +135,8 @@ const tryMesh = () => {
 						tryLoading.value = false;
 					}
 				}
+			}).catch((e)=>{
+				tryLoading.value = false;
 			});
 		}
 	})

@@ -55,6 +55,8 @@ pub async fn create_proxy_webview(
 	proxy: String,
 	curl: String,
 	eval: bool,
+	width: Option<f64>,
+	height: Option<f64>,
 ) -> Result<(),()> {
 	
 	unsafe {
@@ -234,7 +236,7 @@ pub async fn create_proxy_webview(
 					background-color: #444444;
 				}}
 				.ztm-container {{
-					background-color: #2B2B29;
+					background-color: #18181A;
 					color: #eeeeee;
 				}}
 				.ztm-container {{
@@ -625,10 +627,8 @@ pub async fn create_proxy_webview(
 							old_window.inner_size().unwrap(),
 						).unwrap();
 				} else {
-					let width = 1000.;
-					let height = 800.;
 					let window = tauri::window::WindowBuilder::new(&app, &name)
-							.inner_size(width, height)
+							.inner_size(width.unwrap_or(1280.), height.unwrap_or(860.))
 							.title(name)
 							.build()
 							.expect("Failed to create a new window");
