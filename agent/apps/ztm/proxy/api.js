@@ -161,15 +161,17 @@ export default function ({ app, mesh }) {
       .handleMessageEnd(
         (msg) => {
           currentLogger?.log?.({
-            time: $requestTime.toUTCString(),
-            username: $ctx.peer.username,
-            endpoint: $ctx.peer.id,
-            ip: $ctx.peer.ip,
-            target: $target,
-            method: $requestHead.method,
-            path: $requestHead.path,
-            headers: $requestHead.headers,
-            size: msg.tail.headSize + msg.tail.bodySize,
+            event: {
+              time: $requestTime.toUTCString(),
+              username: $ctx.peer.username,
+              endpoint: $ctx.peer.id,
+              ip: $ctx.peer.ip,
+              target: $target,
+              method: $requestHead.method,
+              path: $requestHead.path,
+              headers: $requestHead.headers,
+              size: msg.tail.headSize + msg.tail.bodySize,
+            }
           })
         }
       )
