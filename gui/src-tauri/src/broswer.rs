@@ -506,18 +506,20 @@ pub async fn create_proxy_webview(
 			(function() {{
 				
 				window.location.assign = function(url) {{
-					
 					ztmNav(url)
 				}};
 			
 				window.location.replace = function(url) {{
-					
 					ztmNav(url)
 				}};
 				
 			}})();
 			const doLinkClick = (target) => {{
-				if(target?.href){{
+				if(target?.href && !window?.jumping){{
+					window.jumping = true;
+					setTimeout(()=>{{
+						window.jumping = false;
+					}},600)
 					const name = target.href.replace(/.*\/\//,'').split('/')[0].replaceAll('.','_').replaceAll('-','_');
 					if(target.target == '_blank' || target.getAttribute('tauri-target') == '_blank'){{
 						ztmNav(target.href, name, name + `_webview`)
