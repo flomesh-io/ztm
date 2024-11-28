@@ -78,6 +78,7 @@ const inboundEditor = ref(false);
 const outboundEditor = ref(false);
 const createTunnel = () => {
 	const reqs = [];
+	let errors =0;
 	inbounds.value.forEach((_inbound)=>{
 		if(_inbound.listens.length>0 && !!_inbound.listens[0] && _inbound.ep){
 			reqs.push(tunnelService.createInbound({
@@ -85,6 +86,8 @@ const createTunnel = () => {
 				proto: tunnel.value.proto, 
 				name: tunnel.value.name,
 				ep:_inbound.ep?.id
+			}).catch((e)=>{
+				errors++;
 			}))
 		}
 	})
@@ -96,6 +99,8 @@ const createTunnel = () => {
 				proto: tunnel.value.proto, 
 				name: tunnel.value.name,
 				ep:_outbound.ep?.id
+			}).catch((e)=>{
+				errors++;
 			}))
 		}
 	})
@@ -103,7 +108,11 @@ const createTunnel = () => {
 		outboundEditor.value = false;
 		inboundEditor.value = false;
 		loading.value = false;
-		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+		if(errors == 0){
+			toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+		}else if(reqs.length > errors){
+			toast.add({ severity: 'contrast', summary:'Tips', detail: 'Partially saved successfully.', life: 3000 });
+		}
 		setTimeout(()=>{
 			emits("save",tunnel.value);
 		},1000);
@@ -398,33 +407,30 @@ watch(()=>props.d,()=>{
 									<template #list="slotProps">
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-														<div class="flex-item flex flex-col justify-between items-start gap-2 ">
-															<div class="text-lg font-medium align-items-start flex flex-col flex-column-reverse  md:flex-row" style="justify-content: start;">
+														<div class="flex flex-col pr-2 ">
+															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																{{ item.ep?.name }}
-																<Tag v-if="info.endpoint?.id == item.ep?.id" class="ml-2" severity="contrast" >Local</Tag>
+																<Tag v-if="info.endpoint?.id == item.ep?.id"  severity="contrast" >Local</Tag>
 															</div>
 														</div>
-														<div class="flex flex-col md:items-end gap-4 align-items-start md:align-items-center">
-															<div class="flex md:flex-row flex-column">
-																<div  class="flex md:flex-row flex-column gap-4 ">
-																	
-																	<span class="font-semibold w-6rem md:text-right text-sm">Listens:</span>
-																	<span class="text-xl font-semibold">
-																		<Tag class="block" style="white-space: nowrap;" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens.filter((listen)=> !!listen?.value)" severity="secondary" >
-																			<Status v-if="listen?.open != null" :run="!!listen?.open" :errors="listen?.error" />
-																			{{ listen.value }}
-																		</Tag>
-																	</span>
+														<div class="flex flex-item gap-2 justify-content-center">
+															<div>
+																<div class="font-semibold w-6rem text-left">Listens:</div>
+																<div >
+																	<Tag class="block" style="white-space: nowrap;" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens.filter((listen)=> !!listen?.value)" severity="secondary" >
+																		<Status v-if="listen?.open != null" :run="!!listen?.open" :errors="listen?.error" />
+																		{{ listen.value }}
+																	</Tag>
 																</div>
-																<div class="flex md:flex-row flex-column gap-4 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.exits && item.exits.length>0">
-																	<span class="font-semibold w-6rem md:text-right text-sm" >Exits:</span>
-																	<span class="text-xl font-semibold" ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" :value="props.endpointMap[exit]?.name || props.endpointMap[exit]?.username || props.endpointMap[exit]?.id" severity="secondary" /></span>
-																</div>
-															</div>	
-															<div class="flex flex-row-reverse md:flex-row gap-2 pl-4">
-																	<Button @click="inboundRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
-																	<Button v-if="!!props.d" @click="inboundEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
 															</div>
+															<div v-if="item.exits && item.exits.length>0">
+																<div class="font-semibold w-6rem" >Exits:</div>
+																<div><Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" :value="props.endpointMap[exit]?.name || props.endpointMap[exit]?.username || props.endpointMap[exit]?.id" severity="secondary" /></div>
+															</div>
+														</div>
+														<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
+																<Button v-if="!!props.d" @click="inboundEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
+																<Button @click="inboundRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
 														</div>
 												</div>
 										</div>
@@ -534,30 +540,28 @@ watch(()=>props.d,()=>{
 										
 											<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 													<div class="flex py-2 gap-4 md:gap-1" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-															<div class="flex-item flex flex-col justify-between items-start gap-2 ">
-																	<div class="text-lg font-medium align-items-start flex flex-col flex-column-reverse  md:flex-row" style="justify-content: start;">
-																			{{ item.ep?.name }} <Tag v-if="info.endpoint?.id == item.ep?.id" class="ml-2" severity="contrast" >Local</Tag>
+															<div class="flex flex-col justify-between items-start pr-2 ">
+																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+																			{{ item.ep?.name }} <Tag v-if="info.endpoint?.id == item.ep?.id" severity="contrast" >Local</Tag>
 																	</div>
 															</div>
-															<div class="flex flex-col md:items-end gap-4 md:gap-1 align-items-start md:align-items-center">
-																<div class="flex md:flex-row flex-column">
-																	<div  class="flex md:flex-row flex-column gap-4 md:gap-2 align-items-start md:align-items-center mt-4 md:mt-0" >
-																		<span class="font-semibold w-5rem md:text-right text-sm">Targets:</span>
-																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets.filter((target)=> !!target)" :value="target" severity="secondary" /></span>
-																	</div>	
-																	<div  class="flex md:flex-row flex-column gap-4 md:gap-2 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.entrances && item.entrances.length>0">
-																		<span class="font-semibold w-5rem md:text-right text-sm" >Entrances:</span>
-																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></span>
-																	</div>
-																	<div class="flex md:flex-row flex-column gap-4 md:gap-2 align-items-start md:align-items-center mt-4 md:mt-0" v-if="item.users && item.users.length>0">
-																		<span class="font-semibold w-5rem md:text-right text-sm">Users:</span>
-																		<span class="text-xl font-semibold"><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></span>
-																	</div>
+															<div class="flex flex-item gap-2 justify-content-center">
+																<div  class="flex flex-column" >
+																	<div class="font-semibold w-5rem">Targets:</div>
+																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets.filter((target)=> !!target)" :value="target" severity="secondary" /></div>
 																</div>	
-																	<div class="flex flex-row-reverse md:flex-row gap-2 pl-4">
-																		<Button @click="outboundRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
-																		<Button v-if="!!props.d" @click="outboundEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
-																	</div>
+																<div  class="flex flex-column" v-if="item.entrances && item.entrances.length>0">
+																	<div class="font-semibold w-5rem " >Entrances:</div>
+																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></div>
+																</div>
+																<div class="flex flex-column " v-if="item.users && item.users.length>0">
+																	<div class="font-semibold w-5rem ">Users:</div>
+																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></div>
+																</div>
+															</div>
+															<div class="flex flex-column xl:flex-row-reverse xl:flex-row gap-2">
+																<Button v-if="!!props.d" @click="outboundEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
+																<Button @click="outboundRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
 															</div>
 													</div>
 											</div>

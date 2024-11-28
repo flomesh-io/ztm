@@ -30,7 +30,8 @@ const create = () => {
 	proxyService.setProxy({
 		ep: props?.ep?.id,
 		listen: config.value.listen,
-		targets: config.value.targets
+		targets: config.value.targets,
+		exclusions: config.value.exclusions,
 	}).then((res)=>{
 		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
 		setTimeout(()=>{
@@ -42,6 +43,7 @@ const loaddata = () => {
 	proxyService.getProxy(props?.ep?.id).then((res)=>{
 		config.value.listen = res.listen || "";
 		config.value.targets = res.targets || [];
+		config.value.exclusions = res.exclusions || [];
 	})
 }
 onMounted(() => {
@@ -83,9 +85,17 @@ onMounted(() => {
 							</div>
 							<div class="col-12 p-0">
 								<FormItem label="Targets" :border="false">
-									<ChipList direction="v" icon="pi pi-link" :id="`outbound-targets-${index}`" placeholder="Add" v-model:list="config.targets" />
+									<ChipList direction="v" icon="pi pi-link" :id="`targets-${index}`" placeholder="Add" v-model:list="config.targets" />
 									<div class="absolute mt-2 opacity-60">
-										egs: '*', '0.0.0.0/0'
+										e.g. '*' | '*.example.com' | '8.88.0.0/16'
+									</div>
+								</FormItem>
+							</div>
+							<div class="col-12 p-0">
+								<FormItem label="Exclusions" :border="false">
+									<ChipList direction="v" icon="pi pi-link" :id="`exclusions-${index}`" placeholder="Add" v-model:list="config.exclusions" />
+									<div class="absolute mt-2 opacity-60">
+										e.g. '*.example.com' | '8.88.0.0/16'
 									</div>
 								</FormItem>
 							</div>
