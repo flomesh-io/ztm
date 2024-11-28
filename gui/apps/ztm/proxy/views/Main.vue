@@ -110,7 +110,9 @@ const loadproxys = () => {
 										<div class="grid align-items-center justify-content-end pr-2 gap-1 pt-3" v-if="!visibleEditor && node.proxy">
 											<Tag v-if="node.proxy?.listen" severity="secondary" value="Secondary">Listen {{node.proxy.listen}}</Tag> 
 											<Tag v-show="index<2" v-if="node.proxy?.targets" v-for="(target,index) in node.proxy?.targets" severity="secondary" value="Secondary">Target {{target}}</Tag> 
-											<Tag v-if="!!node.proxy?.targets && node.proxy?.targets.length>2" v-tooltip="JSON.stringify(node.proxy?.targets)"  severity="secondary" value="Secondary">...</Tag> 
+											<Tag v-if="!!node.proxy?.targets && node.proxy?.targets.length>2" v-tooltip="JSON.stringify(node.proxy?.targets)"  severity="secondary" value="Secondary">...</Tag>
+											<Tag v-show="index<2" v-if="node.proxy?.exclusions" v-for="(exclusion,index) in node.proxy?.exclusions" severity="secondary" value="Secondary">Exclusion {{exclusion}}</Tag> 
+											<Tag v-if="!!node.proxy?.exclusions && node.proxy?.exclusions.length>2" v-tooltip="JSON.stringify(node.proxy?.exclusions)"  severity="secondary" value="Secondary">...</Tag> 
 										</div>
 								</div>
 							</div>
