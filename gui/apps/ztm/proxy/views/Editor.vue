@@ -32,6 +32,7 @@ const back = () => {
 	emits('back')
 }
 const save = () => {
+	loading.value = true;
 	proxyService.setProxy({
 		ep: props?.ep?.id,
 		listen: config.value.listen,
@@ -40,10 +41,13 @@ const save = () => {
 		allow: allow.value?allow.value.split("\n"):[],
 		deny: deny.value?deny.value.split("\n"):[],
 	}).then((res)=>{
+		loading.value = false;
 		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
 		setTimeout(()=>{
 			emits("save",config.value);
 		},1000);
+	}).catch((e)=>{
+		loading.value = false;
 	})
 }
 const loaddata = () => {
@@ -74,7 +78,7 @@ const placeholder = ref(`< domain | ip >
 					<span v-else>Loading...</span>
 				</template>
 				<template #end> 
-					<Button :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="save"/>
+					<Button :loading="loading" icon="pi pi-check" label="Save" aria-label="Submit" size="small" @click="save"/>
 				</template>
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
