@@ -126,10 +126,19 @@ export default function ({ app, mesh }) {
       var params = matchPathTargets(req.head.path)
       if (params) {
         $target = params['*']
-        if (IP.isV4($target) || IP.isV6($target)) {
-          if (!hasIP(currentConfig, $target)) return new Message({ status: 403 })
-        } else {
-          if (!hasDomain(currentConfig, $target)) return new Message({ status: 403 })
+        $host = $target.substring(0, $target.lastIndexOf(':'))
+        if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host)) {
+          currentLogger?.log?.({
+            event: {
+              time: new Date().toUTCString(),
+              username: $ctx.peer.username,
+              endpoint: $ctx.peer.id,
+              ip: $ctx.peer.ip,
+              target: $target,
+              denied: true,
+            }
+          })
+          return new Message({ status: 403 })
         }
         app.log(`Forward to ${$target}`)
         return new Message({ status: 200 })
@@ -210,11 +219,9 @@ export default function ({ app, mesh }) {
               new Message({ path: '/api/config' })
             ).then(res => {
               var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
-              if (IP.isV4($host) || IP.isV6($host)) {
-                if (hasIP(config, $host)) return ep
-              } else {
-                if (hasDomain(config, $host)) return ep
-              }
+              println(config)
+              println($host)
+              if (isExit(config, $host)) return ep
               throw null
             })
           }
@@ -284,8 +291,34 @@ export default function ({ app, mesh }) {
     ).to(connectPeer)
   )
 
-  function hasDomain(config, host) {
-    if (config?.exclusions instanceof Array && config.exclusions.some(
+  function isExit(config, host) {
+    if (IP.isV4(host) || IP.isV6(host)) {
+      return (
+        hasIP(config?.exclusions, host) === false &&
+        hasIP(config?.targets, host)
+      )
+    } else {
+      return (
+        hasDomain(config?.exclusions, host) === false &&
+        hasDomain(config?.targets, host)
+      )
+    }
+  }
+
+  function isAllowed(config, host) {
+    if (IP.isV4(host) || IP.isV6(host)) {
+      if (hasIP(config?.deny, host)) return false
+      if (config?.allow?.length > 0) return hasIP(config.allow, host)
+      return true
+    } else {
+      if (hasDomain(config?.deny, host)) return false
+      if (config?.allow?.length > 0) return hasDomain(config.allow, host)
+      return true
+    }
+  }
+
+  function hasDomain(list, host) {
+    return list instanceof Array && list.some(
       domain => {
         if (domain.startsWith('*')) {
           return host.endsWith(domain.substring(1))
@@ -293,23 +326,11 @@ export default function ({ app, mesh }) {
           return host === domain
         }
       }
-    )) {
-      return false
-    } else {
-      return config?.targets instanceof Array && config.targets.some(
-        domain => {
-          if (domain.startsWith('*')) {
-            return host.endsWith(domain.substring(1))
-          } else {
-            return host === domain
-          }
-        }
-      )
-    }
+    )
   }
 
-  function hasIP(config, host) {
-    if (config?.exclusions instanceof Array && config.exclusions.some(
+  function hasIP(list, host) {
+    return list instanceof Array && list.some(
       mask => {
         try {
           var m = new IPMask(mask)
@@ -318,20 +339,7 @@ export default function ({ app, mesh }) {
           return false
         }
       }
-    )) {
-      return false
-    } else {
-      return config?.targets instanceof Array && config.targets.some(
-        mask => {
-          try {
-            var m = new IPMask(mask)
-            return m.contains(host)
-          } catch {
-            return false
-          }
-        }
-      )
-    }
+    )
   }
 
   getLocalConfig().then(applyConfig)
