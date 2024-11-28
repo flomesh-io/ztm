@@ -35,6 +35,10 @@ export default function ({ api, utils }) {
               --add-exclusion     <domain|ip ...>   Add excluded targets where traffic can't go via the endpoint
                                                     e.g. '*.example.com' and '8.88.0.0/16'
               --remove-exclusion  <domain|ip ...>   Remove previously added exclusions
+              --add-allow         <domain|ip ...>   Add allowed destinations
+              --remove-allow      <domain|ip ...>   Remove allowed destinations
+              --add-deny          <domain|ip ...>   Add denied destinations
+              --remove-deny       <domain|ip ...>   Remove denied destinations
               --gen-cert          <on|off>          Enable/disable certificate generation
               --set-log           <splunk|off>      Enable/disable logging
               --log-address       <host:port>       Set the address of the logging service, used with --set-log
@@ -78,6 +82,40 @@ export default function ({ api, utils }) {
               if ('--remove-exclusion' in args && config.exclusions instanceof Array) {
                 args['--remove-exclusion'].forEach(target => {
                   config.exclusions = config.exclusions.filter(t => t !== target)
+                })
+                changed = true
+              }
+
+              if ('--add-allow' in args) {
+                if (!(config.allow instanceof Array)) config.allow = []
+                args['--add-allow'].forEach(allow => {
+                  if (!config.allow.includes(allow)) {
+                    config.allow.push(allow)
+                  }
+                })
+                changed = true
+              }
+
+              if ('--remove-allow' in args && config.allow instanceof Array) {
+                args['--remove-allow'].forEach(allow => {
+                  config.allow = config.allow.filter(t => t !== allow)
+                })
+                changed = true
+              }
+
+              if ('--add-deny' in args) {
+                if (!(config.deny instanceof Array)) config.deny = []
+                args['--add-deny'].forEach(deny => {
+                  if (!config.deny.includes(deny)) {
+                    config.deny.push(deny)
+                  }
+                })
+                changed = true
+              }
+
+              if ('--remove-deny' in args && config.deny instanceof Array) {
+                args['--remove-deny'].forEach(deny => {
+                  config.deny = config.deny.filter(t => t !== deny)
                 })
                 changed = true
               }
@@ -126,6 +164,18 @@ export default function ({ api, utils }) {
                   if (config.exclusions instanceof Array && config.exclusions.length > 0) {
                     output('Excluded Targets:\n')
                     config.exclusions.forEach(t => output(`  ${t}\n`))
+                  }
+                  if (config.allow instanceof Array && config.allow.length > 0) {
+                    output('Allow:\n')
+                    config.allow.forEach(t => output(`  ${t}\n`))
+                  } else {
+                    output('Allow: All\n')
+                  }
+                  if (config.deny instanceof Array && config.deny.length > 0) {
+                    output('Deny:\n')
+                    config.deny.forEach(t => output(`  ${t}\n`))
+                  } else {
+                    output('Deny: None\n')
                   }
                 } else {
                   output('Targets: (not an exit)\n')
