@@ -131,7 +131,6 @@ const tryMesh = () => {
 					});
 				}
 			}).catch((e)=>{
-				debugger
 				tryLoading.value = false;
 			});
 		}
