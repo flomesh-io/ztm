@@ -257,28 +257,12 @@ const openFile = (path, contentType) => {
 const getShared = (isFile, callback) => {
 	if(!isFile){
 		getSharedFilesPath("temp", 'group.com.flomesh.ztm').then((paths)=>{
-			if(paths && paths.length>0){
-				debugger
-				writeMobileFile('getSharedFilesPath.txt',`${paths.join(";")}`);
-			}else {
-				writeMobileFile('getSharedFilesPathAfter.txt',`empty`);
-			}
 			if(callback){
 				callback(paths)
 			}
 		})
 	} else {
 		getSharedFiles("temp", 'group.com.flomesh.ztm').then((files)=>{
-			if(files && files.length>0){
-				debugger
-				let str = "";
-				files.forEach((f)=>{
-					str+= `${f.name},${f.size},${f.mime}`;
-				})
-				writeMobileFile('getSharedFiles.txt',str);
-			}else{
-				writeMobileFile('getSharedFilesAfter.txt',`empty`);
-			}
 			if(callback){
 				callback(files)
 			}

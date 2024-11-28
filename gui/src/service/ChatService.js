@@ -279,8 +279,6 @@ export default class ChatService {
 		}
 	}
 	reqBlobSrc(file,callback) {
-		//'application/octet-stream'
-		//file.contentType
 		if(!!window.__TAURI_INTERNALS__){
 			tauriFetch(file.src, {
 			  method: 'GET', 
@@ -320,17 +318,6 @@ export default class ChatService {
 			})
 		}
 		
-		// request(file.src, "GET", null, this.getHeader('application/octet-stream')).then((resp)=>{
-		// 	var blob = binaryStringToBlob(resp);
-		// 	var url = createObjectURL(blob);
-		// 	debugger
-		// 	// const _file = new File([buffer], file.name, { type: file.contentType });
-		// 	// const url = URL.createObjectURL(_file);
-		// 	store.commit('blob/setUrl', [file.src,url]);
-		// 	if(callback) {
-		// 		callback(url)
-		// 	}
-		// })
 	}
 	/*
 	message:
