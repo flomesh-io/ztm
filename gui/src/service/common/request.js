@@ -81,8 +81,25 @@ const getPort = () => {
 const setPort = (port) => {
 	localStorage.setItem("VITE_APP_API_PORT",port);
 }
-const toastMessage = (e) => {
-	if(!!e?.response?.status && !!e?.response?.data){
+const toastMessage = async (e) => {
+	let result = '';
+	if (e?.body instanceof ReadableStream) {
+		const reader = e.body.getReader();
+		const decoder = new TextDecoder('utf-8');
+		let done = false;
+
+		while (!done) {
+			const { value, done: readerDone } = await reader.read();
+			done = readerDone;
+			if (value) {
+				result += decoder.decode(value, { stream: !done });
+			}
+		}
+	}
+	
+	if(!!result){
+		toast.add({ severity: 'error', summary: 'Tips', detail: `${result}`, life: 3000 });
+	}else if(!!e?.response?.status && !!e?.response?.data){
 		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.response.status}] ${e.response.data}`, life: 3000 });
 	} else if(!!e.status && !!e.message){
 		toast.add({ severity: 'error', summary: 'Tips', detail: `[${e.status}] ${e.message}`, life: 3000 });
