@@ -113,6 +113,8 @@ const loadproxys = () => {
 											<Tag v-if="!!node.proxy?.targets && node.proxy?.targets.length>2" v-tooltip="JSON.stringify(node.proxy?.targets)"  severity="secondary" value="Secondary">...</Tag>
 											<Tag v-show="index<2" v-if="node.proxy?.exclusions" v-for="(exclusion,index) in node.proxy?.exclusions" severity="secondary" value="Secondary">Exclusion {{exclusion}}</Tag> 
 											<Tag v-if="!!node.proxy?.exclusions && node.proxy?.exclusions.length>2" v-tooltip="JSON.stringify(node.proxy?.exclusions)"  severity="secondary" value="Secondary">...</Tag> 
+											<Tag v-if="node.proxy?.allow" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.allow.join('\n')">Alow <Badge :value="node.proxy.allow.length"/></Tag> 
+											<Tag v-if="node.proxy?.deny" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.deny.join('\n')">Deny <Badge :value="node.proxy.deny.length"/></Tag> 
 										</div>
 								</div>
 							</div>

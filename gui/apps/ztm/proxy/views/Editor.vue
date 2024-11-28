@@ -16,9 +16,14 @@ const info = computed(() => {
 	return store.getters['app/info']
 });
 const loading = ref(false);
+const allow = ref('');
+const deny = ref('');
 const newConfig = {
 	listen: "",
 	targets: [],
+	exclusions: [],
+	allow: [],
+	deny: [],
 }
 const config = ref(_.cloneDeep(newConfig));
 
@@ -26,12 +31,14 @@ const error = ref();
 const back = () => {
 	emits('back')
 }
-const create = () => {
+const save = () => {
 	proxyService.setProxy({
 		ep: props?.ep?.id,
 		listen: config.value.listen,
 		targets: config.value.targets,
 		exclusions: config.value.exclusions,
+		allow: allow.value?allow.value.split("\n"):[],
+		deny: deny.value?deny.value.split("\n"):[],
 	}).then((res)=>{
 		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
 		setTimeout(()=>{
@@ -44,11 +51,17 @@ const loaddata = () => {
 		config.value.listen = res.listen || "";
 		config.value.targets = res.targets || [];
 		config.value.exclusions = res.exclusions || [];
+		config.value.allow = res.allow || [];
+		config.value.deny = res.deny || [];
+		allow.value = (res?.allow||[]).join("\n")
+		deny.value = (res?.deny||[]).join("\n")
 	})
 }
 onMounted(() => {
 	loaddata();
 });
+const placeholder = ref(`< domain | ip >
+...`)
 </script>
 
 <template>
@@ -61,7 +74,7 @@ onMounted(() => {
 					<span v-else>Loading...</span>
 				</template>
 				<template #end> 
-					<Button :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="create"/>
+					<Button :loading="loading" label="Save Proxy" aria-label="Submit" size="small" @click="save"/>
 				</template>
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
@@ -83,19 +96,35 @@ onMounted(() => {
 									</Chip>
 								</FormItem>
 							</div>
-							<div class="col-12 p-0">
+							<div class="col-12 md:col-6 p-0">
 								<FormItem label="Targets" :border="false">
-									<ChipList direction="v" icon="pi pi-link" :id="`targets-${index}`" placeholder="Add" v-model:list="config.targets" />
+									<ChipList direction="v" icon="pi pi-link" :id="`targets-${index}`" placeholder="< domain | ip >" v-model:list="config.targets" />
 									<div class="absolute mt-2 opacity-60">
-										e.g. '*' | '*.example.com' | '8.88.0.0/16'
+										e.g. '*.example.com' | '0.0.0.0/0'
 									</div>
 								</FormItem>
 							</div>
-							<div class="col-12 p-0">
+							<div class="col-12 md:col-6 p-0">
 								<FormItem label="Exclusions" :border="false">
-									<ChipList direction="v" icon="pi pi-link" :id="`exclusions-${index}`" placeholder="Add" v-model:list="config.exclusions" />
+									<ChipList direction="v" icon="pi pi-link" :id="`exclusions-${index}`" placeholder="< domain | ip >" v-model:list="config.exclusions" />
 									<div class="absolute mt-2 opacity-60">
-										e.g. '*.example.com' | '8.88.0.0/16'
+										e.g. '*.example.com' | '0.0.0.0/0'
+									</div>
+								</FormItem>
+							</div>
+							<div class="col-12 md:col-6 p-0 mt-4">
+								<FormItem label="Allow" :border="false">
+									<Textarea class="w-full" :placeholder="placeholder" v-model="allow" rows="3" cols="20" />
+									<div class="absolute mt-1 opacity-60">
+										e.g. '*.example.com' | '0.0.0.0/0'
+									</div>
+								</FormItem>
+							</div>
+							<div class="col-12 md:col-6 p-0 mt-4">
+								<FormItem label="Deny" :border="false">
+									<Textarea class="w-full" :placeholder="placeholder" v-model="deny" rows="3" cols="20" />
+									<div class="absolute mt-1 opacity-60">
+										e.g. '*.example.com' | '0.0.0.0/0'
 									</div>
 								</FormItem>
 							</div>
@@ -120,5 +149,10 @@ onMounted(() => {
 	:deep(.add-tag-input:hover){
 		width:160px;
 	}
+}
+
+:deep(.text-tip){
+	width: 90px !important;
+	padding-right: 10px !important;
 }
 </style>
