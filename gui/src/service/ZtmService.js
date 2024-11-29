@@ -10,8 +10,23 @@ import {
 
 import { getItem as getKeychainItem, saveItem as saveKeychainItem } from 'tauri-plugin-keychain';
 
-const VITE_APP_PUB_HUB = import.meta.env.VITE_APP_PUB_HUB;
+
+const VITE_APP_PUB_HUB_CN = import.meta.env.VITE_APP_PUB_HUB_CN;
+const VITE_APP_PUB_HUB_US = import.meta.env.VITE_APP_PUB_HUB_US;
+
 export default class ZtmService {
+	getPubHub() {
+		const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		if (timeZone === "Asia/Shanghai" || timeZone === "Asia/Chongqing" || timeZone === "Asia/Hong_Kong") {
+			return VITE_APP_PUB_HUB_CN;
+		} else if (timeZone === "Asia/Macau") {
+			return VITE_APP_PUB_HUB_US;
+		} else if (timeZone.startsWith("Asia")) {
+			return VITE_APP_PUB_HUB_US;
+		} else {
+			return VITE_APP_PUB_HUB_US;
+		}
+	}
 	login(user, password) {
 		return request('/api/login', "POST", {
 			user, password
@@ -146,7 +161,7 @@ export default class ZtmService {
 		return request(`/api/meshes/${name}`);
 	}
 	getPermit(PublicKey, UserName) {
-		return request(`${VITE_APP_PUB_HUB}/permit`,"POST",{PublicKey, UserName});
+		return request(`${this.getPubHub()}/permit`,"POST",{PublicKey, UserName});
 	}
 	joinMesh(name, config) {
 		if(config.bootstraps){
