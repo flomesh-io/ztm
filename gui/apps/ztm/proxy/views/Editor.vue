@@ -64,7 +64,7 @@ const loaddata = () => {
 onMounted(() => {
 	loaddata();
 });
-const placeholder = ref(`< domain | ip >
+const placeholder = ref(`domain | ip
 ...`)
 </script>
 
@@ -87,7 +87,7 @@ const placeholder = ref(`< domain | ip >
 				<Loading v-if="loading" />
 				<div v-else class="surface-ground surface-section h-full p-4" >
 					<div class="mb-4" v-if="!props.d">
-						<div class="grid" >
+						<div class="grid w-full" >
 							<div class="col-12 p-0">
 								<FormItem label="Listen" :border="false">
 									<Chip class="pl-0 pr-3 mr-2">
@@ -95,43 +95,45 @@ const placeholder = ref(`< domain | ip >
 												<i class="pi pi-sort"/>
 											</span>
 											<span class="ml-2 font-medium">
-												<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  placeholder="Listen (HOST:PORT)" />
+												<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  placeholder="IP:PORT" />
 											</span>
 									</Chip>
 								</FormItem>
 							</div>
+						</div>
+						<div class="grid mt-2 w-full" >
 							<div class="col-12 md:col-6 p-0">
 								<FormItem label="Targets" :border="false">
-									<ChipList direction="v" icon="pi pi-link" :id="`targets-${index}`" placeholder="< domain | ip >" v-model:list="config.targets" />
-									<div class="absolute mt-2 opacity-60">
-										e.g. '*.example.com' | '0.0.0.0/0'
-									</div>
+									<ChipList addClass="" direction="v" icon="pi pi-link" :id="`targets-${index}`" placeholder="domain | ip" v-model:list="config.targets" />
+									
 								</FormItem>
 							</div>
 							<div class="col-12 md:col-6 p-0">
 								<FormItem label="Exclusions" :border="false">
-									<ChipList direction="v" icon="pi pi-link" :id="`exclusions-${index}`" placeholder="< domain | ip >" v-model:list="config.exclusions" />
-									<div class="absolute mt-2 opacity-60">
-										e.g. '*.example.com' | '0.0.0.0/0'
-									</div>
+									<ChipList addClass="w-full" direction="v" icon="pi pi-link" :id="`exclusions-${index}`" placeholder="domain | ip" v-model:list="config.exclusions" />
+									
 								</FormItem>
 							</div>
-							<div class="col-12 md:col-6 p-0 mt-4">
+						</div>
+						<div class="absolute opacity-60" style="padding-left: 100px;margin-top: -10px;">
+							e.g. '*.example.com' | '0.0.0.0/0'
+						</div>
+						<div class="grid mt-5 w-full" >
+							<div class="col-12 md:col-6 p-0">
 								<FormItem label="Allow" :border="false">
 									<Textarea class="w-full" :placeholder="placeholder" v-model="allow" rows="3" cols="20" />
-									<div class="absolute mt-1 opacity-60">
-										e.g. '*.example.com' | '0.0.0.0/0'
-									</div>
+									
 								</FormItem>
 							</div>
-							<div class="col-12 md:col-6 p-0 mt-4">
+							<div class="col-12 md:col-6 p-0">
 								<FormItem label="Deny" :border="false">
 									<Textarea class="w-full" :placeholder="placeholder" v-model="deny" rows="3" cols="20" />
-									<div class="absolute mt-1 opacity-60">
-										e.g. '*.example.com' | '0.0.0.0/0'
-									</div>
+									
 								</FormItem>
 							</div>
+						</div>
+						<div class="absolute opacity-60" style="padding-left: 100px;margin-top: -15px">
+							e.g. '*.example.com' | '0.0.0.0/0'
 						</div>
 					</div>
 				</div>
@@ -156,7 +158,7 @@ const placeholder = ref(`< domain | ip >
 }
 
 :deep(.text-tip){
-	width: 90px !important;
+	width: 100px !important;
 	padding-right: 10px !important;
 }
 </style>
