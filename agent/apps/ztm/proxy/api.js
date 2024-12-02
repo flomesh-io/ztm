@@ -219,8 +219,6 @@ export default function ({ app, mesh }) {
               new Message({ path: '/api/config' })
             ).then(res => {
               var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
-              println(config)
-              println($host)
               if (isExit(config, $host)) return ep
               throw null
             })
