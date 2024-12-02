@@ -103,7 +103,7 @@ const loaddata = (reload) => {
 				store.commit('account/setSelectedMesh', res[0]);
 				selectedMesh.value = res[0];
 			}
-			if(!merged.value && playing.value && (res.length == 0 || true)){
+			if(!merged.value && playing.value && (res.length == 0)){
 				merged.value = true;
 				ztmService.mergePrivateKey(()=>{})
 			}

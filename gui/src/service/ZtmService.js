@@ -17,12 +17,15 @@ const VITE_APP_PUB_HUB_US = import.meta.env.VITE_APP_PUB_HUB_US;
 export default class ZtmService {
 	getPubHub() {
 		const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-		if (timeZone === "Asia/Shanghai" || timeZone === "Asia/Chongqing" || timeZone === "Asia/Hong_Kong") {
+		if (timeZone === "Asia/Shanghai" || timeZone === "Asia/Chongqing") {
+			const pm = platform();
+			if(pm == 'ios'){
+				return '';
+			} else {
+				return VITE_APP_PUB_HUB_CN;
+			}
+		} else if (timeZone === "Asia/Hong_Kong") {
 			return VITE_APP_PUB_HUB_CN;
-		} else if (timeZone === "Asia/Macau") {
-			return VITE_APP_PUB_HUB_US;
-		} else if (timeZone.startsWith("Asia")) {
-			return VITE_APP_PUB_HUB_US;
 		} else {
 			return VITE_APP_PUB_HUB_US;
 		}
