@@ -20,6 +20,7 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.ztm"
 				android:supportsRtl="true"
+        android:extractNativeLibs = "true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
