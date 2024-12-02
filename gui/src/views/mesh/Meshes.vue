@@ -84,6 +84,11 @@ const openEditor = () => {
 const emptyMsg = computed(()=>{
 	return `You haven't joined a mesh yet.`
 });
+
+const hasPubHub = computed(()=>{
+	return !!ztmService.getPubHub()
+});
+
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -169,7 +174,7 @@ onMounted(() => {
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
-						<Button v-if="!!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="'Live Sample'" icon="pi pi-sparkles" text @click="openTryMesh" />
+						<Button v-if="hasPubHub && !!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="'Live Sample'" icon="pi pi-sparkles" text @click="openTryMesh" />
 						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="'Join'" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>
@@ -197,7 +202,9 @@ onMounted(() => {
 				</div>
 			</div>
 			</ScrollPanel>
-			<Empty v-else :title="emptyMsg" cancelButton="Live Sample" @cancel="openTryMesh" button="Join Mesh" @primary="() => visibleEditor = true"/>
+			<Empty v-else-if="hasPubHub" :title="emptyMsg" cancelButton="Live Sample" @cancel="openTryMesh" button="Join Mesh" @primary="() => visibleEditor = true"/>
+			<Empty v-else :title="emptyMsg" button="Join Mesh" @primary="() => visibleEditor = true"/>
+		
 		</div>
 		<div class="flex-item h-full" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
