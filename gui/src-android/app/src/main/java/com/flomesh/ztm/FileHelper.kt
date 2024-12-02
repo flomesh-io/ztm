@@ -15,16 +15,16 @@ import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.util.Log
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
+// import kotlinx.serialization.Serializable
+// import kotlinx.serialization.encodeToString
+// import kotlinx.serialization.decodeFromString
+// import kotlinx.serialization.json.Json
 
-@Serializable
-data class Store(var privatekey: Privatekey)
+// @Serializable
+// data class Store(var privatekey: Privatekey)
 
-@Serializable
-data class Privatekey(var value: Array<Int>)
+// @Serializable
+// data class Privatekey(var value: Array<Int>)
 
 class FileHelper(private val context: Context) {
 
@@ -49,18 +49,18 @@ class FileHelper(private val context: Context) {
 					while (true) {
 						try {
 							println("restoreStore: $backupFile")
-							//backupFile.copyTo(storeFile, overwrite = true)
-							var json = Json {
-								ignoreUnknownKeys = true // 忽略未知字段
-							}
-							var jsonString = backupFile.readText()
-							var storeBackup = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
-							var jsonStringStore = backupFile.readText()
-							var store = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
+							backupFile.copyTo(storeFile, overwrite = true)
+							// var json = Json {
+							// 	ignoreUnknownKeys = true // 忽略未知字段
+							// }
+							// var jsonString = backupFile.readText()
+							// var storeBackup = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
+							// var jsonStringStore = backupFile.readText()
+							// var store = json.decodeFromString<Store>(jsonString)  // 将 JSON 字符串转换为 User 对象
 
-							store.privatekey.value = storeBackup.privatekey.value
-							var jsonStringNew = json.encodeToString(store)  // 将 User 对象转换为 JSON 字符串
-							storeFile.writeText(jsonStringNew)  // 写入文件
+							// store.privatekey.value = storeBackup.privatekey.value
+							// var jsonStringNew = json.encodeToString(store)  // 将 User 对象转换为 JSON 字符串
+							// storeFile.writeText(jsonStringNew)  // 写入文件
 							println("restoreStore: Done")
 							break;
 						} catch (e: Exception) {
