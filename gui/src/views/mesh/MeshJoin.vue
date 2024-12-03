@@ -43,32 +43,85 @@ const config = ref(_.cloneDeep(newConfig));
 const enabled = computed(() => {
 	return !!config.value?.name>0 
 	&& !!config.value.agent?.name>0 
-	&& config.value.agent.certificate.length>0 
-	&& config.value.ca.length>0 
-	&& config.value.bootstraps.length>0 
-	&& !!config.value.bootstraps[0]
-	&& (config.value?.name||'').toLocaleLowerCase() != 'sample';
+	&& ((!!liveSample.value) || (
+		config.value.agent.certificate.length>0 
+		&& config.value.ca.length>0 
+		&& config.value.bootstraps.length>0 
+		&& !!config.value.bootstraps[0]
+		&& (config.value?.name||'').toLocaleLowerCase() != 'sample'
+	))
 });
+const permitType = ref('Json');
+const permit = ref('');
+const liveSample = ref('');
+
+const joinLive = () => {
+	ztmService.identity().then((PublicKey)=>{
+		const username = config.value.agent?.name;
+		if(!!PublicKey){
+			ztmService.getPermit(PublicKey,username,liveSample.value).then((permitJSON)=>{
+				if(!!permitJSON){
+					let saveData = {
+						name: "",
+						ca: "",
+						agent: {
+							name: "",
+							certificate: "",
+							privateKey: null,
+						},
+						bootstraps: []
+					}
+					
+					saveData = {...saveData, ...permitJSON};
+					saveData.name = config.value.name;
+					saveData.agent.name = username
+					ztmService.joinMesh(saveData.name, saveData)
+					.then(res => {
+						loading.value = false;
+						if(!!res){
+							toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
+							emits("save", saveData);
+							config.value = _.cloneDeep(newConfig);
+							config.value.agent.name = user.value.id;
+						}
+						store.dispatch('account/meshes');
+					})
+					.catch(err => {
+						loading.value = false;
+						console.log('Request Failed', err)
+					});
+				}
+			}).catch((e)=>{
+				loading.value = false;
+			});
+		}
+	})
+}
+
 const commit = () => {
 	const joinName = config.value.name;
 	const saveData = _.cloneDeep(config.value);
 	delete saveData.name;
 	loading.value = true;
-	ztmService.joinMesh(joinName, saveData)
-		.then(res => {
-			loading.value = false;
-			if(!!res){
-				toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
-				emits("save", config.value);
-				config.value = _.cloneDeep(newConfig);
-				config.value.agent.name = user.value.id;
-			}
-			store.dispatch('account/meshes');
-		})
-		.catch(err => {
-			loading.value = false;
-			console.log('Request Failed', err)
-		}); 
+	if(!!liveSample.value){
+		joinLive();
+	} else {
+		ztmService.joinMesh(joinName, saveData)
+			.then(res => {
+				loading.value = false;
+				if(!!res){
+					toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
+					emits("save", config.value);
+					config.value = _.cloneDeep(newConfig);
+					config.value.agent.name = user.value.id;
+				}
+				store.dispatch('account/meshes');
+			})
+			.catch(err => {
+				loading.value = false;
+				console.log('Request Failed', err)
+			});
+	} 
 }
 onMounted(() => {
 	if(!!props.pid){
@@ -99,19 +152,22 @@ const loaddata = () => {
 			loading.value = false;
 		}); 
 }
-const permitType = ref('Json');
-const permit = ref('');
 watch(() => permit.value,() => {
 	if(!!permit.value){
-		try{
-			const permitJSON = JSON.parse(permit.value);
-			const agent_name = config.value?.agent?.name;
-			config.value = {...config.value, ...permitJSON};
-			if(!config.value?.agent?.name){
-				config.value.agent.name = agent_name;
+		if(permit.value.indexOf("ztm://")==0){
+			liveSample.value = permit.value.replace("ztm://","https://");
+		} else {
+			liveSample.value = ""
+			try{
+				const permitJSON = JSON.parse(permit.value);
+				const agent_name = config.value?.agent?.name;
+				config.value = {...config.value, ...permitJSON};
+				if(!config.value?.agent?.name){
+					config.value.agent.name = agent_name;
+				}
+				console.log(config.value)
+			}catch(e){
 			}
-			console.log(config.value)
-		}catch(e){
 		}
 	}
 })

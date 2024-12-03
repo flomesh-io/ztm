@@ -74,8 +74,8 @@ const dragAndDrop = () => {
 }
 
 const nameStyle = (user, isMobile) => {
-	const base = {"position":"absolute","width": isMobile?"70px":"90px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
-	const offset = isMobile?"-10px":"-20px";
+	const base = {"position":"absolute","width": isMobile?"60px":"60px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
+	const offset = isMobile?"-5px":"-5px";
 	if(isDrak()){
 		return {
 			default: {

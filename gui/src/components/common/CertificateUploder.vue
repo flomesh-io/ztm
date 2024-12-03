@@ -35,7 +35,7 @@ const props = defineProps({
 
 const emits = defineEmits(['update:modelValue']);
 const $primevue = usePrimeVue();
-
+const isLiveSample = computed(()=> props.modelValue.indexOf("ztm://")==0)
 const isValid = computed(()=>{
 	if(!props.format){
 		return true;
@@ -177,7 +177,14 @@ const typeOk = () => {
         <div v-if="!!props.modelValue">
             <div class="flex flex-wrap p-0 gap-5">
                 <div class="flex flex-column align-items-left gap-3">
-                    <Chip v-if="isValid" severity="success" >
+									
+										<Chip v-if="isLiveSample" severity="success" >
+											<i class="pi pi-verified text-green-600 text-xl mr-2" />Live Mesh
+											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
+												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
+											</span>
+										</Chip>
+                    <Chip v-else-if="isValid" severity="success" >
 											<i class="pi pi-verified text-green-600 text-xl mr-2" />Configured
 											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
 												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />

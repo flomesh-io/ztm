@@ -166,8 +166,8 @@ export default class ZtmService {
 	getMesh(name) {
 		return request(`/api/meshes/${name}`);
 	}
-	getPermit(PublicKey, UserName) {
-		return request(`${this.getPubHub()}/permit`,"POST",{PublicKey, UserName});
+	getPermit(PublicKey, UserName, pubHub) {
+		return request(pubHub||`${this.getPubHub()}/permit`,"POST",{PublicKey, UserName});
 	}
 	joinMesh(name, config) {
 		if(config.bootstraps){

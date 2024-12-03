@@ -163,7 +163,11 @@ const loadusers = () => {
 		})
 }
 const back = () => {
-	emits('close')
+	if(!!isMobile){
+		router.go(-1)
+	} else {
+		emits('close');
+	}
 }
 const manager = ref(false)
 const history = ref(false)
