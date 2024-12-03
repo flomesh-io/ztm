@@ -116,19 +116,19 @@ watch(() => props.room, () => {
 	</AppHeader>
 	<ul class="nav-ul">
 		<li class="nav-li" style="padding: 0;line-height: 30px;">
-			<div class="grid text-center pt-2 m-0" v-if="props.room.members">
+			<div class="grid text-center py-4 m-0" v-if="props.room.members">
 					<div  
 						v-for="(member) in props.room.members"
-						class="py-4 relative text-center col-3" >
+						class="py-2 relative text-center col-3" >
 						<Avatar v-longtap="() => exitGroupUsers(member)" icon="pi pi-user" size="large" style="margin: auto;" />
-						<div class="mt-1" v-tooltip="member">
-							<b class="white-space-nowrap" >
+						<div class="mt-1" v-tooltip="member" style="line-height: 16px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
+							<b  style="">
 								{{ member}}
 							</b>
 						</div>
 					</div>
 					<div
-						class="py-4 relative text-center col-3" >
+						class="py-2 relative text-center col-3" >
 						<Avatar @click="invite" class="pointer" icon="pi pi-plus" size="large" style="margin: auto;" />
 					</div>
 			</div>
