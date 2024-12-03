@@ -11,6 +11,7 @@ import {
 import { getItem as getKeychainItem, saveItem as saveKeychainItem } from 'tauri-plugin-keychain';
 
 
+const VITE_APP_PUB_HUB_JP = import.meta.env.VITE_APP_PUB_HUB_JP;
 const VITE_APP_PUB_HUB_CN = import.meta.env.VITE_APP_PUB_HUB_CN;
 const VITE_APP_PUB_HUB_US = import.meta.env.VITE_APP_PUB_HUB_US;
 
@@ -26,6 +27,8 @@ export default class ZtmService {
 			}
 		} else if (timeZone === "Asia/Hong_Kong") {
 			return VITE_APP_PUB_HUB_CN;
+		} else if (timeZone === "Asia/Tokyo") {
+			return VITE_APP_PUB_HUB_JP;
 		} else {
 			return VITE_APP_PUB_HUB_US;
 		}
