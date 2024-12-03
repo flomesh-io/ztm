@@ -51,9 +51,9 @@ const chatTheme = (viewHeight) => {
 }
 const auxiliaryStyle = () => {
 	if(isDrak()){
-		return "::-webkit-scrollbar-thumb { background-color: #1c1c1c;}";
+		return "::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background-color: #1c1c1c;}";
 	} else {
-		return "::-webkit-scrollbar-thumb { background-color: #ffffff;}";
+		return "::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background-color: #ffffff;}";
 	}
 }
 
