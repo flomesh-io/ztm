@@ -22,8 +22,7 @@ class MainActivity : TauriActivity() {
 		
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        CopyBinaryActivity.start(this)
-
+		
         overlayPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -52,6 +51,37 @@ class MainActivity : TauriActivity() {
 						// val uri: Uri? = fileHelper.saveFileToDocuments("Readme.txt", "Welcome ZTM!")
 						// uri?.let { fileHelper.openFile(it) }
 				}
+
+				// 创建一个新的线程
+				val thread = Thread {
+					var count = 0
+					while (true) {
+						try {
+							println("start pipy: check hasManageExternalStoragePermission")
+							// 检查并请求外部存储管理权限（Android 11+）
+							if (fileHelper.hasManageExternalStoragePermission()) {
+								println("start pipy: check hasManageExternalStoragePermission ok")
+								CopyBinaryActivity.start(this)
+								break;
+							}
+							println("start pipy: wait hasManageExternalStoragePermission")
+							Thread.sleep(6000L)   // 每隔 6 秒执行一次
+							++count
+							println("start pipy: count ${count}")
+							if (count >= 10) {
+								println("start pipy: timeout stop")
+								break
+							}
+						}
+						catch(e: Exception) {
+							println("start pipy e: ${e.message}")
+						}
+					}
+				}
+				// 启动线程
+				thread.start()
+
+
 				fileHelper.createShortcut()
 				// SAFActivity.start(this)
 				fileHelper.restoreStore()

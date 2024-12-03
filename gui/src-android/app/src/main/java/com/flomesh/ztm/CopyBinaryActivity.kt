@@ -44,12 +44,15 @@ class CopyBinaryActivity : AppCompatActivity() {
             // 设置文件权限为可执行
             outFile.setExecutable(true, false)
         } catch (e: IOException) {
+
+			println("start pipy: ${e.message}")
             e.printStackTrace()
         } finally {
             try {
                 inputStream?.close()
                 outputStream?.close()
             } catch (e: IOException) {
+                println("start pipy 2: ${e.message}")
                 e.printStackTrace()
             }
         }
