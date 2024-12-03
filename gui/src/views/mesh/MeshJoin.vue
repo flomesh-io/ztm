@@ -203,6 +203,7 @@ const pay = () => {
 											<InputText :disabled="!!props.pid" placeholder="Name your mesh" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
 										</span>
 								</Chip>
+								<div v-if="config.name.toLocaleLowerCase() == 'sample'" class="text-sm opacity-80 p-1">Cannot use Sample name</div>
 							</FormItem>
 							<FormItem label="Join As">
 								<Chip class="pl-0 pr-3 align-items-top"  >

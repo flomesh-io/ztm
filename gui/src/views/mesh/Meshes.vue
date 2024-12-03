@@ -223,8 +223,7 @@ onMounted(() => {
 					<Button :loading="tryLoading" size="small" :disabled="!username || username == 'root'" label="Join" class="ml-2"  @click="tryMesh"></Button>
 				</div>
 				<div class="pt-2 opacity-70 text-sm">
-					<i class="pi pi-info-circle relative" style="top: 1px;"/> Join to the testing hub server, <br/>
-					only for experience ztm
+					<i class="pi pi-info-circle relative" style="top: 1px;"/> Join our sample mesh for a first experience of ZTM
 				</div>
 			</div>
 		</Dialog>

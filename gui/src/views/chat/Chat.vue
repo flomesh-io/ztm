@@ -163,7 +163,7 @@ const loaddataCore = (callback) => {
 	getHistory().then(res=>{
 		let _messages = [];
 		if(!init.value){
-			(res || []).forEach(item=>{
+			(res || []).sort((a, b) => a.time - b.time).forEach(item=>{
 				const _msg = buildMessage(item);
 				messages.value[`${_msg?.role}-${_msg?.id}`] = true;
 				_messages.push(_msg)
@@ -187,7 +187,7 @@ const loaddataCore = (callback) => {
 			
 		}else if(res && chat.value){
 			const _messages = [];
-			(res || []).forEach(item=>{
+			(res || []).sort((a, b) => a.time - b.time).forEach(item=>{
 				
 				const _msg = buildMessage(item);
 				if(!!_msg?.key && messages.value[`${_msg?.role}-${_msg?.key}`]){
