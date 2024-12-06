@@ -7,6 +7,7 @@ import History from './History.vue'
 import { dayjs, extend } from '@/utils/dayjs';
 import { useRouter } from 'vue-router'
 import ChatService from '@/service/ChatService';
+import { platform } from '@/utils/platform';
 import gptSvg from "@/assets/img/gpt.png";
 import { resize, position } from "@/utils/window";
 import _ from "lodash";
@@ -163,7 +164,7 @@ const loadusers = () => {
 		})
 }
 const back = () => {
-	if(!!isMobile){
+	if(platform() == 'web' || !platform()){
 		router.go(-1)
 	} else {
 		emits('close');
@@ -203,7 +204,7 @@ onActivated(()=>{
 </script>
 
 <template>
-	<div class="flex flex-row min-h-screen">
+	<div class="flex flex-row min-h-screen surface-ground">
 		<div class="relative h-full min-h-screen" :class="{'w-22rem':!!selectRoom,'w-full':!selectRoom,'mobile-hidden':!!selectRoom}">
 				
 			<AppHeader>

@@ -147,8 +147,7 @@ onMounted(()=>{
 </script>
 
 <template>
-	<div class="col-12 min-h-screen pl-0 pr-0" style="background: rgba(56, 4, 40, 0.9);">
-		<div class="ztm-content"></div>
+	<div class="col-12 min-h-screen pl-0 pr-0 pt-0" style="background: rgba(56, 4, 40, 0.9);">
 		<div class="ztm-container">
 			<div class="ztm-left">
 				<button @click="closebrowser" class="go-back">
@@ -172,7 +171,7 @@ onMounted(()=>{
 		</div>
 		<div class="ztm-history" style="display:none"></div>
 		
-		<div class="px-3">
+		<div class="px-3 mt-2">
 			<!-- <div class="mt-3 text-center flex">
 				<div class="flex-item pr-2">
 					<Button severity="secondary" aria-haspopup="true" aria-controls="op" @click="toggle" :disabled="browser.url.length<8" class="w-full" style="height: 30px;" label="Shortcut"/>
