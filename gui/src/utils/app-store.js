@@ -72,8 +72,6 @@ const webApp = [{
 		height:600,
 		icon: ztmlog,
 	},{
-		name: "browser",
-	},{
 		name: "rdp",
 	}];
 const appSelect = {
