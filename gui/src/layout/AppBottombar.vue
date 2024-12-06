@@ -136,18 +136,11 @@ const unread = computed(() => {
 const select = (selected) => {
 	store.commit('account/setSelectedMesh', selected);
 }
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
-const mainPages = ref([
-	"/mesh/list",
-	"/mesh/endpoints",
-	"/mesh/apps",
-	"/mesh/log"
-])
+
 </script>
 
 <template>
-	<Menubar v-if="mainPages.findIndex((n) => n == route.path)>=0" class="app-bottom-bar mobile-show" :model="model" breakpoint="0px">
+	<Menubar class="app-bottom-bar mobile-show" :model="model" breakpoint="0px">
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">

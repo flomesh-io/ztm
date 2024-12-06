@@ -49,37 +49,37 @@ const join = () => {
 	visibleEditor.value = false;
 }
 
+const visibleEditor = ref(false);
 const selectedMenu = ref();
 const actionMenu = ref();
-const actions = ref([
-    {
-        label: 'Actions',
-        items: [
-            {
-                label: 'Edit',
-                icon: 'pi pi-pencil',
-								command: () => {
-									openEditor()
-								}
-            },
-            {
-                label: 'Leave',
-                icon: 'pi pi-trash',
-								command: () => {
-									deleteMesh()
-								}
-            }
-        ]
-    }
-]);
-const showAtionMenu = (event, mesh) => {
-	selectedMenu.value = mesh;
+const actions = computed(()=>(mesh)=>{
+	return [
+	    {
+	        label: 'Actions',
+	        items: [
+	            {
+	                label: 'Edit',
+	                icon: 'pi pi-pencil',
+									command: () => {
+										selectedMenu.value = mesh;
+										visibleEditor.value = true;
+									}
+	            },
+	            {
+	                label: 'Leave',
+	                icon: 'pi pi-trash',
+									command: () => {
+										selectedMenu.value = mesh;
+										deleteMesh()
+									}
+	            }
+	        ]
+	    }
+	]
+});
+const showAtionMenu = (event) => {
 	actionMenu.value[0].toggle(event);
 };
-const visibleEditor = ref(false);
-const openEditor = () => {
-	visibleEditor.value = true;
-}
 
 const emptyMsg = computed(()=>{
 	return `You haven't joined a mesh yet.`
@@ -191,8 +191,8 @@ onMounted(() => {
 													</span>
 													<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
 											 </div>
-											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event, mesh)" aria-haspopup="true" aria-controls="actionMenu" />
-											 <Menu ref="actionMenu" :model="actions" :popup="true" />
+											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event)" aria-haspopup="true" aria-controls="actionMenu" />
+											 <Menu ref="actionMenu" :model="actions(mesh)" :popup="true" />
 									 </div>
 										<span class="text-tip">Hubs: </span>
 										<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>

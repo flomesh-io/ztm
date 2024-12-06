@@ -1385,9 +1385,11 @@ fieldset{
 		margin-top: 6rem !important;
 	}
 	.empty-header{
-		width: 100px;
+		width: 100%;
 		display: block;
-		height: 3.5rem;
+		margin-top: -15px;
+		height: 65px;
+		background: var(--toolbar-background);
 	}
 }
 @media screen and (min-width: 768px){
