@@ -47,6 +47,7 @@ pub async fn create_wry_webview(
 	Ok(())
 }
 
+use tauri_plugin_share::{ShareExt, ShareRequest};
 #[command]
 pub async fn create_proxy_webview(
 	app: tauri::AppHandle,
@@ -60,7 +61,6 @@ pub async fn create_proxy_webview(
 ) -> Result<(),()> {
 	
 	unsafe {
-
 		// let mut options = WindowConfig {
 		// 		label: label.to_string(),
 		// 		url: WebviewUrl::App(curl.parse().unwrap()),

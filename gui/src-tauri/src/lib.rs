@@ -18,7 +18,7 @@ use log::{trace, debug, info, warn, error};
 
 mod binary;
 mod pay;
-mod broswer;
+mod browser;
 mod store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -47,8 +47,8 @@ pub fn run() {
 				.invoke_handler(tauri::generate_handler![
 					binary::pipylib,
 					binary::create_private_key,
-					broswer::create_proxy_webview,
-					broswer::create_wry_webview,
+					browser::create_proxy_webview,
+					browser::create_wry_webview,
 					pay::purchase_product,
 					store::push_store_list,
 					store::get_store_list,
