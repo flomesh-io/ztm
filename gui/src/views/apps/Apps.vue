@@ -74,6 +74,7 @@ const appLoading = ref({})
 const manage = ref(false);
 const mergeApps = computed(()=>{
 	return (!props.noInners?innerApps.value:innerApps.value).concat(meshApps.value||[]).concat(uninstallApps.value);
+	//return [{ "name": "tunnel", "tag": "", "provider": "ztm", "isBuiltin": true, "isDownloaded": false, "isPublished": false, "isRunning": false }]
 })
 
 const installAPP = (app, options, base) => {
