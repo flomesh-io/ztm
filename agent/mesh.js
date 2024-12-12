@@ -97,6 +97,8 @@ export default function (rootDir, config) {
     var connections = new Set
     var closed = false
 
+    var matchSessionID = new http.Match('/api/sessions/{id}')
+
     //
     //    requestHub ---\
     //                   \-->
@@ -106,6 +108,7 @@ export default function (rootDir, config) {
     //
 
     var $response
+    var $sessionInfo
 
     // Long-lived agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
@@ -160,9 +163,48 @@ export default function (rootDir, config) {
             })
           )
           .to(hubSession)
-          .pipe(serveHub)
+          .demuxHTTP().to($=>$
+            .pipe(evt => {
+              if (evt instanceof MessageStart) {
+                var params = matchSessionID(evt.head.path)
+                if (params) {
+                  $sessionInfo = {
+                    id: params.id,
+                    cb: null,
+                  }
+                  return dedicatedSession
+                }
+                return serveHub
+              }
+            })
+          )
         )
       )
+    )
+
+    // Establish a dedicated session to the hub on demand
+    var dedicatedSession = pipeline($=>$
+      .fork().to($=>$
+        .replaceMessage(new Data)
+        .loop($=>$
+          .connectHTTPTunnel(
+            () => new Message({
+              method: 'CONNECT',
+              path: `/api/endpoints/${config.agent.id}?sid=${$sessionInfo.id}`,
+            })
+          )
+          .to($=>$
+            .muxHTTP({ version: 2 }).to($=>$
+              .connectTLS({ ...tlsOptions }).to($=>$
+                .connect(address)
+              )
+            )
+          )
+          .demuxHTTP().to(serveHub)
+        )
+      )
+      .wait(() => new Promise(cb => { $sessionInfo.cb = cb }))
+      .replaceMessage(new Message({ status: 200 }))
     )
 
     // Establish a pull session to the hub
@@ -430,7 +472,6 @@ export default function (rootDir, config) {
 
   } // End of class Hub
 
-  var matchServices = new http.Match('/api/services/{proto}/{svc}')
   var matchApp = new http.Match('/api/apps/{app}')
   var matchProviderApp = new http.Match('/api/apps/{provider}/{app}')
   var response200 = new Message({ status: 200 })
@@ -451,22 +492,18 @@ export default function (rootDir, config) {
   //
 
   var serveHub = pipeline($=>$
-    .demuxHTTP().to($=>$
-      .pipe(
-        function (evt) {
-          if (evt instanceof MessageStart) {
-            if (evt.head.method === 'CONNECT') {
-              var path = evt.head.path
-              if (matchProviderApp(path) || matchApp(path)) {
-                return toLocalApp
-              } else if (matchServices(path)) {
-                return proxyToLocal
-              }
+    .pipe(
+      function (evt) {
+        if (evt instanceof MessageStart) {
+          if (evt.head.method === 'CONNECT') {
+            var path = evt.head.path
+            if (matchProviderApp(path) || matchApp(path)) {
+              return toLocalApp
             }
-            return serveOtherAgents
           }
+          return serveOtherAgents
         }
-      )
+      }
     )
   )
 
@@ -608,7 +645,6 @@ export default function (rootDir, config) {
           }
           return connectApp(params.provider, $requestedApp, username).then(p => {
             if (p) {
-              // logInfo(`Proxy to local app ${$requestedApp}`)
               $requestedAppPipeline = p
               return response200
             }
@@ -622,7 +658,6 @@ export default function (rootDir, config) {
       }
     ).to($=>$
       .pipe(() => $requestedAppPipeline, () => ({ source: 'peer', peer: $requestedAppPeer }))
-      // .onEnd(() => logInfo(`Proxy to local app ${$requestedApp} ended`))
     )
   )
 
@@ -634,7 +669,7 @@ export default function (rootDir, config) {
   //   Local App ----/                  \----> Hub ----> Remote Agent ----> Remote App
   //
 
-  var toRemoteApp = (ep, provider, app, connectOptions) => pipeline($=>$
+  var toRemoteApp = (ep, provider, app, isDedicated, connectOptions) => pipeline($=>$
     .onStart(() => {
       $selectedEp = ep
       return selectHub(ep).then(hub => {
@@ -644,9 +679,9 @@ export default function (rootDir, config) {
     })
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
-        // .onStart(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub}`))
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
+          if (isDedicated) q += '&sid=' + algo.uuid()
           return new Message({
             method: 'CONNECT',
             path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}${q}` : `/api/endpoints/${ep}/apps/${app}${q}`,
@@ -661,7 +696,6 @@ export default function (rootDir, config) {
             )
           )
         )
-        // .onEnd(() => logInfo(`Proxy to ${app} at endpoint ${ep} via ${$selectedHub} ended`))
       ),
       'deny': ($=>$
         .onStart(() => logError(`No route to endpoint ${ep}`))
@@ -1225,10 +1259,11 @@ export default function (rootDir, config) {
 
   function connectFromApp(provider, app) {
     return function (ep, options) {
+      var isDedicated = Boolean(options?.dedicated)
       var bind = options?.bind
       var onState = options?.onState
       var connectOptions = { bind, onState }
-      return toRemoteApp(ep, provider, app, connectOptions)
+      return toRemoteApp(ep, provider, app, isDedicated, connectOptions)
     }
   }
 
