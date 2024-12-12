@@ -94,6 +94,7 @@ var routes = Object.entries({
 
 var endpoints = {}
 var sessions = {}
+var dedicatedSessions = {}
 
 //
 // files[pathname] = {
@@ -269,6 +270,9 @@ function start(listen) {
           ip: conn.remoteAddress,
           port: conn.remotePort,
           via: `${conn.localAddress}:${conn.localPort}`,
+          username: undefined,
+          endpointID: undefined,
+          sessionID: undefined,
         }
       }
     )
@@ -602,23 +606,36 @@ var connectEndpoint = pipeline($=>$
     function (req) {
       var url = new URL(req.head.path)
       var name = URL.decodeComponent(url.searchParams.get('name') || '(unknown)')
+      var sid = url.searchParams.get('sid')
       var id = $params.ep
-      makeEndpoint(id).name = name
-      $ctx.id = id
+      $ctx.endpointID = id
+      $ctx.sessionID = sid
       $hub = new pipeline.Hub
-      sessions[id] ??= new Set
-      sessions[id].add($hub)
-      collectMyNames($ctx.via)
-      console.info(`Endpoint ${endpointName(id)} joined, connections = ${sessions[id].size}`)
+      if (sid) {
+        dedicatedSessions[sid] = $hub
+        console.info(`Endpoint ${endpointName(id)} established session ${sid}`)
+      } else {
+        makeEndpoint(id).name = name
+        sessions[id] ??= new Set
+        sessions[id].add($hub)
+        collectMyNames($ctx.via)
+        console.info(`Endpoint ${endpointName(id)} joined, connections = ${sessions[id].size}`)
+      }
       return response(200)
     }
   ).to($=>$
     .onStart(new Data)
     .swap(() => $hub)
     .onEnd(() => {
-      var id = $ctx.id
-      sessions[id]?.delete?.($hub)
-      console.info(`Endpoint ${endpointName(id)} left, connections = ${sessions[id]?.size || 0}`)
+      var id = $ctx.endpointID
+      var sid = $ctx.sessionID
+      if (sid) {
+        delete dedicatedSessions[sid]
+        console.info(`Endpoint ${endpointName(id)} dropped session ${sid}`)
+      } else {
+        sessions[id]?.delete?.($hub)
+        console.info(`Endpoint ${endpointName(id)} left, connections = ${sessions[id]?.size || 0}`)
+      }
     })
   )
 )
@@ -633,16 +650,35 @@ var connectApp = pipeline($=>$
       sessions[id]?.forEach?.(h => $hubSelected = h)
       if (!$hubSelected) return response(404, 'Agent not found')
       var query = new URL(req.head.path).searchParams.toObject()
-      var src = query.src
-      $params.query = query
-      $trafficSend = trafficTotalSend.withLabels(src)
-      $trafficRecv = trafficTotalRecv.withLabels(src)
-      $trafficPeerSend = trafficTotalSend.withLabels(id)
-      $trafficPeerRecv = trafficTotalRecv.withLabels(id)
-      $trafficLinkSend = trafficTotalMove.withLabels(src, id)
-      $trafficLinkRecv = trafficTotalMove.withLabels(id, src)
-      console.info(`Forward to app ${app} at ${endpointName(id)}`)
-      return response(200)
+      if (query.sid) {
+        return allocateSession.spawn(query.sid).then(
+          () => {
+            $hubSelected = dedicatedSessions[query.sid]
+            if ($hubSelected) {
+              console.info(`Forward to app ${app} at ${endpointName(id)} via session ${query.sid}`)
+              setupMetrics()
+              return response(200)
+            } else {
+              return response(404)
+            }
+          }
+        )
+      } else {
+        console.info(`Forward to app ${app} at ${endpointName(id)}`)
+        setupMetrics()
+        return response(200)
+      }
+
+      function setupMetrics() {
+        var src = query.src
+        $params.query = query
+        $trafficSend = trafficTotalSend.withLabels(src)
+        $trafficRecv = trafficTotalRecv.withLabels(src)
+        $trafficPeerSend = trafficTotalSend.withLabels(id)
+        $trafficPeerRecv = trafficTotalRecv.withLabels(id)
+        $trafficLinkSend = trafficTotalMove.withLabels(src, id)
+        $trafficLinkRecv = trafficTotalMove.withLabels(id, src)
+      }
     }
   ).to($=>$
     .handleData(data => {
@@ -673,6 +709,17 @@ var connectApp = pipeline($=>$
       $trafficLinkRecv.increase(size)
     })
   )
+)
+
+var allocateSession = pipeline($=>$
+  .onStart(id => new Message(
+    {
+      method: 'GET',
+      path: `/api/sessions/${id}`,
+    }
+  ))
+  .pipe(muxToAgent)
+  .replaceMessage(new StreamEnd)
 )
 
 var forwardRequest = pipeline($=>$
@@ -872,7 +919,7 @@ function makeEndpoint(id) {
 }
 
 function findCurrentEndpointSession() {
-  var id = $ctx.id
+  var id = $ctx.endpointID
   if (!id) return false
   $endpoint = makeEndpoint(id)
   return true
