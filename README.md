@@ -1,3 +1,16 @@
+<p align="center">
+  <img width="150px" height="150px" src="https://flomesh.io/img/ztm.png" />
+</p>
+
+<div align="center">
+  <a href="https://github.com/flomesh-io/ztm"><img src="https://flomesh.io/img/ztm.png" width="20px" height="20px"  alt=""></a>
+  <img src="https://img.shields.io/badge/Vue3-35495E?logo=vue.js&logoColor=4FC08D">
+  <img src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=FFC131">
+  <img src="https://img.shields.io/badge/Rust-c57c54?logo=rust&logoColor=E34F26">
+  <img src="https://img.shields.io/badge/Vite5-35495E?logo=vite&logoColor=41D1FF">
+  <a href="https://gitee.com/link?target=https://github.com/flomesh-io/ztm/stargazers"><img src="https://img.shields.io/github/stars/flomesh-io/ztm" alt="star"></a>
+</div>
+
 # ZTM (Zero Trust Mesh)
 
 ZTM is an open source network infrastructure software for running a ***decentralized*** network. It is built upon ***HTTP/2 tunnels*** and can run on ***any sort of IP networks*** such as LANs, containerized networks and the Internet, etc.
