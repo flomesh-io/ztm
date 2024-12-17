@@ -3,13 +3,9 @@
 </p>
 
 <div align="center">
-  
-  <a href="https://github.com/flomesh-io/ztm"><img src="https://flomesh.io/img/ztm.png" width="20px" height="20px"  alt=""></a>
   <a href="https://github.com/flomesh-io/pipy"><img src="https://flomesh.io/img/favicon.ico" width="20px" height="20px"  alt=""></a>
-  
   <img src="https://img.shields.io/badge/PipyJS-blue">
   <img src="https://img.shields.io/badge/C++-green">
-  <img src="https://img.shields.io/badge/Vue3-35495E?logo=vue.js&logoColor=4FC08D">
   <img src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=FFC131">
   <img src="https://img.shields.io/badge/Rust-c57c54?logo=rust&logoColor=E34F26">
   <img src="https://img.shields.io/badge/Vite5-35495E?logo=vite&logoColor=41D1FF">
