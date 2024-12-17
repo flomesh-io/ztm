@@ -217,6 +217,7 @@ var $params = null
 var $endpoint = null
 var $hub = null
 var $hubSelected = null
+var $sessionID
 var $pingID
 var $pingTime
 
@@ -595,7 +596,11 @@ var getEndpointStats = pipeline($=>$
 var muxToAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, {
     version: 2,
-    ping: () => new Timeout(10).wait().then(new Data),
+    ping: () => {
+      if (!$sessionID) {
+        return new Timeout(10).wait().then(new Data)
+      }
+    }
   }).to($=>$
     .swap(() => $hubSelected)
   )
@@ -650,12 +655,13 @@ var connectApp = pipeline($=>$
       sessions[id]?.forEach?.(h => $hubSelected = h)
       if (!$hubSelected) return response(404, 'Agent not found')
       var query = new URL(req.head.path).searchParams.toObject()
-      if (query.sid) {
-        return allocateSession.spawn(query.sid).then(
+      if ('dedicated' in query) {
+        $sessionID = algo.uuid()
+        return allocateSession.spawn($hubSelected, $sessionID).then(
           () => {
-            $hubSelected = dedicatedSessions[query.sid]
+            $hubSelected = dedicatedSessions[$sessionID]
             if ($hubSelected) {
-              console.info(`Forward to app ${app} at ${endpointName(id)} via session ${query.sid}`)
+              console.info(`Forward to app ${app} at ${endpointName(id)} via session ${$sessionID}`)
               setupMetrics()
               return response(200)
             } else {
@@ -712,12 +718,15 @@ var connectApp = pipeline($=>$
 )
 
 var allocateSession = pipeline($=>$
-  .onStart(id => new Message(
-    {
-      method: 'GET',
-      path: `/api/sessions/${id}`,
-    }
-  ))
+  .onStart((hub, id) => {
+    $hubSelected = hub
+    return new Message(
+      {
+        method: 'GET',
+        path: `/api/sessions/${id}`,
+      }
+    )
+  })
   .pipe(muxToAgent)
   .replaceMessage(new StreamEnd)
 )

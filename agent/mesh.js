@@ -108,7 +108,6 @@ export default function (rootDir, config) {
     //
 
     var $response
-    var $sessionInfo
 
     // Long-lived agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
@@ -168,11 +167,8 @@ export default function (rootDir, config) {
               if (evt instanceof MessageStart) {
                 var params = matchSessionID(evt.head.path)
                 if (params) {
-                  $sessionInfo = {
-                    id: params.id,
-                    cb: null,
-                  }
-                  return dedicatedSession
+                  $sessionID = params.id
+                  return establishSession
                 }
                 return serveHub
               }
@@ -183,28 +179,47 @@ export default function (rootDir, config) {
     )
 
     // Establish a dedicated session to the hub on demand
+    var establishSession = pipeline($=>$
+      .onStart(() => {
+        $sessionEstablishedPromise = new Promise(r => { $sessionEstablishedResolve = r })
+        dedicatedSession.spawn($sessionID, $sessionEstablishedResolve)
+      })
+      .wait(() => $sessionEstablishedPromise)
+      .replaceMessage(new Message({ status: 200 }))
+    )
+
+    var $sessionID
+    var $sessionEstablishedPromise
+    var $sessionEstablishedResolve
+
     var dedicatedSession = pipeline($=>$
-      .fork().to($=>$
-        .replaceMessage(new Data)
-        .loop($=>$
-          .connectHTTPTunnel(
-            () => new Message({
-              method: 'CONNECT',
-              path: `/api/endpoints/${config.agent.id}?sid=${$sessionInfo.id}`,
-            })
-          )
-          .to($=>$
-            .muxHTTP({ version: 2 }).to($=>$
-              .connectTLS({ ...tlsOptions }).to($=>$
-                .connect(address)
-              )
+      .onStart((id, cb) => {
+        $sessionID = id
+        $sessionEstablishedResolve = cb
+        return new Data
+      })
+      .loop($=>$
+        .connectHTTPTunnel(
+          () => new Message({
+            method: 'CONNECT',
+            path: `/api/endpoints/${config.agent.id}?sid=${$sessionID}`,
+          }), {
+            onState: state => {
+              if (state === 'connected') {
+                $sessionEstablishedResolve()
+              }
+            }
+          }
+        )
+        .to($=>$
+          .muxHTTP({ version: 2 }).to($=>$
+            .connectTLS({ ...tlsOptions }).to($=>$
+              .connect(address, { idleTimeout: 60 })
             )
           )
-          .demuxHTTP().to(serveHub)
         )
+        .demuxHTTP().to(serveHub)
       )
-      .wait(() => new Promise(cb => { $sessionInfo.cb = cb }))
-      .replaceMessage(new Message({ status: 200 }))
     )
 
     // Establish a pull session to the hub
@@ -681,7 +696,7 @@ export default function (rootDir, config) {
       'proxy': ($=>$
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
-          if (isDedicated) q += '&sid=' + algo.uuid()
+          if (isDedicated) q += '&dedicated'
           return new Message({
             method: 'CONNECT',
             path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}${q}` : `/api/endpoints/${ep}/apps/${app}${q}`,
