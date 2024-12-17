@@ -249,7 +249,7 @@ export default function ({ app, mesh }) {
           })
         ).to($=>$
           .muxHTTP().to($=>$
-            .pipe(() => mesh.connect($selectedEP, { dedicated: true }))
+            .pipe(() => mesh.connect($selectedEP))
           )
         )
         .onEnd(() => app.log(`Disconnected from ep ${$selectedEP} for ${protocol}/${name}`))
