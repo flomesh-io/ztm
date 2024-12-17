@@ -14,10 +14,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Web-green">
-  <img src="https://img.shields.io/badge/Macos-gray">
+  <img src="https://img.shields.io/badge/macOS-gray">
   <img src="https://img.shields.io/badge/Windows-blue">
   <img src="https://img.shields.io/badge/Linux-orange">
-  <img src="https://img.shields.io/badge/Ios-Android-blue">
+  <img src="https://img.shields.io/badge/iOS-Android-blue">
 </p>
 
 # ZTM (Zero Trust Mesh)
