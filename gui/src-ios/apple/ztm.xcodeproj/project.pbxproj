@@ -12,6 +12,7 @@
 		39F1D7B0B487944FE880D319 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = ED8D1C268714DC53353C119F /* assets */; };
 		3DFE09095AA9C7FB81919411 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 398C217B7264372C10D6F203 /* Metal.framework */; };
 		56A49FC056F25BDBF49B3349 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 409E0E5DA6371DAF782D41B5 /* UIKit.framework */; };
+		671C5B622D1949B100D2E2DD /* Logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 671C5B612D1949B100D2E2DD /* Logo.png */; };
 		676495A42CDC660A005BA6DB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */; };
 		676495AE2CDF8EF8005BA6DB /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676495AD2CDF8EF8005BA6DB /* ShareViewController.swift */; };
 		676495B12CDF8EF8005BA6DB /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 676495B02CDF8EF8005BA6DB /* Base */; };
@@ -89,6 +90,7 @@
 		398EB7452B105AF6BFE14E73 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		409E0E5DA6371DAF782D41B5 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		43D056594147C9369E8B973D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		671C5B612D1949B100D2E2DD /* Logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Logo.png; sourceTree = "<group>"; };
 		676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		676495AB2CDF8EF8005BA6DB /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		676495AD2CDF8EF8005BA6DB /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -162,7 +164,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				67DB4AB92CBBAA0100914832 /* StoreKit.framework in Frameworks */,
 				67E60FA82C99283E002E4B6B /* libbrotlicommon-static.a in Frameworks */,
 				67E60FA92C99283E002E4B6B /* libbrotlidec-static.a in Frameworks */,
 				67E60FAA2C99283E002E4B6B /* libcrypto.a in Frameworks */,
@@ -196,6 +197,7 @@
 		08134A590DD62C82DA85DF37 = {
 			isa = PBXGroup;
 			children = (
+				671C5B612D1949B100D2E2DD /* Logo.png */,
 				67E60F752C982A77002E4B6B /* RunnerWidgetExtension.entitlements */,
 				676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */,
 				ED8D1C268714DC53353C119F /* assets */,
@@ -439,6 +441,7 @@
 			files = (
 				29DD4374BA00B027810581B7 /* Assets.xcassets in Resources */,
 				CEB5B073E287F82C663058BE /* LaunchScreen.storyboard in Resources */,
+				671C5B622D1949B100D2E2DD /* Logo.png in Resources */,
 				676495A42CDC660A005BA6DB /* PrivacyInfo.xcprivacy in Resources */,
 				39F1D7B0B487944FE880D319 /* assets in Resources */,
 			);
@@ -645,7 +648,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1.0.0;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = H38KYFAJ64;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -730,7 +733,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1.0.0;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = H38KYFAJ64;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -810,7 +813,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.3.0;
+				CURRENT_PROJECT_VERSION = 1.0.0;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = H38KYFAJ64;
@@ -848,6 +851,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.flomesh.ztm.RunnerWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -897,7 +901,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.3.0;
+				CURRENT_PROJECT_VERSION = 1.0.0;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = H38KYFAJ64;
@@ -928,6 +932,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.flomesh.ztm.RunnerWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -947,6 +952,7 @@
 					"arm64-sim",
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ztm_iOS/ztm_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -1010,6 +1016,7 @@
 					"arm64-sim",
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ztm_iOS/ztm_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
