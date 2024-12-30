@@ -217,6 +217,7 @@ var $params = null
 var $endpoint = null
 var $hub = null
 var $hubSelected = null
+var $sendEOS = null
 var $sessionID
 var $pingID
 var $pingTime
@@ -594,14 +595,17 @@ var getEndpointStats = pipeline($=>$
 )
 
 var muxToAgent = pipeline($=>$
+  .onStart(() => { if ($sessionID) $sendEOS = {} })
+  .handleStreamEnd(() => { $sendEOS?.resolve?.() })
   .muxHTTP(() => $hubSelected, {
     version: 2,
-    ping: () => {
-      if (!$sessionID) {
-        return new Timeout(10).wait().then(new Data)
-      }
-    }
+    ping: () => new Timeout(10).wait().then(new Data),
   }).to($=>$
+    .insert(() => {
+      if ($sendEOS) {
+        return new Promise(r => { $sendEOS.resolve = r }).then(new StreamEnd)
+      }
+    })
     .swap(() => $hubSelected)
   )
 )
