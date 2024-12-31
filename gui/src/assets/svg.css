@@ -1,0 +1,23 @@
+@keyframes linearAnimation {
+	0% {
+		stroke-dasharray: 60;
+		stroke-dashoffset: 60;
+	}
+	100% {
+		stroke-dasharray: 60;
+		stroke-dashoffset: 0;
+	}
+}
+svg {
+	/* width: 200px; */
+	/* height: 200px; */
+}
+
+.svg{
+	width:20px;
+	height: 20px;
+	color: var(--text-color);
+}
+.svg.linear{
+	animation: linearAnimation 3s linear 1;
+}

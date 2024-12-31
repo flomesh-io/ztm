@@ -13,6 +13,7 @@ import rulesReg from './rules/reg';
 import bootstrap from "@/bootstrap";
 import MyPreset from './theme';
 import '@/assets/styles.scss';
+import 'virtual:svg-icons-register';
 
 const app = createApp(App);
 app.use(PrimeVue, { 

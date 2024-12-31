@@ -208,12 +208,18 @@ const toggleLeft = () => {
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">
 									<Badge v-if="item.label == 'Apps' && unread>0" :value="unread" severity="danger" class="absolute" style="right: 2px;top:2px"/>
-									<div class="menu-icon" :class="item.icon" />
+									<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
+										<use :xlink:href="item.svg"></use>
+									</svg>
+									<div v-else class="menu-icon" :class="item.icon" />
 									<div class="text-sm" >{{ item.label }}</div>
 							</a>
 					</router-link>
 					<a class="flex flex-column" v-else-if="!item.route" v-ripple :href="item.url" :target="item.target" v-bind="props.action">
-							<div class="menu-icon" :class="item.icon" />
+							<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
+								<use :xlink:href="item.svg"></use>
+							</svg>
+							<div v-else class="menu-icon" :class="item.icon" />
 							<div class="text-sm">{{ item.label }} </div>
 							<!-- <span v-if="hasSubmenu" class="pi pi-fw pi-angle-right ml-2 relative" style="top: 2px;" /> -->
 					</a>

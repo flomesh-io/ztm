@@ -60,7 +60,11 @@ onMounted(()=>{
 				<Button v-else-if="props.main && (isMobile || pm =='android'|| pm =='ios')" @click.stop="toggleLeft" class="mobile-show"   text >
 					<img class="logo pointer" :src="XeyeSvg" width="28px" height="28px"/>
 				</Button>
-				<Button v-else-if="props.main" @click="home" icon="iconfont icon-home" text />
+				<Button v-else-if="props.main" @click="home"  text >
+					<svg class="svg text-primary-500 linear" aria-hidden="true">
+						<use xlink:href="#svg-home"></use>
+					</svg>
+				</Button>
 				<Button v-else-if="!(props.child && pm !='android' && pm !='ios' && pm !='web' && !!pm)" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>
 	

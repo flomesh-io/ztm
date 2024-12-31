@@ -2,27 +2,27 @@ import { platform } from '@tauri-apps/plugin-os';
 const menus = {
 	tauri: [
 		{
-				label: 'Meshes',short:'Mesh', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+				label: 'Meshes',short:'Mesh', svg: '#svg-mesh', route: '/mesh/list'
 		},
 		{
-				label: 'Endpoints',short:'EP', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
+				label: 'Endpoints',short:'EP', svg: '#svg-endpoint', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Logs',short:'Log', icon: 'pi pi-fw pi-book', route: '/mesh/log'
+				label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
 		},
 	],
 	web: [
 		{
-				label: 'Meshes',short:'Mesh', icon: 'pi pi-fw pi-globe', route: '/mesh/list'
+				label: 'Meshes',short:'Mesh', svg: '#svg-mesh', route: '/mesh/list'
 		},
 		{
-				label: 'Endpoints',short:'EP', icon: 'pi pi-fw pi-chart-scatter', route: '/mesh/endpoints'
+				label: 'Endpoints',short:'EP', svg: '#svg-endpoint', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Apps',short:'Apps', icon: 'pi pi-fw pi-objects-column', route: '/mesh/apps'
+				label: 'Apps',short:'Apps', svg: '#svg-grid', route: '/mesh/apps'
 		},
 		{
-				label: 'Logs',short:'Log', icon: 'pi pi-fw pi-book', route: '/mesh/log'
+				label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
 		},
 	],
 };

@@ -369,7 +369,10 @@ onMounted(() => {
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
-					<i class="pi pi-th-large text-3xl"  />
+					<!-- <i class="pi pi-th-large text-3xl"  /> -->
+					<svg class="svg text-white w-2rem h-2rem linear" aria-hidden="true">
+						<use xlink:href="#svg-grid"></use>
+					</svg>
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
