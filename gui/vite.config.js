@@ -4,7 +4,10 @@ import vue from '@vitejs/plugin-vue';
 import { internalIpV4 } from "internal-ip";
 // import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 import { resolve } from 'path';
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
+
 const mobile = !!/android|ios/.exec(process.env.TAURI_ENV_PLATFORM);
+
 //target: process.env.TAURI_PLATFORM == "windows" ? "chrome105" : "safari13",
 export default defineConfig(async (config) => {
 	return {
@@ -35,7 +38,11 @@ export default defineConfig(async (config) => {
 			}
 		},
 		plugins: [
-			vue({reactivityTransform: true})
+			vue({reactivityTransform: true}),
+			createSvgIconsPlugin({
+				iconDirs: [resolve(process.cwd(), './src/assets/svg')],
+				symbolId: 'svg-[name]', // 自定义 symbolId 模板
+			}),
 		],
 		resolve: {
 			alias: {

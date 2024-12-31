@@ -145,7 +145,10 @@ const select = (selected) => {
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">
 									<Badge v-if="item.label == 'Apps' && unread>0" :value="unread" severity="danger" class="absolute" style="margin-left: 24px;top:3px"/>
-									<div class="menu-icon" :class="item.icon" />
+									<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
+										<use :xlink:href="item.svg"></use>
+									</svg>
+									<div v-else class="menu-icon" :class="item.icon" />
 									<div class="text-sm" >{{ item.short }}</div>
 							</a>
 					</router-link>
