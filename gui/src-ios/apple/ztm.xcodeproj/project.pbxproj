@@ -48,7 +48,6 @@
 		79AE87662C39D7E854A5F2F6 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E33D005F7794ECB6D8583B27 /* WebKit.framework */; };
 		82A8FE4B5D9FD1FC69E297AD /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 398EB7452B105AF6BFE14E73 /* main.mm */; };
 		CA178558A864678F3017FC40 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 71A21086E4F3DECBCF4E00DE /* MetalKit.framework */; };
-		CEB5B073E287F82C663058BE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CF7D014283454D9852E3F02D /* LaunchScreen.storyboard */; };
 		F08DD0783484B1C63D02BD20 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 90047CC5E7E25E800A363744 /* QuartzCore.framework */; };
 		F0CE35BC54A209EBB6FB4D30 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DD2A4B725916D24B1A1B35E /* CoreGraphics.framework */; };
 /* End PBXBuildFile section */
@@ -134,7 +133,6 @@
 		8259B0C5C5ECC2CA791DE4D8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		90047CC5E7E25E800A363744 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		A9F82ADA98B39DAE6E47221E /* main.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.rs; sourceTree = "<group>"; };
-		CF7D014283454D9852E3F02D /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		E33D005F7794ECB6D8583B27 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		E8BA843B02DE7A83E68CEE02 /* ztm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ztm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED8D1C268714DC53353C119F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
@@ -202,7 +200,6 @@
 				676495A32CDC660A005BA6DB /* PrivacyInfo.xcprivacy */,
 				ED8D1C268714DC53353C119F /* assets */,
 				8259B0C5C5ECC2CA791DE4D8 /* Assets.xcassets */,
-				CF7D014283454D9852E3F02D /* LaunchScreen.storyboard */,
 				D53FC224A10A39E07DB98826 /* Externals */,
 				A98A76938967998424257856 /* Sources */,
 				80658884A41C507FD12F719E /* src */,
@@ -440,7 +437,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				29DD4374BA00B027810581B7 /* Assets.xcassets in Resources */,
-				CEB5B073E287F82C663058BE /* LaunchScreen.storyboard in Resources */,
 				671C5B622D1949B100D2E2DD /* Logo.png in Resources */,
 				676495A42CDC660A005BA6DB /* PrivacyInfo.xcprivacy in Resources */,
 				39F1D7B0B487944FE880D319 /* assets in Resources */,

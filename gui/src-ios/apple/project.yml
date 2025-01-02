@@ -35,7 +35,6 @@ targets:
       - path: assets
         buildPhase: resources
         type: folder
-      - path: LaunchScreen.storyboard
     info:
       path: ztm_iOS/Info.plist
       properties:
