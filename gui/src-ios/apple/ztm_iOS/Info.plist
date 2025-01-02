@@ -35,6 +35,15 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.3</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>BackgroundColor</key>
+		<string>#222222</string>
+		<key>ImageName</key>
+		<string>Logo.png</string>
+		<key>ImagePosition</key>
+		<string>Center</string>
+	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -100,8 +109,6 @@
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen.storyboard</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>
