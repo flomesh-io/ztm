@@ -12,7 +12,8 @@ import { copy } from '@/utils/clipboard';
 import { downloadFile } from '@/utils/file';
 import toast from "@/utils/toast";
 import ZtmService from '@/service/ZtmService';
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -212,7 +213,7 @@ const toggleLeft = () => {
 										<use :xlink:href="item.svg"></use>
 									</svg>
 									<div v-else class="menu-icon" :class="item.icon" />
-									<div class="text-sm" >{{ item.label }}</div>
+									<div class="text-sm" >{{ t(item.label) }}</div>
 							</a>
 					</router-link>
 					<a class="flex flex-column" v-else-if="!item.route" v-ripple :href="item.url" :target="item.target" v-bind="props.action">
@@ -220,7 +221,7 @@ const toggleLeft = () => {
 								<use :xlink:href="item.svg"></use>
 							</svg>
 							<div v-else class="menu-icon" :class="item.icon" />
-							<div class="text-sm">{{ item.label }} </div>
+							<div class="text-sm">{{ t(item.label) }} </div>
 							<!-- <span v-if="hasSubmenu" class="pi pi-fw pi-angle-right ml-2 relative" style="top: 2px;" /> -->
 					</a>
 			</template>

@@ -9,7 +9,8 @@ import HoverXeyeSvg from "@/assets/img/hover-web-logo.png";
 import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -149,7 +150,7 @@ const select = (selected) => {
 										<use :xlink:href="item.svg"></use>
 									</svg>
 									<div v-else class="menu-icon" :class="item.icon" />
-									<div class="text-sm" >{{ item.short }}</div>
+									<div class="text-sm" >{{ t(item.short) }}</div>
 							</a>
 					</router-link>
 			</template>

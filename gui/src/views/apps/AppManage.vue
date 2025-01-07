@@ -7,7 +7,8 @@ import { appMapping } from '@/utils/app-store'
 import { openWebview } from '@/utils/webview';
 import shortcutIcon from "@/assets/img/apps/shortcut.png";
 import defaultIcon from "@/assets/img/apps/default.png";
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const router = useRouter();
 const store = useStore();
 const appService = new AppService();
@@ -107,25 +108,25 @@ onMounted(()=>{
 				<div class="flex">
 					<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 					<div class="flex-item text-left pl-3" :class="{'text-white-alpha-80':!props.theme}" style="line-height: 40px;">
-						<b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | 
+						<b>{{ t(app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name) }}</b> | 
 						<i class="iconfont icon-provider" v-if="app?.provider == (props.embedEp?.username || selectedMesh.value?.agent?.username)"/>
 						{{app.provider}}
 					</div>
 					
-					<Button v-if="!!app.provider && !app.shortcut" v-tooltip.left="'App Log'" icon="pi pi-file" severity="help" text rounded aria-label="Filter" @click="logApp(app)" >
+					<Button v-if="!!app.provider && !app.shortcut" v-tooltip.left="t('App Log')" icon="pi pi-file" severity="help" text rounded aria-label="Filter" @click="logApp(app)" >
 					</Button>
-					<Button v-if="app.isRunning === false" v-tooltip.left="'Start'" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
+					<Button v-if="app.isRunning === false" v-tooltip.left="t('Start')" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
 					</Button>
-					<Button v-else-if="!!app.isRunning" v-tooltip.left="'Stop'" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >
+					<Button v-else-if="!!app.isRunning" v-tooltip.left="t('Stop')" icon="pi pi-pause" severity="help" text rounded aria-label="Filter" @click="stopApp(app)" >
 					</Button>
 					<Button 
 						v-if="!props.embedEp?.id && !!app.provider && app.provider == selectedMesh?.agent?.username && !app.shortcut" 
-						v-tooltip.left="!app.isPublished?'Publish':'Cancel publish'" 
+						v-tooltip.left="!app.isPublished?t('Publish'):t('Cancel publish')" 
 						:icon="!app.isPublished?'pi pi-cloud-upload':'pi pi-cloud-download'" 
 						severity="help" text rounded aria-label="Filter" 
 						@click="publishApp(app, !app.isPublished)" >
 					</Button>
-					<Button v-if="app.provider != 'ztm' || app.shortcut" v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+					<Button v-if="app.provider != 'ztm' || app.shortcut" v-tooltip.left="t('Delete')" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 					</Button>
 				</div>
 			</div>
@@ -133,7 +134,7 @@ onMounted(()=>{
 				<div class="flex">
 					<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 					<div class="flex-item text-left pl-3" :class="{'text-white-alpha-80':!props.theme}" style="line-height: 40px;"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}} </div>
-					<Button  v-tooltip.left="'Delete'" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
+					<Button  v-tooltip.left="t('Delete')" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 					</Button>
 				</div>
 			</div>

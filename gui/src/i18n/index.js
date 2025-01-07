@@ -8,7 +8,14 @@ const messages = {
   en,
   zh,
 };
-const defaultLang = localStorage.getItem('lang')||import.meta.env.VITE_APP_LANG;
+const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+let tzLang = 'en';
+if (timeZone === "Asia/Shanghai" || timeZone === "Asia/Chongqing") {
+	tzLang = 'zh'
+} else if (timeZone === "Asia/Hong_Kong") {
+	tzLang = 'zh'
+}
+const defaultLang = localStorage.getItem('lang')|| tzLang ||import.meta.env.VITE_APP_LANG;
 // 创建 i18n 实例
 const i18n = createI18n({
   locale: defaultLang, 
