@@ -10,6 +10,8 @@ import { downloadFile } from '@/utils/file';
 import { inAppPay } from '@/utils/pay';
 import { platform, isSafariOrMacOS } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const store = useStore();
 const props = defineProps(['pid','title']);
 const emits = defineEmits(['save','back']);
@@ -234,11 +236,11 @@ const pay = () => {
 	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - 20px)`}">
 		<AppHeader :back="back">
 				<template #center>
-					<b>{{props.title||'Join Mesh'}}</b>
+					<b>{{props.title||t('Join Mesh')}}</b>
 				</template>
 		
 				<template #end> 
-					<Button :loading="loading" :disabled="!enabled" label="Save" aria-label="Submit" size="small" @click="commit"/>
+					<Button :loading="loading" :disabled="!enabled" :label="t('Save')" aria-label="Submit" size="small" @click="commit"/>
 				</template>
 		</AppHeader>
 		<div class="md:m-3 relative h-full">

@@ -9,7 +9,8 @@ import shortcutIcon from "@/assets/img/apps/shortcut.png";
 import defaultIcon from "@/assets/img/apps/default.png";
 import { resize } from "@/utils/window";
 import AppManage from './AppManage.vue';
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const slots = useSlots();
 const router = useRouter();
 const route = useRoute();
@@ -204,16 +205,16 @@ watch(()=>selectedMesh,()=>{
 						<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
 						{{selectedMesh?.name}}
 					</div>
-					<b v-else>Apps</b>
+					<b v-else>{{t('Apps')}}</b>
 				</template>
 				<template #end> 
 					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
-											offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="' '"/>
+											offIcon="pi pi-sliders-h"  :onLabel="t('Manage')" :offLabel="' '"/>
 				</template>
 		</AppHeader>
 		<div v-else class="flex actions transparent-header">
 			<div class="flex-item">
-				<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="'Back'"  variant="text" severity="help" text @click="hide" ></Button>
+				<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
 			</div>
 			<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
 				<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
@@ -224,12 +225,12 @@ watch(()=>selectedMesh,()=>{
 			</div>
 			<div class="flex-item text-right">
 				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-times" 
-										offIcon="pi pi-sliders-h"  :onLabel="'Manage'" :offLabel="'.'"/>
+										offIcon="pi pi-sliders-h"  :onLabel="t('Manage')" :offLabel="'.'"/>
 			</div>
 		</div>
 			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-5':'pt-2'" v-if="!manage">
 				<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
-					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> No mesh selected
+					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
 				</div>
 				<div class="grid text-center" >
 						<div  
@@ -244,13 +245,13 @@ watch(()=>selectedMesh,()=>{
 							<div class="mt-1" v-tooltip="`${app.provider||'local'}/${app.name}`">
 								<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
 									<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
-									{{ app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}
+									{{ t(app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name)}}
 								</b>
 							</div>
 						</div>
 				</div>
 				<div v-if="props.layout=='absolute_container' && !selectedMesh && !props.noInners" class="flex-item text-center text-xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px">
-					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected-
+					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
 				</div>
 			</div>
 			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else>

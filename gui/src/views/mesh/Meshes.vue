@@ -6,6 +6,8 @@ import MeshJoin from './MeshJoin.vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { useToast } from "primevue/usetoast";
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const store = useStore();
 const router = useRouter();
 const confirm = useConfirm();
@@ -55,10 +57,10 @@ const actionMenu = ref();
 const actions = computed(()=>(mesh)=>{
 	return [
 	    {
-	        label: 'Actions',
+	        label: t('Actions'),
 	        items: [
 	            {
-	                label: 'Edit',
+	                label: t('Edit'),
 	                icon: 'pi pi-pencil',
 									command: () => {
 										selectedMenu.value = mesh;
@@ -66,7 +68,7 @@ const actions = computed(()=>(mesh)=>{
 									}
 	            },
 	            {
-	                label: 'Leave',
+	                label: t('Leave'),
 	                icon: 'pi pi-trash',
 									command: () => {
 										selectedMenu.value = mesh;
@@ -82,7 +84,7 @@ const showAtionMenu = (event) => {
 };
 
 const emptyMsg = computed(()=>{
-	return `You haven't joined a mesh yet.`
+	return t(`You haven't joined a mesh yet.`)
 });
 
 const hasPubHub = computed(()=>{
@@ -170,12 +172,12 @@ onMounted(() => {
 			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>
-						<b>My Meshes ({{meshes.length}})</b>
+						<b>{{t('My Meshes')}} ({{meshes.length}})</b>
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
-						<Button v-if="hasPubHub && !!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="'Live Sample'" icon="pi pi-sparkles" text @click="openTryMesh" />
-						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="'Join'" @click="() => visibleEditor = true"/>
+						<Button v-if="hasPubHub && !!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="t('Live Sample')" icon="pi pi-sparkles" text @click="openTryMesh" />
+						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="t('Join')" @click="() => visibleEditor = true"/>
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
@@ -189,7 +191,7 @@ onMounted(() => {
 													<span class="block text-tip font-medium mb-3">
 														{{decodeURI(mesh.name)}}
 													</span>
-													<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?'Connected':'Disconnect'" />
+													<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?t('Connected'):t('Disconnect')" />
 											 </div>
 											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event)" aria-haspopup="true" aria-controls="actionMenu" />
 											 <Menu ref="actionMenu" :model="actions(mesh)" :popup="true" />
@@ -209,7 +211,7 @@ onMounted(() => {
 		<div class="flex-item h-full" v-if="!!visibleEditor">
 			<div class="shadow mobile-fixed h-full">
 				<MeshJoin
-					:title="!!selectedMenu?('Edit Mesh'):null" 
+					:title="!!selectedMenu?t('Edit Mesh'):null" 
 					:pid="selectedMenu?.name" 
 					@save="join" 
 					@back="() => {selectedMenu=null;visibleEditor=false;}"/>
@@ -223,7 +225,7 @@ onMounted(() => {
 					<Button :loading="tryLoading" size="small" :disabled="!username || username == 'root'" label="Join" class="ml-2"  @click="tryMesh"></Button>
 				</div>
 				<div class="pt-2 opacity-70 text-sm">
-					<i class="pi pi-info-circle relative" style="top: 1px;"/> Join our sample mesh for a first experience of ZTM
+					<i class="pi pi-info-circle relative" style="top: 1px;"/> {{t('Join our sample mesh for a first experience of ZTM')}}
 				</div>
 			</div>
 		</Dialog>

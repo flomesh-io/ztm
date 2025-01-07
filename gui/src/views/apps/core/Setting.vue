@@ -54,7 +54,7 @@ onMounted(()=>{
 					<Button @click="close" icon="pi pi-angle-left" severity="secondary" text />
 				</template>
 				<template #center>
-					<b>Setting</b>
+					<b>{{t('Setting')}}</b>
 				</template>
 				<template #end> 
 					<Button text icon="pi pi-check" :loading="saving" :disabled="!port" v-tooltip="'Save'" @click="save"/>
@@ -63,18 +63,18 @@ onMounted(()=>{
 		<div>
 			<ul class="list-none px-2 m-0">
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-					<div class="font-medium font-bold w-3 text-white">Version</div>
+					<div class="font-medium font-bold w-3 text-white">{{t('Version')}}</div>
 					<PipyVersion />
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-						<div class="font-medium font-bold w-3 text-white">Port</div>
+						<div class="font-medium font-bold w-3 text-white">{{t('Port')}}</div>
 						<InputGroup class="search-bar" style="border-radius: 8px;" >
 							<InputNumber :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" :min="0" :max="65535" placeholder="0-65535" v-model="port" />
 							<Button size="small" icon="pi pi-sort" />
 						</InputGroup>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-						<div class="font-medium font-bold w-3 text-white">DB</div>
+						<div class="font-medium font-bold w-3 text-white">{{t('DB')}}</div>
 						<div v-if="platform() != 'ios' && platform() != 'android'" class="text-white flex-item" v-tooltip="db">
 							{{db}}
 						</div>
@@ -86,12 +86,12 @@ onMounted(()=>{
 						</div>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-					<div class="font-medium font-bold w-3 text-white">Lang</div>
-					<ToggleButton @change="changeLang" v-model="defaultLang" onLabel="EN" offLabel="中文" />
+					<div class="font-medium font-bold w-3 text-white">{{t('Lang')}}</div>
+					<ToggleButton size="small" @change="changeLang" v-model="defaultLang" onLabel="EN" offLabel="中文" />
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="flex-item">
-							<Button severity="secondary" variant="outlined" icon="pi pi-refresh" class="w-full opacity-70" @click="reset" label="Reset Private Key" />
+							<Button size="small" severity="secondary" icon="pi pi-refresh" class="w-full opacity-70" @click="reset" :label="t('Reset Private Key')" />
 						</div>
 				</li>
 			</ul>
