@@ -3,7 +3,9 @@ import { ref, onMounted,onActivated,watch, computed } from "vue";
 import _ from 'lodash';
 import { dayjs,extend } from '@/utils/dayjs';
 import { FilterMatchMode } from '@primevue/core/api';
-extend()
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+extend(locale.value)
 const props = defineProps(['d','endpoints']);
 const severityMap = computed(() => (severity) => {
 	if(severity == 'error'){
@@ -50,31 +52,31 @@ const isMobile = computed(() => windowWidth.value<=768);
 
 <template>
 		<DataTable scrollable :size="isMobile?'small':''" v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]"  :value="logs" tableStyle="min-width: 50rem">
-			<Column frozen style="width: 160px;" header="Time" sortable field="time">
+			<Column frozen style="width: 160px;" :header="t('Time')" sortable field="time">
 				<template #body="slotProps">
 					{{timeago(slotProps.data.time)}}
 				</template>
 			</Column>
-			<Column style="width: 80px;" header="Type" field="type" :showFilterMenu="true" :showFilterMatchModes="false" >
+			<Column style="width: 100px;" :header="t('Type')" field="type" :showFilterMenu="true" :showFilterMatchModes="false" >
 				<template #body="slotProps">
 					<Tag :severity="severityMap(slotProps.data.type)">{{slotProps.data.type}}</Tag>
 				</template>
 				
 				<template #filter="{ filterModel, filterCallback }">
-						<Select v-model="filterModel.value" @change="filterCallback()" :options="statuses" placeholder="Select One" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+						<Select v-model="filterModel.value" @change="filterCallback()" :options="statuses" :placeholder="t('Select')" class="p-column-filter" style="min-width: 12rem" :showClear="true">
 								<template #option="slotProps">
 										<Tag :value="slotProps.option" :severity="getSeverity(slotProps.option)" />
 								</template>
 						</Select>
 				</template>
 			</Column>
-			<Column header="Endpoint"  v-if="!!props.endpoints && props.endpoints.length>0">
+			<Column :header="t('Endpoint')"  v-if="!!props.endpoints && props.endpoints.length>0">
 				<template #body="slotProps">
 					{{props.endpoints.find((n)=>n.id == slotProps.data.ep)?.name}}
 				</template>
 			</Column>
 			
-			<Column header="Message">
+			<Column :header="t('Message')">
 				<template #body="slotProps">
 					{{slotProps.data.message}}
 				</template>

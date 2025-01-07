@@ -9,7 +9,8 @@ import { platform } from '@/utils/platform';
 import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 /*
 	{"files": [{
 		src: "data:image/gif;base64...",
@@ -238,7 +239,11 @@ const viewHeight = computed(() => windowHeight.value - (isMobile.value?49:36));
 const submitStyle = computed(() => style.submitStyle)
 const micStyle= computed(()=>style.micStyle)
 const menuStyle = computed(()=>style.menuStyle)
-const inputStyle = computed(() => style.inputStyle(isMobile.value))
+const inputStyle = computed(() => {
+	let _style = style.inputStyle(isMobile.value);
+	_style.placeholder.text = t(_style.placeholder.text)
+	return _style;
+})
 const hasMediaDevices = computed(() => true);
 const postMessage = (message, callback) => {
 	if(props.room?.peer){

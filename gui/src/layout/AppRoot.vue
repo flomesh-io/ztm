@@ -51,20 +51,20 @@ const ztmVersion = computed(() => {
 const meshes = ref([]);
 const placeholder = computed(() => {
 	const _vs = "ZTM : ";
-	const unit = 'Mesh';
-	const units = 'Meshes';
+	const unit = t('Mesh');
+	const units = t('Meshes');
 	if(!!loading.value){
-		return `Starting...`;
+		return t(`Starting...`);
 	} else if(!playing.value && errors.value > 0){
-		return `${props.embed?'':_vs}Check for errors.`;
+		return `${props.embed?'':_vs}`+t('Check for errors.');
 	} else if(!playing.value){
-		return `${_vs}Off.`;
+		return `${_vs}${t('Off')}.`;
 	} else if(!meshes.value || meshes.value.length ==0){
-		return `${props.embed?'':_vs}First, join a ${unit}.`;
+		return `${props.embed?'':_vs}`+t('First, join a Mesh.');
 	} else if(meshes.value.length == 1){
-		return `${_vs}1 ${unit} Joined.`;
+		return `${_vs}1 ${unit} ${t('Joined')}.`;
 	} else {
-		return `${_vs}${meshes.value.length} ${meshes.value.length>1?units:unit} Joined.`;
+		return `${_vs}${meshes.value.length} ${meshes.value.length>1?units:unit} ${t('Joined')}.`;
 	}
 });
 

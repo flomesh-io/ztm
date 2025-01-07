@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { usePrimeVue } from 'primevue/config';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 
 const props = defineProps({
 	format: {
@@ -153,8 +155,8 @@ const typeOk = () => {
         <div class="w-full">
           <div class="flex flex-wrap justify-content-between align-items-center flex-1 gap-2" v-if="!props.modelValue">
 						<div class="flex gap-2">
-                <Button size="small" v-tooltip="'Browse'" @click="chooseCallback" icon="pi pi-plus" rounded ></Button>
-                <Button size="small" v-tooltip="'Input'" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
+                <Button size="small" v-tooltip="t('Browse')" @click="chooseCallback" icon="pi pi-plus" rounded ></Button>
+                <Button size="small" v-tooltip="t('Input')" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
 								<OverlayPanel ref="op">
 									<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel w-30rem"  >
 											<span class="font-medium">
@@ -162,8 +164,8 @@ const typeOk = () => {
 											</span>
 									</Chip>	
 									<div class="flex justify-content-end">
-										<Button size="small" class="mr-2" label="Cancel" @click="typeCancel" severity="secondary"></Button>
-										<Button size="small" label="Ok" @click="typeOk"  severity="success"></Button>
+										<Button size="small" class="mr-2" :label="t('Cancel')" @click="typeCancel" severity="secondary"></Button>
+										<Button size="small" :label="t('Ok')" @click="typeOk"  severity="success"></Button>
 									</div>
 								</OverlayPanel>
 						</div>
@@ -179,20 +181,20 @@ const typeOk = () => {
                 <div class="flex flex-column align-items-left gap-3">
 									
 										<Chip v-if="isLiveSample" severity="success" >
-											<i class="pi pi-verified text-green-600 text-xl mr-2" />Live Mesh
-											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
+											<i class="pi pi-verified text-green-600 text-xl mr-2" />{{t('Live Mesh')}}
+											<span v-tooltip="t('Clear')" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
 												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
 											</span>
 										</Chip>
                     <Chip v-else-if="isValid" severity="success" >
-											<i class="pi pi-verified text-green-600 text-xl mr-2" />Configured
-											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
+											<i class="pi pi-verified text-green-600 text-xl mr-2" />{{t('Configured')}}
+											<span v-tooltip="t('Clear')" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
 												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
 											</span>
 										</Chip>
                     <Chip v-else severity="error" >
-											<i class="pi pi-exclamation-circle text-red-600 text-xl mr-2" />Format error
-											<span v-tooltip="'Clear'" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
+											<i class="pi pi-exclamation-circle text-red-600 text-xl mr-2" />{{t('Format error')}}
+											<span v-tooltip="t('Clear')" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
 												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
 											</span>
 										</Chip>
@@ -203,7 +205,7 @@ const typeOk = () => {
     <template #empty="{ chooseCallback }">
         <div v-if="!props.modelValue" class="flex align-items-center justify-content-center flex-column">
             <i class="pi pi-file-arrow-up pt-2 pb-4 text-6xl text-400 border-400 text-gray-300" />
-            <p class="mb-2 text-tip">Drag and drop {{props.label}} here.</p>
+            <p class="mb-2 text-tip">{{t(`Drag and drop ${props.label} here.`)}}</p>
         </div>
     </template>
 	</FileUpload>

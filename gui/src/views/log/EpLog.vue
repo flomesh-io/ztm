@@ -6,7 +6,8 @@ import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
 import _ from 'lodash';
 import Log from './Log.vue'
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const store = useStore();
 const router = useRouter();
 const ztmService = new ZtmService();
@@ -101,7 +102,7 @@ onActivated(()=>{
 <template>
 	<AppHeader :main="true" >
 			<template #center>
-				<b>Endpoint Logs</b>
+				<b>{{t('Endpoint Logs')}}</b>
 			</template>
 	
 			<template #end> 
@@ -112,9 +113,9 @@ onActivated(()=>{
 		<template #content>
 			<InputGroup class="search-bar" >
 				<Button icon="pi pi-chart-scatter" />
-				<MultiSelect v-if="!!endpoints && endpoints.length>0" v-model="selectEndpoints" @change="mergeLogs" :options="endpoints" optionLabel="name" optionValue="id" :filter="endpoints.length>8" placeholder="Endpoints"
+				<MultiSelect v-if="!!endpoints && endpoints.length>0" v-model="selectEndpoints" @change="mergeLogs" :options="endpoints" optionLabel="name" optionValue="id" :filter="endpoints.length>8" :placeholder="t('Endpoints')"
 				            :maxSelectedLabels="2" style="max-width: 200px;" />
-				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type keyword" rows="1" cols="30" />
+				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" :placeholder="t('Type keyword')" rows="1" cols="30" />
 				<Button :disabled="!typing" icon="pi pi-search"/>
 			</InputGroup>
 		</template>

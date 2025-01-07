@@ -10,7 +10,9 @@ import { useToast } from "primevue/usetoast";
 import { dayjs, extend } from '@/utils/dayjs';
 import { downloadFile } from '@/utils/file';
 import clipboard from 'clipboardy';
-extend()
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+extend(locale.value)
 
 const store = useStore();
 const router = useRouter();
@@ -101,9 +103,9 @@ const select = (node) => {
 }
 const emptyMsg = computed(()=>{
 	if(!!selectedMesh.value?.name){
-		return 'No endpoint.'
+		return t('No endpoint.')
 	} else {
-		return `First, join a Mesh.`
+		return t(`First, join a Mesh.`)
 	}
 });
 const username = ref('');
@@ -142,7 +144,7 @@ const download = () => {
 }
 const copy = () => {
 	clipboard.write(permitStr.value).then(()=>{
-		toast.add({ severity: 'contrast', summary: 'Tips', detail: `Copied.`, life: 3000 });
+		toast.add({ severity: 'contrast', summary: 'Tips', detail: t(`Copied.`), life: 3000 });
 	});
 }
 const visibleImport = ref(false);
@@ -160,12 +162,12 @@ const newInvite = () => {
 		<div class="relative h-full" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
 					<template #center>
-						<b>Endpoints ({{endpoints.length}})</b>
+						<b>{{t('Endpoints')}} ({{endpoints.length}})</b>
 					</template>
 			
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
-						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="'Invite'"  @click="newInvite"/>
+						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="t('Invite')"  @click="newInvite"/>
 					</template>
 			</AppHeader>
 			
@@ -175,15 +177,15 @@ const newInvite = () => {
 						<CertificateUploder placeholder="Identity" v-model="identity" label="Identity"/>
 					</div>
 					<div class="flex mt-2 w-full">
-						<InputText size="small" placeholder="Username" v-model="username"  class="flex-item"></InputText>
-						<Button size="small" :disabled="!username || username == 'root'" label="Invite" class="ml-2"  @click="inviteEp"></Button>
+						<InputText size="small" :placeholder="t('Username')" v-model="username"  class="flex-item"></InputText>
+						<Button size="small" :disabled="!username || username == 'root'" :label="t('Invite')" class="ml-2"  @click="inviteEp"></Button>
 					</div>
 				</div>
 				<div class="p-2" v-else>
 					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="permitStr"/>
 					<div class="flex mt-1">
-						<Button size="small"  label="Copy" class="flex-item mr-1"  @click="copy"></Button>
-						<Button size="small"  label="Download" class="flex-item"  @click="download"></Button>
+						<Button size="small"  :label="t('Copy')" class="flex-item mr-1"  @click="copy"></Button>
+						<Button size="small"  :label="t('Download')" class="flex-item"  @click="download"></Button>
 					</div>
 				</div>
 			</Dialog>
@@ -200,7 +202,7 @@ const newInvite = () => {
 												<div class="flex">
 													<div class="flex-item pt-1">
 														<b>{{ node.label || node.id }} <span v-if="!!node.username">({{node.username}})</span></b>
-														<span v-if="node.isLocal" class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >Local</Tag></span>
+														<span v-if="node.isLocal" class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 													</div>
 													<div class="flex">
 														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[node.id]">↑{{bitUnit(stats[node.id]?.send)}}</span>
