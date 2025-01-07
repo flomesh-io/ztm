@@ -14,6 +14,8 @@ import { AcceptFile } from "@/doms/AcceptFile";
 import { reg } from "@/utils/notification";
 import { getShared } from '@/utils/file';
 import { platform } from '@/utils/platform';
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n(); 
 const store = useStore();
 const toast = useToast();
 const confirm = useConfirm();
@@ -57,5 +59,12 @@ onMounted(()=>{
 	timmer()
 	customElements.define('accept-file', AcceptFile);
 })
+
+
+
+const changeLanguage = (lang) => {
+	locale.value = lang;
+};
+
 </script>
 <style scoped></style>
