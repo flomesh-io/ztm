@@ -11,6 +11,8 @@ import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
 import Config from './Config.vue'
 import _ from "lodash";
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const toast = useToast();
 const store = useStore();
 const confirm = useConfirm();
@@ -46,7 +48,7 @@ const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 
 const emptyMsg = computed(()=>{
-	return 'Empty.'
+	return t('Empty.')
 });
 const fullPath = computed(()=>(item)=>{
 	if(item?.path){
@@ -323,7 +325,7 @@ const config = ref({
 })
 const saveConfig = () => {
 	fileService.setConfig(info.value?.endpoint?.id, config.value).then(()=>{
-		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+		toast.add({ severity: 'success', summary:t('Tips'), detail: t('Save successfully.'), life: 3000 });
 		getConfig();
 	})
 }
@@ -364,7 +366,7 @@ const doDownload = (item) => {
 	if(item.path){
 		fileService.download(item.path).then((res)=>{
 			// writeMobileFile('doDownloadSuccess.txt',res?.toString()||'');
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the download queue.`, life: 3000 });
+			toast.add({ severity: 'contrast', summary:t('Tips'), detail: `${item.name} ${t('in the download queue.')}`, life: 3000 });
 			emits('download',[item]);
 			selectedFile.value = item;
 			loadFileAttr(true);
@@ -395,7 +397,7 @@ const doDownloads = () => {
 	}
 	if(reqs.length>0){
 		merge(reqs).then((allRes) => {
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `${downloadFiles.length} files in the download queue.`, life: 3000 });
+			toast.add({ severity: 'contrast', summary:t('Tips'), detail: `${downloadFiles.length} ${t('files in the download queue.')}`, life: 3000 });
 			emits('download',downloadFiles)
 		})
 		.catch(err => {
@@ -412,7 +414,7 @@ const doUpload = (item) => {
 	if(item.path){
 		item.uploading = true;
 		fileService.upload(item.path).then((res)=>{
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `${item.name} in the upload queue.`, life: 3000 });
+			toast.add({ severity: 'contrast', summary:t('Tips'), detail: `${item.name} ${t('in the upload queue.')}`, life: 3000 });
 			emits('upload',[item]);
 			selectedFile.value = item;
 			setTimeout(()=>{
@@ -441,7 +443,7 @@ const doUploads = () => {
 	}
 	if(reqs.length>0){
 		merge(reqs).then((allRes) => {
-			toast.add({ severity: 'contrast', summary:'Tips', detail: `${uploadFiles.length} files in the upload queue.`, life: 3000 });
+			toast.add({ severity: 'contrast', summary:t('Tips'), detail: `${uploadFiles.length} ${t('files in the upload queue.')}`, life: 3000 });
 			emits('upload',uploadFiles)
 		})
 		.catch(err => {
@@ -467,7 +469,7 @@ const moreItems = computed(()=>{
 	const actions = [];
 	if(isMobile.value){
 		actions.push({
-				label: 'Home',
+				label: t('Home'),
 				command(){
 					changePath(0)
 				}
@@ -475,7 +477,7 @@ const moreItems = computed(()=>{
 	}
 	if(!!hasTauri.value){
 		actions.push({
-				label: 'Open Folder',
+				label: t('Open Folder'),
 				command(){
 					openFile(`${localDir.value}${current.value.path}`)
 				}
@@ -483,13 +485,13 @@ const moreItems = computed(()=>{
 	}
 	if(selectedFiles.value.length>1){
 		actions.push({
-			label: 'Download',
+			label: t('Download'),
 			command(){
 				doDownloads()
 			}
 		});
 		actions.push({
-			label: 'Upload',
+			label: t('Upload'),
 			command(){
 				doUploads()
 			}
@@ -553,7 +555,7 @@ onMounted(()=>{
 						
 						<Button v-if="showBack" @click="back" icon="pi pi-times" severity="secondary" text />
 						<span v-if="showBack" class="opacity-40 mx-2">/</span>
-						<Button v-if="!isMobile" @click="openSetting()" v-tooltip="'Setting'" icon="pi pi-cog" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
+						<Button v-if="!isMobile" @click="openSetting()" v-tooltip="t('Setting')" icon="pi pi-cog" severity="secondary" text aria-haspopup="true" aria-controls="op"/>
 						<span v-if="!isMobile" class="opacity-40 mx-2">/</span>
 						<Button @click="changePath(0)" v-tooltip="`Root:${localDir}`" icon="pi pi-warehouse" severity="secondary" text />
 						<span v-if="!!current.name" class="opacity-40 mx-2">/</span>
@@ -575,8 +577,8 @@ onMounted(()=>{
 					</template>
 					<template #end> 
 						<Button v-if="!isMobile" @click="load()" :icon="loading?'pi pi-refresh pi-spin':'pi pi-refresh'" :severity="'secondary'" text />
-						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}${current.path}`)" v-tooltip.bottom="'Open folder'" icon="pi pi-folder-open" severity="secondary" text />
-						<FileImportSelector icon="pi pi-plus" v-if="isMyFolder && hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" placeholder="Import" @saved="load"></FileImportSelector>
+						<Button v-if="hasTauri && !isMobile" @click="openFile(`${localDir}${current.path}`)" v-tooltip.bottom="t('Open folder')" icon="pi pi-folder-open" severity="secondary" text />
+						<FileImportSelector icon="pi pi-plus" v-if="isMyFolder && hasTauri && current.path!='' && current.path!='/' && current.path!='/users'" :path="`${localDir}${current.path}`" class="pointer ml-2" :placeholder="t('Import')" @saved="load"></FileImportSelector>
 						<Button v-if="!props.small" @click="openQueue" :severity="!props.queueSize?'secondary':'primary'">
 							<i :class="!props.queueSize?'pi pi-inbox':'pi pi-spinner pi-spin'"/>
 							<Badge v-if="!!props.queueSize" :value="props.queueSize" size="small"></Badge>
@@ -589,11 +591,11 @@ onMounted(()=>{
 			<Popover ref="op" >
 				<div class="flex w-full pt-4">
 					<FloatLabel>
-						<label>Local Dir</label>
+						<label>{{t('Local Dir')}}</label>
 						<InputText  id="LocalDir" size="small" v-model="config.localDir"  class="flex-item"></InputText>
 					</FloatLabel>
 					<Button v-tooltip="'Copy'" size="small" :disabled="!localDir" icon="pi pi-copy" class="ml-2"  @click="copyDir"></Button>
-					<FileFolderSelector v-if="hasTauri" :path="localDir" class="pointer ml-2" placeholder="Choose" @select="selectDir"></FileFolderSelector>
+					<FileFolderSelector v-if="hasTauri" :path="localDir" class="pointer ml-2" :placeholder="t('Choose')" @select="selectDir"></FileFolderSelector>
 				</div>
 				<!-- <div class="flex w-full">
 					<InputList
@@ -613,14 +615,14 @@ onMounted(()=>{
 					</InputList>
 				</div> -->
 				<div class="flex w-full mt-3">
-					<Button class="w-full" label="Apply" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
+					<Button class="w-full" :label="t('Apply')" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
 				</div>
 			</Popover>
 			<Card class="nopd" >
 				<template #content>
 					<InputGroup class="search-bar" >
 						<DataViewLayoutOptions v-model="layout" style="z-index: 2;"/>
-						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type file name" rows="1" cols="30" />
+						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" :placeholder="t('Type file name')" rows="1" cols="30" />
 						<Button :disabled="!typing" icon="pi pi-search"  :label="null"/>
 					</InputGroup>
 				</template>
@@ -629,7 +631,7 @@ onMounted(()=>{
 			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="filesFilter && filesFilter.length >0">
 			<div class="text-center" >
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block pb-8" :value="filesFilter" >
-						<Column sortable field="name" header="Name" expander style="width: 50%">
+						<Column sortable field="name" :header="t('Name')" expander style="width: 50%">
 								<template  #body="slotProps">
 									<div class="selector pointer noSelect" v-longtap="handleLongTap(slotProps.node)" @click="selectFile($event,slotProps.node)" :class="{'active':!!slotProps.node.selected?.value,'px-2':!!slotProps.node.selected?.value,'py-1':!!slotProps.node.selected?.value}" style="max-width: 200px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
 										<img :class="stateLabel(detailData[slotProps.node.path]) == 'not find'?'opacity-40':''" oncontextmenu="return false;"  :src="fileIcon(slotProps.node)" class="relative vertical-align-middle noEvent noSelect" width="20" style="top: -1px; overflow: hidden;margin: auto;"/>
@@ -637,20 +639,20 @@ onMounted(()=>{
 									</div>
 								</template>
 						</Column>
-						<Column field="state" header="State"  sortable>
+						<Column field="state" :header="t('State')"  sortable>
 								<template  #body="slotProps">
 									<ProgressBar v-if="slotProps.node.ext!='/' && detailData[slotProps.node.path]?.downloading!=null" :value="detailData[slotProps.node.path].downloading*100" class="w-3rem" style="height: 6px;"><span></span></ProgressBar>
 									<Tag v-else v-tooltip="detailData[slotProps.node.path]?.error?.message"  :severity="stateColor[stateLabel(detailData[slotProps.node.path])]" class="py-0 px-1" v-if="slotProps.node.ext!='/' && !!detailData[slotProps.node.path]">
-										{{stateLabel(detailData[slotProps.node.path])}}
+										{{t(stateLabel(detailData[slotProps.node.path]))}}
 									</Tag>
 								</template>
 						</Column>
-						<Column field="size" header="Size"  sortable>
+						<Column field="size" :header="t('Size')"  sortable>
 							<template  #body="slotProps">
 								<div class="text-sm opacity-60" v-if="slotProps.node.ext!='/' && detailData[slotProps.node.path]?.size">{{bitUnit(detailData[slotProps.node.path].size)}}</div>
 							</template>
 						</Column>
-						<Column v-if="!isMobile" field="time" header="Time" style="min-width: 12rem" sortable>
+						<Column v-if="!isMobile" field="time" :header="t('Time')" style="min-width: 12rem" sortable>
 							<template  #body="slotProps">
 								<div class="text-sm opacity-60" v-if="slotProps.node.ext!='/' && detailData[slotProps.node.path]?.time">
 									{{new Date(detailData[slotProps.node.path].time).toLocaleString()}}
@@ -676,7 +678,7 @@ onMounted(()=>{
 									<ProgressBar v-if="file.ext!='/' && detailData[file.path]?.downloading!=null" :value="detailData[file.path].downloading*100" class="w-3rem" style="height: 6px;margin: auto;"><span></span></ProgressBar>
 								</div>
 								<Tag v-tooltip="detailData[file.path]?.error?.message" v-if="file.ext!='/' && !!detailData[file.path] && detailData[file.path]?.state!='synced'"  :severity="stateColor[stateLabel(detailData[file.path])]" class="py-0 px-1 mt-2" >
-									{{stateLabel(detailData[file.path])}}
+									{{t(stateLabel(detailData[file.path]))}}
 								</Tag>
 								<div v-if="file.ext!='/' && !!detailData[file.path]" class="text-sm opacity-60 mt-1">{{bitUnit(detailData[file.path].size)}}</div>
 							</div>

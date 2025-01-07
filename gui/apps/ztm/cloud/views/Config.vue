@@ -10,6 +10,8 @@ import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
 import _ from "lodash";
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const toast = useToast();
 const store = useStore();
 const confirm = useConfirm();
@@ -43,7 +45,7 @@ const infos = computed(()=>{
 	if(props.file?.ext == "/"){
 		return [
 			{
-					label: 'Path',
+					label: t('Path'),
 					shortcut: props.file?.path,
 					command: () => {
 					}
@@ -53,14 +55,14 @@ const infos = computed(()=>{
 	}else{
 		return [
 			{
-					label: 'State',
-					shortcut: props.file?.state,
+					label: t('State'),
+					shortcut: t(props.file?.state),
 					error: props.file?.error,
 					command: () => {
 					}
 			},
 			{
-					label: 'Sources',
+					label: t('Sources'),
 					badge: props.file?.sources?.length,
 					command: () => {
 					}
@@ -68,7 +70,7 @@ const infos = computed(()=>{
 			
 			
 			{
-					label: 'Path',
+					label: t('Path'),
 					shortcut: props.file?.path,
 					command: () => {
 					}
@@ -80,13 +82,13 @@ const infos = computed(()=>{
 					}
 			},
 			{
-					label: 'Time',
+					label: t('Time'),
 					shortcut: !!props.file?.time?new Date(props.file.time).toLocaleString():'-',
 					command: () => {
 					}
 			},
 			{
-					label: 'Size',
+					label: t('Size'),
 					shortcut: bitUnit(props.file?.size),
 					command: () => {
 					}
@@ -117,7 +119,7 @@ const saveAcl = () => {
 	fileService.setAcl(fullPath.value(props.file), props.file?.access || {}).then((res)=>{
 		aclLoading.value = false;
 		shareVisible.value = false;
-		toast.add({ severity: 'success', summary:'Tips', detail: 'ACL Save successfully.', life: 3000 });
+		toast.add({ severity: 'success', summary:'Tips', detail: t('ACL Save successfully.'), life: 3000 });
 	})
 }
 
@@ -289,7 +291,7 @@ const unpublishLoading = ref(false);
 const actions = computed(()=>{
 	
 	const _actions = [{
-		label: 'Info',
+		label: t('Info'),
 		icon: 'pi pi-info-circle',
 		// shortcut: '⌘+O',
 		command(e){
@@ -298,7 +300,7 @@ const actions = computed(()=>{
 	}];
 	if(isMyFolder.value && props.file?.access &&!!props.file?.state &&  props.file?.state != 'new' && !props.file?.error){
 		_actions.push({
-			label: 'Sharing',
+			label: t('Sharing'),
 			icon: 'pi pi-shield',
 			// shortcut: '⌘+O',
 			command(){
@@ -308,7 +310,7 @@ const actions = computed(()=>{
 	}
 	if(props.file?.ext == '/' && !!props.file?.path){
 		_actions.push({
-			label: 'Auto-Sync',
+			label: t('Auto-Sync'),
 			icon: isMirror.value?'pi-spin text-primary pi pi-sync':'pi pi-sync',
 			// shortcut: '⌘+O',
 			command(){
@@ -318,7 +320,7 @@ const actions = computed(()=>{
 	}
 	if(props.file?.ext != '/' &&!!props.file?.state &&  (props.file?.state == 'new' || props.file?.state == 'changed' || props.file?.state == 'synced')){
 		_actions.push({
-			label: 'Upload',
+			label: t('Upload'),
 			icon: 'pi pi-cloud-upload',
 			loading: !!props.file.uploading,
 			// shortcut: '⌘+O',
@@ -331,7 +333,7 @@ const actions = computed(()=>{
 	if(props.file?.ext != '/' && !!props.file?.state && props.file?.state != 'new'  && !props.file?.error){
 		if(props.file?.downloading == null){
 			_actions.push({
-				label: 'Download',
+				label: t('Download'),
 				icon: 'pi pi-cloud-download',
 				// shortcut: '⌘+O',
 				command(){
@@ -340,7 +342,7 @@ const actions = computed(()=>{
 			})
 		} else {
 				_actions.push({
-					label: 'Cancel Download',
+					label: t('Cancel Download'),
 					icon: 'pi pi-cloud-download',
 					// shortcut: '⌘+O',
 					command(){
@@ -352,7 +354,7 @@ const actions = computed(()=>{
 	
 	if(!!props.file?.fileUrl && !props.file?.error){
 		_actions.push({
-			label: 'Save As',
+			label: t('Save As'),
 			icon: 'pi pi-save',
 			loading: saving.value,
 			// shortcut: '⌘+O',
@@ -365,7 +367,7 @@ const actions = computed(()=>{
 	if(props.file?.ext != '/' &&!!props.file?.state &&  props.file?.state != 'missing' && !props.file?.error){
 		if(platform() == 'ios'){
 			_actions.push({
-				label: 'Open',
+				label: t('Open'),
 				icon: 'pi pi-external-link',
 				disabled: !props.file?.path,
 				// shortcut: '⌘+O',
@@ -375,7 +377,7 @@ const actions = computed(()=>{
 			})
 		} else if(isPC.value) {
 			_actions.push({
-				label: 'Open',
+				label: t('Open'),
 				icon: 'pi pi-external-link',
 				disabled: !props.file?.path,
 				// shortcut: '⌘+O',
@@ -387,7 +389,7 @@ const actions = computed(()=>{
 	} else if(props.file?.ext != '/' && !!props.file?.state &&  props.file?.state != 'new' && !props.file?.error){
 		
 		_actions.push({
-			label: 'Preview',
+			label: t('Preview'),
 			icon: 'pi pi-eye',
 			disabled: !props.file?.fileUrl,
 			// shortcut: '⌘+O',
@@ -400,7 +402,7 @@ const actions = computed(()=>{
 	_actions.push({separator: true});
 	if(isMyFolder.value && !!props.file?.state &&  props.file?.state != 'new'){
 		_actions.push({
-			label: 'Take Down',
+			label: t('Take Down'),
 			class:'opacity-80',
 			icon: 'pi pi-trash',
 			loading: false,
@@ -415,7 +417,7 @@ const actions = computed(()=>{
 		})
 	}
 	_actions.push({
-		label: 'Delete Local File',
+		label: t('Delete Local File'),
 		class:'opacity-80',
 		icon: 'pi pi-trash',
 		loading: false,
@@ -512,17 +514,17 @@ onMounted(()=>{
 	</Dialog>
 	<Dialog v-if="shareVisible" v-model:visible="shareVisible" style="max-width: 400px;min-width: 360px;min-height: 460px;" class="noclose smheader nopd transparentMask" modal :dismissableMask="true" :draggable="true" >
 		<template #header>
-			<i class="pi pi-shield mr-2" />Sharing
+			<i class="pi pi-shield mr-2" />{{t('Sharing')}}
 		</template>
 		<Button v-if="isMyFolder && props.file?.access && props.file?.state != 'new' && !props.file?.error" :loading="aclLoading" class="absolute" style="right: 8px;z-index: 2;top: 8px;" @click="saveAcl" icon="pi pi-check" />
 		<Loading v-if="loading" />
 		<div v-else class="p-3">
 			<div class="py-2">
-				<b>All permission:</b>
+				<b>{{t('All permission')}}:</b>
 			</div>
-			<SelectButton class="w-full" v-model="props.file.access.all" :options="[{name:'Inherit',id:null},{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" aria-labelledby="basic" />
+			<SelectButton class="w-full" v-model="props.file.access.all" :options="[{name:t('Inherit'),id:null},{name:t('Readonly'),id:'readonly'},{name:t('Block'),id:'block'}]" optionLabel="name" optionValue="id" aria-labelledby="basic" />
 			<div class="pt-4 pb-2">
-				<b>Users permission:</b>
+				<b>{{t('Users permission')}}:</b>
 			</div>
 			<Listbox v-if="props.file.access?.users" :options="Object.keys(props.file.access.users)" class="w-full md:w-56 noborder noshadow" listStyle="max-height:250px">
 				<template #option="slotProps">
@@ -532,7 +534,7 @@ onMounted(()=>{
 								<span class="ml-2">{{slotProps.option}}</span>
 							</div>
 							<div>
-								<Select size="small" class="w-full small"  v-model="props.file.access.users[slotProps.option]" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
+								<Select size="small" class="w-full small"  v-model="props.file.access.users[slotProps.option]" :options="[{name:t('Readonly'),id:'readonly'},{name:t('Block'),id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
 							</div>
 						<div class="pl-1">
 							<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary" />
@@ -560,7 +562,7 @@ onMounted(()=>{
 		</Dialog>
 		<Dialog v-if="syncVisible" v-model:visible="syncVisible" style="max-width: 400px;min-width: 360px;min-height: 400px;" class="nopd transparentMask smheader" modal :dismissableMask="true" :draggable="true" >
 			<template #header>
-				<i class="pi pi-sync mr-2" :class="isMirror?'pi-spin text-primary':''"/>Auto-Sync
+				<i class="pi pi-sync mr-2" :class="isMirror?'pi-spin text-primary':''"/>{{t('Auto-Sync')}}
 			</template>
 			<div class="p-3">
 				<Loading v-if="mirrorLoading" />
@@ -569,7 +571,7 @@ onMounted(()=>{
 							<div class="flex items-center px-0 w-full">
 								<div class="flex-item pr-2 py-2">
 									<Tag>{{slotProps.option.ep?.name}}</Tag>
-									<Tag v-if="info?.endpoint?.id == slotProps.option?.ep?.id" value="Local" class="ml-2" severity="contrast"/> 
+									<Tag v-if="info?.endpoint?.id == slotProps.option?.ep?.id" :value="t('Local')" class="ml-2" severity="contrast"/> 
 								</div>
 								<div class="flex-item">
 									<Select 
@@ -591,10 +593,10 @@ onMounted(()=>{
 					<template #footer>
 						<div class="flex items-center pt-1 pb-2">
 							<div class="flex-item pr-1">
-								<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" placeholder="Endpoint">
+								<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" :placeholder="t('Endpoint')">
 									<template #option="slotProps">
 										{{ slotProps.option.name }}
-										<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+										<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
 									</template>
 								</Select>
 							</div>

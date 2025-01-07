@@ -8,7 +8,8 @@ import { platform } from '@/utils/platform';
 import { useStore } from 'vuex';
 import { checker, bitUnit, openFile, isImage, saveFile } from '@/utils/file';
 import _ from "lodash"
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const props = defineProps(['item','dir']);
 const emits = defineEmits(['back','load']);
 const store = useStore();
@@ -47,7 +48,7 @@ const saveAs = () => {
 			},
 			after: ()=>{
 				saving.value = false;
-				toast.add({ severity: 'success', summary:'Tips', detail: 'Saved.', life: 3000 });
+				toast.add({ severity: 'success', summary:t('Tips'), detail: t('Saved.'), life: 3000 });
 			}
 		})
 	}
