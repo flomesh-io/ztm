@@ -9,7 +9,8 @@ import ZtmService from '@/service/ZtmService';
 import confirm from "@/utils/confirm";
 import PipyVersion from '@/components/mesh/PipyVersion.vue';
 import { getPort, setPort } from '@/service/common/request';
-
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
 const emits = defineEmits(['close']);
 const saving = ref(false);
 const isRunning = ref(false);
@@ -20,6 +21,12 @@ const openFinder = () => {
 	shellService.openFinder();
 }
 const db = ref('');
+
+const defaultLang = ref(locale.value=='en');
+const changeLang = () => {
+	locale.value = defaultLang.value?'en':'zh';
+	localStorage.setItem('lang',locale.value);
+}
 const loaddata = async () => {
 	db.value = await shellService.getDB();
 }
@@ -79,6 +86,10 @@ onMounted(()=>{
 						</div>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
+					<div class="font-medium font-bold w-3 text-white">Lang</div>
+					<ToggleButton @change="changeLang" v-model="defaultLang" onLabel="EN" offLabel="中文" />
+				</li>
+				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="flex-item">
 							<Button severity="secondary" variant="outlined" icon="pi pi-refresh" class="w-full opacity-70" @click="reset" label="Reset Private Key" />
 						</div>
@@ -89,4 +100,7 @@ onMounted(()=>{
 </template>
 
 <style lang="scss" scoped>
+	:deep(.empty-header){
+		height: 60px;
+	}
 </style>

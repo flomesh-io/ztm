@@ -22,7 +22,8 @@ import { openWebview } from '@/utils/webview';
 import { fsInit, downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 import toast from "@/utils/toast";
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n(); 
 const store = useStore();
 const playing = ref(false);
 const loading = ref(false);
@@ -358,17 +359,17 @@ onMounted(() => {
 			</div> -->
 
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button @click="joinMesh" v-tooltip="'Join Mesh'" class="pointer" severity="help" rounded text aria-label="Filter" >
+				<Button @click="joinMesh" v-tooltip="t('Join Mesh')" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
 				</Button>
 			</div>
 			<div class="flex-item">
-				<FileUploderSmall class="pointer" placeholder="Import Mesh | App" @upload="upload">
+				<FileUploderSmall class="pointer" :placeholder="t('Import Mesh | App')" @upload="upload">
 					<i class="pi pi-upload text-3xl"  />
 				</FileUploderSmall>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button @click="() => appsOpen=true" v-tooltip="'Apps'" class="pointer" severity="help" rounded text aria-label="Filter" >
+				<Button @click="() => appsOpen=true" v-tooltip="t('Apps')" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<!-- <i class="pi pi-th-large text-3xl"  /> -->
 					<svg class="svg text-white w-2rem h-2rem linear" aria-hidden="true">
 						<use xlink:href="#svg-grid"></use>
@@ -376,10 +377,10 @@ onMounted(() => {
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button v-tooltip.left="'Start'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
+				<Button v-tooltip.left="t('Start')" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
 					<i class="pi pi-play " />
 				</Button>
-				<Button v-tooltip="'Pause'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="clickPause" >
+				<Button v-tooltip="t('Pause')"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="clickPause" >
 					<i class="pi pi-stop-circle" />
 				</Button>
 			</div>
