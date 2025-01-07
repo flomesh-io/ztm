@@ -9,7 +9,9 @@ import { useConfirm } from "primevue/useconfirm";
 import AppManage from '@/views/apps/AppManage.vue';
 import { dayjs, extend } from '@/utils/dayjs';
 import defaultIcon from "@/assets/img/apps/default.png";
-extend();
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+extend(locale.value)
 
 const props = defineProps(['ep']);
 const emits = defineEmits(['back','reload']);
@@ -76,7 +78,7 @@ const loadApps = () => {
 			</template>
 	
 			<template #end> 
-				<span v-if="!!props.ep && props.ep.isLocal" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >Local</Tag></span>
+				<span v-if="!!props.ep && props.ep.isLocal" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 				<Button v-if="selectedMesh?.agent?.username == 'root' && props.ep.username != 'root'" icon="pi pi-trash" severity="danger"  @click="removeEp"/>
 			</template>
 	</AppHeader>
@@ -86,7 +88,7 @@ const loadApps = () => {
 			<TabPanel>
 				<template #header>
 					<div>
-						<i class="pi pi-info-circle mr-2" />Info
+						<i class="pi pi-info-circle mr-2" />{{t('Info')}}
 					</div>
 				</template>
 				<EndpointInfo :ep="props.ep"/>
@@ -94,7 +96,7 @@ const loadApps = () => {
 			<TabPanel>
 				<template #header>
 					<div >
-						<i class="pi pi-objects-column mr-2" />Apps
+						<i class="pi pi-objects-column mr-2" />{{t('Apps')}}
 					</div>
 				</template>
 				

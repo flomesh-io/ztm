@@ -27,7 +27,7 @@ const placeholder = ref({
 	c:`-----BEGIN CERTIFICATE-----`,
 	ca:`-----BEGIN CERTIFICATE-----`,
 	p:`-----BEGIN RSA PRIVATE KEY-----`,
-	json:`Paste your permit here.`
+	json:t(`Paste your permit here.`)
 })
 
 const newConfig = {
@@ -250,26 +250,26 @@ const pay = () => {
 			<div class="grid" v-else>
 				<div class="col-12 md:col-6">
 					<div class="surface-section">
-						<h6><Tag severity="contrast" value="Contrast">Names</Tag></h6>
+						<h6><Tag severity="contrast" value="Contrast">{{t('Names')}}</Tag></h6>
 						<ul class="list-none p-0 m-0">
-							<FormItem label="Mesh">
+							<FormItem :label="t('Mesh')">
 								<Chip class="pl-0 pr-3 mr-2">
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<i class="pi pi-bookmark"/>
 										</span>
 										<span class="ml-2 font-medium">
-											<InputText :disabled="!!props.pid" placeholder="Name your mesh" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
+											<InputText :disabled="!!props.pid" :placeholder="t('Name your mesh')" class="add-tag-input xxl" :unstyled="true" v-model="config.name" type="text" />
 										</span>
 								</Chip>
-								<div v-if="config.name.toLocaleLowerCase() == 'sample'" class="text-sm opacity-80 p-1">Cannot use Sample name</div>
+								<div v-if="config.name.toLocaleLowerCase() == 'sample'" class="text-sm opacity-80 p-1">{{t('Cannot use Sample name')}}</div>
 							</FormItem>
-							<FormItem label="Join As">
+							<FormItem :label="t('Join As')">
 								<Chip class="pl-0 pr-3 align-items-top"  >
 										<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 											<i class="pi pi-user" />
 										</span>
 										<span class="font-medium ml-2">
-											<InputText :maxLength="20" placeholder="Name your endpoint" class="add-tag-input xxl" :unstyled="true" v-model="config.agent.name" type="text" />
+											<InputText :maxLength="20" :placeholder="t('Name your endpoint')" class="add-tag-input xxl" :unstyled="true" v-model="config.agent.name" type="text" />
 										</span>
 								</Chip>	
 							</FormItem>
@@ -279,7 +279,7 @@ const pay = () => {
 				<div class="col-12 md:col-6">
 					<div class="surface-section">
 						<h6 class="flex">
-							<Tag severity="contrast" value="Contrast">Permit</Tag>
+							<Tag severity="contrast" value="Contrast">{{t('Permit')}}</Tag>
 						</h6>
 						<ul class="list-none p-0 m-0" >
 							<li class="flex align-items-center py-3 px-2 surface-border flex-wrap">
@@ -290,11 +290,11 @@ const pay = () => {
 						</ul>
 						<div class="pl-2" v-if="!permit">
 							<i class="pi pi-info-circle relative" style="top: 1px;"/>
-							For non-root users, get your <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> and send it to 'root' user to acquire a permit
+							{{t('For non-root users, get your')}} <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> {{t("and send it to 'root' user to acquire a permit")}}
 						</div>
 						
 						<div class="pl-2 mt-3" v-if="!permit && platform() == 'ios' && false">
-							<div><i class="pi pi-cart-arrow-down relative" style="top: 1px;"/> Or, you can <Button @click="pay" class="p-0" label="<Buy>" link /> an AWS hub and received a root permit</div>
+							<div><i class="pi pi-cart-arrow-down relative" style="top: 1px;"/> {{t('Or, you can')}} <Button @click="pay" class="p-0" :label="t('<Buy>')" link /> {{t('an AWS hub and received a root permit')}}</div>
 						</div>
 					</div>
 				</div>

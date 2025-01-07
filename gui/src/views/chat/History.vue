@@ -6,7 +6,9 @@ import userSvg from "@/assets/img/user.png";
 import { chatFileType, bitUnit, extIcon } from '@/utils/file';
 import _ from 'lodash';
 import { dayjs, extend } from '@/utils/dayjs';
-extend()
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+extend(locale.value)
 const store = useStore();
 const chatService = new ChatService();
 const props = defineProps(['room','users']);

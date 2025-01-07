@@ -11,8 +11,9 @@ import { platform } from '@/utils/platform';
 import gptSvg from "@/assets/img/gpt.png";
 import { resize, position } from "@/utils/window";
 import _ from "lodash";
-
-extend('en')
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+extend(locale.value)
 const props = defineProps(['app']);
 const emits = defineEmits(['close'])
 const store = useStore();
@@ -45,7 +46,7 @@ const uniRooms = computed(() => {
 			peer: selectedMesh.value?.agent?.username,
 			latest:{
 				message:{
-					text:'My Room.',
+					text:t('My Room.'),
 				},
 				time: Date.now()
 			}
@@ -212,17 +213,17 @@ onActivated(()=>{
 						<Button @click="back" icon="pi pi-angle-left" severity="secondary" text />
 					</template>
 					<template #center>
-						<b>Messages <span v-if="cnt>0">({{cnt}})</span></b>
+						<b>{{t('Messages')}} <span v-if="cnt>0">({{cnt}})</span></b>
 					</template>
 					<template #end> 
-						<Button text v-tooltip="'New Chat'" icon="pi pi-plus"  @click="()=> {loadusers();visibleUserSelector = true}" />
+						<Button text v-tooltip="t('New Chat')" icon="pi pi-plus"  @click="()=> {loadusers();visibleUserSelector = true}" />
 					</template>
 			</AppHeader>
 			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal header="New chat" :style="{ width: '25rem' }">
 					
 					<AppHeader :back="() => visibleUserSelector = false" :main="false">
 							<template #center>
-								<b>New Chat <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
+								<b>{{t('New Chat')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
 							</template>
 					
 							<template #end> 
@@ -267,7 +268,7 @@ onActivated(()=>{
 												<div class="flex mt-1">
 													<div class="flex-item" >
 														<div class="w-10rem text-ellipsis" >
-															<span v-if="item.latest?.message?.files?.length>0">[{{item.latest.message.files.length}} {{item.latest.message.files.length>1?'Files':'File'}}]</span>
+															<span v-if="item.latest?.message?.files?.length>0">[{{item.latest.message.files.length}} {{item.latest.message.files.length>1?t('Files'):t('File')}}]</span>
 															<span v-if="item.latest?.message?.text">{{item.latest?.message?.text}}</span>
 															&nbsp;
 														</div>
