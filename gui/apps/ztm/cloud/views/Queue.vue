@@ -7,6 +7,8 @@ import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
 import { checker, bitUnit } from '@/utils/file';
 import _ from "lodash"
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const props = defineProps(['downloads','uploads']);
 const emits = defineEmits(['back','load']);
 const store = useStore();
@@ -45,7 +47,7 @@ const doCancelDownload = (item) => {
 		fileService.cancelDownload(item.path,(error)=>{
 			loaddata();
 			if(!error){
-				toast.add({ severity: 'contrast', summary:'Tips', detail: `Cancelled.`, life: 3000 });
+				toast.add({ severity: 'contrast', summary:t('Tips'), detail:t(`Cancelled.`), life: 3000 });
 			}
 		});
 	}
@@ -58,7 +60,7 @@ const active = ref(0)
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					 <b>Downloads</b>
+					 <b>{{t('Downloads')}}</b>
 				</template>
 				<template #end> 
 					<Button  :severity="!props.downloads.length?'secondary':'primary'">
@@ -91,7 +93,7 @@ const active = ref(0)
 									{{bitUnit(item?.speed||0)}}/s
 								</div>
 								<div v-else>
-									{{!!item?.error?'Error':'Waiting'}}
+									{{!!item?.error?t('Error'):t('Waiting')}}
 								</div>
 							</div>
 						</div>

@@ -3,6 +3,8 @@ import { ref } from "vue";
 import freeSvg from "@/assets/img/free.svg";
 import accessSvg from "@/assets/img/asset-access.svg";
 import errorSvg from "@/assets/img/asset-error.svg";
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const props = defineProps({
 	error: {
 		type: Object,
@@ -41,12 +43,12 @@ const cancel = () => {
     </div>
     <div v-else-if="props.error?.status >= 400 || props.error?.response?.status >= 400" class="w-full text-center empty-result mt-4">
 				<img :src="errorSvg" class="w-4 h-4 mx-aut" style="margin: auto;"  />
-        <h5 class="text-tip">({{props.error?.status || props.error?.response?.status}}) {{props.error?.statusText||props.error?.response?.statusText||"Error"}}</h5>
+        <h5 class="text-tip">({{props.error?.status || props.error?.response?.status}}) {{props.error?.statusText||props.error?.response?.statusText||t("Error")}}</h5>
         <p>{{props.error?.message}}</p>
     </div>
     <div v-else class="w-full text-center empty-result mt-4 relative">
 				<img :src="freeSvg" class="w-4 h-4 mx-aut" style="margin: auto;max-width: 400px;"  />
-				<h5 class="text-tip">{{props.title||'No data.'}}</h5>
+				<h5 class="text-tip">{{props.title||t('No data.')}}</h5>
         <p>{{props.sub}}</p>
 				<div>
 				<Button 
