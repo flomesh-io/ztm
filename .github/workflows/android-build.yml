@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v4
       with:
-        node-version: '21'
+        node-version: '22'
     - name: Setup Java JDK
       uses: actions/setup-java@v4
       with:
@@ -93,12 +93,12 @@ jobs:
         export JAVA_HOME='/opt/hostedtoolcache/Java_Adopt_jdk/17.0.10-7/x64'
         export ANDROID_HOME='/usr/local/lib/android/sdk'
         $ANDROID_HOME/build-tools/31.0.0/apksigner verify ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ztm-app-v${{ vars.APP_VERSION }}-android
         path: ./gui/src-tauri/gen/android/app/build/outputs/apk/universal/release/ztm-app-v${{ vars.APP_VERSION }}-android.apk
     
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ztm-lib-v${{ vars.APP_VERSION }}-android
         path: |
