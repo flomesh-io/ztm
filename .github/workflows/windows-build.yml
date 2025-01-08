@@ -17,7 +17,7 @@ jobs:
         ninjaVersion: "^1.11.1"
     - uses: actions/setup-node@v4
       with:
-        node-version: '21'
+        node-version: '22'
     - run: npm install -g win-node-env
     - name: Install NASM
       uses: ilammy/setup-nasm@v1
@@ -38,7 +38,7 @@ jobs:
     - name: Rename
       run: Rename-Item -Path './gui/src-tauri/target/release/bundle/nsis/ztm_${{ vars.APP_VERSION }}_x64-setup.exe' -NewName 'ztm-app-v${{ vars.APP_VERSION }}-win_x86_64.exe'
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ztm-app-v${{ vars.APP_VERSION }}-win_x86_64
         path: ./gui/src-tauri/target/release/bundle/nsis/ztm-app-v${{ vars.APP_VERSION }}-win_x86_64.exe
