@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import TunnelService from '../service/TunnelService';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const store = useStore();
 
 const confirm = useConfirm();
@@ -28,10 +30,10 @@ const typing = ref('');
 const actionMenu = ref();
 const actions = ref([
     {
-        label: 'Actions',
+        label: t('Actions'),
         items: [
             {
-                label: 'Edit',
+                label: t('Edit'),
                 icon: 'pi pi-pencil',
 								command: () => {
 								}
@@ -51,7 +53,7 @@ const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 
 const emptyMsg = computed(()=>{
-	return 'No tunnels.'
+	return t('No tunnels.')
 });
 const load = () => {
 	emits('load')
@@ -89,7 +91,7 @@ const outboundsInfo = computed(() => (outbounds) => {
 		<div  class="relative h-full w-full min-h-screen" >
 			<AppHeader :child="true">
 					<template #center>
-						<b>Tunnels</b>
+						<b>{{t('Tunnels')}}</b>
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
@@ -100,7 +102,7 @@ const outboundsInfo = computed(() => (outbounds) => {
 				<template #content>
 					<InputGroup class="search-bar" >
 						<DataViewLayoutOptions v-if="!isMobile" v-model="layout" style="z-index: 2;"/>
-						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" placeholder="Type tunnel name" rows="1" cols="30" />
+						<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" :placeholder="t('Type tunnel name')" rows="1" cols="30" />
 						<Button :disabled="!typing" icon="pi pi-search"  :label="null"/>
 					</InputGroup>
 				</template>
@@ -109,24 +111,24 @@ const outboundsInfo = computed(() => (outbounds) => {
 			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
 			<div class="text-center">
 				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="tunnelsFilter" dataKey="id" tableStyle="min-width: 50rem">
-						<Column header="Tunnel">
+						<Column :header="t('Tunnel')">
 							<template #body="slotProps">
 								<span class="block text-tip font-medium"><i class="pi pi-arrow-right-arrow-left text-tip mr-2"></i> {{slotProps.data.name}}</span>
 							</template>
 						</Column>
-						<Column header="Inbound">
+						<Column :header="t('Inbound')">
 							<template #body="slotProps">
 								<Badge  v-tooltip="inboundsInfo(slotProps.data.inbounds)" v-if="slotProps.data.inbounds" :value="slotProps.data.inbounds.length"/>
 							</template>
 						</Column>
-						<Column header="Outbound">
+						<Column :header="t('Outbound')">
 							<template #body="slotProps">
 								<Badge  v-tooltip="outboundsInfo(slotProps.data.outbounds)" v-if="slotProps.data.outbounds" :value="slotProps.data.outbounds.length"/>
 							</template>
 						</Column>
-						<Column header="Action"  style="width: 110px;">
+						<Column :header="t('Action')"  style="width: 110px;">
 							<template #body="slotProps">
-								 <div @click="edit(slotProps.data)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2rem; height: 2rem'">
+								 <div @click="edit(slotProps.data)" v-tooltip="t('Edit')"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-2" :style="'width: 2rem; height: 2rem'">
 										 <i class="pi pi-pencil text-xl"></i>
 								 </div>
 							</template>
@@ -139,12 +141,12 @@ const outboundsInfo = computed(() => (outbounds) => {
 											 <div>
 													<span class="block text-tip font-medium mb-3"><Tag severity="contrast" class="mr-1">{{tunnel.proto.toUpperCase()}}</Tag> {{tunnel.name}}</span>
 													<div class="text-left w-full" >
-														<Tag v-tooltip="inboundsInfo(tunnel.inbounds)" severity="secondary" value="Secondary">Inbounds: <Badge :value="tunnel.inbounds.length"/></Tag> 
-														<Tag v-tooltip="outboundsInfo(tunnel.outbounds)" class="ml-2" severity="secondary" value="Secondary">Outbounds: <Badge :value="tunnel.outbounds.length"/></Tag> 
+														<Tag v-tooltip="inboundsInfo(tunnel.inbounds)" severity="secondary" value="Secondary">{{t('Inbounds')}}: <Badge :value="tunnel.inbounds.length"/></Tag> 
+														<Tag v-tooltip="outboundsInfo(tunnel.outbounds)" class="ml-2" severity="secondary" value="Secondary">{{t('Outbounds')}}: <Badge :value="tunnel.outbounds.length"/></Tag> 
 													</div>
 											 </div>
 											 <div class="flex">
-												 <div @click="edit(tunnel)" v-tooltip="'Edit'"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-1" :style="'width: 2rem; height: 2rem'">
+												 <div @click="edit(tunnel)" v-tooltip="t('Edit')"   class="pointer flex align-items-center justify-content-center bg-primary-sec border-round mr-1" :style="'width: 2rem; height: 2rem'">
 														 <i class="pi pi-pencil text-xl"></i>
 												 </div><!-- 
 												 <div  @click="showAtionMenu($event, tunnel)" aria-haspopup="true" aria-controls="actionMenu" class="pointer flex align-items-center justify-content-center p-button-secondary border-round" style="width: 2rem; height: 2rem">

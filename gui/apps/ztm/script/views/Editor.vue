@@ -6,6 +6,8 @@ import { useRoute } from 'vue-router'
 import { useStore } from 'vuex';
 import { useToast } from "primevue/usetoast";
 import { platform } from '@/utils/platform';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 
 const toast = useToast();
 const props = defineProps(['loading','scriptsHide','isMobile'])
@@ -95,11 +97,11 @@ defineExpose({ setPjs })
 		<AppHeader >
 				<template #start>
 					<Button v-if="showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
-					<Button v-tooltip="'Show Favorites'" v-if="props.scriptsHide || props.isMobile" icon="pi pi-list-check" aria-haspopup="true" aria-controls="op" @click="show"/>
+					<Button v-tooltip="t('Show Favorites')" v-if="props.scriptsHide || props.isMobile" icon="pi pi-list-check" aria-haspopup="true" aria-controls="op" @click="show"/>
 					<Button icon="pi pi-star" text aria-haspopup="true" aria-controls="op" @click="toggle"/>
 				</template>
 				<template #center>
-					<b>Script</b>
+					<b>{{t('Script')}}</b>
 				</template>
 		
 				<template #end> 
@@ -108,21 +110,21 @@ defineExpose({ setPjs })
 						:options="endpoints" 
 						optionLabel="name" 
 						optionValue="id"
-						placeholder="Endpoint" 
+						:placeholder="t('Endpoint')" 
 						class="flex"></Select>
-					<Button :loading="props.loading" v-tooltip="'Execute'" icon="pi pi-send" @click="run"/>
+					<Button :loading="props.loading" v-tooltip="t('Execute')" icon="pi pi-send" @click="run"/>
 				</template>
 		</AppHeader>
 		
 		<Popover class="ml-6 mt-3" ref="op" appendTo="self">
-				<InputText size="small" placeholder="As Name" v-model="name"  class="w-20rem"></InputText>
+				<InputText size="small" :placeholder="t('As Name')" v-model="name"  class="w-20rem"></InputText>
 				<Button size="small" icon="pi pi-save" class="ml-2"  @click="addScript"></Button>
 		</Popover>
 		
 		<div style="background: #1e1e1e;color:#fff;" class="p-2 container_pannel flex">
-			<b class="w-7rem p-2">Arguments</b>
+			<b class="w-7rem p-2">{{t('Arguments')}}</b>
 			<div class="flex-item">
-				<ChipList :placeholder="`Argument ${args.length}`" v-model:list="args" />
+				<ChipList :placeholder="`${t('Argument')} ${args.length}`" v-model:list="args" />
 			</div>
 		</div>
 		<JsEditor

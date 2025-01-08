@@ -6,6 +6,8 @@ import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
 import _ from "lodash"
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const props = defineProps(['ep']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
@@ -64,8 +66,7 @@ const loaddata = () => {
 onMounted(() => {
 	loaddata();
 });
-const placeholder = ref(`domain | ip
-...`)
+const placeholder = ref(t('domain | ip')+`...`)
 </script>
 
 <template>
@@ -73,12 +74,12 @@ const placeholder = ref(`domain | ip
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag v-if="props.ep.id == info.endpoint?.id" severity="contrast" >Local</Tag></span>
-					<b v-if="!!props.ep">{{ props.ep.name|| 'Unknow EP' }}</b>
-					<span v-else>Loading...</span>
+					<span v-if="!!props.ep" class="mr-2 relative" style="top: -1px;"><Tag v-if="props.ep.id == info.endpoint?.id" severity="contrast" >{{t('Local')}}</Tag></span>
+					<b v-if="!!props.ep">{{ props.ep.name|| t('Unknow EP') }}</b>
+					<span v-else>{{t('Loading')}}...</span>
 				</template>
 				<template #end> 
-					<Button :loading="loading" icon="pi pi-check" label="Save" aria-label="Submit" size="small" @click="save"/>
+					<Button :loading="loading" icon="pi pi-check" :label="t('Save')" aria-label="Submit" size="small" @click="save"/>
 				</template>
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
@@ -89,13 +90,13 @@ const placeholder = ref(`domain | ip
 					<div class="mb-4" v-if="!props.d">
 						<div class="grid w-full" >
 							<div class="col-12 p-0">
-								<FormItem label="Listen" :border="false">
+								<FormItem :label="t('Listen')" :border="false">
 									<Chip class="pl-0 pr-3 mr-2">
 											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 												<i class="pi pi-sort"/>
 											</span>
 											<span class="ml-2 font-medium">
-												<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  placeholder="IP:PORT" />
+												<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  :placeholder="t('ip:port')" />
 											</span>
 									</Chip>
 								</FormItem>
@@ -103,14 +104,14 @@ const placeholder = ref(`domain | ip
 						</div>
 						<div class="grid mt-2 w-full" >
 							<div class="col-12 md:col-6 p-0">
-								<FormItem label="Targets" :border="false">
-									<ChipList addClass="" direction="v" icon="pi pi-link" :id="`targets-${index}`" placeholder="domain | ip" v-model:list="config.targets" />
+								<FormItem :label="t('Targets')" :border="false">
+									<ChipList addClass="" direction="v" icon="pi pi-link" :id="`targets-${index}`" :placeholder="t('domain | ip')" v-model:list="config.targets" />
 									
 								</FormItem>
 							</div>
 							<div class="col-12 md:col-6 p-0">
-								<FormItem label="Exclusions" :border="false">
-									<ChipList addClass="w-full" direction="v" icon="pi pi-link" :id="`exclusions-${index}`" placeholder="domain | ip" v-model:list="config.exclusions" />
+								<FormItem :label="t('Exclusions')" :border="false">
+									<ChipList addClass="w-full" direction="v" icon="pi pi-link" :id="`exclusions-${index}`" :placeholder="t('domain | ip')" v-model:list="config.exclusions" />
 									
 								</FormItem>
 							</div>
@@ -120,13 +121,13 @@ const placeholder = ref(`domain | ip
 						</div>
 						<div class="grid mt-5 w-full" >
 							<div class="col-12 md:col-6 p-0">
-								<FormItem label="Allow" :border="false">
+								<FormItem :label="t('Allow')" :border="false">
 									<Textarea class="w-full" :placeholder="placeholder" v-model="allow" rows="3" cols="20" />
 									
 								</FormItem>
 							</div>
 							<div class="col-12 md:col-6 p-0">
-								<FormItem label="Deny" :border="false">
+								<FormItem :label="t('Deny')" :border="false">
 									<Textarea class="w-full" :placeholder="placeholder" v-model="deny" rows="3" cols="20" />
 									
 								</FormItem>

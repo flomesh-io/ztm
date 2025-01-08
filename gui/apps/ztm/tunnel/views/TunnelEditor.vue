@@ -6,6 +6,8 @@ import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
 import _ from "lodash"
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const props = defineProps(['d','endpointMap']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
@@ -109,9 +111,9 @@ const createTunnel = () => {
 		inboundEditor.value = false;
 		loading.value = false;
 		if(errors == 0){
-			toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+			toast.add({ severity: 'success', summary:t('Tips'), detail: t('Save successfully.'), life: 3000 });
 		}else if(reqs.length > errors){
-			toast.add({ severity: 'contrast', summary:'Tips', detail: 'Partially saved successfully.', life: 3000 });
+			toast.add({ severity: 'contrast', summary:t('Tips'), detail: t('Partially saved successfully.'), life: 3000 });
 		}
 		setTimeout(()=>{
 			emits("save",tunnel.value);
@@ -142,7 +144,7 @@ const commitIn = () => {
 				inboundEditor.value = false;
 				loading.value = false;
 				inbound.value = _.cloneDeep(newInbound);
-				toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+				toast.add({ severity: 'success', summary:t('Tips'), detail: t('Save successfully.'), life: 3000 });
 				setTimeout(()=>{
 					emits("save",tunnel.value);
 				},1000);
@@ -178,7 +180,7 @@ const commitOut = () => {
 				loading.value = false;
 				outboundEditor.value = false;
 				outbound.value = _.cloneDeep(newOutbound);
-				toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
+				toast.add({ severity: 'success', summary:t('Tips'), detail: t('Save successfully.'), life: 3000 });
 				setTimeout(()=>{
 					emits("save",tunnel.value);
 				},1000);
@@ -284,7 +286,7 @@ watch(()=>props.d,()=>{
 				</template>
 		
 				<template #end> 
-					<Button v-if="!props.d" :loading="loading" :disabled="!enabled" label="Create" aria-label="Submit" size="small" @click="createTunnel"/>
+					<Button v-if="!props.d" :loading="loading" :disabled="!enabled" :label="t('Create')" aria-label="Submit" size="small" @click="createTunnel"/>
 				</template>
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
@@ -294,23 +296,23 @@ watch(()=>props.d,()=>{
 				<div v-else class="surface-ground surface-section h-full p-4" >
 						<div class="mb-4" v-if="!props.d">
 							<h6>
-								<Tag>Tunnel</Tag>
+								<Tag>{{t('Tunnel')}}</Tag>
 							</h6>
 							<div class="grid" >
 								<div class="col-12 md:col-6">
-									<FormItem label="Name" :border="false">
+									<FormItem :label="t('Name')" :border="false">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 													<i class="pi pi-bookmark"/>
 												</span>
 												<span class="ml-2 font-medium">
-													<InputText :disabled="!!props.d" placeholder="Name your tunnel" class="add-tag-input xxl" :unstyled="true" v-model="tunnel.name" type="text" />
+													<InputText :disabled="!!props.d" :placeholder="t('Name your tunnel')" class="add-tag-input xxl" :unstyled="true" v-model="tunnel.name" type="text" />
 												</span>
 										</Chip>
 									</FormItem>
 								</div>
 								<div class="col-12 md:col-6">
-									<FormItem label="Protocol" :border="false">
+									<FormItem :label="t('Protocol')" :border="false">
 										<Chip class="pl-0 pr-3">
 												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 													<RadioButton  :disabled="!!props.d" v-model="tunnel.proto" inputId="scopeType2" name="scopeType" value="tcp" />
@@ -331,7 +333,7 @@ watch(()=>props.d,()=>{
 							<div class="col-12 md:col-6">
 								<h6 class="flex">
 									<div>
-										<Tag >Inbound
+										<Tag >{{t('Inbound')}}
 											<Badge v-if="!!props.d" :value="inbounds.length" />
 										</Tag> 
 									</div>
@@ -339,17 +341,17 @@ watch(()=>props.d,()=>{
 										<Button 
 											v-if="!loading && !inboundEditor" 
 											@click="inboundCreate" 
-											v-tooltip.left="'Add Inbound'" 
+											v-tooltip.left="t('Add Inbound')" 
 											size="small" 
 											icon="pi pi-plus" ></Button>
 										<div v-else-if="!loading" >
 											<Button class="mr-2" @click="() => inboundEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!addInEnabled" @click="commitIn()" v-tooltip="'Save Inbound'"  size="small" icon="pi pi-check" ></Button>
+											<Button :disabled="!addInEnabled" @click="commitIn()" v-tooltip="t('Save Inbound')"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
 								</h6>
 								<ul v-if="inboundEditor" class="list-none p-0 m-0">
-									<FormItem label="Endpoint">
+									<FormItem :label="t('Endpoint')">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 													<i class="pi pi-chart-scatter"/>
@@ -361,7 +363,7 @@ watch(()=>props.d,()=>{
 														:options="endpoints" 
 														optionLabel="name" 
 														optionValue="id"
-														placeholder="Endpoint" 
+														:placeholder="t('Endpoint')" 
 														class="flex">
 															<template #option="slotProps">
 																{{ slotProps.option.name }}
@@ -372,12 +374,12 @@ watch(()=>props.d,()=>{
 										</Chip>
 									</FormItem>
 									<FormItem label="Listens">
-										<ChipList direction="v" icon="pi-desktop" placeholder="IP:Port" v-model:list="inbound.listens" listKey="value"/>
+										<ChipList direction="v" icon="pi-desktop" :placeholder="t('ip:port')" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
 									<FormItem label=""  :border="inboundRestrict">
-										<ToggleSwitch  class="vm" v-model="inboundRestrict" inputId="inboundRestrict"/><label for="inboundRestrict" class="vm ml-2">Restrict access</label>
+										<ToggleSwitch  class="vm" v-model="inboundRestrict" inputId="inboundRestrict"/><label for="inboundRestrict" class="vm ml-2">{{t('Restrict access')}}</label>
 									</FormItem>
-									<FormItem v-if="inboundRestrict" label="Allowed Exits"  :border="false">
+									<FormItem v-if="inboundRestrict" :label="t('Allowed Exits')"  :border="false">
 											<Chip class="pl-0 pr-3 mr-2">
 													<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 														<i class="pi pi-chart-scatter"/>
@@ -389,11 +391,11 @@ watch(()=>props.d,()=>{
 															optionLabel="name" 
 															optionValue="id"
 															:filter="endpoints.length>=8"
-															placeholder="Endpoints" 
+															:placeholder="t('Endpoints')" 
 															class="flex" :maxSelectedLabels="3">
 																<template #option="slotProps">
 																	{{ slotProps.option.name }}
-																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
 																</template>
 															</MultiSelect>
 												</span>
@@ -402,7 +404,7 @@ watch(()=>props.d,()=>{
 								</ul>
 								<DataView class="transparent" v-else :value="inbounds">
 										<template #empty>
-											No inbound.
+											{{t('No inbound.')}}
 										</template>
 									<template #list="slotProps">
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
@@ -410,12 +412,12 @@ watch(()=>props.d,()=>{
 														<div class="flex flex-col pr-2 ">
 															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																{{ item.ep?.name }}
-																<Tag v-if="info.endpoint?.id == item.ep?.id"  severity="contrast" >Local</Tag>
+																<Tag v-if="info.endpoint?.id == item.ep?.id"  severity="contrast" >{{t('Local')}}</Tag>
 															</div>
 														</div>
 														<div class="flex flex-item gap-2 justify-content-center">
 															<div>
-																<div class="font-semibold w-6rem text-left">Listens:</div>
+																<div class="font-semibold w-6rem text-left">{{t('Listens')}}:</div>
 																<div >
 																	<Tag class="block" style="white-space: nowrap;" :class="{'mt-1':idx==1}" v-for="(listen,idx) in item.listens.filter((listen)=> !!listen?.value)" severity="secondary" >
 																		<Status v-if="listen?.open != null" :run="!!listen?.open" :errors="listen?.error" />
@@ -424,7 +426,7 @@ watch(()=>props.d,()=>{
 																</div>
 															</div>
 															<div v-if="item.exits && item.exits.length>0">
-																<div class="font-semibold w-6rem" >Exits:</div>
+																<div class="font-semibold w-6rem" >{{t('Exits')}}:</div>
 																<div><Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" :value="props.endpointMap[exit]?.name || props.endpointMap[exit]?.username || props.endpointMap[exit]?.id" severity="secondary" /></div>
 															</div>
 														</div>
@@ -440,7 +442,7 @@ watch(()=>props.d,()=>{
 							<div class="col-12 md:col-6">
 								<h6 class="flex">
 									<div>
-										<Tag >Outbound
+										<Tag >{{t('Outbound')}}
 											<Badge v-if="!!props.d" :value="outbounds.length" />
 										</Tag> 
 									</div>
@@ -448,17 +450,17 @@ watch(()=>props.d,()=>{
 										<Button 
 											v-if="!loading && !outboundEditor" 
 											@click="outboundCreate" 
-											v-tooltip.left="'Add Outbound'" 
+											v-tooltip.left="t('Add Outbound')" 
 											size="small" 
 											icon="pi pi-plus" ></Button>
 										<div v-else-if="!loading" >
 											<Button class="mr-2" @click="() => outboundEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!addOutEnabled" @click="commitOut(true,false)" v-tooltip="'Save Outbound'"  size="small" icon="pi pi-check" ></Button>
+											<Button :disabled="!addOutEnabled" @click="commitOut(true,false)" v-tooltip="t('Save Outbound')"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
 								</h6>
 								<ul v-if="outboundEditor" class="list-none p-0 m-0">
-										<FormItem label="Endpoint">
+										<FormItem :label="t('Endpoint')">
 											<Chip class="pl-0 pr-3 mr-2">
 													<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 														<i class="pi pi-chart-scatter"/>
@@ -470,24 +472,24 @@ watch(()=>props.d,()=>{
 															:options="endpoints" 
 															optionLabel="name" 
 															optionValue="id"
-															placeholder="Endpoint" 
+															:placeholder="t('Endpoint')" 
 															class="flex">
 																<template #option="slotProps">
 																	{{ slotProps.option.name }}
-																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
 																</template>
 															</Select>
 													</span>
 											</Chip>
 										</FormItem>
-										<FormItem label="Targets">
-											<ChipList direction="v" icon="pi-desktop" placeholder="Host:Port" v-model:list="outbound.targets" />
+										<FormItem :label="t('Targets')">
+											<ChipList direction="v" icon="pi-desktop" :placeholder="t('Host:Port')" v-model:list="outbound.targets" />
 										</FormItem>
 										
 										<FormItem label=""  :border="outboundRestrict">
-											<ToggleSwitch  class="vm" v-model="outboundRestrict" inputId="outboundRestrict"/><label for="outboundRestrict" class="vm ml-2">Restrict access</label>
+											<ToggleSwitch  class="vm" v-model="outboundRestrict" inputId="outboundRestrict"/><label for="outboundRestrict" class="vm ml-2">{{t('Restrict access')}}</label>
 										</FormItem>
-										<FormItem v-if="outboundRestrict" label="Allowed Entrances" >
+										<FormItem v-if="outboundRestrict" :label="t('Allowed Entrances')" >
 												<Chip class="pl-0 pr-3 mr-2">
 														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 															<i class="pi pi-chart-scatter"/>
@@ -499,17 +501,17 @@ watch(()=>props.d,()=>{
 																optionLabel="name" 
 																optionValue="id"
 																:filter="endpoints.length>=8"
-																placeholder="Endpoints" 
+																:placeholder="t('Endpoints')" 
 																class="flex" :maxSelectedLabels="3">
 																	<template #option="slotProps">
 																		{{ slotProps.option.name }}
-																		<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+																		<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
 																	</template>
 																</MultiSelect>
 													</span>
 											</Chip>
 										</FormItem>
-										<FormItem v-if="outboundRestrict" label="Users"  :border="false">
+										<FormItem v-if="outboundRestrict" :label="t('Users')"  :border="false">
 												<Chip class="pl-0 pr-3 mr-2">
 														<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 															<i class="pi pi-users"/>
@@ -519,14 +521,14 @@ watch(()=>props.d,()=>{
 																v-model="outbound.users" 
 																:options="users" 
 																:filter="users.length>=8"
-																placeholder="Users" 
+																:placeholder="t('Users')" 
 																class="flex" :maxSelectedLabels="3">
 																
 																<template #dropdownicon>
 																	<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
 																</template>
 															</MultiSelect>
-															<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" placeholder="Add" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
+															<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" :placeholder="t('Add')" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
 													</span>
 											</Chip>
 										</FormItem>
@@ -534,7 +536,7 @@ watch(()=>props.d,()=>{
 									</ul>
 									<DataView  class="transparent" v-else :value="outbounds">
 										<template #empty>
-											No outbound.
+											{{t('No outbound.')}}
 										</template>
 										<template #list="slotProps">
 										
@@ -547,15 +549,15 @@ watch(()=>props.d,()=>{
 															</div>
 															<div class="flex flex-item gap-2 justify-content-center">
 																<div  class="flex flex-column" >
-																	<div class="font-semibold w-5rem">Targets:</div>
+																	<div class="font-semibold w-5rem">{{t('Targets')}}:</div>
 																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets.filter((target)=> !!target)" :value="target" severity="secondary" /></div>
 																</div>	
 																<div  class="flex flex-column" v-if="item.entrances && item.entrances.length>0">
-																	<div class="font-semibold w-5rem " >Entrances:</div>
+																	<div class="font-semibold w-5rem " >{{t('Entrances')}}:</div>
 																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></div>
 																</div>
 																<div class="flex flex-column " v-if="item.users && item.users.length>0">
-																	<div class="font-semibold w-5rem ">Users:</div>
+																	<div class="font-semibold w-5rem ">{{t('Users')}}:</div>
 																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></div>
 																</div>
 															</div>
