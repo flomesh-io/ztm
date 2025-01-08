@@ -12,6 +12,7 @@ import rulesReg from '@/rules/reg';
 import bootstrap from "./bootstrap";
 import MyPreset from '@/theme';
 import '@/assets/styles.scss';
+import i18n from '@/i18n';
 
 const app = createApp(App);
 app.use(PrimeVue, { 
@@ -42,6 +43,7 @@ app.use(store);
 app.use(ToastService);
 app.use(DialogService);
 app.use(ConfirmationService);
+app.use(i18n);
 
 async function setRouter() {
   const router = await initRouter({ store });
