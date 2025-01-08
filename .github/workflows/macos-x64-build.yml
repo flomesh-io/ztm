@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v4
       with:
-        node-version: '21'
+        node-version: '22'
     - name: build app
       run: |
         cd gui
@@ -17,7 +17,7 @@ jobs:
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:apps
         yarn build-ztm-macos-x64
         NODE_OPTIONS="--max-old-space-size=4096" yarn build:base
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: release
         path: ./gui/src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_x64.dmg
