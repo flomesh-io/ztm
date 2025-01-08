@@ -22,7 +22,7 @@ jobs:
     - name: Rename
       run: mv ./gui/src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64.dmg ./gui/src-tauri/target/release/bundle/dmg/ztm-app-v${{ vars.APP_VERSION }}-macos-arm64.dmg
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ztm-app-v${{ vars.APP_VERSION }}-macos-arm64
         path: ./gui/src-tauri/target/release/bundle/dmg/ztm-app-v${{ vars.APP_VERSION }}-macos-arm64.dmg
