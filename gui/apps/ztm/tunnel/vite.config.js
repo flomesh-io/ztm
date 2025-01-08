@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
 export default defineConfig(async (config) => {
 	return {
 		base:"./",
@@ -21,6 +22,10 @@ export default defineConfig(async (config) => {
 		},
 		plugins: [
 			vue({reactivityTransform: true}),
+			createSvgIconsPlugin({
+				iconDirs: [resolve(process.cwd(), '../../../src/assets/svg')],
+				symbolId: 'svg-[name]', // 自定义 symbolId 模板
+			}),
 		],
 		resolve: {
 			alias: {
