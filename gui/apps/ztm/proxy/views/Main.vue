@@ -4,7 +4,9 @@ import Editor from './Editor.vue'
 import ProxyService from '../service/ProxyService';
 import { dayjs,extend } from '@/utils/dayjs';
 import { useStore } from 'vuex';
-extend()
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
+extend(locale.value)
 
 const store = useStore();
 const visibleEditor = ref(false);
@@ -20,12 +22,12 @@ const loaddata = (endpoint) => {
 	getEndpoints(endpoint);
 }
 const timeago = computed(() => (ts) => {
-	let label = "Last heartbeat: ";
+	let label = t("Last heartbeat")+ ": ";
 	if(ts>0){
 		const date = new Date(ts);
 		return label + dayjs(date).fromNow();
 	} else {
-		return label + "None";
+		return label + t("None");
 	}
 })
 const selectedEp = ref();
@@ -83,7 +85,7 @@ const loadproxys = () => {
 		<div class="relative h-full" :class="{'w-22rem':!!selectedEp,'w-full':!selectedEp,'mobile-hidden':!!selectedEp}">
 			<AppHeader :child="true">
 					<template #center>
-						<b>Proxy ({{endpoints.length}} Endpoints)</b>
+						<b>{{t('Proxy')}} ({{endpoints.length}} {{t('Endpoints')}})</b>
 					</template>
 			
 					<template #end> 
@@ -102,26 +104,26 @@ const loadproxys = () => {
 										<div class="flex-item" style="min-width: 150px;">
 												<div class="flex">
 													<div class="flex-item pt-1">
-														<b>{{ node.name || 'Unknow EP' }}</b>
-														<Tag class="ml-2" v-if="node.id == info.endpoint?.id" severity="contrast" >Local</Tag>
+														<b>{{ node.name || t('Unknow EP') }}</b>
+														<Tag class="ml-2" v-if="node.id == info.endpoint?.id" severity="contrast" >{{t('Local')}}</Tag>
 													</div>
 												</div>
 										</div>
 										<div class="grid align-items-center justify-content-end pr-2 gap-1 pt-3" v-if="!visibleEditor && node.proxy">
-											<Tag v-if="node.proxy?.listen" severity="secondary" value="Secondary">Listen {{node.proxy.listen}}</Tag> 
-											<Tag v-show="index<2" v-if="node.proxy?.targets" v-for="(target,index) in node.proxy?.targets" severity="secondary" value="Secondary">Target {{target}}</Tag> 
+											<Tag v-if="node.proxy?.listen" severity="secondary" value="Secondary">{{t('Listen')}} {{node.proxy.listen}}</Tag> 
+											<Tag v-show="index<2" v-if="node.proxy?.targets" v-for="(target,index) in node.proxy?.targets" severity="secondary" value="Secondary">{{t('Target')}} {{target}}</Tag> 
 											<Tag v-if="!!node.proxy?.targets && node.proxy?.targets.length>2" v-tooltip="JSON.stringify(node.proxy?.targets)"  severity="secondary" value="Secondary">...</Tag>
-											<Tag v-show="index<2" v-if="node.proxy?.exclusions" v-for="(exclusion,index) in node.proxy?.exclusions" severity="secondary" value="Secondary">Exclusion {{exclusion}}</Tag> 
+											<Tag v-show="index<2" v-if="node.proxy?.exclusions" v-for="(exclusion,index) in node.proxy?.exclusions" severity="secondary" value="Secondary">{{t('Exclusion')}} {{exclusion}}</Tag> 
 											<Tag v-if="!!node.proxy?.exclusions && node.proxy?.exclusions.length>2" v-tooltip="JSON.stringify(node.proxy?.exclusions)"  severity="secondary" value="Secondary">...</Tag> 
-											<Tag v-if="node.proxy?.allow" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.allow.join('\n')">Alow <Badge :value="node.proxy.allow.length"/></Tag> 
-											<Tag v-if="node.proxy?.deny" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.deny.join('\n')">Deny <Badge :value="node.proxy.deny.length"/></Tag> 
+											<Tag v-if="node.proxy?.allow" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.allow.join('\n')">{{t('Allow')}} <Badge :value="node.proxy.allow.length"/></Tag> 
+											<Tag v-if="node.proxy?.deny" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.deny.join('\n')">{{t('Deny')}} <Badge :value="node.proxy.deny.length"/></Tag> 
 										</div>
 								</div>
 							</div>
 					</template>
 			</DataView>
 			</ScrollPanel>
-			<Empty v-else title="No endpoint."/>
+			<Empty v-else :title="t('No endpoint.')"/>
 		</div>
 		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
 			<div class="h-full mobile-fixed" >

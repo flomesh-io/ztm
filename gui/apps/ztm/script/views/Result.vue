@@ -3,6 +3,8 @@ import { ref,onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex';
 import { downloadFile } from '@/utils/file';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const props = defineProps(['response','loading'])
 const emits = defineEmits(['back'])
 const back = () => {
@@ -36,7 +38,7 @@ const exportCsv = () => {
 	<div  class="relative h-full min-h-screen w-full" >
 		<AppHeader :back="back" >
 				<template #center>
-					<b>Result</b>
+					<b>{{t('Result')}}</b>
 				</template>
 		
 				<template #end> 
@@ -63,13 +65,13 @@ const exportCsv = () => {
 								filterDisplay="menu"
 								responsiveLayout="scroll"
 							>
-									<template #empty> No results. </template>
+									<template #empty> {{t('No result.')}} </template>
 									<Column v-if="props.response?.data.length>0" v-for="(k,i) in Object.keys(props.response?.data[0])" :key="k" :showFilterOperator="false" :showFilterMatchModes="false"   :field="k" :header="k" >
 											<template #body="{ data }">
 												{{data[k]}}
 											</template>
 									</Column>
-									<Column v-else field="result" header="Status">
+									<Column v-else field="result" :header="t('Status')">
 										<template #body="{ data }" >
 											result
 										</template>
@@ -98,7 +100,7 @@ const exportCsv = () => {
 					<template #content>
 						<ul class="list-none p-0 m-0">
 							<li class="flex align-items-center py-3 px-5 surface-border flex-wrap">
-								<div class="text-tip w-6 md:w-2 font-medium">ERROR</div>
+								<div class="text-tip w-6 md:w-2 font-medium">{{t('Error')}}</div>
 								<div class="text-900 w-full md:w-8 md:flex-order-0 flex-order-1">
 									<Tag severity="danger" :value="props.response?.data.error"></Tag>
 								</div>
@@ -120,7 +122,7 @@ const exportCsv = () => {
 					</template>
 				</card>
 		</div>
-		<Empty v-else :title="'No result.'" :error="props.response?.error"/>
+		<Empty v-else :title="t('No result.')" :error="props.response?.error"/>
 	</div>
 </template>
 

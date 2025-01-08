@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import ScriptService from '../service/ScriptService';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 
 const scriptService = new ScriptService();
 const emits = defineEmits(['hide','edit'])
@@ -35,7 +37,7 @@ onMounted(()=>{
 						<Button icon="pi pi-eye-slash" @click="hide" />
 					</template>
 					<template #center> 
-						<b>Favorites</b>
+						<b>{{t('Favorites')}}</b>
 					</template>
 			</AppHeader>
 			<ScrollPanel class="absolute-scroll-panel" v-if="scripts && scripts.length >0">
@@ -68,7 +70,7 @@ onMounted(()=>{
 			</div>
 			</ScrollPanel>
 			<b v-else class="w-full text-center block opacity-60" style="margin-top: 60%;">
-				Empty
+				{{t('Empty')}}
 			</b>
 		</div>
 	</div>
