@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v4
       with:
-        node-version: '21'
+        node-version: '22'
     - name: Decode and import certificate
       env:
         MACOS_BASE64: ${{ secrets.MACOS_BASE64 }}
@@ -36,7 +36,7 @@ jobs:
         cd gui
         src-ios/sign.sh src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64.dmg $APPLE_ID $APPLE_PASSWORD
       timeout-minutes: 120
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: release
         path: ./gui/src-tauri/target/release/bundle/dmg/ztm_${{ vars.APP_VERSION }}_aarch64_signed.dmg
