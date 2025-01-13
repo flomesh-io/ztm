@@ -39,16 +39,12 @@ jobs:
     - name: Rename deb
       run: mv ./gui/src-tauri/target/release/bundle/deb/ztm_${{ vars.APP_VERSION }}_amd64.deb ./gui/src-tauri/target/release/bundle/deb/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.deb
 
-    - name: Rename appimage
-      run: mv ./gui/src-tauri/target/release/bundle/appimage/ztm_${{ vars.APP_VERSION }}_amd64.AppImage ./gui/src-tauri/target/release/bundle/appimage/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.AppImage
-
     - uses: actions/upload-artifact@v4
       with:
         name: ztm-app-v${{ vars.APP_VERSION }}-generic_linux
         path: |
           ./gui/src-tauri/target/release/bundle/rpm/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.rpm
           ./gui/src-tauri/target/release/bundle/deb/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.deb
-          ./gui/src-tauri/target/release/bundle/appimage/ztm-app-v${{ vars.APP_VERSION }}-generic_linux.AppImage
   
     - uses: actions/upload-artifact@v4
       with:
