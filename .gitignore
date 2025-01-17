@@ -8,3 +8,5 @@ agent/gui
 agent/apps/*/*/gui
 version.env
 usr/
+data
+config.json
