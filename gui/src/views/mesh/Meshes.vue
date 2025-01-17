@@ -168,7 +168,7 @@ onMounted(() => {
 
 <template>
 	<div class="flex flex-row min-h-screen">
-		<div v-if="!visibleEditor || (!!visibleEditor && !!meshes && meshes.length>0)" class="relative h-full" :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
+		<div v-if="!visibleEditor || (!!visibleEditor && !!meshes && meshes.length>0)" class="relative h-full min-h-screen" :class="{'w-22rem':(!!visibleEditor),'w-full':(!visibleEditor),'mobile-hidden':(!!visibleEditor)}">
 			<AppHeader :main="true">
 					<template #center>
 						<i class="pi pi-star-fill mr-2" style="color: orange;"/>

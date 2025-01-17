@@ -549,7 +549,7 @@ onMounted(()=>{
 
 <template>
 	<div class="flex flex-row min-h-screen h-full" :class="{'embed-ep-header':false}">
-		<div  class="relative h-full w-full" >
+		<div  class="relative h-full w-full min-h-screen" >
 			<AppHeader :child="true">
 					<template #start>
 						

@@ -634,7 +634,7 @@ pub async fn create_proxy_webview(
 							.title(name)
 							.build()
 							.expect("Failed to create a new window");
-							
+					// window.drag_and_drop(false);
 					let webview = window.add_child(
 						webview_builder,
 						tauri::LogicalPosition::new(0, 0),
