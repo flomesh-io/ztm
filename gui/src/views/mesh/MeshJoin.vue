@@ -243,7 +243,7 @@ const pay = () => {
 					<Button :loading="loading" :disabled="!enabled" :label="t('Save')" aria-label="Submit" size="small" @click="commit"/>
 				</template>
 		</AppHeader>
-		<div class="md:m-3 relative h-full">
+		<div class="md:m-3 relative h-full min-h-screen">
 			<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
 			<BlockViewer containerClass="surface-section px-3 md:px-4 md:pb-7 lg:px-5 pt-4" >
 			<Loading v-if="loading" />

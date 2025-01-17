@@ -159,7 +159,7 @@ const newInvite = () => {
 <template>
 	
 	<div class="flex flex-row min-h-screen">
-		<div class="relative h-full" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
+		<div class="relative h-full min-h-screen" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
 					<template #center>
 						<b>{{t('Endpoints')}} ({{endpoints.length}})</b>
