@@ -19,6 +19,7 @@ export default {
 		platform: null,
 		selectedMesh:null,
 		mobileLeftbar: false,
+		avatars: {},
 		mode: import.meta.env.VITE_APP_MODE,
 		logs:[],
   },
@@ -33,6 +34,9 @@ export default {
   getters: {
     mobileLeftbar: (state) => {
       return state.mobileLeftbar;
+    },
+    avatars: (state) => {
+      return state.avatars;
     },
     mode: (state) => {
       return state.mode;
@@ -115,6 +119,12 @@ export default {
     },
     setLogs(state, logs) {
       state.logs = logs;
+    },
+    setAvatars(state, avatars) {
+      state.avatars = avatars;
+    },
+    setAvatar(state, n) {
+      state.avatars[n[0]] = n[1];
     },
     setMobileLeftbar(state, mobileLeftbar) {
       state.mobileLeftbar = mobileLeftbar;

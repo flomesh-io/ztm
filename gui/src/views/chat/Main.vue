@@ -232,7 +232,7 @@ onActivated(()=>{
 					</AppHeader>
 					<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
 						<template #nodeicon="slotProps">
-								<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
+								<UserAvatar :username="slotProps.node?.label" size="20"/>
 						</template>
 						<template #default="slotProps">
 								<b class="px-2">{{ slotProps.node?.label }}</b>
@@ -248,10 +248,9 @@ onActivated(()=>{
 										<div class="md:w-40 relative">
 											<Badge v-if="item.updated" :value="item.updated" severity="danger" class="absolute" style="right: -10px;top:-10px"/>
 											<img v-if="item.isAi" :src="gptSvg" width="42" height="42" />
-											<Avatar v-else-if="!!item.group" icon="pi pi-users" size="large"  />
-											<Avatar v-else-if="selectedMesh?.agent?.username == item.peer" icon="pi pi-tablet" size="large"  />
-											<Avatar v-else icon="pi pi-user" size="large"  />
-											
+											<Avatar shape="circle"  v-else-if="!!item.group" icon="pi pi-users" size="large"  />
+											<Avatar shape="circle"  v-else-if="selectedMesh?.agent?.username == item.peer" icon="pi pi-tablet" size="large"  />
+											<UserAvatar v-else :username="item?.peer" />
 										</div>
 										<div class="flex-item">
 												<div class="flex" v-if="!!item?.peer">
