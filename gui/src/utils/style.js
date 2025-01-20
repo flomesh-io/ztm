@@ -76,35 +76,33 @@ const dragAndDrop = () => {
 const nameStyle = (user, isMobile) => {
 	const base = {"position":"absolute","width": isMobile?"60px":"60px","marginTop": "40px","whiteSpace":"wrap","wordBreak":"break-all","textAlign":"center",  "fontSize": "12px"}
 	const offset = isMobile?"-5px":"-5px";
+	const rtn = {};
 	if(isDrak()){
-		return {
-			default: {
-				"style": { ...base, "color": "white", "fontSize": "12px","left": offset}
-			},
-			user: {
-				"text": user,
-				"style": { ...base, "color": "white", "fontSize": "12px","right": offset,"left":"auto"}
-			},
-			system: {
-				"text": "System",
-				"style": { ...base, "color": "white", "fontSize": "12px","left": offset}
-			}
+		rtn['default'] = {
+			"style": { ...base, "color": "white", "fontSize": "12px","left": offset}
+		}
+		rtn['user'] = {
+			"text": user,
+			"style": { ...base, "color": "white", "fontSize": "12px","right": offset,"left":"auto"}
+		}
+		rtn['system'] = {
+			"text": "System",
+			"style": { ...base, "color": "white", "fontSize": "12px","left": offset}
 		}
 	} else {
-		return {
-			default: {
-				"style": { ...base, "fontSize": "12px","left": offset}
-			},
-			user: {
-				"text": user,
-				"style": { ...base, "fontSize": "12px","right": offset,"left":"auto"}
-			},
-			system: {
-				"text": "System",
-				"style": { ...base, "fontSize": "12px","left": offset}
-			}
-		}
+		rtn['default'] =  {
+			"style": { ...base, "fontSize": "12px","left": offset}
+		};
+		rtn['user'] = {
+			"text": user,
+			"style": { ...base, "fontSize": "12px","right": offset,"left":"auto"}
+		};
+		rtn['system'] =  {
+			"text": "System",
+			"style": { ...base, "fontSize": "12px","left": offset}
+		};
 	}
+	return rtn;
 }
 
 const messageStyles = () => {
@@ -467,9 +465,11 @@ const avatarStyle = {"avatar":{
 	"marginLeft": "10px",
 	"marginRight": "10px",
 	"position":"relative",
+	"borderRadius": "50%",
 	"width": "30px",
 	"height": "30px",
-	"top":"-10px",
+	"top":"-5px",
+	"padding": "0px",
 }};
 
 export default{

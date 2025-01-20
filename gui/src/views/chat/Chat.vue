@@ -10,6 +10,7 @@ import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
+import { generateList } from "@/utils/svgAvatar";
 const { t } = useI18n();
 /*
 	{"files": [{
@@ -104,6 +105,7 @@ const buildMessage = (item) => {
 		// html:`<button class="download-button" title="sdkbqwkejnqwkjehkqweh">test2</button>`,
 		endpoint:item.sender,
 		role: user.value != item.sender?item.sender:'user'
+		// role: item.sender
 	}
 	if(!!item.message?.text){
 		_msg.key = item.message?.text;
@@ -157,7 +159,6 @@ const buildMessage = (item) => {
 			}
 		})
 	}
-	
 	return _msg;
 }
 const loaddataCore = (callback) => {
@@ -406,13 +407,36 @@ const request = ref({
 })
 
 const names = computed(() => style.nameStyle(user.value, isMobile.value))
-const avatars = computed(() => {
-	return {
-		system: {"src": systemSvg,"styles":style.avatarStyle},
-		default: {"src": userSvg,"styles":style.avatarStyle},
-		ai: {"src": userSvg,"styles":style.avatarStyle}
-	};
-})
+const renderAvatars = async (_users) => {
+	const reqs = [];
+	_users.forEach((u)=>{
+		if(!store.getters['account/avatars'][u]){
+			reqs.push(u);
+		}
+	})
+	if(reqs.length>0){
+		const avatarList = await generateList(reqs);
+		avatarList.forEach((avatarNode)=>{
+			store.commit('account/setAvatar', avatarNode);
+		})
+	}
+}
+const avatars = ref([]) 
+watch(()=>props.room, async (newQuery) => {
+	const _users = props.room?.members || [props.room?.peer,user.value];
+	if(_users && _users.length>0){
+		await renderAvatars(_users);
+		let res = {
+			system: {"src": systemSvg,"styles":style.avatarStyle},
+			default: {"src": userSvg,"styles":style.avatarStyle},
+			ai: {"src": userSvg,"styles":style.avatarStyle}
+		}
+		_users.forEach((u)=>{
+			res[u == user.value ? 'user': u] = {"src": store.getters['account/avatars'][u],"styles":style.avatarStyle};
+		})
+		avatars.value = res;
+	}
+}, { immediate: true,deep:true });
 
 const manage = ref(false);
 const showManage = () => {
