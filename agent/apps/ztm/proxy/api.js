@@ -304,15 +304,28 @@ export default function ({ app, mesh }) {
   }
 
   function isAllowed(config, host) {
-    if (IP.isV4(host) || IP.isV6(host)) {
-      if (hasIP(config?.deny, host)) return false
-      if (config?.allow?.length > 0) return hasIP(config.allow, host)
-      return true
-    } else {
-      if (hasDomain(config?.deny, host)) return false
-      if (config?.allow?.length > 0) return hasDomain(config.allow, host)
-      return true
-    }
+		if (config?.rules){
+			// rules with user or group list TODO
+			/*
+			config.rules is:
+			[{
+				username | usergroup,
+				allow,
+				deny
+			}]
+			*/
+		} else {
+			// keep simple allow | deny
+			if (IP.isV4(host) || IP.isV6(host)) {
+			  if (hasIP(config?.deny, host)) return false
+			  if (config?.allow?.length > 0) return hasIP(config.allow, host)
+			  return true
+			} else {
+			  if (hasDomain(config?.deny, host)) return false
+			  if (config?.allow?.length > 0) return hasDomain(config.allow, host)
+			  return true
+			}
+		}
   }
 
   function hasDomain(list, host) {
