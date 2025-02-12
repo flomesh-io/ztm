@@ -420,6 +420,42 @@ function main(listen) {
       }
     },
 
+    //
+    // Groups
+    //
+    '/api/meshes/{mesh}/groups': {
+      'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        var obj = [{
+          name: "group1",
+          users: ['user1', 'user2']
+        }]
+        return response(200, obj)
+      },
+      'POST': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        return response(200, { status: "success" })
+      },
+    },
+    '/api/meshes/{mesh}/groups/{group}': {
+      'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        var obj = {
+          name: "group1",
+          users: ['user1', 'user2']
+        }
+        return response(200, obj)
+      },
+      'POST': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        return response(200, { status: "success" })
+      },
+      'DELETE': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        return response(200, { status: "success" })
+      },
+    },
+
   }).map(
     function ([path, methods]) {
       var match = new http.Match(path)
