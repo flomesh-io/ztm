@@ -28,6 +28,12 @@ export default function ({ app, mesh, utils }) {
       })))
     },
 
+    '/api/users': {
+      'GET': responder(() => api.allUsers().then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+		
     '/api/endpoints': {
       'GET': responder(() => api.allEndpoints().then(
         ret => ret ? response(200, ret) : response(404)

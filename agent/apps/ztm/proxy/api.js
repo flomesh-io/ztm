@@ -11,6 +11,23 @@ export default function ({ app, mesh }) {
     return mesh.discover()
   }
 
+  function allUsers() {
+    return mesh.discover().then(
+      endpoints => {
+        var users = []
+        var set = new Set
+        endpoints.forEach(ep => {
+          var user = ep.username
+          if (!set.has(user)) {
+            users.push(user)
+            set.add(user)
+          }
+        })
+        return users.sort()
+      }
+    )
+  }
+	
   function getEndpointCA(ep) {
     if (ep === app.endpoint.id) {
       if (certGen) {
@@ -309,7 +326,7 @@ export default function ({ app, mesh }) {
 			/*
 			config.rules is:
 			[{
-				username | usergroup,
+				users<string name ary> | group<string>,
 				allow,
 				deny
 			}]
@@ -357,6 +374,7 @@ export default function ({ app, mesh }) {
 
   return {
     allEndpoints,
+		allUsers,
     getEndpointCA,
     getEndpointConfig,
     setEndpointConfig,

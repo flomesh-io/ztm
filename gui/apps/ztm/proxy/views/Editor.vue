@@ -29,20 +29,32 @@ const newConfig = {
 }
 const config = ref(_.cloneDeep(newConfig));
 
+
 const error = ref();
 const back = () => {
 	emits('back')
 }
 const save = () => {
 	loading.value = true;
-	proxyService.setProxy({
+	const rules = config.value?.rules;
+	const _data = {
 		ep: props?.ep?.id,
 		listen: config.value.listen,
 		targets: config.value.targets,
 		exclusions: config.value.exclusions,
 		allow: allow.value?allow.value.split("\n"):[],
 		deny: deny.value?deny.value.split("\n"):[],
-	}).then((res)=>{
+	}
+	if(rules && rules.length>0){
+		rules.forEach(rule => {
+			rule.allow = rule.allowStr?rule.allowStr.split("\n"):[];
+			rule.deny = rule.denyStr?rule.denyStr.split("\n"):[];
+			delete rule.allowStr;
+			delete rule.denyStr;
+		});
+		_data.rules = rules;
+	}
+	proxyService.setProxy(_data).then((res)=>{
 		loading.value = false;
 		toast.add({ severity: 'success', summary:'Tips', detail: 'Save successfully.', life: 3000 });
 		setTimeout(()=>{
@@ -52,6 +64,14 @@ const save = () => {
 		loading.value = false;
 	})
 }
+
+const users = ref([])
+const getUsers = () => {
+	proxyService.getUsers().then((res)=>{
+		users.value = res || [];
+	})
+}
+const enableRoutingRules = ref(false);
 const loaddata = () => {
 	proxyService.getProxy(props?.ep?.id).then((res)=>{
 		config.value.listen = res.listen || "";
@@ -61,12 +81,44 @@ const loaddata = () => {
 		config.value.deny = res.deny || [];
 		allow.value = (res?.allow||[]).join("\n")
 		deny.value = (res?.deny||[]).join("\n")
+		if(res?.rules && res.rules.length>0){
+			config.value.rules = res.rules;
+			config.value.rules.forEach(rule => {
+				rule.allowStr = (rule?.allow).join("\n")
+				rule.denyStr = (rule?.deny).join("\n")
+			})
+			enableRoutingRules.value = true;
+		}
 	})
+	getUsers();
 }
 onMounted(() => {
 	loaddata();
 });
-const placeholder = ref(t('domain | ip')+`...`)
+const placeholder = ref(t('domain | ip')+`...`);
+const newRule = {
+	users:[],
+	group:'',
+	allow: [],
+	allowStr: '',
+	denyStr: '',
+}
+const groups = ref(['group1','group2','group3'])
+const rule = ref(_.cloneDeep(newRule))
+const addRule = () => {
+	config.value.rules.push(rule.value);
+	rule.value = _.cloneDeep(newRule);
+}
+const changeEnableRoutingRules = () => {
+	setTimeout(()=>{
+		if(!!enableRoutingRules.value){
+			config.value.rules = [];
+		} else if(config.value.rules) {
+			delete config.value.rules;
+		}
+	},300)
+}
+const ruleType = ref(t('Users'))
 </script>
 
 <template>
@@ -120,16 +172,69 @@ const placeholder = ref(t('domain | ip')+`...`)
 							e.g. '*.example.com' | '0.0.0.0/0'
 						</div>
 						<div class="grid mt-5 w-full" >
-							<div class="col-12 md:col-6 p-0">
-								<FormItem :label="t('Allow')" :border="false">
-									<Textarea class="w-full" :placeholder="placeholder" v-model="allow" rows="3" cols="20" />
-									
+							<div class="col-12 p-0">
+								<FormItem :label="t('Using Rules')" :border="false">
+									<ToggleSwitch v-model="enableRoutingRules" @click="changeEnableRoutingRules"/>
 								</FormItem>
 							</div>
-							<div class="col-12 md:col-6 p-0">
+							<div class="col-12 p-0" v-if="!!enableRoutingRules">
+								<FormItem :label="t('Rules')" :border="false">
+									<div class="flex w-full" v-for="(rule,index) in config.rules">
+										<div class="flex-item p-1" v-if="rule.users && rule.users.length>0">
+											<FloatLabel>
+												<MultiSelect size="small" class="w-full"  v-model="rule.users" :options="users" optionLabel="username" optionValue="username" :filter="users.length>8" />
+												<label >{{t('Users')}}</label>
+											</FloatLabel>
+										</div>
+										<div class="flex-item p-1" v-else>
+											<FloatLabel>
+												<Select size="small" class="w-full" v-model="rule.group" :options="groups"  :placeholder="t('Group')"/>
+												<label >{{t('Group')}}</label>
+											</FloatLabel>
+										</div>
+										<div class="flex-item p-1">
+											<FloatLabel>
+												<Textarea class="w-full"  v-model="rule.allowStr" rows="3" cols="20" />
+												<label>{{t('Allow')}}</label>
+											</FloatLabel>
+											<div class="opacity-60">
+												e.g. '*.example.com' | '0.0.0.0/0'
+											</div>
+										</div>
+										<div class="flex-item p-1">
+											<FloatLabel>
+												<Textarea class="w-full" v-model="rule.denyStr" rows="3" cols="20" />
+												<label>{{t('Deny')}}</label>
+											</FloatLabel>
+										</div>
+										<div class="p-1">
+											<Button @click="() => config.rules.splice(index,1)" icon="pi pi-minus" size="small" severity="secondary" />
+										</div>
+									</div>
+									<div class="flex items-center pt-1 pb-2 ">
+										<div class="px-1">
+											<SelectButton class="w-10rem" size="small" v-model="ruleType" :options="[t('Users'),t('Group')]" />
+										</div>
+										<div v-if="ruleType == t('Users')" class="flex-item p-1">
+											<MultiSelect size="small" class="w-full" v-model="rule.users" :options="users" optionLabel="username" optionValue="username" :filter="users.length>8" :placeholder="t('Users')"/>
+										</div>
+										<div v-else class="flex-item p-1">
+											<Select size="small" class="w-full" v-model="rule.group" :options="groups" :placeholder="t('Group')"/>
+										</div>
+										<div class="p-1">
+											<Button :disabled="(!rule.users || rule.users.length ==0) && !rule.group" @click="addRule" icon="pi pi-plus" size="small" severity="secondary" />
+										</div>
+									</div>
+								</FormItem>
+							</div>
+							<div v-if="!enableRoutingRules" class="col-12 md:col-6 p-0">
+								<FormItem :label="t('Allow')" :border="false">
+									<Textarea class="w-full" :placeholder="placeholder" v-model="allow" rows="3" cols="20" />
+								</FormItem>
+							</div>
+							<div v-if="!enableRoutingRules" class="col-12 md:col-6 p-0">
 								<FormItem :label="t('Deny')" :border="false">
 									<Textarea class="w-full" :placeholder="placeholder" v-model="deny" rows="3" cols="20" />
-									
 								</FormItem>
 							</div>
 						</div>

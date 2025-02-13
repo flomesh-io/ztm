@@ -537,7 +537,7 @@ onMounted(()=>{
 								<Select size="small" class="w-full small"  v-model="props.file.access.users[slotProps.option]" :options="[{name:t('Readonly'),id:'readonly'},{name:t('Block'),id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
 							</div>
 						<div class="pl-1">
-							<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary" />
+							<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary"  size="small"/>
 						</div>
 						</div>
 				</template>
@@ -553,7 +553,7 @@ onMounted(()=>{
 							<Select size="small" class="w-full"  v-model="acl.permission" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
 						</div>
 						<div class="pl-1">
-							<Button :disabled="!acl.user" @click="addUser" icon="pi pi-plus" severity="secondary" />
+							<Button :disabled="!acl.user" @click="addUser" icon="pi pi-plus" severity="secondary"  size="small"/>
 						</div>
 					</div>
 				</template>
@@ -583,7 +583,7 @@ onMounted(()=>{
 										placeholder="Mode"/>
 								</div>
 								<div class="pl-2">
-									<Button @click="delMirror(slotProps.option)" icon="pi pi-minus" severity="secondary" />
+									<Button @click="delMirror(slotProps.option)" icon="pi pi-minus" severity="secondary"  size="small"/>
 								</div>
 							</div>
 					</template>
@@ -609,7 +609,7 @@ onMounted(()=>{
 									placeholder="Mode"/>
 							</div>
 							<div class="pl-2 ">
-								<Button :disabled="!mirror.user" @click="addMirror" icon="pi pi-plus" severity="secondary" />
+								<Button :disabled="!mirror.user" @click="addMirror" icon="pi pi-plus" severity="secondary"  size="small"/>
 							</div>
 						</div>
 					</template>

@@ -5,14 +5,20 @@ export default class ProxyService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
+	getUsers() {
+		return request(`/api/users`);
+	}
 	getEndpoints() {
 		return request(`/api/endpoints`);
 	}
 	getProxy(ep) {
 		return request(`/api/endpoints/${ep}/config`)
 	}
-	setProxy({ep, listen, targets, allow, deny, exclusions}) {
+	setProxy({ep, listen, targets, allow, deny, exclusions, rules}) {
 		const body = {};
+		if(!!rules && rules.length>0){
+			body.rules = rules
+		}
 		if(!!listen){
 			body.listen = listen
 		}
