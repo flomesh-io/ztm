@@ -456,6 +456,13 @@ function main(listen) {
       },
     },
 
+    '/api/meshes/{mesh}/groups/user/{user}': {
+      'GET': function ({ mesh }) {
+        mesh = URL.decodeComponent(mesh)
+        var obj = ["group1", "group2"]
+        return response(200, obj)
+      }
+    },
   }).map(
     function ([path, methods]) {
       var match = new http.Match(path)
