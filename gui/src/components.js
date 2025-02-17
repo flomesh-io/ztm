@@ -7,6 +7,7 @@ import AccordionContent from 'primevue/accordioncontent';
 import Avatar from 'primevue/avatar';
 import AvatarGroup from 'primevue/avatargroup';
 import Badge from 'primevue/badge';
+import OverlayBadge from 'primevue/overlaybadge';
 import BlockUI from 'primevue/blockui';
 import Button from 'primevue/button';
 import Breadcrumb from 'primevue/breadcrumb';
@@ -138,6 +139,7 @@ export function useComponent(app){
 	app.component('Avatar', Avatar);
 	app.component('AvatarGroup', AvatarGroup);
 	app.component('Badge', Badge);
+	app.component('OverlayBadge', OverlayBadge);
 	app.component('BlockUI', BlockUI);
 	app.component('Breadcrumb', Breadcrumb);
 	app.component('Button', Button);
