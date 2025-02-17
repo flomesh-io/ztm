@@ -22,6 +22,7 @@ export default function ({ app, mesh, utils }) {
     '/api/groups': {
       'GET': responder(({}) => {
         var obj = [{
+          id: "ea4f1005-63b4-3b06-a44f-e952c58250a5",
           name: "group1",
           users: ['user1', 'user2']
         }]
@@ -34,6 +35,7 @@ export default function ({ app, mesh, utils }) {
     '/api/groups/{group}': {
       'GET': responder(({}) => {
         var obj = {
+          id: "ea4f1005-63b4-3b06-a44f-e952c58250a5",
           name: "group1",
           users: ['user1', 'user2']
         }
@@ -50,7 +52,13 @@ export default function ({ app, mesh, utils }) {
     '/api/groups/user/{user}': {
       'GET': responder(({}) => {
         mesh = URL.decodeComponent(mesh)
-        var obj = ["group1", "group2"]
+        var obj = [{
+          id: "ea4f1005-63b4-3b06-a44f-e952c58250a5",
+          name: "group1"
+        }, {
+          id: "3f31e539-455c-f9b0-024e-117af039026a",
+          name: "group2"
+        }]
         return Promise.resolve(response(200, obj))
       }),
     },
