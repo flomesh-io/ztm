@@ -373,7 +373,7 @@ watch(()=>props.d,()=>{
 												</span>
 										</Chip>
 									</FormItem>
-									<FormItem label="Listens">
+									<FormItem :label="t('Listens')">
 										<ChipList direction="v" icon="pi-desktop" :placeholder="t('ip:port')" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
 									<FormItem label=""  :border="inboundRestrict">
