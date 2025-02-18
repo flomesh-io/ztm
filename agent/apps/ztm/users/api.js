@@ -56,11 +56,29 @@ export default function ({ app, mesh }) {
     mesh.write('/local/config.json', JSON.encode(config))
   }
 
+  function allUsers() {
+    return mesh.discover().then(
+      endpoints => {
+        var users = []
+        var set = new Set
+        endpoints.forEach(ep => {
+          var user = ep.username
+          if (!set.has(user)) {
+            users.push(user)
+            set.add(user)
+          }
+        })
+        return users.sort()
+      }
+    )
+  }
+  
   return {
     getGroups,
     setGroups,
     getGroup,
     deleteGroup,
     getUserGroups,
+    allUsers,
   }
 }

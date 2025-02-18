@@ -28,7 +28,7 @@ export default function ({ app, mesh, utils }) {
         endpoint: app.endpoint,
       })))
     },
-    
+
     //
     // Groups
     //
@@ -70,6 +70,11 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/users': {
+      'GET': responder(() => api.allUsers().then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
 
     '*': {
       'GET': responder((_, req) => {
@@ -79,7 +84,6 @@ export default function ({ app, mesh, utils }) {
   })
 
   var servePeer = utils.createServer({
-    
   })
 
   return pipeline($=>$
