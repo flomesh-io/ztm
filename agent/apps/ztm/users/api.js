@@ -2,15 +2,16 @@ export default function ({ app, mesh }) {
 
   function setGroups(id, name, users) {
     return getLocalConfig().then(config => {
-      if (id == null) {
-        id = algo.uuid()
+      console.log(config)
+      var group = config.find(g => g.id == id)
+      if (group == null) {
         config.push({id, name, users})
       } else {
-        var group = config.find(g => g.id == id)
         group.name = name
         group.users = users
       }
       setLocalConfig(config)
+      return true
     })
   }
 

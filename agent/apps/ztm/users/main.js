@@ -35,37 +35,35 @@ export default function ({ app, mesh, utils }) {
     '/api/groups': {
       'GET': responder(({}) => {
         return api.getGroups().then(
-          ret => response(200, ret)
+          ret => ret ? response(200, ret) : response(404)
         )
-      }),
-      'POST': responder(({}, req) => {
-        var obj = JSON.decode(req.body)
-        var name = obj.name
-        var users = obj.users
-        return api.setGroups(null, name, users).then(response(201))
       }),
     },
     '/api/groups/{group}': {
       'GET': responder(({group}) => {
         return api.getGroup(group).then(
-          ret => response(200, ret)
+          ret => ret ? response(200, ret) : response(404)
         )
       }),
       'POST': responder(({group}, req) => {
         var obj = JSON.decode(req.body)
         var name = obj.name
         var users = obj.users
-        return api.setGroups(group, name, users).then(response(201))
+        return api.setGroups(group, name, users).then(
+          ret => response(ret ? 201 : 403)
+        )
       }),
       'DELETE': responder(({group}) => {
-        return api.deleteGroup(group).then(response(204))
+        return api.deleteGroup(group).then(
+          ret => response(ret ? 200 : 404)
+        )
       }),
     },
 
     '/api/groups/user/{user}': {
       'GET': responder(({user}) => {
         return api.getUserGroups(user).then(
-          ret => response(200, ret)
+          ret => ret ? response(200, ret) : response(404)
         )
       }),
     },
