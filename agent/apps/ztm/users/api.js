@@ -2,8 +2,7 @@ export default function ({ app, mesh }) {
 
   function setGroups(id, name, users) {
     return getLocalConfig().then(config => {
-      console.log(config)
-      var group = config.find(g => g.id == id)
+      var group = config.find(g => g?.id == id)
       if (group == null) {
         config.push({id, name, users})
       } else {
@@ -32,14 +31,14 @@ export default function ({ app, mesh }) {
   function getGroup(id) {
     return getLocalConfig().then(
       config => config.find(
-        g => g.id == id
+        g => g?.id == id
       ) || null
     )
   }
 
   function deleteGroup(id) {
     return getLocalConfig().then(config => {
-      var i = config.findIndex(o => o.id === id)
+      var i = config.findIndex(o => o?.id === id)
       if (i >= 0) {
         config.splice(i, 1)
         setLocalConfig(config)
