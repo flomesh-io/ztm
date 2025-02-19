@@ -1,5 +1,4 @@
 import initCertGen from './cert-gen.js'
-
 export default function ({ app, mesh }) {
   var certGen = null
 
@@ -58,6 +57,24 @@ export default function ({ app, mesh }) {
     }
   }
 
+  function getGroups(ep) {
+    var data = null
+    return pipeline($=>$
+      .onStart(new Message({ method: 'GET', path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups` }))
+      .encodeHTTPRequest()
+      .connect(
+        () => `localhost:7777`
+      )
+      .decodeHTTPResponse()
+      .replaceMessage(res => {
+        data = JSON.decode(res.body)
+        return new StreamEnd
+      })
+      ).spawn().then((e) => {
+        return data
+      })
+  }
+  
   function setEndpointConfig(ep, config) {
     if (ep === app.endpoint.id) {
       setLocalConfig(config)
@@ -377,6 +394,7 @@ export default function ({ app, mesh }) {
 		allUsers,
     getEndpointCA,
     getEndpointConfig,
+    getGroups,
     setEndpointConfig,
     acceptPeer,
   }
