@@ -42,7 +42,10 @@ export default function ({ app, mesh }) {
       if (i >= 0) {
         config.splice(i, 1)
         setLocalConfig(config)
+      } else {
+        return false;
       }
+      return true;
     })
   }
 
