@@ -62,8 +62,6 @@ const getEndpoints = () => {
 	ztmService.getEndpoints(selectedMesh.value?.name)
 		.then(res => {
 			usersMap.value = {};
-			console.log("Endpoints:")
-			console.log(res)
 			loading.value = false;
 			setTimeout(() => {
 				loader.value = false;
@@ -146,7 +144,7 @@ const newInvite = () => {
 const groups = ref([])
 const loadgroup = () => {
 	usersService.getGroups().then(data => {
-		// groups.value = data||[];
+		groups.value = data||[];
 	})
 }
 const removeGroupUser = (group,user) => {
@@ -178,27 +176,42 @@ const usersTree = computed(()=>{
 	return _users;
 })
 const selectedGroup = ref({});
-const selectGroup = (group) => {
+const selectGroup = (group,type) => {
 	selectedGroup.value = group;
 	selectedUsers.value = {};
-	(group?.users || []).forEach((user)=>{
-		selectedUsers.value[user] = {checked:true}
-	})
-	visibleUserSelector.value = true;
+	if(type == 'adduser'){
+		(group?.users || []).forEach((user)=>{
+			selectedUsers.value[user] = {checked:true}
+		})
+		visibleUserSelector.value = true;
+	} else {
+		groupname.value = group?.name;
+		visibleCreateGroup.value = true;
+	}
 }
+const load = () => {
+	getEndpoints();
+	loadusers();
+	loadgroup();
+}
+const saving = ref(false);
 const appendUsers = () => {
+	saving.value = true;
 	const _users = Object.keys(selectedUsers.value);
 	usersService.appendGroupUser({
 		users: _users,
 		group: selectedGroup.value?.id,
 		callback(){
+			visibleUserSelector.value = false;
+			saving.value = false;
+			loadgroup();
 			toast.add({ severity: 'success', summary:'Tips', detail: `${_users.length} user appended to ${selectedGroup.value?.name}.`, life: 3000 });
 		}
 	})
 }
 const removeGroup = (group) => {
 	usersService.removeGroup({
-		group: selectedGroup.value?.id,
+		group: group?.id,
 		callback(){
 			loadgroup()
 		}
@@ -209,20 +222,38 @@ const visibleCreateGroup = ref(false);
 const newGroup = () => {
 	visibleCreateGroup.value = true;
 	groupname.value = "";
+	selectedGroup.value = {};
 }
-const createGroup = () => {
-	usersService.newGroup({
-		name: groupname.value,
-		users: [],
-		callback(){
-			toast.add({ severity: 'success', summary:'Tips', detail: `${groupname.value} created.`, life: 3000 });
-			groupname.value = "";
-		}
-	})
+const postGroup = () => {
+	saving.value = true;
+	if(selectedGroup.value?.id){
+		usersService.setGroupName({
+			group: selectedGroup.value?.id,
+			name: groupname.value,
+			callback(){
+				toast.add({ severity: 'success', summary:'Tips', detail: `${groupname.value} updated.`, life: 3000 });
+				groupname.value = "";
+				visibleCreateGroup.value = false;
+				saving.value = false;
+				loadgroup();
+			}
+		})
+	} else {
+		usersService.newGroup({
+			name: groupname.value,
+			users: [],
+			callback(){
+				toast.add({ severity: 'success', summary:'Tips', detail: `${groupname.value} created.`, life: 3000 });
+				groupname.value = "";
+				visibleCreateGroup.value = false;
+				saving.value = false;
+				loadgroup();
+			}
+		})
+	}
 }
 onActivated(()=>{
-	getEndpoints();
-	loadusers();
+	load()
 })
 onMounted(()=>{
 	getStatsTimer();
@@ -230,14 +261,14 @@ onMounted(()=>{
 
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
-		getEndpoints();
-		loadusers();
+		load()
 	}
 },{
 	deep:true,
 	immediate:true
 })
-
+// || true to open dev manage
+const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 </script>
 
 <template>
@@ -250,16 +281,16 @@ watch(()=>selectedMesh,()=>{
 					</template>
 			
 					<template #end> 
-						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
-						<Button text v-if="selectedMesh?.agent?.username == 'root' || true" icon="iconfont icon-add-user"  v-tooltip="t('Invite')"  @click="newInvite"/>
-						<Button text v-if="selectedMesh?.agent?.username == 'root' || true" icon="iconfont icon-add-group-right"  v-tooltip="t('Create Group')"  @click="newGroup"/>
+						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
+						<Button text v-if="manage" icon="iconfont icon-add-user"  v-tooltip="t('Invite')"  @click="newInvite"/>
+						<Button text v-if="manage" icon="iconfont icon-add-group-right"  v-tooltip="t('Create Group')"  @click="newGroup"/>
 					</template>
 			</AppHeader>
 			
 			<Loading v-if="loading"/>
 			<ScrollPanel class="absolute-scroll-panel" v-else-if="endpoints && endpoints.length >0">
 				<Accordion value="all">
-					<AccordionPanel value="all">
+					<AccordionPanel class="small" value="all">
 						<AccordionHeader class="small">{{t('All')}} ({{Object.keys(usersMap).length}})</AccordionHeader>
 						<AccordionContent>
 							<DataView class="message-list" :value="Object.keys(usersMap)">
@@ -312,14 +343,15 @@ watch(()=>selectedMesh,()=>{
 							</DataView>
 						</AccordionContent>
 					</AccordionPanel>
-					<AccordionPanel v-for="(group,index) in groups" :key="index" :value="group.group">
+					<AccordionPanel class="small" v-for="(group,index) in groups" :key="index" :value="group.id">
 							<AccordionHeader class="small flex">
-								<div class="flex-item">{{ group?.name }} ({{group.users.length}})</div>
-								<Button @click.stop="selectGroup(group)" size="small" icon="iconfont icon-add-user" text v-if="!selectEp && selectedMesh?.agent?.username == 'root' || true"/>
-								<Button severity="secondary" @click.stop="removeGroup(group)" class="mr-2" size="small" icon="pi pi-trash" text v-if="!selectEp && selectedMesh?.agent?.username == 'root' || true"/>
+								<div class="flex-item">{{ group?.name }} <span v-if="group.users?.length>0">({{group.users.length}})</span></div>
+								<Button @click.stop="selectGroup(group,'rename')" size="small" icon="pi pi-pen-to-square" text v-if="!selectEp && manage"/>
+								<Button @click.stop="selectGroup(group,'adduser')" size="small" icon="iconfont icon-add-user" text v-if="!selectEp && manage"/>
+								<Button severity="secondary" @click.stop="removeGroup(group)" class="mr-2" size="small" icon="pi pi-trash" text v-if="!selectEp && manage"/>
 							</AccordionHeader>
 							<AccordionContent>
-								<DataView class="message-list" :value="group.users">
+								<DataView v-if="group.users && group.users.length>0" class="message-list" :value="group.users">
 										<template #list="slotProps">
 												<div class="flex flex-col message-item pointer" v-for="(key, index) in slotProps.items" :key="index" >
 													<div v-if="usersMap[key].length <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(usersMap[key][0])">
@@ -334,7 +366,7 @@ watch(()=>selectedMesh,()=>{
 															<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[usersMap[key][0].id]">↑{{bitUnit(stats[usersMap[key][0].id]?.send)}}</span>
 															<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[usersMap[key][0].id]">↓{{bitUnit(stats[usersMap[key][0].id]?.receive)}}</span>
 															<Status :run="usersMap[key][0].online" :tip="timeago(usersMap[key][0].heartbeat)"  style="top: 9px;margin-right: 0;"/>
-															<Button severity="secondary" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="selectedMesh?.agent?.username == 'root' || true"/>
+															<Button severity="secondary" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="manage"/>
 														</div>
 													</div>
 													
@@ -346,7 +378,7 @@ watch(()=>selectedMesh,()=>{
 																	<b class="line-height-4">{{ key }}</b>
 																	<OverlayBadge :value="usersMap[key].length" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 																</div>
-																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="!selectEp && selectedMesh?.agent?.username == 'root' || true"/>
+																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 															</AccordionHeader>
 															<AccordionContent>	
 																<div class="flex flex-col message-item pointer" v-for="(ep, index) in usersMap[key]" :key="index" >
@@ -369,6 +401,10 @@ watch(()=>selectedMesh,()=>{
 												</div>
 										</template>
 								</DataView>
+								<div class="py-4 text-center" v-else>
+									<Button @click.stop="selectGroup(group,'adduser')" :label="t('Append Users')" icon="iconfont icon-add-user" v-if="!selectEp && manage">
+									</Button>
+								</div>
 							</AccordionContent>
 					</AccordionPanel>
 				</Accordion>
@@ -390,7 +426,7 @@ watch(()=>selectedMesh,()=>{
 						</template>
 				
 						<template #end> 
-							<Button icon="pi pi-check" @click="appendUsers" :disabled="Object.keys(selectedUsers).length==0"/>
+							<Button :loading="saving" icon="pi pi-check" @click="appendUsers" :disabled="Object.keys(selectedUsers).length==0"/>
 						</template>
 				</AppHeader>
 				<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
@@ -425,7 +461,7 @@ watch(()=>selectedMesh,()=>{
 			<div class="p-2" >
 				<div class="flex mt-2 w-full">
 					<InputText size="small" :placeholder="t('Group Name')" v-model="groupname"  class="flex-item"></InputText>
-					<Button size="small" :disabled="!groupname" :label="t('Create')" class="ml-2"  @click="createGroup"></Button>
+					<Button size="small" :loading="saving" :disabled="!groupname" :label="!!selectedGroup?.id?t('Save'):t('Create')" class="ml-2"  @click="postGroup"></Button>
 				</div>
 			</div>
 		</Dialog>
@@ -454,10 +490,13 @@ watch(()=>selectedMesh,()=>{
 }
 
 :deep(.p-accordionheader.small){
-	padding-top: 7px;
-	padding-bottom: 7px;
+	padding-top: 8px;
+	padding-bottom: 8px;
 	font-size: 12px;
 	background-color: var(--surface-subground) !important;
+}
+:deep(.small.p-accordionpanel){
+	border-bottom: 1px solid var(--surface-border) !important;
 }
 :deep(.p-accordioncontent-content){
 	padding: 0;
