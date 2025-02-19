@@ -25,6 +25,9 @@ export default class ChatService {
 		return request(`${base}${url}`, method, body, config);
 	}
 	
+	getUsers() {
+		return this.request(`/api/users`, "GET");
+	}
 	getGroups() {
 		return this.request(`/api/groups`, "GET");
 	}
@@ -45,8 +48,7 @@ export default class ChatService {
 			}
 		});
 	}
-	removeGroup({group, user, callback}) {
-		
+	removeGroup({group, callback}) {
 		confirm.custom({
 				message: `Are you sure to remove this group?`,
 				header: 'Tip',
@@ -62,11 +64,11 @@ export default class ChatService {
 				}
 		});
 	}
-	appendGroupUser({group, user, callback}) {
+	appendGroupUser({group, users, callback}) {
 		this.getGroup(group).then((res) => {
 			const _d = res;
 			_d.users = _d.users || [];
-			_d.users.push(user)
+			_d.users = _d.users.concat(users);
 			this.request(`/api/groups/${group}`, "POST", _d).then(()=>{
 				if(callback){
 					callback({
