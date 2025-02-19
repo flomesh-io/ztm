@@ -67,8 +67,7 @@ export default class ChatService {
 	appendGroupUser({group, users, callback}) {
 		this.getGroup(group).then((res) => {
 			const _d = res;
-			_d.users = _d.users || [];
-			_d.users = _d.users.concat(users);
+			_d.users = users;
 			this.request(`/api/groups/${group}`, "POST", _d).then(()=>{
 				if(callback){
 					callback({
