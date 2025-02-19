@@ -42,13 +42,13 @@ const save = () => {
 		listen: config.value.listen,
 		targets: config.value.targets,
 		exclusions: config.value.exclusions,
-		allow: allow.value?allow.value.split("\n"):[],
-		deny: deny.value?deny.value.split("\n"):[],
+		allow: allow.value?allow.value.split("\n").join(";").split(";"):[],
+		deny: deny.value?deny.value.split("\n").join(";").split(";"):[],
 	}
 	if(rules && rules.length>0){
 		rules.forEach(rule => {
-			rule.allow = rule.allowStr?rule.allowStr.split("\n"):[];
-			rule.deny = rule.denyStr?rule.denyStr.split("\n"):[];
+			rule.allow = rule.allowStr?rule.allowStr.split("\n").join(";").split(";"):[];
+			rule.deny = rule.denyStr?rule.denyStr.split("\n").join(";").split(";"):[];
 			delete rule.allowStr;
 			delete rule.denyStr;
 		});
@@ -71,6 +71,12 @@ const getUsers = () => {
 		users.value = res || [];
 	})
 }
+const groups = ref([]);
+const getGroups = () => {
+	proxyService.getGroups().then((res)=>{
+		groups.value = res || [];
+	})
+}
 const enableRoutingRules = ref(false);
 const loaddata = () => {
 	proxyService.getProxy(props?.ep?.id).then((res)=>{
@@ -91,6 +97,7 @@ const loaddata = () => {
 		}
 	})
 	getUsers();
+	getGroups();
 }
 onMounted(() => {
 	loaddata();
@@ -103,7 +110,6 @@ const newRule = {
 	allowStr: '',
 	denyStr: '',
 }
-const groups = ref(['group1','group2','group3'])
 const rule = ref(_.cloneDeep(newRule))
 const addRule = () => {
 	config.value.rules.push(rule.value);
@@ -179,16 +185,16 @@ const ruleType = ref(t('Users'))
 							</div>
 							<div class="col-12 p-0" v-if="!!enableRoutingRules">
 								<FormItem :label="t('Rules')" :border="false">
-									<div class="flex w-full" v-for="(rule,index) in config.rules">
-										<div class="flex-item p-1" v-if="rule.users && rule.users.length>0">
+									<div class="flex w-full mb-4" v-for="(rule,index) in config.rules">
+										<div style="min-width: 200px;" class="p-1" v-if="rule.users && rule.users.length>0">
 											<FloatLabel>
-												<MultiSelect size="small" class="w-full"  v-model="rule.users" :options="users" optionLabel="username" optionValue="username" :filter="users.length>8" />
+												<MultiSelect size="small" class="w-full"  v-model="rule.users" :options="users" :filter="users.length>8" />
 												<label >{{t('Users')}}</label>
 											</FloatLabel>
 										</div>
-										<div class="flex-item p-1" v-else>
+										<div style="min-width: 200px;" class="p-1" v-else>
 											<FloatLabel>
-												<Select size="small" class="w-full" v-model="rule.group" :options="groups"  :placeholder="t('Group')"/>
+												<Select size="small" class="w-full" v-model="rule.group" :options="groups"  :placeholder="t('Group')" optionLabel="name" optionValue="id"/>
 												<label >{{t('Group')}}</label>
 											</FloatLabel>
 										</div>
@@ -216,10 +222,10 @@ const ruleType = ref(t('Users'))
 											<SelectButton class="w-10rem" size="small" v-model="ruleType" :options="[t('Users'),t('Group')]" />
 										</div>
 										<div v-if="ruleType == t('Users')" class="flex-item p-1">
-											<MultiSelect size="small" class="w-full" v-model="rule.users" :options="users" optionLabel="username" optionValue="username" :filter="users.length>8" :placeholder="t('Users')"/>
+											<MultiSelect size="small" style="max-width: 200px;" class="w-full" v-model="rule.users" :options="users" :filter="users.length>8" :placeholder="t('Users')"/>
 										</div>
 										<div v-else class="flex-item p-1">
-											<Select size="small" class="w-full" v-model="rule.group" :options="groups" :placeholder="t('Group')"/>
+											<Select size="small" style="max-width: 200px;" class="w-full" v-model="rule.group" :options="groups" :placeholder="t('Group')" optionLabel="name" optionValue="id"/>
 										</div>
 										<div class="p-1">
 											<Button :disabled="(!rule.users || rule.users.length ==0) && !rule.group" @click="addRule" icon="pi pi-plus" size="small" severity="secondary" />
