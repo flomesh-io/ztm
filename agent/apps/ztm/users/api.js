@@ -1,5 +1,12 @@
 export default function ({ app, mesh }) {
 
+  function watchGroups() {
+    mesh.watch('/shared/root/publish/groups').then(paths => 
+      console.log(paths)
+    ).then(() => watchGroups())
+  }
+  watchGroups()
+
   function setGroups(id, name, users) {
     return getGroupConfig().then(config => {
       var group = config.find(g => g?.id == id)
@@ -58,14 +65,6 @@ export default function ({ app, mesh }) {
   function setGroupConfig(id, config) {
     mesh.write(`/shared/root/publish/groups/config.json`, JSON.encode(config))
   }
-
-
-  function watchGroups() {
-    mesh.watch('/shared/root/publish/groups').then(paths => 
-      console.log(paths)
-    ).then(() => watchGroups())
-  }
-  watchGroups()
 
   function allUsers() {
     return mesh.discover().then(
