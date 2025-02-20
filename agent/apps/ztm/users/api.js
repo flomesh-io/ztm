@@ -8,17 +8,7 @@ export default function ({ app, mesh }) {
   watchGroups()
 
   function setGroups(id, name, users) {
-    return getGroupConfig().then(config => {
-      var group = config.find(g => g?.id == id)
-      if (group == null) {
-        config.push({id, name, users})
-      } else {
-        group.name = name
-        group.users = users
-      }
-      setGroupConfig(id, config)
-      return true
-    })
+    return setGroupConfig(id, {id, name, users}).then(() => true)
   }
 
   function getGroups() {
@@ -28,6 +18,7 @@ export default function ({ app, mesh }) {
   }
 
   function getUserGroups(user) {
+    console.log('getUserGroups', user)
     return getGroupConfig().then(
       config => config.filter(
         g => g.users.includes(user)
@@ -36,34 +27,49 @@ export default function ({ app, mesh }) {
   }
 
   function getGroup(id) {
-    return getGroupConfig().then(
-      config => config.find(
-        g => g?.id == id
-      ) || null
+    return getGroupConfig(id).then(
+      config => config || null
     )
   }
 
   function deleteGroup(id) {
-    return getGroupConfig().then(config => {
-      var i = config.findIndex(o => o?.id === id)
-      if (i >= 0) {
-        config.splice(i, 1)
-        setGroupConfig(id, config)
-      } else {
-        return false;
+    return mesh.read(`/shared/root/publish/groups/${id}.json`).then(
+      data => {
+        if (data?.toString()) {
+          mesh.erase(`/shared/root/publish/groups/${id}.json`)
+          return true
+        } else {
+          return false
+        }
       }
-      return true;
-    })
+    )
   }
 
-  function getGroupConfig() {
-    return mesh.read(`/shared/root/publish/groups/config.json`).then(
-      data => data ? JSON.decode(data) : []
-    )
+  function getGroupConfig(id) {
+    if (id) {
+      return mesh.read(`/shared/root/publish/groups/${id}.json`).then(
+        data => {
+          return data?.toString() ? JSON.decode(data) : null
+        }
+      )
+    } else {
+      var datas = []
+      return mesh.dir(`/shared/root/publish/groups`).then(
+        files => Promise.all(
+          files.map(file => mesh.read(`/shared/root/publish/groups/${file}`).then(
+            data => {
+              if (data?.toString()) {
+                datas.push(JSON.decode(data))
+              }
+            }
+          ))
+        ).then(() => datas)
+      )
+    }
   }
   
   function setGroupConfig(id, config) {
-    mesh.write(`/shared/root/publish/groups/config.json`, JSON.encode(config))
+    return mesh.write(`/shared/root/publish/groups/${id}.json`, JSON.encode(config))
   }
 
   function allUsers() {
