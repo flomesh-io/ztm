@@ -1,7 +1,7 @@
 export default function ({ app, mesh }) {
 
   function setGroups(id, name, users) {
-    return getLocalConfig().then(config => {
+    return getGroupConfig().then(config => {
       var group = config.find(g => g?.id == id)
       if (group == null) {
         config.push({id, name, users})
@@ -9,19 +9,19 @@ export default function ({ app, mesh }) {
         group.name = name
         group.users = users
       }
-      setLocalConfig(config)
+      setGroupConfig(id, config)
       return true
     })
   }
 
   function getGroups() {
-    return getLocalConfig().then(
+    return getGroupConfig().then(
       config => config || null
     )
   }
 
   function getUserGroups(user) {
-    return getLocalConfig().then(
+    return getGroupConfig().then(
       config => config.filter(
         g => g.users.includes(user)
       )
@@ -29,7 +29,7 @@ export default function ({ app, mesh }) {
   }
 
   function getGroup(id) {
-    return getLocalConfig().then(
+    return getGroupConfig().then(
       config => config.find(
         g => g?.id == id
       ) || null
@@ -37,11 +37,11 @@ export default function ({ app, mesh }) {
   }
 
   function deleteGroup(id) {
-    return getLocalConfig().then(config => {
+    return getGroupConfig().then(config => {
       var i = config.findIndex(o => o?.id === id)
       if (i >= 0) {
         config.splice(i, 1)
-        setLocalConfig(config)
+        setGroupConfig(id, config)
       } else {
         return false;
       }
@@ -49,15 +49,23 @@ export default function ({ app, mesh }) {
     })
   }
 
-  function getLocalConfig() {
-    return mesh.read('/local/config.json').then(
+  function getGroupConfig() {
+    return mesh.read(`/shared/root/publish/groups/config.json`).then(
       data => data ? JSON.decode(data) : []
     )
   }
   
-  function setLocalConfig(config) {
-    mesh.write('/local/config.json', JSON.encode(config))
+  function setGroupConfig(id, config) {
+    mesh.write(`/shared/root/publish/groups/config.json`, JSON.encode(config))
   }
+
+
+  function watchGroups() {
+    mesh.watch('/shared/root/publish/groups').then(paths => 
+      console.log(paths)
+    ).then(() => watchGroups())
+  }
+  watchGroups()
 
   function allUsers() {
     return mesh.discover().then(
