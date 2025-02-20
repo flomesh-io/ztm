@@ -5,6 +5,9 @@ export default class ProxyService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
+	getGroups() {
+		return request(`/api/groups`);
+	}
 	getUsers() {
 		return request(`/api/users`);
 	}
