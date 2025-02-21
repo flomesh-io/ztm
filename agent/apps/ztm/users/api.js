@@ -1,9 +1,12 @@
 export default function ({ app, mesh }) {
 
   function watchGroups() {
-    mesh.watch('/shared/root/publish/groups').then(paths => 
-      console.log(paths)
-    ).then(() => watchGroups())
+    mesh.watch('/shared/root/publish/groups').then((paths) => {
+      paths.forEach(path => {
+        mesh.read(path)
+      })
+      watchGroups()
+    })
   }
   watchGroups()
 
@@ -35,7 +38,7 @@ export default function ({ app, mesh }) {
   function deleteGroup(id) {
     return mesh.read(`/shared/root/publish/groups/${id}.json`).then(
       data => {
-        if (data?.toString()) {
+        if (data && data.toString()) {
           mesh.erase(`/shared/root/publish/groups/${id}.json`)
           return true
         } else {
@@ -49,7 +52,7 @@ export default function ({ app, mesh }) {
     if (id) {
       return mesh.read(`/shared/root/publish/groups/${id}.json`).then(
         data => {
-          return data?.toString() ? JSON.decode(data) : null
+          return data && data.toString() ? JSON.decode(data) : null
         }
       )
     } else {
@@ -58,7 +61,7 @@ export default function ({ app, mesh }) {
         files => Promise.all(
           files.map(file => mesh.read(`/shared/root/publish/groups/${file}`).then(
             data => {
-              if (data?.toString()) {
+              if (data && data.toString()) {
                 datas.push(JSON.decode(data))
               }
             }
