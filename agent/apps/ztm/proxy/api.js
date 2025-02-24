@@ -26,7 +26,7 @@ export default function ({ app, mesh }) {
       }
     )
   }
-	
+  
   function getEndpointCA(ep) {
     if (ep === app.endpoint.id) {
       if (certGen) {
@@ -338,28 +338,64 @@ export default function ({ app, mesh }) {
   }
 
   function isAllowed(config, host) {
-		if (config?.rules){
-			// rules with user or group list TODO
-			/*
-			config.rules is:
-			[{
-				users<string name ary> | group<string>,
-				allow,
-				deny
-			}]
-			*/
-		} else {
-			// keep simple allow | deny
-			if (IP.isV4(host) || IP.isV6(host)) {
-			  if (hasIP(config?.deny, host)) return false
-			  if (config?.allow?.length > 0) return hasIP(config.allow, host)
-			  return true
-			} else {
-			  if (hasDomain(config?.deny, host)) return false
-			  if (config?.allow?.length > 0) return hasDomain(config.allow, host)
-			  return true
-			}
-		}
+    if (config?.rules) {
+      // rules with user or group list TODO
+      /*
+      config.rules is:
+      [{
+        users<string name ary> | group<string>,
+        allow,
+        deny
+      }]
+      */
+      var allowed = true;
+      var ha = new http.Agent('localhost:7777');
+      var options = {
+        method: 'GET',
+        path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups/user/${$ctx.peer.username}`
+      };
+
+      return ha.request(options.method, options.path).then(res => {
+        var body = JSON.decode(res.body);
+        var group = null;
+
+        if (body && body.length > 0) {
+          group = body[0].id;
+        }
+
+        for (var i = 0; i < config.rules.length; i++) {
+          var rule = config.rules[i];
+          var userMatch = rule.users?.includes($ctx.peer.username);
+          var groupMatch = rule.group && rule.group === group;
+  
+          if (userMatch || groupMatch) {
+            if (rule.deny && hasDomain(rule.deny, host)) {
+              return false;
+            }
+            if (rule.allow && hasDomain(rule.allow, host)) {
+              allowed = true;
+            } else if (!rule.allow && !rule.deny) {
+              allowed = true; // If no allow/deny, default allow
+            }
+          }
+        }
+
+        return allowed;
+      }).catch(error => {
+        console.error("Error fetching group information:", error);
+      });
+    } else {
+      // keep simple allow | deny
+      if (IP.isV4(host) || IP.isV6(host)) {
+        if (hasIP(config?.deny, host)) return false
+        if (config?.allow?.length > 0) return hasIP(config.allow, host)
+        return true
+      } else {
+        if (hasDomain(config?.deny, host)) return false
+        if (config?.allow?.length > 0) return hasDomain(config.allow, host)
+        return true
+      }
+    }
   }
 
   function hasDomain(list, host) {
@@ -391,7 +427,7 @@ export default function ({ app, mesh }) {
 
   return {
     allEndpoints,
-		allUsers,
+    allUsers,
     getEndpointCA,
     getEndpointConfig,
     getGroups,
