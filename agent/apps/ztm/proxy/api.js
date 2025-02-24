@@ -70,7 +70,7 @@ export default function ({ app, mesh }) {
         data = JSON.decode(res.body)
         return new StreamEnd
       })
-      ).spawn().then((e) => {
+      ).spawn().then(() => {
         return data
       })
   }
