@@ -153,15 +153,40 @@ export default function ({ app, mesh }) {
   var $ctx
   var $requestHead
   var $requestTime
+  var $group
 
   var acceptPeer = pipeline($=>$
     .onStart(c => { $ctx = c })
+    .handleMessageStart(
+      function (req) {
+        var ha = new http.Agent('localhost:7777');
+        var options = {
+          method: 'GET',
+          path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups/user/${$ctx.peer.username}`
+        };
+
+        return ha.request(options.method, options.path).then(res => {
+          console.log(res.body);
+          var body = JSON.decode(res.body);
+
+          if (body && body.length > 0) {
+            $group = body[0].id;
+          }
+
+          console.log('handleMessageStart $group:', $group);
+        })
+      }
+    )
     .acceptHTTPTunnel(req => {
       var params = matchPathTargets(req.head.path)
       if (params) {
         $target = params['*']
         $host = $target.substring(0, $target.lastIndexOf(':'))
-        if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host)) {
+
+        console.log('acceptHTTPTunnel $group:', $group);
+
+        if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host, $group)) {
+          console.log('403');
           currentLogger?.log?.({
             event: {
               time: new Date().toUTCString(),
@@ -175,6 +200,7 @@ export default function ({ app, mesh }) {
           return new Message({ status: 403 })
         }
         app.log(`Forward to ${$target}`)
+        console.log('line 199')
         return new Message({ status: 200 })
       } else {
         return new Message({ status: 404 })
@@ -337,7 +363,7 @@ export default function ({ app, mesh }) {
     }
   }
 
-  function isAllowed(config, host) {
+  function isAllowed(config, host, group) {
     if (config?.rules) {
       // rules with user or group list TODO
       /*
@@ -349,41 +375,26 @@ export default function ({ app, mesh }) {
       }]
       */
       var allowed = true;
-      var ha = new http.Agent('localhost:7777');
-      var options = {
-        method: 'GET',
-        path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups/user/${$ctx.peer.username}`
-      };
+      for (var i = 0; i < config.rules.length; i++) {
+        var rule = config.rules[i];
+        var userMatch = rule.users?.includes($ctx.peer.username);
+        var groupMatch = rule.group && rule.group === group;
 
-      return ha.request(options.method, options.path).then(res => {
-        var body = JSON.decode(res.body);
-        var group = null;
-
-        if (body && body.length > 0) {
-          group = body[0].id;
-        }
-
-        for (var i = 0; i < config.rules.length; i++) {
-          var rule = config.rules[i];
-          var userMatch = rule.users?.includes($ctx.peer.username);
-          var groupMatch = rule.group && rule.group === group;
-  
-          if (userMatch || groupMatch) {
-            if (rule.deny && hasDomain(rule.deny, host)) {
-              return false;
-            }
-            if (rule.allow && hasDomain(rule.allow, host)) {
-              allowed = true;
-            } else if (!rule.allow && !rule.deny) {
-              allowed = true; // If no allow/deny, default allow
-            }
+        if (userMatch || groupMatch) {
+          if (rule.deny && hasDomain(rule.deny, host)) {
+            allowed = false;
+            break;
+          }
+          if (rule.allow && hasDomain(rule.allow, host)) {
+            allowed = true;
+          } else if (!rule.allow && !rule.deny) {
+            allowed = true; // If no allow/deny, default allow
           }
         }
+      }
 
-        return allowed;
-      }).catch(error => {
-        console.error("Error fetching group information:", error);
-      });
+      console.log('allowed:', allowed);
+      return allowed;
     } else {
       // keep simple allow | deny
       if (IP.isV4(host) || IP.isV6(host)) {
