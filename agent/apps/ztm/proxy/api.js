@@ -153,12 +153,15 @@ export default function ({ app, mesh }) {
   var $ctx
   var $requestHead
   var $requestTime
-  var $group
 
   var acceptPeer = pipeline($=>$
     .onStart(c => { $ctx = c })
-    .handleMessageStart(
-      function (req) {
+    .acceptHTTPTunnel(req => {
+      var params = matchPathTargets(req.head.path)
+      if (params) {
+        $target = params['*']
+        $host = $target.substring(0, $target.lastIndexOf(':'))
+
         var ha = new http.Agent('localhost:7777');
         var options = {
           method: 'GET',
@@ -166,42 +169,29 @@ export default function ({ app, mesh }) {
         };
 
         return ha.request(options.method, options.path).then(res => {
-          console.log(res.body);
           var body = JSON.decode(res.body);
+          var group
 
           if (body && body.length > 0) {
-            $group = body[0].id;
+            group = body[0].id;
           }
 
-          console.log('handleMessageStart $group:', $group);
+          if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host, group)) {
+            currentLogger?.log?.({
+              event: {
+                time: new Date().toUTCString(),
+                username: $ctx.peer.username,
+                endpoint: $ctx.peer.id,
+                ip: $ctx.peer.ip,
+                target: $target,
+                denied: true,
+              }
+            })
+            return new Message({ status: 403 })
+          }
+          app.log(`Forward to ${$target}`)
+          return new Message({ status: 200 })
         })
-      }
-    )
-    .acceptHTTPTunnel(req => {
-      var params = matchPathTargets(req.head.path)
-      if (params) {
-        $target = params['*']
-        $host = $target.substring(0, $target.lastIndexOf(':'))
-
-        console.log('acceptHTTPTunnel $group:', $group);
-
-        if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host, $group)) {
-          console.log('403');
-          currentLogger?.log?.({
-            event: {
-              time: new Date().toUTCString(),
-              username: $ctx.peer.username,
-              endpoint: $ctx.peer.id,
-              ip: $ctx.peer.ip,
-              target: $target,
-              denied: true,
-            }
-          })
-          return new Message({ status: 403 })
-        }
-        app.log(`Forward to ${$target}`)
-        console.log('line 199')
-        return new Message({ status: 200 })
       } else {
         return new Message({ status: 404 })
       }
@@ -302,7 +292,7 @@ export default function ({ app, mesh }) {
           })
         ).to($=>$
           .muxHTTP().to($=>$
-            .pipe(() => mesh.connect($targetEP))
+            .pipe(() => mesh.connect($targetEP, { dedicated: true }))
           )
         )
       ),
@@ -393,7 +383,6 @@ export default function ({ app, mesh }) {
         }
       }
 
-      console.log('allowed:', allowed);
       return allowed;
     } else {
       // keep simple allow | deny

@@ -21,7 +21,6 @@ export default function ({ app, mesh }) {
   }
 
   function getUserGroups(user) {
-    console.log('getUserGroups', user)
     return getGroupConfig().then(
       config => config.filter(
         g => g.users.includes(user)
