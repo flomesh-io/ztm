@@ -84,8 +84,8 @@ export default function ({ api, utils }) {
               For ACL:
 
               --protocol  <tcp|udp>         Set protocol of the target (default = tcp)
-              --address   <host[:port]>     Set target address or address range
-                                              <host> can be CIDR, IP address or regexp
+              --address   <ip|cidr|regexp>  Set target address or address range
+              --port      <number>          Set allowed port number (optional)
               --users     <username ...>    Set allowed users
             `,
             notes: objectTypeNotes,
@@ -93,7 +93,7 @@ export default function ({ api, utils }) {
               var proto = validateProtocol(args['--protocol'])
               switch (validateObjectType(args, 'set')) {
                 case 'port': return setPort(proto, args['--listen'], args['--via'], args['--target'])
-                case 'acl': return setACL(proto, args['--address'], args['--users'])
+                case 'acl': return setACL(proto, args['--address'], args['--port'], args['--users'])
               }
             }
           },
@@ -155,7 +155,8 @@ export default function ({ api, utils }) {
         printTable(config.acl || [], {
           'PROTOCOL': a => a.protocol,
           'ADDRESS': a => a.address,
-          'USERS': a => (a.users || []).join(', '),
+          'PORT': a => a.port || '(all)',
+          'USERS': a => (a.users || []).join(' '),
         })
       ))
     }
@@ -185,18 +186,20 @@ export default function ({ api, utils }) {
       )
     }
 
-    function setACL(protocol, address, users) {
+    function setACL(protocol, address, port, users) {
       if (!address) throw `Option '--address' is required`
       if (!users || users.length === 0) throw `Option '--users' is required`
       address = validateAddressPattern(address)
+      port = port && validatePort(port)
       return api.getConfig(endpoint.id).then(
         config => {
           config.acl ??= []
           var a = config.acl.find(p => p.protocol === protocol && p.address === address)
           if (a) {
+            a.port = port
             a.users = users
           } else {
-            config.acl.push({ protocol, address, users })
+            config.acl.push({ protocol, address, port, users })
           }
           return api.setConfig(endpoint.id, config)
         }
@@ -218,7 +221,7 @@ export default function ({ api, utils }) {
 
     function deleteACL(protocol, address) {
       if (!address) throw `Option '--address' is required`
-      address = validateAddressPattern(listen)
+      address = validateAddressPattern(address)
       return api.getConfig(endpoint.id).then(
         config => {
           config.acl = (config.acl || []).filter(
@@ -291,26 +294,15 @@ export default function ({ api, utils }) {
     }
 
     function validateAddressPattern(addr) {
-      var i = addr.lastIndexOf(':')
-      if (i >= 0) {
-        var host = addr.substring(0,i)
-        var port = addr.substring(i+1)
-      } else {
-        var host = addr
-        var port = 0
-      }
-      port = port && validatePort(port)
-      host = host || '127.0.0.1'
       try {
-        new IPMask(host)
-        return port ? `${host}:${port}` : host
+        new IPMask(addr)
+        return addr
       } catch {}
-      host = host || '127.0.0.1'
       try {
-        new RegExp(host)
-        return port ? `${host}:${port}` : host
+        new RegExp(addr)
+        return addr
       } catch {}
-      throw `Invalid IP/CIDR or regexp '${host}'`
+      throw `Invalid IP/CIDR or regexp '${addr}'`
     }
 
     function printTable(data, columns, indent) {
