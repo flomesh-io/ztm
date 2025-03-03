@@ -25,8 +25,8 @@ const platform = computed(() => {
 const loading = ref(false);
 const loader = ref(false);
 
-const deleteMesh = () => {
-	const name = selectedMenu.value?.name;
+const deleteMesh = (mesh) => {
+	const name = mesh?.name;
 	if(!name){
 		return
 	}
@@ -54,31 +54,10 @@ const join = () => {
 const visibleEditor = ref(false);
 const selectedMenu = ref();
 const actionMenu = ref();
-const actions = computed(()=>(mesh)=>{
-	return [
-	    {
-	        label: t('Actions'),
-	        items: [
-	            {
-	                label: t('Edit'),
-	                icon: 'pi pi-pencil',
-									command: () => {
-										selectedMenu.value = mesh;
-										visibleEditor.value = true;
-									}
-	            },
-	            {
-	                label: t('Leave'),
-	                icon: 'pi pi-trash',
-									command: () => {
-										selectedMenu.value = mesh;
-										deleteMesh()
-									}
-	            }
-	        ]
-	    }
-	]
-});
+const editMesh = (mesh)=> {
+	selectedMenu.value = mesh;
+	visibleEditor.value = true;
+}
 const showAtionMenu = (event) => {
 	actionMenu.value[0].toggle(event);
 };
@@ -194,7 +173,25 @@ onMounted(() => {
 													<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?t('Connected'):t('Disconnect')" />
 											 </div>
 											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event)" aria-haspopup="true" aria-controls="actionMenu" />
-											 <Menu ref="actionMenu" :model="actions(mesh)" :popup="true" />
+											 <Menu ref="actionMenu" :model="[{
+															label: t('Actions'),
+															items: [
+																	{
+																			label: t('Edit'),
+																			icon: 'pi pi-pencil',
+																			command: () => {
+																				editMesh(mesh);
+																			}
+																	},
+																	{
+																			label: t('Leave'),
+																			icon: 'pi pi-trash',
+																			command: () => {
+																				deleteMesh(mesh)
+																			}
+																	}
+															]
+													}]" :popup="true" />
 									 </div>
 										<span class="text-tip">Hubs: </span>
 										<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
