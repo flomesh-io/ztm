@@ -1,8 +1,9 @@
 export default function ({ app, mesh }) {
-  var currentListens = []
+  var currentPorts = []
+  var currentACL = []
 
   function getListenStatus(protocol, listen) {
-    var l = currentListens.find(l => (l.protocol === protocol && l.listen === listen))
+    var l = currentPorts.find(l => (l.protocol === protocol && l.listen === listen))
     if (l) return { open: l.open, error: l.error }
     return { open: false }
   }
@@ -75,8 +76,9 @@ export default function ({ app, mesh }) {
 
   function applyLocalConfig(config) {
     var ports = config.ports || []
+    var acl = config.acl || []
 
-    currentListens.forEach(l => {
+    currentPorts.forEach(l => {
       var protocol = l.protocol
       var listen = l.listen
       if (!ports.some(p => (
@@ -88,7 +90,7 @@ export default function ({ app, mesh }) {
       }
     })
 
-    currentListens = []
+    currentPorts = []
 
     ports.forEach(p => {
       var protocol = p.protocol
@@ -127,13 +129,40 @@ export default function ({ app, mesh }) {
 
       try {
         pipy.listen(listen, protocol, connectPeer)
-        currentListens.push({ protocol, listen, via, target, open: true })
+        currentPorts.push({ protocol, listen, via, target, open: true })
         app.log(`Started ${protocol} listening ${listen}`)
       } catch (err) {
         var error = err.message || err.toString()
-        currentListens.push({ protocol, listen, via, target, open: false, error })
+        currentPorts.push({ protocol, listen, via, target, open: false, error })
         app.log(`Cannot open ${protocol} port ${listen}: ${error}`)
       }
+    })
+
+    currentACL = []
+
+    acl.forEach(a => {
+      var protocol = a.protocol || 'tcp'
+      var port = Number.parseInt(a.port) || undefined
+      var users = a.users || []
+      var address = a.address || ''
+      var access = { protocol, port, users }
+      try {
+        var cidr = address
+        if (cidr.lastIndexOf('/') < 0) cidr += '/32'
+        var mask = new IPMask(cidr)
+        currentACL.push({
+          ...access,
+          match: addr => mask.contains(addr),
+        })
+        return
+      } catch {}
+      try {
+        var regexp = new RegExp(address)
+        currentACL.push({
+          ...access,
+          match: addr => regexp.test(addr),
+        })
+      } catch {}
     })
   }
 
@@ -180,8 +209,20 @@ export default function ({ app, mesh }) {
     )
   )
 
-  function canAccess(protocol, target, user) {
-    return user === app.username
+  function canAccess(protocol, target, username) {
+    if (username === app.username) return true
+    var i = target.lastIndexOf(':')
+    if (i < 0) return false
+    var host = target.substring(0,i)
+    var port = target.substring(i+1)
+    if (host === 'localhost') host = '127.0.0.1'
+    port = Number.parseInt(port)
+    return currentACL.some(a => {
+      if (a.protocol !== protocol) return false
+      if (a.port && a.port !== port) return false
+      if (a.match(host)) return a.users.includes(username)
+      return false
+    })
   }
 
   getLocalConfig().then(applyLocalConfig)
