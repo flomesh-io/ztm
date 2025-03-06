@@ -106,18 +106,32 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `View or change labels of an endpoint`,
+        usage: 'label',
+        options: `
+          --add     <label ...>  Add labels
+          --delete  <label ...>  Delete labels
+        `,
+        action: (args) => {
+          var add = args['--add'] || []
+          var del = args['--delete'] || []
+          return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => label(mesh, ep, add, del))
+        }
+      },
+
+      {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
-          -d, --data    <dir>           Specify the location of ZTM storage (default: ~/.ztm)
-                                        Only applicable to hubs and agents
-          -l, --listen  <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                        Only applicable to hubs and agents
-          -n, --names   <host:port...>  Specify one or more hub addresses (host:port) that are accessible to agents
-                                        Only applicable to hubs
-              --ca      <url>           Specify the location of an external CA service if any
-          -p, --permit  <pathname>      Specify an optional output filename for the root user's permit
-                                        Only applicable to hubs
+          -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+                                          Only applicable to hubs and agents
+          -l, --listen  <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+                                          Only applicable to hubs and agents
+          -n, --names   <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+                                          Only applicable to hubs
+              --ca      <url>             Specify the location of an external CA service if any
+          -p, --permit  <pathname>        Specify an optional output filename for the root user's permit
+                                          Only applicable to hubs
         `,
         notes: `Available object types include: hub, agent, app`,
         action: (args) => {
@@ -438,6 +452,31 @@ function identity() {
       }
     }
   )
+}
+
+//
+// Command: label
+//
+
+function label(mesh, ep, add, del) {
+  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/labels`).then(ret => {
+    var labels = JSON.decode(ret)
+    if (add.length > 0 || del.length > 0) {
+      del.forEach(label => labels = labels.filter(l => l !== label))
+      add.forEach(label => {
+        if (!labels.includes(label)) {
+          labels.push(label)
+        }
+      })
+      return client.post(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/labels`, JSON.encode(labels)).then(() => {
+        labels.sort()
+        labels.forEach(l => println(l))
+      })
+    } else {
+      labels.sort()
+      labels.forEach(l => println(l))
+    }
+  })
 }
 
 //
@@ -889,6 +928,14 @@ function getEndpoint(name, mesh) {
         'PORT': ep => ep.port,
         'STATUS': ep => ep.online ? 'Online' : 'Offline',
         'PING': ep => ep.ping ? ep.ping + 'ms' : 'n/a',
+        'LABELS': ep => {
+          var labels = ep.labels || []
+          if (labels.length > 3) {
+            labels.length = 3
+            labels[3] = '...'
+          }
+          return labels.join(' ')
+        }
       }
     )
   })
@@ -1007,6 +1054,7 @@ function describeEndpoint(name, mesh) {
     println(`Heartbeat: ${new Date(ep.heartbeat).toUTCString()}`)
     println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
     println(`Status:`, ep.online ? 'Online' : 'Offline')
+    println(`Labels:`, ep.labels?.length > 0 ? ep.labels.join(' ') : '(none)')
   })
 }
 

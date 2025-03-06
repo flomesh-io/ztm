@@ -82,6 +82,7 @@ var routes = Object.entries({
 // endpoints[uuid] = {
 //   id: 'uuid',
 //   name: 'ep-xxx',
+//   labels: ['a:b', 'c:d'],
 //   username: 'root',
 //   ip: 'x.x.x.x',
 //   port: 12345,
@@ -316,9 +317,16 @@ var postStatus = pipeline($=>$
   .replaceMessage(
     function (req) {
       var info = JSON.decode(req.body)
+      var labels = info.labels
+      if (labels instanceof Array) {
+        labels = labels.filter(l => typeof l === 'string')
+      } else {
+        labels = []
+      }
       Object.assign(
         $endpoint, {
           name: info.name,
+          labels,
           heartbeat: Date.now(),
         }
       )
@@ -344,18 +352,39 @@ var signCertificate = pipeline($=>$
 var getEndpoints = pipeline($=>$
   .replaceData()
   .replaceMessage(
-    () => response(200, Object.values(endpoints).map(
-      ep => ({
-        id: ep.id,
-        name: ep.name,
-        username: ep.username,
-        ip: ep.ip,
-        port: ep.port,
-        heartbeat: ep.heartbeat,
-        ping: ep.ping,
-        online: isEndpointOnline(ep),
-      })
-    ))
+    function (req) {
+      var url = new URL(req.head.path)
+      var params = url.searchParams
+      var name = params.get('name')
+      var keyword = params.get('keyword')
+      var offset = Number.parseInt(params.get('offset')) || 0
+      var limit = Number.parseInt(params.get('limit')) || 100
+      println(name, keyword, offset, limit)
+      return response(200, Object.values(endpoints).filter(
+        (ep, i) => {
+          if (i < offset || i >= offset + limit) return false
+          if (name && ep.name !== name) return false
+          if (keyword) {
+            if (name.indexOf(keyword) >= 0) return true
+            if (ep.labels instanceof Array && ep.labels.find(l => l.indexOf(keyword) >= 0)) return true
+            return false
+          }
+          return true
+        }
+      ).map(
+        ep => ({
+          id: ep.id,
+          name: ep.name,
+          labels: ep.labels || [],
+          username: ep.username,
+          ip: ep.ip,
+          port: ep.port,
+          heartbeat: ep.heartbeat,
+          ping: ep.ping,
+          online: isEndpointOnline(ep),
+        })
+      ))
+    }
   )
 )
 
@@ -368,6 +397,7 @@ var getEndpoint = pipeline($=>$
       return response(200, {
         id: ep.id,
         name: ep.name,
+        labels: ep.labels || [],
         username: ep.username,
         certificate: ep.certificate,
         ip: ep.ip,

@@ -8,6 +8,7 @@ export default function (rootDir, config) {
   var caCert
   var agentCert
   var agentKey
+  var agentLabels = []
   var agentLog = []
   var meshErrors = []
   var fs = null
@@ -29,6 +30,13 @@ export default function (rootDir, config) {
     connect: connectFromApp,
     fs: makeAppFilesystem,
   }
+
+  try {
+    var meta = JSON.decode(os.read(os.path.join(rootDir, 'meta.json')))
+    if (meta.labels instanceof Array) {
+      agentLabels = meta.labels.filter(l => typeof l === 'string')
+    }
+  } catch {}
 
   if (config.ca) {
     try {
@@ -308,7 +316,10 @@ export default function (rootDir, config) {
       requestHub.spawn(
         new Message(
           { method: 'POST', path: '/api/status' },
-          JSON.encode({ name: config.agent.name })
+          JSON.encode({
+            name: config.agent.name,
+            labels: agentLabels,
+          })
         )
       )
     }
@@ -541,6 +552,17 @@ export default function (rootDir, config) {
         'GET': function () {
           return response(200, getLog())
         }
+      },
+
+      '/api/labels': {
+        'GET': function () {
+          return response(200, getLabels())
+        },
+
+        'POST': function (_, req) {
+          setLabels(JSON.decode(req.body))
+          return response(201)
+        },
       },
 
       '/api/file-data/{hash}': {
@@ -1525,6 +1547,53 @@ export default function (rootDir, config) {
     return [...meshErrors]
   }
 
+  function getLabels() {
+    return [...agentLabels]
+  }
+
+  function setLabels(labels) {
+    if (labels instanceof Array) {
+      var all = {}
+      labels.forEach(l => all[l] = true)
+      agentLabels = Object.keys(all)
+      var filename = os.path.join(rootDir, 'meta.json')
+      try {
+        var meta = JSON.decode(os.read(filename))
+      } catch {}
+      if (typeof meta !== 'object') meta = {}
+      meta.labels = agentLabels
+      os.write(filename, JSON.encode(meta))
+    }
+    return true
+  }
+
+  function remoteGetLabels(ep) {
+    return selectHubWithThrow(ep).then(
+      (hub) => httpAgents.get(hub).request(
+        'GET', `/api/forward/${ep}/labels`
+      ).then(
+        res => {
+          remoteCheckResponse(res, 200)
+          return JSON.decode(res.body)
+        }
+      )
+    )
+  }
+
+  function remoteSetLabels(ep, labels) {
+    return selectHubWithThrow(ep).then(
+      (hub) => httpAgents.get(hub).request(
+        'POST', `/api/forward/${ep}/labels`,
+        null, JSON.encode(labels)
+      ).then(
+        res => {
+          remoteCheckResponse(res, 201)
+          return true
+        }
+      )
+    )
+  }
+
   function log(type, msg) {
     if (agentLog.length > 100) {
       agentLog.splice(0, agentLog.length - 100)
@@ -1561,6 +1630,10 @@ export default function (rootDir, config) {
     getStatus,
     getLog,
     getErrors,
+    getLabels,
+    setLabels,
+    remoteGetLabels,
+    remoteSetLabels,
     issuePermit,
     revokePermit,
     findEndpoint,
