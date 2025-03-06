@@ -251,6 +251,23 @@ function main(listen) {
       },
     },
 
+    '/api/meshes/{mesh}/endpoints/{ep}/labels': {
+      'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.getEndpointLabels(mesh, ep).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      },
+
+      'POST': function ({ mesh, ep }, req) {
+        mesh = URL.decodeComponent(mesh)
+        var labels = JSON.decode(req.body)
+        return api.setEndpointLabels(mesh, ep, labels).then(
+          ret => response(ret ? 201 : 403)
+        )
+      },
+    },
+
     '/api/meshes/{mesh}/endpoints/{ep}/log': {
       'GET': function ({ mesh, ep }) {
         mesh = URL.decodeComponent(mesh)

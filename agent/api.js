@@ -110,6 +110,26 @@ function getEndpoint(mesh, ep) {
   )
 }
 
+function getEndpointLabels(mesh, ep) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  if (!ep || ep === m.config.agent.id) {
+    return Promise.resolve(m.getLabels())
+  } else {
+    return m.remoteGetLabels(ep)
+  }
+}
+
+function setEndpointLabels(mesh, ep, labels) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  if (!ep || ep === m.config.agent.id) {
+    return Promise.resolve(m.setLabels(labels))
+  } else {
+    return m.remoteSetLabels(ep, labels)
+  }
+}
+
 function getEndpointLog(mesh, ep) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
@@ -234,6 +254,8 @@ export default {
   delPermit,
   allEndpoints,
   getEndpoint,
+  getEndpointLabels,
+  setEndpointLabels,
   getEndpointLog,
   allFiles,
   getFileInfo,
