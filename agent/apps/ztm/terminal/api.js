@@ -3,8 +3,8 @@ export default function ({ app, mesh }) {
   var $config
   var $shell
 
-  function allEndpoints() {
-    return mesh.discover()
+  function allEndpoints(id, name) {
+    return mesh.discover(id, name)
   }
 
   function getEndpointConfig(ep) {

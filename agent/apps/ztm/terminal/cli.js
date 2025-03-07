@@ -27,16 +27,9 @@ export default function ({ app, api, utils }) {
       )
     }
 
-    var endpoints = null
-
-    function allEndpoints() {
-      if (endpoints) return Promise.resolve(endpoints)
-      return api.allEndpoints().then(list => (endpoints = list))
-    }
-
     function selectEndpoint(name) {
       if (name) {
-        return allEndpoints().then(endpoints => {
+        return api.allEndpoints(name, name).then(endpoints => {
           var ep = endpoints.find(ep => ep.id === name)
           if (ep) return ep
           var list = endpoints.filter(ep => ep.name === name)
