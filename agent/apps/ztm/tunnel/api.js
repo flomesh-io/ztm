@@ -18,8 +18,8 @@ export default function ({ app, mesh }) {
     throw res?.head?.statusText || 'No response from peer'
   }
 
-  function allEndpoints() {
-    return mesh.discover()
+  function allEndpoints(id, name) {
+    return mesh.discover(id, name)
   }
 
   function allTunnels(ep) {

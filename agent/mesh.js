@@ -351,8 +351,9 @@ export default function (rootDir, config) {
       )
     }
 
-    function discoverEndpoints(name, keyword) {
+    function discoverEndpoints(id, name, keyword) {
       var params = []
+      if (id) params.push(`id=${URL.encodeComponent(id)}`)
       if (name) params.push(`name=${URL.encodeComponent(name)}`)
       if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
       var q = params.length > 0 ? '?' + params.join('&') : ''
@@ -856,8 +857,8 @@ export default function (rootDir, config) {
     }
   }
 
-  function discoverEndpoints(name, keyword) {
-    return hubs[0].discoverEndpoints(name, keyword)
+  function discoverEndpoints(id, name, keyword) {
+    return hubs[0].discoverEndpoints(id, name, keyword)
   }
 
   function discoverFiles(since, wait) {
@@ -1293,8 +1294,8 @@ export default function (rootDir, config) {
   //
 
   function discoverFromApp(provider, app) {
-    return function (name, keyword) {
-      return discoverEndpoints(name, keyword)
+    return function (id, name, keyword) {
+      return discoverEndpoints(id, name, keyword)
     }
   }
 
