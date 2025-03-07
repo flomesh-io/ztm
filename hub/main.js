@@ -359,13 +359,14 @@ var getEndpoints = pipeline($=>$
       var keyword = params.get('keyword')
       var offset = Number.parseInt(params.get('offset')) || 0
       var limit = Number.parseInt(params.get('limit')) || 100
-      println(name, keyword, offset, limit)
+      if (name) name = URL.decodeComponent(name)
+      if (keyword) keyword = URL.decodeComponent(keyword)
       return response(200, Object.values(endpoints).filter(
         (ep, i) => {
           if (i < offset || i >= offset + limit) return false
           if (name && ep.name !== name) return false
           if (keyword) {
-            if (name.indexOf(keyword) >= 0) return true
+            if (ep.name.indexOf(keyword) >= 0) return true
             if (ep.labels instanceof Array && ep.labels.find(l => l.indexOf(keyword) >= 0)) return true
             return false
           }

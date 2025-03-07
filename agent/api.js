@@ -93,11 +93,11 @@ function delPermit(mesh, username) {
   return m.revokePermit(username)
 }
 
-function allEndpoints(mesh) {
+function allEndpoints(mesh, name, keyword) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve([])
   var id = m.config.agent.id
-  return m.discoverEndpoints().then(
+  return m.discoverEndpoints(name, keyword).then(
     list => list.map(ep => ({ ...ep, isLocal: (ep.id === id) }))
   )
 }

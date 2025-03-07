@@ -223,6 +223,7 @@ function main(listen) {
     // Endpoint
     //   id: string (UUID)
     //   name: string
+    //   labels: [string]
     //   username: string
     //   certificate: string (PEM)
     //   isLocal: boolean
@@ -234,9 +235,16 @@ function main(listen) {
     //
 
     '/api/meshes/{mesh}/endpoints': {
-      'GET': function ({ mesh }) {
+      'GET': function ({ mesh }, req) {
         mesh = URL.decodeComponent(mesh)
-        return api.allEndpoints(mesh).then(
+        var params = new URL(req.head.path).searchParams
+        var name = params.get('name')
+        var keyw = params.get('keyword')
+        return api.allEndpoints(
+          mesh,
+          name && URL.decodeComponent(name),
+          keyw && URL.decodeComponent(keyw),
+        ).then(
           ret => response(200, ret)
         )
       },

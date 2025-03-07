@@ -917,10 +917,11 @@ function getMesh(name) {
 }
 
 function getEndpoint(name, mesh) {
-  var epName = normalizeName(name)
-  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints`).then(ret => {
+  var keyword = normalizeName(name)
+  var q = keyword ? '?keyword=' + URL.encodeComponent(keyword) : ''
+  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints${q}`).then(ret => {
     printTable(
-      JSON.decode(ret).filter(ep => !epName || ep.name.indexOf(epName) >= 0),
+      JSON.decode(ret),
       {
         'NAME': ep => ep.isLocal ? `${ep.name} (local)` : ep.name,
         'USER': ep => ep.username,
@@ -1370,8 +1371,9 @@ function normalizeAppName(name) {
   return { provider, name: app, tag }
 }
 
-function allEndpoints(mesh) {
-  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints`).then(ret => {
+function allEndpoints(mesh, keyword) {
+  var q = keyword ? '?keyword=' + URL.encodeComponent(keyword) : ''
+  return client.get(`/api/meshes/${uri(mesh.name)}/endpoints${q}`).then(ret => {
     var endpoints = {}
     JSON.decode(ret).forEach(ep => endpoints[ep.id] = ep)
     return endpoints
@@ -1401,14 +1403,16 @@ function selectMesh(name) {
 function selectEndpoint(name, mesh) {
   if (!mesh) throw 'no mesh specified'
   if (name) {
-    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints`).then(ret => {
-      var list = JSON.decode(ret)
-      var ep = list.find(ep => ep.id === name)
-      if (ep) return ep
-      list = list.filter(ep => ep.name === name)
-      if (list.length === 1) return list[0]
-      if (list.length === 0) throw `endpoint '${name}' not found`
-      throw `ambiguous endpoint name '${name}'`
+    var key = URL.encodeComponent(name)
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${key}`).then(ret => {
+      return JSON.decode(ret)
+    }).catch(() => {
+      return client.get(`/api/meshes/${uri(mesh.name)}/endpoints?name=${key}`).then(ret => {
+        var list = JSON.decode(ret)
+        if (list.length === 1) return list[0]
+        if (list.length === 0) throw `endpoint '${name}' not found`
+        throw `ambiguous endpoint name '${name}'`
+      })
     })
   } else {
     return client.get(`/api/meshes/${uri(mesh.name)}`).then(ret => {
