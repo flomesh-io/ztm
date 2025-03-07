@@ -18,6 +18,10 @@ var routes = Object.entries({
     'GET': () => getEndpoints,
   },
 
+  '/api/users': {
+    'GET': () => getUsers,
+  },
+
   '/api/endpoints/{ep}': {
     'GET': () => getEndpoint,
     'CONNECT': () => connectEndpoint,
@@ -364,10 +368,11 @@ var getEndpoints = pipeline($=>$
       if (name) name = URL.decodeComponent(name)
       if (keyword) keyword = URL.decodeComponent(keyword)
       return response(200, Object.values(endpoints).filter(
-        (ep, i) => {
-          if (i < offset || i >= offset + limit) return false
+        ep => {
           if (id || name) {
-            if (ep.id !== id && ep.name !== name) return false
+            if (ep.id !== id && ep.name !== name) {
+              return false
+            }
           }
           if (keyword) {
             if (ep.name.indexOf(keyword) >= 0) return true
@@ -376,6 +381,8 @@ var getEndpoints = pipeline($=>$
           }
           return true
         }
+      ).filter(
+        (_, i) => offset <= i && i < offset + limit
       ).map(
         ep => ({
           id: ep.id,
@@ -412,6 +419,49 @@ var getEndpoint = pipeline($=>$
         ping: ep.ping,
         online: isEndpointOnline(ep),
       })
+    }
+  )
+)
+
+var getUsers = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function (req) {
+      var url = new URL(req.head.path)
+      var params = url.searchParams
+      var name = params.get('name')
+      var keyword = params.get('keyword')
+      var offset = Number.parseInt(params.get('offset')) || 0
+      var limit = Number.parseInt(params.get('limit')) || 100
+      if (name) name = URL.decodeComponent(name)
+      if (keyword) keyword = URL.decodeComponent(keyword)
+      var users = {}
+      Object.values(endpoints).forEach(
+        ep => {
+          var name = ep.username
+          var user = (users[name] ??= {
+            name,
+            endpoints: {
+              count: 0,
+              instances: []
+            }
+          })
+          var epList = user.endpoints
+          if (epList.instances.length < 5) {
+            epList.instances.push({ id: ep.id, name: ep.name })
+          }
+          epList.count++
+        }
+      )
+      return response(200, Object.values(users).filter(
+        user => {
+          if (name && user.name !== name) return false
+          if (keyword && user.name.indexOf(keyword) < 0) return false
+          return true
+        }
+      ).filter(
+        (_, i) => offset <= i && i < offset + limit
+      ))
     }
   )
 )

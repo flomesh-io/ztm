@@ -351,14 +351,36 @@ export default function (rootDir, config) {
       )
     }
 
-    function discoverEndpoints(id, name, keyword) {
+    function discoverEndpoints(id, name, keyword, offset, limit) {
       var params = []
       if (id) params.push(`id=${URL.encodeComponent(id)}`)
       if (name) params.push(`name=${URL.encodeComponent(name)}`)
       if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
+      if (offset) params.push(`offset=${offset}`)
+      if (limit) params.push(`limit=${limit}`)
       var q = params.length > 0 ? '?' + params.join('&') : ''
       return requestHub.spawn(
         new Message({ method: 'GET', path: `/api/endpoints${q}` })
+      ).then(
+        function (res) {
+          if (res && res.head.status === 200) {
+            return JSON.decode(res.body)
+          } else {
+            return []
+          }
+        }
+      )
+    }
+
+    function discoverUsers(name, keyword, offset, limit) {
+      var params = []
+      if (name) params.push(`name=${URL.encodeComponent(name)}`)
+      if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
+      if (offset) params.push(`offset=${offset}`)
+      if (limit) params.push(`limit=${limit}`)
+      var q = params.length > 0 ? '?' + params.join('&') : ''
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: `/api/users${q}` })
       ).then(
         function (res) {
           if (res && res.head.status === 200) {
@@ -492,6 +514,7 @@ export default function (rootDir, config) {
       advertiseACL,
       checkACL,
       discoverEndpoints,
+      discoverUsers,
       discoverFiles,
       issuePermit,
       revokePermit,
@@ -857,8 +880,12 @@ export default function (rootDir, config) {
     }
   }
 
-  function discoverEndpoints(id, name, keyword) {
-    return hubs[0].discoverEndpoints(id, name, keyword)
+  function discoverEndpoints(id, name, keyword, offset, limit) {
+    return hubs[0].discoverEndpoints(id, name, keyword, offset, limit)
+  }
+
+  function discoverUsers(name, keyword, offset, limit) {
+    return hubs[0].discoverUsers(name, keyword, offset, limit)
   }
 
   function discoverFiles(since, wait) {
@@ -1294,8 +1321,9 @@ export default function (rootDir, config) {
   //
 
   function discoverFromApp(provider, app) {
-    return function (id, name, keyword) {
-      return discoverEndpoints(id, name, keyword)
+    return function (id, name, options) {
+      options = options || {}
+      return discoverEndpoints(id, name, options.keyword, options.offset, options.limit)
     }
   }
 
@@ -1645,6 +1673,7 @@ export default function (rootDir, config) {
     findFile,
     findApp,
     discoverEndpoints,
+    discoverUsers,
     discoverFiles,
     discoverApps,
     publishApp,
