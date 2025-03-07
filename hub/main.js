@@ -355,16 +355,20 @@ var getEndpoints = pipeline($=>$
     function (req) {
       var url = new URL(req.head.path)
       var params = url.searchParams
+      var id = params.get('id')
       var name = params.get('name')
       var keyword = params.get('keyword')
       var offset = Number.parseInt(params.get('offset')) || 0
       var limit = Number.parseInt(params.get('limit')) || 100
+      if (id) id = URL.decodeComponent(id)
       if (name) name = URL.decodeComponent(name)
       if (keyword) keyword = URL.decodeComponent(keyword)
       return response(200, Object.values(endpoints).filter(
         (ep, i) => {
           if (i < offset || i >= offset + limit) return false
-          if (name && ep.name !== name) return false
+          if (id || name) {
+            if (ep.id !== id && ep.name !== name) return false
+          }
           if (keyword) {
             if (ep.name.indexOf(keyword) >= 0) return true
             if (ep.labels instanceof Array && ep.labels.find(l => l.indexOf(keyword) >= 0)) return true

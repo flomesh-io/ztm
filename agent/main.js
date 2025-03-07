@@ -238,10 +238,12 @@ function main(listen) {
       'GET': function ({ mesh }, req) {
         mesh = URL.decodeComponent(mesh)
         var params = new URL(req.head.path).searchParams
+        var id = params.get('id')
         var name = params.get('name')
         var keyw = params.get('keyword')
         return api.allEndpoints(
           mesh,
+          id && URL.decodeComponent(id),
           name && URL.decodeComponent(name),
           keyw && URL.decodeComponent(keyw),
         ).then(

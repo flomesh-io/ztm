@@ -1404,15 +1404,14 @@ function selectEndpoint(name, mesh) {
   if (!mesh) throw 'no mesh specified'
   if (name) {
     var key = URL.encodeComponent(name)
-    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${key}`).then(ret => {
-      return JSON.decode(ret)
-    }).catch(() => {
-      return client.get(`/api/meshes/${uri(mesh.name)}/endpoints?name=${key}`).then(ret => {
-        var list = JSON.decode(ret)
-        if (list.length === 1) return list[0]
-        if (list.length === 0) throw `endpoint '${name}' not found`
-        throw `ambiguous endpoint name '${name}'`
-      })
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints?id=${key}&name=${key}`).then(ret => {
+      var list = JSON.decode(ret)
+      var ep = list.find(ep => ep.id === name)
+      if (ep) return ep
+      var dups = list.filter(ep => ep.name === name)
+      if (dups.length === 1) return list[0]
+      if (dups.length === 0) throw `endpoint '${name}' not found`
+      throw `ambiguous endpoint name '${name}'`
     })
   } else {
     return client.get(`/api/meshes/${uri(mesh.name)}`).then(ret => {
