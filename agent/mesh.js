@@ -8,6 +8,7 @@ export default function (rootDir, config) {
   var caCert
   var agentCert
   var agentKey
+  var agentLabels = []
   var agentLog = []
   var meshErrors = []
   var fs = null
@@ -29,6 +30,13 @@ export default function (rootDir, config) {
     connect: connectFromApp,
     fs: makeAppFilesystem,
   }
+
+  try {
+    var meta = JSON.decode(os.read(os.path.join(rootDir, 'meta.json')))
+    if (meta.labels instanceof Array) {
+      agentLabels = meta.labels.filter(l => typeof l === 'string')
+    }
+  } catch {}
 
   if (config.ca) {
     try {
@@ -308,7 +316,10 @@ export default function (rootDir, config) {
       requestHub.spawn(
         new Message(
           { method: 'POST', path: '/api/status' },
-          JSON.encode({ name: config.agent.name })
+          JSON.encode({
+            name: config.agent.name,
+            labels: agentLabels,
+          })
         )
       )
     }
@@ -340,9 +351,36 @@ export default function (rootDir, config) {
       )
     }
 
-    function discoverEndpoints() {
+    function discoverEndpoints(id, name, keyword, offset, limit) {
+      var params = []
+      if (id) params.push(`id=${URL.encodeComponent(id)}`)
+      if (name) params.push(`name=${URL.encodeComponent(name)}`)
+      if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
+      if (offset) params.push(`offset=${offset}`)
+      if (limit) params.push(`limit=${limit}`)
+      var q = params.length > 0 ? '?' + params.join('&') : ''
       return requestHub.spawn(
-        new Message({ method: 'GET', path: '/api/endpoints' })
+        new Message({ method: 'GET', path: `/api/endpoints${q}` })
+      ).then(
+        function (res) {
+          if (res && res.head.status === 200) {
+            return JSON.decode(res.body)
+          } else {
+            return []
+          }
+        }
+      )
+    }
+
+    function discoverUsers(name, keyword, offset, limit) {
+      var params = []
+      if (name) params.push(`name=${URL.encodeComponent(name)}`)
+      if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
+      if (offset) params.push(`offset=${offset}`)
+      if (limit) params.push(`limit=${limit}`)
+      var q = params.length > 0 ? '?' + params.join('&') : ''
+      return requestHub.spawn(
+        new Message({ method: 'GET', path: `/api/users${q}` })
       ).then(
         function (res) {
           if (res && res.head.status === 200) {
@@ -476,6 +514,7 @@ export default function (rootDir, config) {
       advertiseACL,
       checkACL,
       discoverEndpoints,
+      discoverUsers,
       discoverFiles,
       issuePermit,
       revokePermit,
@@ -541,6 +580,17 @@ export default function (rootDir, config) {
         'GET': function () {
           return response(200, getLog())
         }
+      },
+
+      '/api/labels': {
+        'GET': function () {
+          return response(200, getLabels())
+        },
+
+        'POST': function (_, req) {
+          setLabels(JSON.decode(req.body))
+          return response(201)
+        },
       },
 
       '/api/file-data/{hash}': {
@@ -830,8 +880,12 @@ export default function (rootDir, config) {
     }
   }
 
-  function discoverEndpoints() {
-    return hubs[0].discoverEndpoints()
+  function discoverEndpoints(id, name, keyword, offset, limit) {
+    return hubs[0].discoverEndpoints(id, name, keyword, offset, limit)
+  }
+
+  function discoverUsers(name, keyword, offset, limit) {
+    return hubs[0].discoverUsers(name, keyword, offset, limit)
   }
 
   function discoverFiles(since, wait) {
@@ -1267,8 +1321,9 @@ export default function (rootDir, config) {
   //
 
   function discoverFromApp(provider, app) {
-    return function () {
-      return discoverEndpoints()
+    return function (id, name, options) {
+      options = options || {}
+      return discoverEndpoints(id, name, options.keyword, options.offset, options.limit)
     }
   }
 
@@ -1525,6 +1580,53 @@ export default function (rootDir, config) {
     return [...meshErrors]
   }
 
+  function getLabels() {
+    return [...agentLabels]
+  }
+
+  function setLabels(labels) {
+    if (labels instanceof Array) {
+      var all = {}
+      labels.forEach(l => all[l] = true)
+      agentLabels = Object.keys(all)
+      var filename = os.path.join(rootDir, 'meta.json')
+      try {
+        var meta = JSON.decode(os.read(filename))
+      } catch {}
+      if (typeof meta !== 'object') meta = {}
+      meta.labels = agentLabels
+      os.write(filename, JSON.encode(meta))
+    }
+    return true
+  }
+
+  function remoteGetLabels(ep) {
+    return selectHubWithThrow(ep).then(
+      (hub) => httpAgents.get(hub).request(
+        'GET', `/api/forward/${ep}/labels`
+      ).then(
+        res => {
+          remoteCheckResponse(res, 200)
+          return JSON.decode(res.body)
+        }
+      )
+    )
+  }
+
+  function remoteSetLabels(ep, labels) {
+    return selectHubWithThrow(ep).then(
+      (hub) => httpAgents.get(hub).request(
+        'POST', `/api/forward/${ep}/labels`,
+        null, JSON.encode(labels)
+      ).then(
+        res => {
+          remoteCheckResponse(res, 201)
+          return true
+        }
+      )
+    )
+  }
+
   function log(type, msg) {
     if (agentLog.length > 100) {
       agentLog.splice(0, agentLog.length - 100)
@@ -1561,12 +1663,17 @@ export default function (rootDir, config) {
     getStatus,
     getLog,
     getErrors,
+    getLabels,
+    setLabels,
+    remoteGetLabels,
+    remoteSetLabels,
     issuePermit,
     revokePermit,
     findEndpoint,
     findFile,
     findApp,
     discoverEndpoints,
+    discoverUsers,
     discoverFiles,
     discoverApps,
     publishApp,

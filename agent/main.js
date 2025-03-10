@@ -223,6 +223,7 @@ function main(listen) {
     // Endpoint
     //   id: string (UUID)
     //   name: string
+    //   labels: [string]
     //   username: string
     //   certificate: string (PEM)
     //   isLocal: boolean
@@ -234,9 +235,21 @@ function main(listen) {
     //
 
     '/api/meshes/{mesh}/endpoints': {
-      'GET': function ({ mesh }) {
+      'GET': function ({ mesh }, req) {
         mesh = URL.decodeComponent(mesh)
-        return api.allEndpoints(mesh).then(
+        var params = new URL(req.head.path).searchParams
+        var id = params.get('id')
+        var name = params.get('name')
+        var keyw = params.get('keyword')
+        var offset = Number.parseInt(params.get('offset')) || 0
+        var limit = Number.parseInt(params.get('limit')) || 100
+        return api.allEndpoints(
+          mesh,
+          id && URL.decodeComponent(id),
+          name && URL.decodeComponent(name),
+          keyw && URL.decodeComponent(keyw),
+          offset, limit
+        ).then(
           ret => response(200, ret)
         )
       },
@@ -251,11 +264,58 @@ function main(listen) {
       },
     },
 
+    '/api/meshes/{mesh}/endpoints/{ep}/labels': {
+      'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.getEndpointLabels(mesh, ep).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      },
+
+      'POST': function ({ mesh, ep }, req) {
+        mesh = URL.decodeComponent(mesh)
+        var labels = JSON.decode(req.body)
+        return api.setEndpointLabels(mesh, ep, labels).then(
+          ret => response(ret ? 201 : 403)
+        )
+      },
+    },
+
     '/api/meshes/{mesh}/endpoints/{ep}/log': {
       'GET': function ({ mesh, ep }) {
         mesh = URL.decodeComponent(mesh)
         return api.getEndpointLog(mesh, ep).then(
           ret => ret ? response(200, ret) : response(404)
+        )
+      },
+    },
+
+    //
+    // Users
+    //   name: string
+    //   endpoints:
+    //     count: number
+    //     instances: [{
+    //       id: string
+    //       name: string
+    //     }]
+    //
+
+    '/api/meshes/{mesh}/users': {
+      'GET': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
+        var params = new URL(req.head.path).searchParams
+        var name = params.get('name')
+        var keyw = params.get('keyword')
+        var offset = Number.parseInt(params.get('offset')) || 0
+        var limit = Number.parseInt(params.get('limit')) || 100
+        return api.allUsers(
+          mesh,
+          name && URL.decodeComponent(name),
+          keyw && URL.decodeComponent(keyw),
+          offset, limit
+        ).then(
+          ret => response(200, ret)
         )
       },
     },

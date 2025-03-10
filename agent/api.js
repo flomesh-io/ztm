@@ -93,12 +93,12 @@ function delPermit(mesh, username) {
   return m.revokePermit(username)
 }
 
-function allEndpoints(mesh) {
+function allEndpoints(mesh, id, name, keyword, offset, limit) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve([])
-  var id = m.config.agent.id
-  return m.discoverEndpoints().then(
-    list => list.map(ep => ({ ...ep, isLocal: (ep.id === id) }))
+  var idLocal = m.config.agent.id
+  return m.discoverEndpoints(id, name, keyword, offset, limit).then(
+    list => list.map(ep => ({ ...ep, isLocal: (ep.id === idLocal) }))
   )
 }
 
@@ -110,6 +110,26 @@ function getEndpoint(mesh, ep) {
   )
 }
 
+function getEndpointLabels(mesh, ep) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  if (!ep || ep === m.config.agent.id) {
+    return Promise.resolve(m.getLabels())
+  } else {
+    return m.remoteGetLabels(ep)
+  }
+}
+
+function setEndpointLabels(mesh, ep, labels) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  if (!ep || ep === m.config.agent.id) {
+    return Promise.resolve(m.setLabels(labels))
+  } else {
+    return m.remoteSetLabels(ep, labels)
+  }
+}
+
 function getEndpointLog(mesh, ep) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
@@ -118,6 +138,12 @@ function getEndpointLog(mesh, ep) {
   } else {
     return m.remoteQueryLog(ep)
   }
+}
+
+function allUsers(mesh, name, keyword, offset, limit) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve([])
+  return m.discoverUsers(name, keyword, offset, limit)
 }
 
 function allFiles(mesh, since) {
@@ -234,7 +260,10 @@ export default {
   delPermit,
   allEndpoints,
   getEndpoint,
+  getEndpointLabels,
+  setEndpointLabels,
   getEndpointLog,
+  allUsers,
   allFiles,
   getFileInfo,
   delFileInfo,

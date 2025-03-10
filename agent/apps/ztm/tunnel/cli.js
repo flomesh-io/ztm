@@ -24,32 +24,33 @@ export default function ({ api, utils }) {
       return [buffer, new StreamEnd]
     }
 
-    var endpoints = null
-
-    function allEndpoints() {
-      if (endpoints) return Promise.resolve(endpoints)
-      return api.allEndpoints().then(list => (endpoints = list))
-    }
-
     function lookupEndpointNames(list) {
-      return allEndpoints().then(endpoints => (
-        list.map(id => {
-          var ep = endpoints.find(ep => ep.id === id)
-          return ep ? ep.name : id
-        })
-      ))
+      return Promise.all(list.map(id => api.allEndpoints(id))).then(
+        endpoints => {
+          endpoints = endpoints.flat()
+          return list.map(id => {
+            var ep = endpoints.find(ep => ep.id === id)
+            return ep ? ep.name : id
+          })
+        }
+      )
     }
 
     function lookupEndpointIDs(list) {
-      return allEndpoints().then(endpoints => (
-        list.flatMap(name => {
-          if (endpoints.some(ep => ep.id === name)) return name
-          var list = endpoints.filter(ep => ep.name === name)
-          if (list.length === 1) return list[0].id
-          if (list.length === 0) throw `Endpoint '${name}' not found`
-          return list.map(ep => ep.id)
-        })
-      ))
+      return Promise.all(list.map(name => api.allEndpoints(name, name))).then(
+        endpoints => {
+          endpoints = endpoints.flat()
+          var all = {}
+          list.forEach(name => {
+            if (endpoints.some(ep => ep.id === name)) return all[name] = true
+            var list = endpoints.filter(ep => ep.name === name)
+            if (list.length === 1) return all[list[0].id] = true
+            if (list.length === 0) throw `Endpoint '${name}' not found`
+            list.forEach(ep => all[ep.id] = true)
+          })
+          return Object.keys(all)
+        }
+      )
     }
 
     try {
