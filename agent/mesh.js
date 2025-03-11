@@ -351,10 +351,11 @@ export default function (rootDir, config) {
       )
     }
 
-    function discoverEndpoints(id, name, keyword, offset, limit) {
+    function discoverEndpoints(id, name, user, keyword, offset, limit) {
       var params = []
       if (id) params.push(`id=${URL.encodeComponent(id)}`)
       if (name) params.push(`name=${URL.encodeComponent(name)}`)
+      if (user) params.push(`user=${URL.encodeComponent(user)}`)
       if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
       if (offset) params.push(`offset=${offset}`)
       if (limit) params.push(`limit=${limit}`)
@@ -880,8 +881,8 @@ export default function (rootDir, config) {
     }
   }
 
-  function discoverEndpoints(id, name, keyword, offset, limit) {
-    return hubs[0].discoverEndpoints(id, name, keyword, offset, limit)
+  function discoverEndpoints(id, name, user, keyword, offset, limit) {
+    return hubs[0].discoverEndpoints(id, name, user, keyword, offset, limit)
   }
 
   function discoverUsers(name, keyword, offset, limit) {
@@ -1323,7 +1324,7 @@ export default function (rootDir, config) {
   function discoverFromApp(provider, app) {
     return function (id, name, options) {
       options = options || {}
-      return discoverEndpoints(id, name, options.keyword, options.offset, options.limit)
+      return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
     }
   }
 

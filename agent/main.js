@@ -240,6 +240,7 @@ function main(listen) {
         var params = new URL(req.head.path).searchParams
         var id = params.get('id')
         var name = params.get('name')
+        var user = params.get('user')
         var keyw = params.get('keyword')
         var offset = Number.parseInt(params.get('offset')) || 0
         var limit = Number.parseInt(params.get('limit')) || 100
@@ -247,6 +248,7 @@ function main(listen) {
           mesh,
           id && URL.decodeComponent(id),
           name && URL.decodeComponent(name),
+          user && URL.decodeComponent(user),
           keyw && URL.decodeComponent(keyw),
           offset, limit
         ).then(
@@ -298,6 +300,13 @@ function main(listen) {
     //     instances: [{
     //       id: string
     //       name: string
+    //       labels: [string]
+    //       ip: string
+    //       port: number
+    //       heartbeat: number
+    //       ping: number
+    //       online: boolean
+    //       isLocal: boolean
     //     }]
     //
 

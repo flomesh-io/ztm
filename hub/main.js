@@ -361,11 +361,13 @@ var getEndpoints = pipeline($=>$
       var params = url.searchParams
       var id = params.get('id')
       var name = params.get('name')
+      var user = params.get('user')
       var keyword = params.get('keyword')
       var offset = Number.parseInt(params.get('offset')) || 0
       var limit = Number.parseInt(params.get('limit')) || 100
       if (id) id = URL.decodeComponent(id)
       if (name) name = URL.decodeComponent(name)
+      if (user) user = URL.decodeComponent(user)
       if (keyword) keyword = URL.decodeComponent(keyword)
       return response(200, Object.values(endpoints).filter(
         ep => {
@@ -373,6 +375,9 @@ var getEndpoints = pipeline($=>$
             if (ep.id !== id && ep.name !== name) {
               return false
             }
+          }
+          if (user) {
+            if (ep.username !== user) return false
           }
           if (keyword) {
             if (ep.name.indexOf(keyword) >= 0) return true
@@ -448,7 +453,16 @@ var getUsers = pipeline($=>$
           })
           var epList = user.endpoints
           if (epList.instances.length < 5) {
-            epList.instances.push({ id: ep.id, name: ep.name })
+            epList.instances.push({
+              id: ep.id,
+              name: ep.name,
+              labels: ep.labels || [],
+              ip: ep.ip,
+              port: ep.port,
+              heartbeat: ep.heartbeat,
+              ping: ep.ping,
+              online: isEndpointOnline(ep),
+            })
           }
           epList.count++
         }
