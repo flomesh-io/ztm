@@ -186,8 +186,34 @@ export default class ZtmService {
 	getEndpointStats(mesh) {
 		return request(`/api/meshes/${mesh}/stats/endpoints`);
 	}
-	getEndpoints(mesh) {
-		return request(`/api/meshes/${mesh}/endpoints`);
+	makePaging(params) {
+		let paramsAry = [];
+		if(params && Object.keys(params).length>0){
+			if(params?.id){
+				paramsAry.push(`id=${encodeURIComponent(params.id)}`)
+			}
+			if(params?.name){
+				paramsAry.push(`name=${encodeURIComponent(params.name)}`)
+			}
+			if(params?.keyword){
+				paramsAry.push(`keyword=${encodeURIComponent(params.keyword)}`)
+			}
+			if(params?.offset){
+				paramsAry.push(`offset=${params.offset}`)
+			}
+			if(params?.limit){
+				paramsAry.push(`limit=${params.limit}`)
+			}
+			return `?${paramsAry.join('&')}`
+		} else {
+			return '';
+		}
+	}
+	getEndpoints(mesh, params) {
+		return request(`/api/meshes/${mesh}/endpoints${this.makePaging(params)}`);
+	}
+	getUsers(mesh, params) {
+		return request(`/api/meshes/${mesh}/users${this.makePaging(params)}`);
 	}
 	getVersion() {
 		return request(`/api/version`);
