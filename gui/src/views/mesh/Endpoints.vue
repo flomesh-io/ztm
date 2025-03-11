@@ -57,18 +57,10 @@ const getStatsTimer = () => {
 const users = ref([]);
 const usersMap = ref({});
 const endpointsMap = ref({});
-const getEndpoints = () => {
+const loadusers = () => {
 	
 	loading.value = true;
 	loader.value = true;
-	ztmService.getEndpoints(selectedMesh.value?.name)
-		.then(res => {
-			endpointsMap.value = {};
-			(res || []).forEach((ep)=>{
-				endpointsMap.value[ep?.id] = ep
-			})
-		})
-		.catch(err => console.log('Request Failed', err)); 
 	ztmService.getUsers(selectedMesh.value?.name)
 		.then(res => {
 			console.log('$$$ok',res)
@@ -84,7 +76,13 @@ const getEndpoints = () => {
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
-
+const loadepByUser = (user) => {
+	ztmService.getEndpoints(selectedMesh.value?.name, {user} )
+		.then(res => {
+			usersMap.value[user?.name].instances = res;
+		})
+		.catch(err => console.log('Request Failed', err)); 
+}
 const typing = ref('');
 
 const selectEp = ref();
@@ -189,7 +187,7 @@ const selectGroup = (group,type) => {
 	}
 }
 const load = () => {
-	getEndpoints();
+	loadusers();
 	loadgroup();
 }
 const saving = ref(false);
@@ -300,36 +298,36 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 														<b class="line-height-4">{{ user.name }} </b>
 														<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 														<b class="line-height-4">{{user.instances[0].name || user.instances[0].id}}</b>
-														<span v-if="endpointsMap[user.instances[0].id]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+														<span v-if="user.instances[0]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 													</div>
 													<div class="flex" v-if="!selectEp">
 														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[user.instances[0].id]">↑{{bitUnit(stats[user.instances[0].id]?.send)}}</span>
 														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[user.instances[0].id]">↓{{bitUnit(stats[user.instances[0].id]?.receive)}}</span>
-														<Status :run="endpointsMap[user.instances[0].id]?.online" :tip="timeago(endpointsMap[user.instances[0].id]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+														<Status :run="user.instances[0]?.online" :tip="timeago(user.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 													</div>
 												</div>
 												
 												<Accordion v-else class="w-full block" :value="key">
 													<AccordionPanel>
 														<AccordionHeader class="flex">
-															<div class="flex-item flex gap-2">
+															<div class="flex-item flex gap-2" @click="loadepByUser(key)">
 																<Avatar icon="pi pi-user" size="small" style="color: #2a1261" />
 																<b class="line-height-4">{{ key }}</b>
-																<OverlayBadge :value="user.instances.length" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
+																<OverlayBadge :value="user.cnt" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 															</div>
 														</AccordionHeader>
 														<AccordionContent>	
-															<div class="flex flex-col message-item pointer" v-for="(ep, index) in user.instances" :key="index" >
+															<div class="flex flex-col message-item pointer" v-for="(ep, index) in usersMap[key].instances" :key="index" >
 																<div class="flex flex-col py-3 pr-3 pl-2 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(ep)">
 																	<div class="flex-item flex gap-2">
 																		<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 																		<b class="line-height-4">{{ep.name || ep.id}}</b>
-																		<span v-if="endpointsMap[ep.id]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+																		<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 																	</div>
 																	<div class="flex" v-if="!selectEp">
 																		<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
 																		<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
-																		<Status :run="endpointsMap[ep.id]?.online" :tip="timeago(endpointsMap[ep.id]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+																		<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 																	</div>
 																</div>
 															</div>
@@ -358,12 +356,12 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 															<b class="line-height-4">{{ key }} </b>
 															<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 															<b class="line-height-4">{{usersMap[key].instances[0].name || usersMap[key].instances[0].id}}</b>
-															<span v-if="endpointsMap[usersMap[key].instances[0].id]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+															<span v-if="usersMap[key].instances[0]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 														</div>
 														<div class="flex" v-if="!selectEp">
 															<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[usersMap[key].instances[0].id]">↑{{bitUnit(stats[usersMap[key].instances[0].id]?.send)}}</span>
 															<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[usersMap[key].instances[0].id]">↓{{bitUnit(stats[usersMap[key].instances[0].id]?.receive)}}</span>
-															<Status :run="endpointsMap[usersMap[key].instances[0].id]?.online" :tip="timeago(endpointsMap[usersMap[key].instances[0].id]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+															<Status :run="usersMap[key].instances[0]?.online" :tip="timeago(usersMap[key].instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 															<Button severity="secondary" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="manage"/>
 														</div>
 													</div>
@@ -371,10 +369,10 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 													<Accordion v-else class="w-full block" :value="key">
 														<AccordionPanel>
 															<AccordionHeader class="flex">
-																<div class="flex-item flex gap-2">
+																<div class="flex-item flex gap-2" @click="loadepByUser(key)">
 																	<Avatar icon="pi pi-user" size="small" style="color: #2a1261" />
 																	<b class="line-height-4">{{ key }}</b>
-																	<OverlayBadge :value="usersMap[key].instances.length" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
+																	<OverlayBadge :value="usersMap[key].cnt" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 																</div>
 																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 															</AccordionHeader>
@@ -384,12 +382,12 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																		<div class="flex-item flex gap-2">
 																			<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 																			<b class="line-height-4">{{ep.name || ep.id}}</b>
-																			<span v-if="endpointsMap[ep.id]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+																			<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 																		</div>
 																		<div class="flex" v-if="!selectEp">
 																			<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
 																			<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
-																			<Status :run="endpointsMap[ep.id]?.online" :tip="timeago(endpointsMap[ep.id]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+																			<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 																		</div>
 																	</div>
 																</div>
@@ -413,7 +411,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 
 		<div class="flex-item" v-if="!!selectEp">
 			<div class="shadow mobile-fixed">
-				<EndpointDetail @back="() => selectEp=false" :ep="selectEp" @reload="getEndpoints"/>
+				<EndpointDetail @back="() => selectEp=false" :ep="selectEp" @reload="loadusers"/>
 			</div>
 		</div>
 		

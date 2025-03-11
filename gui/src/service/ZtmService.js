@@ -192,6 +192,9 @@ export default class ZtmService {
 			if(params?.id){
 				paramsAry.push(`id=${encodeURIComponent(params.id)}`)
 			}
+			if(params?.user){
+				paramsAry.push(`user=${encodeURIComponent(params.user)}`)
+			}
 			if(params?.name){
 				paramsAry.push(`name=${encodeURIComponent(params.name)}`)
 			}
