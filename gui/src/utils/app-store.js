@@ -4,6 +4,7 @@ import rdp from "@/assets/img/apps/rdp.png";
 import terminal from "@/assets/img/apps/terminal.png";
 import scriptIcon from "@/assets/img/apps/script.png";
 import chatIcon from "@/assets/img/apps/chat.png";
+import usersIcon from "@/assets/img/apps/users.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
 import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
@@ -95,6 +96,13 @@ const appMapping = {
 		icon: rdp,
 		name: "RDP",
 		component: RDPComponent
+	},
+	"ztm/users": {
+		icon: usersIcon,
+		url:'/#/mesh/endpoints',
+		name: "Users",
+		width:1280,
+		height:860,
 	},
 	"ztm/chat": {
 		icon: chatIcon,
