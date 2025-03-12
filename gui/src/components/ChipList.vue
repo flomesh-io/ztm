@@ -13,6 +13,10 @@ const props = defineProps({
 			type: String,
 			default: 'h'
 	},
+	listType: {
+			type: String,
+			default: null
+	},
 	listKey: {
 			type: String,
 			default: null
@@ -73,6 +77,48 @@ const typing = (e,idx) => {
 </script>
 
 <template>
+	<span v-if="props.listType == 'tag'">
+		<span v-if="props.direction == 'h'" v-for="(tag,tagidx) in props.list">
+			<Tag v-if="tagidx<props.list.length - 1" class="mr-2" >
+				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
+				<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
+			</Tag>
+			<Tag v-else-if="!slots.input" class="pl-0 pr-3">
+					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+						<i class="pi" :class="icon"/>
+					</span>
+					<span class="ml-2 font-medium">
+						<InputText v-if="!props.listKey" @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
+						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
+						<i class="pi pi-arrow-down-left" />
+					</span>
+			</Tag>
+			<slot v-else name="input"/>
+		</span>
+		<div v-else v-for="(tag,tagidx) in props.list">
+			<Tag v-if="tagidx<props.list.length - 1" class="pl-0">
+				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+					<i class="pi" :class="icon"/>
+				</span>
+				<span class="ml-2 font-medium">
+					<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
+					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
+				</span>
+			</Tag>
+			<Tag v-else-if="!slots.input" class="pl-0 pr-3">
+					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+						<i class="pi" :class="icon"/>
+					</span>
+					<span class="ml-2 font-medium">
+						<InputText v-if="!props.listKey" @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
+						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
+						<i class="pi pi-arrow-down-left" />
+					</span>
+			</Tag>
+			<slot v-else name="input"/>
+		</div>
+	</span>
+	<span v-else>
 		<span v-if="props.direction == 'h'" v-for="(tag,tagidx) in props.list">
 			<Chip v-if="tagidx<props.list.length - 1" class="mr-2 custom-chip" >
 				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
@@ -112,6 +158,7 @@ const typing = (e,idx) => {
 			</Chip>
 			<slot v-else name="input"/>
 		</div>
+	</span>
 </template>
 
 <style scoped lang="scss">
