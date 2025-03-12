@@ -352,25 +352,41 @@ export default function (rootDir, config) {
     }
 
     function discoverEndpoints(id, name, user, keyword, offset, limit) {
-      var params = []
-      if (id) params.push(`id=${URL.encodeComponent(id)}`)
-      if (name) params.push(`name=${URL.encodeComponent(name)}`)
-      if (user) params.push(`user=${URL.encodeComponent(user)}`)
-      if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
-      if (offset) params.push(`offset=${offset}`)
-      if (limit) params.push(`limit=${limit}`)
-      var q = params.length > 0 ? '?' + params.join('&') : ''
-      return requestHub.spawn(
-        new Message({ method: 'GET', path: `/api/endpoints${q}` })
-      ).then(
-        function (res) {
-          if (res && res.head.status === 200) {
-            return JSON.decode(res.body)
-          } else {
-            return []
+      if (id instanceof Array) {
+        return Promise.all(
+          id.map(id => requestHub.spawn(
+            new Message({ method: 'GET', path: `/api/endpoints/${id}` })
+          ).then(
+            function (res) {
+              if (res && res.head.status === 200) {
+                return JSON.decode(res.body)
+              } else {
+                return null
+              }
+            }
+          ))
+        )
+      } else {
+        var params = []
+        if (id) params.push(`id=${URL.encodeComponent(id)}`)
+        if (name) params.push(`name=${URL.encodeComponent(name)}`)
+        if (user) params.push(`user=${URL.encodeComponent(user)}`)
+        if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
+        if (offset) params.push(`offset=${offset}`)
+        if (limit) params.push(`limit=${limit}`)
+        var q = params.length > 0 ? '?' + params.join('&') : ''
+        return requestHub.spawn(
+          new Message({ method: 'GET', path: `/api/endpoints${q}` })
+        ).then(
+          function (res) {
+            if (res && res.head.status === 200) {
+              return JSON.decode(res.body)
+            } else {
+              return []
+            }
           }
-        }
-      )
+        )
+      }
     }
 
     function discoverUsers(name, keyword, offset, limit) {
@@ -1324,7 +1340,11 @@ export default function (rootDir, config) {
   function discoverFromApp(provider, app) {
     return function (id, name, options) {
       options = options || {}
-      return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
+      if (id instanceof Array) {
+        return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
+      } else {
+        return discoverEndpoints(id)
+      }
     }
   }
 
