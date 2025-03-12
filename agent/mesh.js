@@ -1350,11 +1350,21 @@ export default function (rootDir, config) {
 
   function connectFromApp(provider, app) {
     return function (ep, options) {
-      var isDedicated = Boolean(options?.dedicated)
-      var bind = options?.bind
-      var onState = options?.onState
-      var connectOptions = { bind, onState }
-      return toRemoteApp(ep, provider, app, isDedicated, connectOptions)
+      if (typeof ep === 'object') {
+        return connectApp(ep.provider, ep.app, username).then(p => {
+          if (p) {
+            return pipeline($=>$.pipe(p, () => ({ source: 'self' })))
+          } else {
+            throw `Local app ${$ep.app} not found`
+          }
+        })
+      } else {
+        var isDedicated = Boolean(options?.dedicated)
+        var bind = options?.bind
+        var onState = options?.onState
+        var connectOptions = { bind, onState }
+        return toRemoteApp(ep, provider, app, isDedicated, connectOptions)
+      }
     }
   }
 
