@@ -221,6 +221,9 @@ export default class ZtmService {
 	getVersion() {
 		return request(`/api/version`);
 	}
+	changeEpLabels(mesh, ep, labels) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/labels`, "POST", labels);
+	}
 	deleteMesh(name,callback) {
 		confirm.remove(() => {
 			request(`/api/meshes/${name}`,"DELETE").then((res) => {
