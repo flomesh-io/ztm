@@ -221,6 +221,7 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
       }
 
       var connect = meshEnv.connect(provider, appname)
+
       var request = function (ep, req) {
         var $response
         return pipeline($=>$
