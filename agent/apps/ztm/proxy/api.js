@@ -155,6 +155,7 @@ export default function ({ app, mesh }) {
         return new Message({ status: 404 })
       }
     }).to($=>$
+      .onStart(new Data)
       .detectProtocol(proto => $proto = proto)
       .pipe(
         function() {

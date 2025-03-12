@@ -1351,13 +1351,19 @@ export default function (rootDir, config) {
   function connectFromApp(provider, app) {
     return function (ep, options) {
       if (typeof ep === 'object') {
-        return connectApp(ep.provider, ep.app, username).then(p => {
-          if (p) {
-            return pipeline($=>$.pipe(p, () => ({ source: 'self' })))
-          } else {
-            throw `Local app ${$ep.app} not found`
-          }
-        })
+        var $appPipeline
+        return pipeline($=>$
+          .onStart(() => connectApp(ep.provider, ep.app, username).then(p => {
+            if (p) {
+              $appPipeline = p
+            } else {
+              $appPipeline = pipeline($=>$)
+              logError(`Local app ${$ep.app} not found`)
+              return new StreamEnd
+            }
+          }))
+          .pipe(() => $appPipeline, () => ({ source: 'self' }))
+        )
       } else {
         var isDedicated = Boolean(options?.dedicated)
         var bind = options?.bind
