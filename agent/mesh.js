@@ -2,7 +2,7 @@ import db from './db.js'
 import initFilesystem from './fs.js'
 import initApps from './apps.js'
 
-export default function (rootDir, config) {
+export default function (rootDir, listen, config, onConfigUpdate) {
   var meshName = config.name
   var username
   var caCert
@@ -25,18 +25,15 @@ export default function (rootDir, config) {
 
   var meshEnv = {
     name: meshName,
-    url: `http://${config.agent.listen}/api/meshes/${meshName}`,
+    url: `http://${listen}/api/meshes/${meshName}`,
     discover: discoverFromApp,
     connect: connectFromApp,
     fs: makeAppFilesystem,
   }
 
-  try {
-    var meta = JSON.decode(os.read(os.path.join(rootDir, 'meta.json')))
-    if (meta.labels instanceof Array) {
-      agentLabels = meta.labels.filter(l => typeof l === 'string')
-    }
-  } catch {}
+  if (config.agent.labels instanceof Array) {
+    agentLabels = config.agent.labels.filter(l => typeof l === 'string')
+  }
 
   if (config.ca) {
     try {
@@ -52,6 +49,7 @@ export default function (rootDir, config) {
     try {
       agentCert = new crypto.Certificate(config.agent.certificate)
       username = agentCert.subject?.commonName
+      logInfo(`Agent certificate expires in ${getCertificateDays()} days`)
     } catch {
       meshError('Invalid agent certificate')
     }
@@ -324,6 +322,34 @@ export default function (rootDir, config) {
       )
     }
 
+    function renewCertificate() {
+      if (closed) return
+      logInfo(`Renewing agent certificate...`)
+      return requestHub.spawn(
+        new Message(
+          { method: 'POST', path: `/api/sign/${username}`},
+          new crypto.PublicKey(agentKey).toPEM()
+        )
+      ).then(
+        res => {
+          var status = res?.head?.status
+          if (status === 201) {
+            try {
+              agentCert = new crypto.Certificate(res.body.toString())
+              tlsOptions.certificate.cert = agentCert
+              config.agent.certificate = agentCert.toPEM().toString()
+              onConfigUpdate(config)
+              logInfo(`New agent certificate expires in ${getCertificateDays()} days`)
+            } catch {
+              logError(`Cannot renew agent certificate with ${res?.body?.toString?.()}`)
+            }
+          } else {
+            logError(`Cannot renew agent certificate with status ${status}`)
+          }
+        }
+      )
+    }
+
     function advertiseFilesystem(files) {
       filesystemLatest = files
       filesystemUpdate = files
@@ -527,6 +553,7 @@ export default function (rootDir, config) {
       isConnected: () => connections.size > 0,
       address,
       heartbeat,
+      renewCertificate,
       advertiseFilesystem,
       advertiseACL,
       checkACL,
@@ -801,8 +828,22 @@ export default function (rootDir, config) {
   function heartbeat() {
     if (!exited) {
       hubs.forEach(h => h.heartbeat())
-      new Timeout(15).wait().then(heartbeat)
+      renewCertificate().then(() => {
+        new Timeout(15).wait().then(heartbeat)
+      })
     }
+  }
+
+  // Certificate expiration
+  function getCertificateDays() {
+    return Math.floor((agentCert.notAfter - Date.now()) / (24*60*60*1000))
+  }
+
+  // Renew certificate
+  function renewCertificate() {
+    var days = getCertificateDays()
+    if (days > 100) return Promise.resolve()
+    return hubs[0].renewCertificate()
   }
 
   // Advertise the filesystem
@@ -1626,13 +1667,8 @@ export default function (rootDir, config) {
       var all = {}
       labels.forEach(l => all[l] = true)
       agentLabels = Object.keys(all)
-      var filename = os.path.join(rootDir, 'meta.json')
-      try {
-        var meta = JSON.decode(os.read(filename))
-      } catch {}
-      if (typeof meta !== 'object') meta = {}
-      meta.labels = agentLabels
-      os.write(filename, JSON.encode(meta))
+      config.agent.labels = [...agentLabels]
+      onConfigUpdate(config)
     }
     return true
   }
