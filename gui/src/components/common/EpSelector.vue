@@ -8,7 +8,7 @@ import ZtmService from '@/service/ZtmService';
 
 const { t } = useI18n();
 const ztmService = new ZtmService();
-const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint','size']);
+const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint','size','class','user']);
 const emits = defineEmits(['select','update:modelValue']);
 
 const endpoints = ref([]);
@@ -30,7 +30,10 @@ const getEndpoints = (callback) => {
 	if(!filter.value.keyword && endpoints.value.length == 0 && props.mesh){
 		endpoints.value = currentEp.value
 	}
-	ztmService.getEndpoints(props.mesh?.name,filter.value)
+	ztmService.getEndpoints(props.mesh?.name,{
+		...filter.value,
+		user:props.user
+	})
 		.then(res => {
 			endpoints.value = res || [];
 			loading.value = false;
@@ -51,9 +54,6 @@ const select = () => {
 	}
 }
 const selectFilter = (v) => {
-	selectEndpoints.value = [];
-	selectEndpoint.value = [];
-	select();
 	filter.value.keyword = v?.value||"";
 	getEndpoints();
 }
@@ -85,6 +85,7 @@ onMounted(()=>{
 		@change="select" 
 		:options="endpoints" 
 		optionLabel="name" 
+		:class="props.class"
 		optionValue="id" 
 		:filter="true" 
 		:placeholder="t('Endpoints')"
@@ -109,7 +110,7 @@ onMounted(()=>{
 		optionLabel="name" 
 		optionValue="id"
 		:placeholder="t('Endpoint')" 
-		class="flex" >
+		:class="props.class">
 			<template #option="slotProps">
 				<i class="pi pi-mobile mr-1"/>
 				{{ slotProps.option.name }}

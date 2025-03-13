@@ -28,8 +28,8 @@ export default class FileService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
-	getEndpoints() {
-		return ztmService.getEndpoints();
+	getEndpoints(mesh,params) {
+		return ztmService.getEndpoints(mesh,params);
 	}
 	getDir() {
 		return documentDir();

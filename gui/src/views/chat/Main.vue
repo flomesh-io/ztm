@@ -7,6 +7,7 @@ import History from './History.vue'
 import { dayjs, extend } from '@/utils/dayjs';
 import { useRouter } from 'vue-router'
 import ChatService from '@/service/ChatService';
+import ZtmService from '@/service/ZtmService';
 import { platform } from '@/utils/platform';
 import gptSvg from "@/assets/img/gpt.png";
 import { resize, position } from "@/utils/window";
@@ -19,6 +20,7 @@ const emits = defineEmits(['close'])
 const store = useStore();
 const router = useRouter();
 const chatService = new ChatService();
+const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -151,18 +153,37 @@ const usersTree = computed(()=>{
 	const _users = [];
 	users.value.forEach((user,index)=>{
 		_users.push({
-			key:user,
-			label:user,
-			data:user,
+			key:user?.name,
+			label:user?.name,
+			data:user?.name,
 		})
 	});
 	return _users;
 })
-const loadusers = () => {
-	chatService.getUsers()
+const filter = ref({
+	keyword:'',
+	limit:100,
+	offset:0
+})
+
+const getUsers = () => {
+	ztmService.getUsers(selectedMesh.value?.name,filter.value)
 		.then(res => {
+			if(filter.value.offset == 0){
+				users.value = res || [];
+			} else {
+				users.value = users.value.concat(res);
+			}
+			if(res.length == filter.value.limit){
+				filter.value.offset += filter.value.limit;
+				getUsers();
+			}
 			users.value = res.filter((item) => item != selectedMesh.value?.agent?.username);
 		})
+}
+const loadusers = () => {
+	filter.value.offset = 0;
+	getUsers();
 }
 const back = () => {
 	if(platform() == 'web' || !platform()){
@@ -197,6 +218,10 @@ watch(()=>selectedMesh,()=>{
 	deep:true,
 	immediate:true
 })
+const makeFilter = (v) => {
+	filter.keyword = v.value;
+	loadusers();
+}
 onActivated(()=>{
 	loadrooms();
 	loadusers();
@@ -230,7 +255,7 @@ onActivated(()=>{
 								<Button icon="pi pi-check" @click="newChat" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
 							</template>
 					</AppHeader>
-					<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
+					<Tree :filter="true" @filter="makeFilter" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
 						<template #nodeicon="slotProps">
 								<UserAvatar :username="slotProps.node?.label" size="20"/>
 						</template>

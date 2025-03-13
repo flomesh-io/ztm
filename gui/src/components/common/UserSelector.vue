@@ -8,7 +8,7 @@ import ZtmService from '@/service/ZtmService';
 
 const { t } = useI18n();
 const ztmService = new ZtmService();
-const props = defineProps(['multiple','modelValue','mesh','disabled','app','user','size']);
+const props = defineProps(['multiple','modelValue','mesh','disabled','app','user','size','class']);
 const emits = defineEmits(['select','update:modelValue']);
 
 const users = ref([]);
@@ -51,9 +51,6 @@ const select = () => {
 	}
 }
 const selectFilter = (v) => {
-	selectUsers.value = [];
-	selectUser.value = [];
-	select();
 	filter.value.keyword = v?.value||"";
 	getUsers();
 }
@@ -75,6 +72,7 @@ onMounted(()=>{
 	<MultiSelect 
 		v-if="props.multiple" 
 		@filter="selectFilter" 
+		:class="props.class"
 		:disabled="!!props.disabled"
 		:size="props.size"
 		maxSelectedLabels="2" 
@@ -107,8 +105,8 @@ onMounted(()=>{
 		:loading="loading"  
 		optionLabel="name" 
 		optionValue="name"
-		:placeholder="t('User')" 
-		class="flex" >
+		:placeholder="t('User')"
+		:class="props.class" >
 			<template #option="slotProps">
 				<i class="pi pi-user mr-1"/>
 				{{ slotProps.option.name }}
