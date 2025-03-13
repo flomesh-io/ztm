@@ -82,7 +82,6 @@ const loadusers = () => {
 	ztmService.getUsers(selectedMesh.value?.name,filter.value)
 		.then(res => {
 			if(filter.value.offset == 0){
-				usersMap.value = {};
 				users.value = res || [];
 			} else {
 				users.value = users.value.concat(res);
@@ -187,9 +186,9 @@ const usersTree = computed(()=>{
 	const _users = [];
 	users.value.forEach((user,index)=>{
 		_users.push({
-			key:user,
-			label:user,
-			data:user,
+			key:user?.name,
+			label:user?.name,
+			data:user?.name,
 		})
 	});
 	return _users;
@@ -465,14 +464,14 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 							<Button :loading="saving" icon="pi pi-check" @click="appendUsers" :disabled="Object.keys(selectedUsers).length==0"/>
 						</template>
 				</AppHeader>
-				<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
-					<template #nodeicon="slotProps">
-							<UserAvatar :username="slotProps.node?.label" size="20"/>
-					</template>
-					<template #default="slotProps">
-							<b class="px-2">{{ slotProps.node?.label }}</b>
-					</template>
-				</Tree>
+				<UserSelector
+					:app="true" 
+					size="small"
+					class="w-full"
+					:mesh="selectedMesh"
+					multiple="tree" 
+					:user="selectedMesh?.agent?.username" 
+					v-model="selectedUsers" />
 		</Dialog>
 		
 		<Dialog class="noheader" v-model:visible="visibleImport" modal :dismissableMask="true">

@@ -148,43 +148,6 @@ const cnt = () => {
 	})
 	return rtn;
 }
-const users = ref([]);
-const usersTree = computed(()=>{
-	const _users = [];
-	users.value.forEach((user,index)=>{
-		_users.push({
-			key:user?.name,
-			label:user?.name,
-			data:user?.name,
-		})
-	});
-	return _users;
-})
-const filter = ref({
-	keyword:'',
-	limit:100,
-	offset:0
-})
-
-const getUsers = () => {
-	ztmService.getUsers(selectedMesh.value?.name,filter.value)
-		.then(res => {
-			if(filter.value.offset == 0){
-				users.value = res || [];
-			} else {
-				users.value = users.value.concat(res);
-			}
-			if(res.length == filter.value.limit){
-				filter.value.offset += filter.value.limit;
-				getUsers();
-			}
-			users.value = res.filter((item) => item != selectedMesh.value?.agent?.username);
-		})
-}
-const loadusers = () => {
-	filter.value.offset = 0;
-	getUsers();
-}
 const back = () => {
 	if(platform() == 'web' || !platform()){
 		router.go(-1)
@@ -212,19 +175,13 @@ const backhistory = () => {
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
 		loadrooms();
-		loadusers();
 	}
 },{
 	deep:true,
 	immediate:true
 })
-const makeFilter = (v) => {
-	filter.keyword = v.value;
-	loadusers();
-}
 onActivated(()=>{
 	loadrooms();
-	loadusers();
 })
 
 </script>
@@ -241,7 +198,7 @@ onActivated(()=>{
 						<b>{{t('Messages')}} <span v-if="cnt>0">({{cnt}})</span></b>
 					</template>
 					<template #end> 
-						<Button text v-tooltip="t('New Chat')" icon="pi pi-plus"  @click="()=> {loadusers();visibleUserSelector = true}" />
+						<Button text v-tooltip="t('New Chat')" icon="pi pi-plus"  @click="()=> {visibleUserSelector = true}" />
 					</template>
 			</AppHeader>
 			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal header="New chat" :style="{ width: '25rem' }">
@@ -255,14 +212,14 @@ onActivated(()=>{
 								<Button icon="pi pi-check" @click="newChat" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
 							</template>
 					</AppHeader>
-					<Tree :filter="true" @filter="makeFilter" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
-						<template #nodeicon="slotProps">
-								<UserAvatar :username="slotProps.node?.label" size="20"/>
-						</template>
-						<template #default="slotProps">
-								<b class="px-2">{{ slotProps.node?.label }}</b>
-						</template>
-					</Tree>
+					<UserSelector
+						:app="true" 
+						size="small"
+						class="w-full"
+						:mesh="selectedMesh"
+						multiple="tree" 
+						:user="selectedMesh?.agent?.username" 
+						v-model="selectedNewChatUsers" />
 			</Dialog>
 			
 			<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top': (isMobile && !selectRoom?'50px':'35px')}" >
@@ -315,12 +272,12 @@ onActivated(()=>{
 		</div>
 		<div v-if="manager && history" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<History :users="users" v-model:room="selectRoom" @back="backhistory" />
+				<History v-model:room="selectRoom" @back="backhistory" />
 			</div>
 		</div>
 		<div v-else-if="manager && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<Setting :users="users" v-model:room="selectRoom" @back="backmanage" @history="() => history = true"/>
+				<Setting v-model:room="selectRoom" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
 		

@@ -11,7 +11,7 @@ const { t, locale } = useI18n();
 extend(locale.value)
 const store = useStore();
 const chatService = new ChatService();
-const props = defineProps(['room','users']);
+const props = defineProps(['room']);
 const emits = defineEmits(['back','ep','update:room']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]

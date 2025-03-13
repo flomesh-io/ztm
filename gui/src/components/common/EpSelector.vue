@@ -28,7 +28,7 @@ const currentEp = computed(()=>{
 const getEndpoints = (callback) => {
 	loading.value = true;
 	if(!filter.value.keyword && endpoints.value.length == 0 && props.mesh){
-		endpoints.value = currentEp.value
+		endpoints.value = [currentEp.value]
 	}
 	ztmService.getEndpoints(props.mesh?.name,{
 		...filter.value,
@@ -72,7 +72,6 @@ onMounted(()=>{
 </script>
 
 <template>
-	
 	<MultiSelect 
 		v-if="props.multiple" 
 		@filter="selectFilter" 
@@ -93,8 +92,8 @@ onMounted(()=>{
 		style="max-width: 200px;" >
 		<template #option="slotProps">
 			<i class="pi pi-mobile mr-1"/>
-			{{ slotProps.option.name }}
-			<Tag v-if="currentEp.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+			{{ slotProps.option?.name }}
+			<Tag v-if="currentEp?.id == slotProps.option?.id" :value="t('Local')" class="ml-2" severity="contrast"/>
 		</template>
 	</MultiSelect>
 	<Select
@@ -113,8 +112,8 @@ onMounted(()=>{
 		:class="props.class">
 			<template #option="slotProps">
 				<i class="pi pi-mobile mr-1"/>
-				{{ slotProps.option.name }}
-				<Tag v-if="currentEp.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+				{{ slotProps.option?.name }}
+				<Tag v-if="currentEp?.id == slotProps.option?.id" :value="t('Local')" class="ml-2" severity="contrast"/>
 			</template>
 	</Select>
 </template>

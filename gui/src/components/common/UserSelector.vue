@@ -20,15 +20,15 @@ const filter = ref({
 })
 const currentUser = computed(()=>{
 	if(!!props.app){
-		return [{name:props.user}]
+		return {name:props.user}
 	}else{
-		return [{name:props.mesh?.agent?.username}]
+		return {name:props.mesh?.agent?.username}
 	}
 })
 const getUsers = (callback) => {
 	loading.value = true;
 	if(!filter.value.keyword && users.value.length == 0 && props.mesh){
-		users.value = currentUser.value
+		users.value = [currentUser.value]
 	}
 	ztmService.getUsers(props.mesh?.name,filter.value)
 		.then(res => {
@@ -39,10 +39,14 @@ const getUsers = (callback) => {
 			loading.value = false;
 		}); 
 }
+const selectedTreeUsers = ref({});
 const selectUsers = ref([]);
 const selectUser = ref();
 const select = () => {
-	if(!!props.multiple){
+	if(props.multiple == 'tree'){
+		emits('select',selectedTreeUsers.value);
+		emits('update:modelValue',selectedTreeUsers.value);
+	} else if(!!props.multiple){
 		emits('select',selectUsers.value);
 		emits('update:modelValue',selectUsers.value);
 	} else {
@@ -54,9 +58,22 @@ const selectFilter = (v) => {
 	filter.value.keyword = v?.value||"";
 	getUsers();
 }
+const usersTree = computed(()=>{
+	const _users = [];
+	users.value.forEach((user,index)=>{
+		_users.push({
+			key:user?.name,
+			label:user?.name,
+			data:user?.name,
+		})
+	});
+	return _users;
+})
 watch(()=>props.modelValue,()=>{
 	if(props.modelValue){
-		if(!!props.multiple){
+		if(props.multiple == 'tree'){
+			selectedTreeUsers.value = props.modelValue
+		}else if(!!props.multiple){
 			selectUsers.value = props.modelValue
 		}else{
 			selectUser.value = props.modelValue
@@ -69,8 +86,25 @@ onMounted(()=>{
 </script>
 
 <template>
+	<Tree 
+		v-if="props.multiple == 'tree'" 
+		:filter="true" 
+		@filter="selectFilter" 
+		filterMode="lenient" 
+		v-model:selectionKeys="selectedTreeUsers" 
+		:value="usersTree" 
+		@node-select="select"
+		selectionMode="checkbox" 
+		class="w-full md:w-[30rem]">
+		<template #nodeicon="slotProps">
+				<UserAvatar :username="slotProps.node?.label" size="20"/>
+		</template>
+		<template #default="slotProps">
+				<b class="px-2">{{ slotProps.node?.label }}</b>
+		</template>
+	</Tree>
 	<MultiSelect 
-		v-if="props.multiple" 
+		v-else-if="props.multiple" 
 		@filter="selectFilter" 
 		:class="props.class"
 		:disabled="!!props.disabled"
