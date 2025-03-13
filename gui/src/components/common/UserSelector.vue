@@ -8,7 +8,7 @@ import ZtmService from '@/service/ZtmService';
 
 const { t } = useI18n();
 const ztmService = new ZtmService();
-const props = defineProps(['multiple','modelValue','mesh','disabled','app','user']);
+const props = defineProps(['multiple','modelValue','mesh','disabled','app','user','size']);
 const emits = defineEmits(['select','update:modelValue']);
 
 const users = ref([]);
@@ -44,10 +44,10 @@ const selectUser = ref();
 const select = () => {
 	if(!!props.multiple){
 		emits('select',selectUsers.value);
-		emits('update:value',selectUsers.value);
+		emits('update:modelValue',selectUsers.value);
 	} else {
 		emits('select',selectUser.value);
-		emits('update:value',selectUser.value);
+		emits('update:modelValue',selectUser.value);
 	}
 }
 const selectFilter = (v) => {
@@ -76,6 +76,7 @@ onMounted(()=>{
 		v-if="props.multiple" 
 		@filter="selectFilter" 
 		:disabled="!!props.disabled"
+		:size="props.size"
 		maxSelectedLabels="2" 
 		:loading="loading"  
 		:emptyMessage="t('No User')"
@@ -91,13 +92,14 @@ onMounted(()=>{
 		<template #option="slotProps">
 			<i class="pi pi-user mr-1"/>
 			{{ slotProps.option.name }}
-			<Tag v-if="currentUser.name == slotProps.option.name" value="Local" class="ml-2" severity="contrast"/>
+			<Tag v-if="currentUser.name == slotProps.option.name" value="Me" class="ml-2" severity="contrast"/>
 		</template>
 	</MultiSelect>
 	<Select
 		v-else
 		:disabled="!!props.disabled"
 		v-model="selectUser"  
+		:size="props.size"
 		@change="select" 
 		:emptyMessage="t('No User')"
 		:options="users" 
@@ -110,7 +112,7 @@ onMounted(()=>{
 			<template #option="slotProps">
 				<i class="pi pi-user mr-1"/>
 				{{ slotProps.option.name }}
-				<Tag v-if="currentUser.name == slotProps.option.name" value="Local" class="ml-2" severity="contrast"/>
+				<Tag v-if="currentUser.name == slotProps.option.name" value="Me" class="ml-2" severity="contrast"/>
 			</template>
 	</Select>
 </template>

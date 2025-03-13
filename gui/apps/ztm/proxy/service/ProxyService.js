@@ -1,6 +1,8 @@
 import { request, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default class ProxyService {
 	getInfo() {
 		return request(`/api/appinfo`);
@@ -11,8 +13,8 @@ export default class ProxyService {
 	getUsers() {
 		return request(`/api/users`);
 	}
-	getEndpoints() {
-		return request(`/api/endpoints`);
+	getEndpoints(mesh,params) {
+		return ztmService.getEndpoints(mesh,params);
 	}
 	getProxy(ep) {
 		return request(`/api/endpoints/${ep}/config`)

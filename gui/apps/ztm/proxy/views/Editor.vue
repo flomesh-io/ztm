@@ -65,12 +65,6 @@ const save = () => {
 	})
 }
 
-const users = ref([])
-const getUsers = () => {
-	proxyService.getUsers().then((res)=>{
-		users.value = res || [];
-	})
-}
 const groups = ref([]);
 const getGroups = () => {
 	proxyService.getGroups().then((res)=>{
@@ -96,7 +90,6 @@ const loaddata = () => {
 			enableRoutingRules.value = true;
 		}
 	})
-	getUsers();
 	getGroups();
 }
 onMounted(() => {
@@ -188,7 +181,12 @@ const ruleType = ref(t('Users'))
 									<div class="flex w-full mb-4" v-for="(rule,index) in config.rules">
 										<div style="min-width: 200px;" class="p-1" v-if="rule.users && rule.users.length>0">
 											<FloatLabel>
-												<MultiSelect size="small" class="w-full"  v-model="rule.users" :options="users" :filter="users.length>8" />
+												<UserSelector
+													:app="true" 
+													size="small"
+													:multiple="true" 
+													:user="info?.username" 
+													v-model="rule.users" />
 												<label >{{t('Users')}}</label>
 											</FloatLabel>
 										</div>
@@ -222,7 +220,12 @@ const ruleType = ref(t('Users'))
 											<SelectButton class="w-10rem" size="small" v-model="ruleType" :options="[t('Users'),t('Group')]" />
 										</div>
 										<div v-if="ruleType == t('Users')" class="flex-item p-1">
-											<MultiSelect size="small" style="max-width: 200px;" class="w-full" v-model="rule.users" :options="users" :filter="users.length>8" :placeholder="t('Users')"/>
+											<UserSelector
+												:app="true" 
+												size="small"
+												:multiple="true" 
+												:user="info?.username" 
+												v-model="rule.users" />
 										</div>
 										<div v-else class="flex-item p-1">
 											<Select size="small" style="max-width: 200px;" class="w-full" v-model="rule.group" :options="groups" :placeholder="t('Group')" optionLabel="name" optionValue="id"/>

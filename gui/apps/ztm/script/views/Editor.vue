@@ -54,21 +54,10 @@ const op = ref();
 const toggle = (event) => {
 	op.value.toggle(event);
 }
-const endpoints = ref([]);
-const getEndpoints = () => {
-	scriptService.getEndpoints()
-		.then(res => {
-			console.log("Endpoints:")
-			console.log(res)
-			endpoints.value = res || [];
-		})
-		.catch(err => console.log('Request Failed', err)); 
-}
 const windowHeight = ref(window.innerHeight);
 const viewHeight = computed(() => windowHeight.value - 80);
 onMounted(()=>{
 	name.value = '';
-	getEndpoints();
 })
 const show = () => {
 	emits('show');
@@ -105,13 +94,11 @@ defineExpose({ setPjs })
 				</template>
 		
 				<template #end> 
-					<Select
-						v-model="selectEp" 
-						:options="endpoints" 
-						optionLabel="name" 
-						optionValue="id"
-						:placeholder="t('Endpoint')" 
-						class="flex"></Select>
+					<EpSelector 
+						:app="true" 
+						:multiple="false" 
+						:endpoint="info?.endpoint" 
+						v-model="selectEp" />
 					<Button :loading="props.loading" v-tooltip="t('Execute')" icon="pi pi-send" @click="run"/>
 				</template>
 		</AppHeader>

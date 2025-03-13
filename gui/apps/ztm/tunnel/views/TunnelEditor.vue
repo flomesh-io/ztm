@@ -461,7 +461,7 @@ watch(()=>props.d,()=>{
 															<UserSelector 
 																:app="true" 
 																:multiple="true" 
-																:endpoint="info?.endpoint" 
+																:user="info?.username" 
 																v-model="outbound.users" />
 													</span>
 											</Chip>

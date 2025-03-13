@@ -8,7 +8,7 @@ import ZtmService from '@/service/ZtmService';
 
 const { t } = useI18n();
 const ztmService = new ZtmService();
-const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint']);
+const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint','size']);
 const emits = defineEmits(['select','update:modelValue']);
 
 const endpoints = ref([]);
@@ -44,10 +44,10 @@ const selectEndpoint = ref();
 const select = () => {
 	if(!!props.multiple){
 		emits('select',selectEndpoints.value);
-		emits('update:value',selectEndpoints.value);
+		emits('update:modelValue',selectEndpoints.value);
 	} else {
 		emits('select',selectEndpoint.value);
-		emits('update:value',selectEndpoint.value);
+		emits('update:modelValue',selectEndpoint.value);
 	}
 }
 const selectFilter = (v) => {
@@ -76,6 +76,7 @@ onMounted(()=>{
 	<MultiSelect 
 		v-if="props.multiple" 
 		@filter="selectFilter" 
+		:size="props.size"
 		:disabled="!!props.disabled"
 		maxSelectedLabels="2" 
 		:loading="loading"  
@@ -99,6 +100,7 @@ onMounted(()=>{
 		v-else
 		:disabled="!!props.disabled"
 		v-model="selectEndpoint"  
+		:size="props.size"
 		@change="select" 
 		:emptyMessage="t('No Endpoint')"
 		:options="endpoints" 
