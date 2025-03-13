@@ -2,7 +2,7 @@ import db from './db.js'
 import initFilesystem from './fs.js'
 import initApps from './apps.js'
 
-export default function (rootDir, config) {
+export default function (rootDir, listen, config, onConfigUpdate) {
   var meshName = config.name
   var username
   var caCert
@@ -25,18 +25,15 @@ export default function (rootDir, config) {
 
   var meshEnv = {
     name: meshName,
-    url: `http://${config.agent.listen}/api/meshes/${meshName}`,
+    url: `http://${listen}/api/meshes/${meshName}`,
     discover: discoverFromApp,
     connect: connectFromApp,
     fs: makeAppFilesystem,
   }
 
-  try {
-    var meta = JSON.decode(os.read(os.path.join(rootDir, 'meta.json')))
-    if (meta.labels instanceof Array) {
-      agentLabels = meta.labels.filter(l => typeof l === 'string')
-    }
-  } catch {}
+  if (config.agent.labels instanceof Array) {
+    agentLabels = config.agent.labels.filter(l => typeof l === 'string')
+  }
 
   if (config.ca) {
     try {
@@ -52,6 +49,7 @@ export default function (rootDir, config) {
     try {
       agentCert = new crypto.Certificate(config.agent.certificate)
       username = agentCert.subject?.commonName
+      logInfo(`Agent certificate expires in ${getCertificateDays()} days`)
     } catch {
       meshError('Invalid agent certificate')
     }
@@ -324,6 +322,34 @@ export default function (rootDir, config) {
       )
     }
 
+    function renewCertificate() {
+      if (closed) return
+      logInfo(`Renewing agent certificate...`)
+      return requestHub.spawn(
+        new Message(
+          { method: 'POST', path: `/api/sign/${username}`},
+          new crypto.PublicKey(agentKey).toPEM()
+        )
+      ).then(
+        res => {
+          var status = res?.head?.status
+          if (status === 201) {
+            try {
+              agentCert = new crypto.Certificate(res.body.toString())
+              tlsOptions.certificate.cert = agentCert
+              config.agent.certificate = agentCert.toPEM().toString()
+              onConfigUpdate(config)
+              logInfo(`New agent certificate expires in ${getCertificateDays()} days`)
+            } catch {
+              logError(`Cannot renew agent certificate with ${res?.body?.toString?.()}`)
+            }
+          } else {
+            logError(`Cannot renew agent certificate with status ${status}`)
+          }
+        }
+      )
+    }
+
     function advertiseFilesystem(files) {
       filesystemLatest = files
       filesystemUpdate = files
@@ -352,25 +378,41 @@ export default function (rootDir, config) {
     }
 
     function discoverEndpoints(id, name, user, keyword, offset, limit) {
-      var params = []
-      if (id) params.push(`id=${URL.encodeComponent(id)}`)
-      if (name) params.push(`name=${URL.encodeComponent(name)}`)
-      if (user) params.push(`user=${URL.encodeComponent(user)}`)
-      if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
-      if (offset) params.push(`offset=${offset}`)
-      if (limit) params.push(`limit=${limit}`)
-      var q = params.length > 0 ? '?' + params.join('&') : ''
-      return requestHub.spawn(
-        new Message({ method: 'GET', path: `/api/endpoints${q}` })
-      ).then(
-        function (res) {
-          if (res && res.head.status === 200) {
-            return JSON.decode(res.body)
-          } else {
-            return []
+      if (id instanceof Array) {
+        return Promise.all(
+          id.map(id => requestHub.spawn(
+            new Message({ method: 'GET', path: `/api/endpoints/${id}` })
+          ).then(
+            function (res) {
+              if (res && res.head.status === 200) {
+                return JSON.decode(res.body)
+              } else {
+                return null
+              }
+            }
+          ))
+        )
+      } else {
+        var params = []
+        if (id) params.push(`id=${URL.encodeComponent(id)}`)
+        if (name) params.push(`name=${URL.encodeComponent(name)}`)
+        if (user) params.push(`user=${URL.encodeComponent(user)}`)
+        if (keyword) params.push(`keyword=${URL.encodeComponent(keyword)}`)
+        if (offset) params.push(`offset=${offset}`)
+        if (limit) params.push(`limit=${limit}`)
+        var q = params.length > 0 ? '?' + params.join('&') : ''
+        return requestHub.spawn(
+          new Message({ method: 'GET', path: `/api/endpoints${q}` })
+        ).then(
+          function (res) {
+            if (res && res.head.status === 200) {
+              return JSON.decode(res.body)
+            } else {
+              return []
+            }
           }
-        }
-      )
+        )
+      }
     }
 
     function discoverUsers(name, keyword, offset, limit) {
@@ -511,6 +553,7 @@ export default function (rootDir, config) {
       isConnected: () => connections.size > 0,
       address,
       heartbeat,
+      renewCertificate,
       advertiseFilesystem,
       advertiseACL,
       checkACL,
@@ -785,8 +828,22 @@ export default function (rootDir, config) {
   function heartbeat() {
     if (!exited) {
       hubs.forEach(h => h.heartbeat())
-      new Timeout(15).wait().then(heartbeat)
+      renewCertificate().then(() => {
+        new Timeout(15).wait().then(heartbeat)
+      })
     }
+  }
+
+  // Certificate expiration
+  function getCertificateDays() {
+    return Math.floor((agentCert.notAfter - Date.now()) / (24*60*60*1000))
+  }
+
+  // Renew certificate
+  function renewCertificate() {
+    var days = getCertificateDays()
+    if (days > 100) return Promise.resolve()
+    return hubs[0].renewCertificate()
   }
 
   // Advertise the filesystem
@@ -1324,17 +1381,37 @@ export default function (rootDir, config) {
   function discoverFromApp(provider, app) {
     return function (id, name, options) {
       options = options || {}
-      return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
+      if (id instanceof Array) {
+        return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
+      } else {
+        return discoverEndpoints(id)
+      }
     }
   }
 
   function connectFromApp(provider, app) {
     return function (ep, options) {
-      var isDedicated = Boolean(options?.dedicated)
-      var bind = options?.bind
-      var onState = options?.onState
-      var connectOptions = { bind, onState }
-      return toRemoteApp(ep, provider, app, isDedicated, connectOptions)
+      if (typeof ep === 'object') {
+        var $appPipeline
+        return pipeline($=>$
+          .onStart(() => connectApp(ep.provider, ep.app, username).then(p => {
+            if (p) {
+              $appPipeline = p
+            } else {
+              $appPipeline = pipeline($=>$)
+              logError(`Local app ${$ep.app} not found`)
+              return new StreamEnd
+            }
+          }))
+          .pipe(() => $appPipeline, () => ({ source: 'self' }))
+        )
+      } else {
+        var isDedicated = Boolean(options?.dedicated)
+        var bind = options?.bind
+        var onState = options?.onState
+        var connectOptions = { bind, onState }
+        return toRemoteApp(ep, provider, app, isDedicated, connectOptions)
+      }
     }
   }
 
@@ -1590,13 +1667,8 @@ export default function (rootDir, config) {
       var all = {}
       labels.forEach(l => all[l] = true)
       agentLabels = Object.keys(all)
-      var filename = os.path.join(rootDir, 'meta.json')
-      try {
-        var meta = JSON.decode(os.read(filename))
-      } catch {}
-      if (typeof meta !== 'object') meta = {}
-      meta.labels = agentLabels
-      os.write(filename, JSON.encode(meta))
+      config.agent.labels = [...agentLabels]
+      onConfigUpdate(config)
     }
     return true
   }

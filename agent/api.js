@@ -16,11 +16,14 @@ function init(dirname, listen) {
   agentListen = listen
   db.allMeshes().forEach(
     function (mesh) {
-      mesh.agent ??= {}
-      mesh.agent.listen = agentListen
-      meshes[mesh.name] = Mesh(
-        os.path.join(rootDir, 'meshes', mesh.name),
-        mesh
+      var name = mesh.name
+      meshes[name] = Mesh(
+        os.path.join(rootDir, 'meshes', name),
+        agentListen, mesh,
+        function (newMesh) {
+          mesh = newMesh
+          db.setMesh(name, mesh)
+        }
       )
     }
   )

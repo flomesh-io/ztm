@@ -102,6 +102,15 @@ export default function ({ app, mesh }) {
 
   function setLocalConfig(config) {
     mesh.write('/local/config.json', JSON.encode(config))
+    var pathname = `/shared/${app.username}/${app.endpoint.id}/config.json`
+    if (config?.targets instanceof Array && config.targets.length > 0) {
+      mesh.write(pathname, JSON.encode({
+        targets: config.targets,
+        exclusions: config?.exclusions,
+      }))
+    } else {
+      mesh.erase(pathname)
+    }
   }
 
   function applyConfig(config) {
@@ -196,6 +205,7 @@ export default function ({ app, mesh }) {
         return new Message({ status: 404 })
       }
     }).to($=>$
+      .onStart(new Data)
       .detectProtocol(proto => $proto = proto)
       .pipe(
         function() {
@@ -206,7 +216,6 @@ export default function ({ app, mesh }) {
       )
     )
   )
-
 
   var observe = pipeline($=>$
     .fork().to($=>$
@@ -260,7 +269,19 @@ export default function ({ app, mesh }) {
 
   var connectPeer = pipeline($=>$
     .onStart(
-      () => mesh.discover().then(
+      () => mesh.list('/shared').then(
+        files => {
+          var peers = []
+          var pattern = new http.Match('/shared/{username}/{ep}/config.json')
+          Object.keys(files).forEach(path => {
+            var params = pattern(path)
+            if (params) {
+              peers.push(params.ep)
+            }
+          })
+          return mesh.discover(peers)
+        }
+      ).then(
         peers => Promise.any(peers.map(
           ep => {
             if (!ep.online) return Promise.reject(null)
