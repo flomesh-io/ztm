@@ -324,7 +324,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 											<div class="flex flex-col message-item pointer" v-for="(user, index) in slotProps.items" :key="index" >
 												<div v-if="user.endpoints?.count <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(user.endpoints?.instances[0])">
 													<div class="flex-item flex gap-2">
-														<Avatar icon="pi pi-user" size="small" style="color: #2a1261" />
+														<UserAvatar :size="28" :username="user.name"/>
 														<b class="line-height-4">{{ user.name }} </b>
 														<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 														<b class="line-height-4">{{user.endpoints?.instances[0].name || user.endpoints?.instances[0].id}}</b>
@@ -342,7 +342,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 													<AccordionPanel>
 														<AccordionHeader class="flex">
 															<div class="flex-item flex gap-2" @click="loadepByUser(user.name)">
-																<Avatar icon="pi pi-user" size="small" style="color: #2a1261" />
+																<UserAvatar :size="28" :username="user.name"/>
 																<b class="line-height-4">{{ user.name }}</b>
 																<OverlayBadge :value="user.endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 															</div>
@@ -390,7 +390,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 												<div class="flex flex-col message-item pointer" v-for="(key, index) in slotProps.items" :key="index" >
 													<div v-if="usersMap[key]?.endpoints?.count <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(usersMap[key].endpoints?.instances[0])">
 														<div class="flex-item flex gap-2">
-															<Avatar icon="pi pi-user" size="small" style="color: #2a1261" />
+															<UserAvatar :size="28" :username="key"/>
 															<b class="line-height-4">{{ key }} </b>
 															<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 															<b class="line-height-4">{{usersMap[key].endpoints?.instances[0].name || usersMap[key].endpoints?.instances[0].id}}</b>
@@ -409,7 +409,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 														<AccordionPanel>
 															<AccordionHeader class="flex">
 																<div class="flex-item flex gap-2" @click="loadepByUser(key)">
-																	<Avatar icon="pi pi-user" size="small" style="color: #2a1261" />
+																	<UserAvatar :size="28" :username="key"/>
 																	<b class="line-height-4">{{ key }}</b>
 																	<OverlayBadge :value="usersMap[key].endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 																</div>

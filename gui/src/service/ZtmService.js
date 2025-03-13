@@ -212,11 +212,39 @@ export default class ZtmService {
 			return '';
 		}
 	}
+	getAppMesh(){
+		const devPath = localStorage.getItem("DEV_BASE")
+		const match1 = location.href.match(/meshes\/(.*?)\/apps/);
+		const match2 = devPath.match(/meshes\/(.*?)\/apps/);
+		if(match1 && match1[1]){
+			return match1[1];
+		} else if(!!devPath && match2 && match2[1]) {
+			return match2[1];
+		} else {
+			return "";
+		}
+	}
+	getEndpoint(mesh, ep) {
+		let _mesh = mesh;
+		if(!_mesh){
+			_mesh = this.getAppMesh()
+		}
+		console.log(ep)
+		return request(`/api/meshes/${_mesh}/endpoints/${ep}`);
+	}
 	getEndpoints(mesh, params) {
-		return request(`/api/meshes/${mesh}/endpoints${this.makePaging(params)}`);
+		let _mesh = mesh;
+		if(!_mesh){
+			_mesh = this.getAppMesh()
+		}
+		return request(`/api/meshes/${_mesh}/endpoints${this.makePaging(params)}`);
 	}
 	getUsers(mesh, params) {
-		return request(`/api/meshes/${mesh}/users${this.makePaging(params)}`);
+		let _mesh = mesh;
+		if(!_mesh){
+			_mesh = this.getAppMesh()
+		}
+		return request(`/api/meshes/${_mesh}/users${this.makePaging(params)}`);
 	}
 	getVersion() {
 		return request(`/api/version`);

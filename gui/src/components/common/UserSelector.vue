@@ -8,110 +8,109 @@ import ZtmService from '@/service/ZtmService';
 
 const { t } = useI18n();
 const ztmService = new ZtmService();
-const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint']);
+const props = defineProps(['multiple','modelValue','mesh','disabled','app','user']);
 const emits = defineEmits(['select','update:modelValue']);
 
-const endpoints = ref([]);
+const users = ref([]);
 const loading = ref(false)
 const filter = ref({
 	keyword:'',
 	limit:100,
 	offset:0
 })
-const currentEp = computed(()=>{
+const currentUser = computed(()=>{
 	if(!!props.app){
-		return props.endpoint
+		return [{name:props.user}]
 	}else{
-		return props.mesh?.agent
+		return [{name:props.mesh?.agent?.username}]
 	}
 })
-const getEndpoints = (callback) => {
+const getUsers = (callback) => {
 	loading.value = true;
-	if(!filter.value.keyword && endpoints.value.length == 0 && props.mesh){
-		endpoints.value = currentEp.value
+	if(!filter.value.keyword && users.value.length == 0 && props.mesh){
+		users.value = currentUser.value
 	}
-	ztmService.getEndpoints(props.mesh?.name,filter.value)
+	ztmService.getUsers(props.mesh?.name,filter.value)
 		.then(res => {
-			endpoints.value = res || [];
+			users.value = res || [];
 			loading.value = false;
 		})
 		.catch(err => {
 			loading.value = false;
 		}); 
 }
-const selectEndpoints = ref([]);
-const selectEndpoint = ref();
+const selectUsers = ref([]);
+const selectUser = ref();
 const select = () => {
 	if(!!props.multiple){
-		emits('select',selectEndpoints.value);
-		emits('update:value',selectEndpoints.value);
+		emits('select',selectUsers.value);
+		emits('update:value',selectUsers.value);
 	} else {
-		emits('select',selectEndpoint.value);
-		emits('update:value',selectEndpoint.value);
+		emits('select',selectUser.value);
+		emits('update:value',selectUser.value);
 	}
 }
 const selectFilter = (v) => {
-	selectEndpoints.value = [];
-	selectEndpoint.value = [];
+	selectUsers.value = [];
+	selectUser.value = [];
 	select();
 	filter.value.keyword = v?.value||"";
-	getEndpoints();
+	getUsers();
 }
 watch(()=>props.modelValue,()=>{
 	if(props.modelValue){
 		if(!!props.multiple){
-			selectEndpoints.value = props.modelValue
+			selectUsers.value = props.modelValue
 		}else{
-			selectEndpoint.value = props.modelValue
+			selectUser.value = props.modelValue
 		}
 	}
 },{deep:true,immediate:true});
 onMounted(()=>{
-	getEndpoints();
+	getUsers();
 })
 </script>
 
 <template>
-	
 	<MultiSelect 
 		v-if="props.multiple" 
 		@filter="selectFilter" 
 		:disabled="!!props.disabled"
 		maxSelectedLabels="2" 
 		:loading="loading"  
-		:emptyMessage="t('No Endpoint')"
-		v-model="selectEndpoints" 
+		:emptyMessage="t('No User')"
+		v-model="selectUsers" 
 		@change="select" 
-		:options="endpoints" 
+		:options="users" 
 		optionLabel="name" 
-		optionValue="id" 
+		optionValue="name" 
 		:filter="true" 
-		:placeholder="t('Endpoints')"
-	  :selectedItemsLabel="`${selectEndpoints.length} ${t('Endpoints')}`" 
+		:placeholder="t('Users')"
+	  :selectedItemsLabel="`${selectUsers.length} ${t('Users')}`" 
 		style="max-width: 200px;" >
 		<template #option="slotProps">
-			<i class="pi pi-mobile mr-1"/>
+			<i class="pi pi-user mr-1"/>
 			{{ slotProps.option.name }}
-			<Tag v-if="currentEp.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+			<Tag v-if="currentUser.name == slotProps.option.name" value="Local" class="ml-2" severity="contrast"/>
 		</template>
 	</MultiSelect>
 	<Select
 		v-else
 		:disabled="!!props.disabled"
-		v-model="selectEndpoint"  
+		v-model="selectUser"  
 		@change="select" 
-		:emptyMessage="t('No Endpoint')"
-		:options="endpoints" 
+		:emptyMessage="t('No User')"
+		:options="users" 
 		@filter="selectFilter" 
 		:loading="loading"  
 		optionLabel="name" 
-		optionValue="id"
-		:placeholder="t('Endpoint')" 
+		optionValue="name"
+		:placeholder="t('User')" 
 		class="flex" >
 			<template #option="slotProps">
-				<i class="pi pi-mobile mr-1"/>
+				<i class="pi pi-user mr-1"/>
 				{{ slotProps.option.name }}
-				<Tag v-if="currentEp.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
+				<Tag v-if="currentUser.name == slotProps.option.name" value="Local" class="ml-2" severity="contrast"/>
 			</template>
 	</Select>
 </template>
