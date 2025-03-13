@@ -94,6 +94,11 @@ const info = computed(() => {
 	return store.getters['app/info']
 });
 
+const searchEps = () => {
+	filter.value.offset = 0;
+	more.value = false;
+	loadEndpoints();
+}
 onMounted(()=>{
 	loadEndpoints()
 })
@@ -108,7 +113,7 @@ onMounted(()=>{
 						
 						<IconField>
 							<InputIcon class="pi pi-search" />
-							<InputText style="background-color: transparent;" v-model="filter.keyword" :placeholder="t('Search')" @input="searchUsers"/>
+							<InputText style="background-color: transparent;" v-model="filter.keyword" :placeholder="t('Search')" @input="searchEps"/>
 						</IconField>
 					</template>
 			
