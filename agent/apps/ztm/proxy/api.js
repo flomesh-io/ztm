@@ -1,5 +1,4 @@
 import initCertGen from './cert-gen.js'
-
 export default function ({ app, mesh }) {
   var certGen = null
 
@@ -11,6 +10,23 @@ export default function ({ app, mesh }) {
     return mesh.discover()
   }
 
+  function allUsers() {
+    return mesh.discover().then(
+      endpoints => {
+        var users = []
+        var set = new Set
+        endpoints.forEach(ep => {
+          var user = ep.username
+          if (!set.has(user)) {
+            users.push(user)
+            set.add(user)
+          }
+        })
+        return users.sort()
+      }
+    )
+  }
+  
   function getEndpointCA(ep) {
     if (ep === app.endpoint.id) {
       if (certGen) {
@@ -41,6 +57,24 @@ export default function ({ app, mesh }) {
     }
   }
 
+  function getGroups(ep) {
+    var data = null
+    return pipeline($=>$
+      .onStart(new Message({ method: 'GET', path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups` }))
+      .encodeHTTPRequest()
+      .connect(
+        () => `localhost:7777`
+      )
+      .decodeHTTPResponse()
+      .replaceMessage(res => {
+        data = JSON.decode(res.body)
+        return new StreamEnd
+      })
+      ).spawn().then(() => {
+        return data
+      })
+  }
+  
   function setEndpointConfig(ep, config) {
     if (ep === app.endpoint.id) {
       setLocalConfig(config)
@@ -136,21 +170,37 @@ export default function ({ app, mesh }) {
       if (params) {
         $target = params['*']
         $host = $target.substring(0, $target.lastIndexOf(':'))
-        if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host)) {
-          currentLogger?.log?.({
-            event: {
-              time: new Date().toUTCString(),
-              username: $ctx.peer.username,
-              endpoint: $ctx.peer.id,
-              ip: $ctx.peer.ip,
-              target: $target,
-              denied: true,
-            }
-          })
-          return new Message({ status: 403 })
-        }
-        app.log(`Forward to ${$target}`)
-        return new Message({ status: 200 })
+
+        var ha = new http.Agent('localhost:7777');
+        var options = {
+          method: 'GET',
+          path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups/user/${$ctx.peer.username}`
+        };
+
+        return ha.request(options.method, options.path).then(res => {
+          var body = JSON.decode(res.body);
+          var group
+
+          if (body && body.length > 0) {
+            group = body[0].id;
+          }
+
+          if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host, group)) {
+            currentLogger?.log?.({
+              event: {
+                time: new Date().toUTCString(),
+                username: $ctx.peer.username,
+                endpoint: $ctx.peer.id,
+                ip: $ctx.peer.ip,
+                target: $target,
+                denied: true,
+              }
+            })
+            return new Message({ status: 403 })
+          }
+          app.log(`Forward to ${$target}`)
+          return new Message({ status: 200 })
+        })
       } else {
         return new Message({ status: 404 })
       }
@@ -263,7 +313,7 @@ export default function ({ app, mesh }) {
           })
         ).to($=>$
           .muxHTTP().to($=>$
-            .pipe(() => mesh.connect($targetEP))
+            .pipe(() => mesh.connect($targetEP, { dedicated: true }))
           )
         )
       ),
@@ -324,15 +374,48 @@ export default function ({ app, mesh }) {
     }
   }
 
-  function isAllowed(config, host) {
-    if (IP.isV4(host) || IP.isV6(host)) {
-      if (hasIP(config?.deny, host)) return false
-      if (config?.allow?.length > 0) return hasIP(config.allow, host)
-      return true
+  function isAllowed(config, host, group) {
+    if (config?.rules) {
+      // rules with user or group list TODO
+      /*
+      config.rules is:
+      [{
+        users<string name ary> | group<string>,
+        allow,
+        deny
+      }]
+      */
+      var allowed = true;
+      for (var i = 0; i < config.rules.length; i++) {
+        var rule = config.rules[i];
+        var userMatch = rule.users?.includes($ctx.peer.username);
+        var groupMatch = rule.group && rule.group === group;
+
+        if (userMatch || groupMatch) {
+          if (rule.deny && hasDomain(rule.deny, host)) {
+            allowed = false;
+            break;
+          }
+          if (rule.allow && hasDomain(rule.allow, host)) {
+            allowed = true;
+          } else if (!rule.allow && !rule.deny) {
+            allowed = true; // If no allow/deny, default allow
+          }
+        }
+      }
+
+      return allowed;
     } else {
-      if (hasDomain(config?.deny, host)) return false
-      if (config?.allow?.length > 0) return hasDomain(config.allow, host)
-      return true
+      // keep simple allow | deny
+      if (IP.isV4(host) || IP.isV6(host)) {
+        if (hasIP(config?.deny, host)) return false
+        if (config?.allow?.length > 0) return hasIP(config.allow, host)
+        return true
+      } else {
+        if (hasDomain(config?.deny, host)) return false
+        if (config?.allow?.length > 0) return hasDomain(config.allow, host)
+        return true
+      }
     }
   }
 
@@ -365,8 +448,10 @@ export default function ({ app, mesh }) {
 
   return {
     allEndpoints,
+    allUsers,
     getEndpointCA,
     getEndpointConfig,
+    getGroups,
     setEndpointConfig,
     acceptPeer,
   }

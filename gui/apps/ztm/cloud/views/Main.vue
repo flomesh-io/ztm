@@ -89,7 +89,6 @@ const openPreview = ({item, localDir}) => {
 			<Files 
 				:queueSize="queueSize"
 				:files="files" 
-				:endpoints="endpoints"
 				:loading="loading"
 				:small="visibleEditor?'queue':(visiblePreview?'preview':'')" 
 				@upload="()=>{}" 

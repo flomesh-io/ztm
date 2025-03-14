@@ -11,16 +11,17 @@ extend(locale.value)
 const store = useStore();
 const visibleEditor = ref(false);
 const proxyService = new ProxyService();
+
+
+const filter = ref({
+	keyword:'',
+	limit:50,
+	offset:0
+})
 const save = (tunnel) => {
-	loaddata(tunnel);
+	loadEndpoints(tunnel);
 }
 const endpoints = ref([]);
-onMounted(()=>{
-	loaddata()
-})
-const loaddata = (endpoint) => {
-	getEndpoints(endpoint);
-}
 const timeago = computed(() => (ts) => {
 	let label = t("Last heartbeat")+ ": ";
 	if(ts>0){
@@ -34,28 +35,52 @@ const selectedEp = ref();
 const loading = ref(false);
 const loader = ref(false);
 const error = ref();
-const getEndpoints = (endpoint) => {
+const more = ref(false);
+
+const loadproxys = () => {
+	const reqs = []
+	endpoints.value.forEach((ep)=>{
+		if(!ep?.proxy){
+			proxyService.getProxy(ep?.id).then((res)=>{
+				ep.proxy = res;
+			})
+		}
+	})
+}
+const loadEndpoints = (endpoint) => {
+	
 	loading.value = true;
 	loader.value = true;
-	proxyService.getEndpoints().then((res)=>{
-		loading.value = false;
-		setTimeout(() => {
-			loader.value = false;
-		},2000)
-		error.value = null;
-		endpoints.value = res || [];
-		if(!!endpoint){
-			const _find = endpoints.value.find((_t) => _t.id == endpoint.id)
-			if(!!_find){
-				selectedEp.value = _find;
-				visibleEditor.value = true;
+	proxyService.getEndpoints(null,filter.value)
+		.then(res => {
+			if(filter.value.offset == 0){
+				endpoints.value = res || [];
 			} else {
-				selectedEp.value = null;
-				visibleEditor.value = false;
+				endpoints.value = endpoints.value.concat(res);
 			}
-		}
-		loadproxys();
-	})
+			more.value = res.length == filter.value.limit;
+			loading.value = false;
+			setTimeout(() => {
+				loader.value = false;
+			},2000)
+			if(!!endpoint){
+				const _find = endpoints.value.find((_t) => _t.id == endpoint.id)
+				if(!!_find){
+					selectedEp.value = _find;
+					visibleEditor.value = true;
+				} else {
+					selectedEp.value = null;
+					visibleEditor.value = false;
+				}
+			}
+			loadproxys();
+		})
+		.catch(err => console.log('Request Failed', err)); 
+}
+const nextEndpoints = () => {
+	filter.value.offset += filter.value.limit;
+	more.value = false;
+	loadEndpoints();
 }
 const select = (node) => {
 	selectedEp.value = null;
@@ -69,15 +94,14 @@ const info = computed(() => {
 	return store.getters['app/info']
 });
 
-
-const loadproxys = () => {
-	const reqs = []
-	endpoints.value.forEach((ep)=>{
-		proxyService.getProxy(ep?.id).then((res)=>{
-			ep.proxy = res;
-		})
-	})
+const searchEps = () => {
+	filter.value.offset = 0;
+	more.value = false;
+	loadEndpoints();
 }
+onMounted(()=>{
+	loadEndpoints()
+})
 </script>
 
 <template>
@@ -85,14 +109,19 @@ const loadproxys = () => {
 		<div class="relative h-full min-h-screen" :class="{'w-22rem':!!selectedEp,'w-full':!selectedEp,'mobile-hidden':!!selectedEp}">
 			<AppHeader :child="true">
 					<template #center>
-						<b>{{t('Proxy')}} ({{endpoints.length}} {{t('Endpoints')}})</b>
+						<b class="mr-2">{{t('Proxy')}} | </b>
+						
+						<IconField>
+							<InputIcon class="pi pi-search" />
+							<InputText style="background-color: transparent;" v-model="filter.keyword" :placeholder="t('Search')" @input="searchEps"/>
+						</IconField>
 					</template>
 			
 					<template #end> 
-						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
+						<Button icon="pi pi-refresh" text @click="loadEndpoints()"  :loading="loader"/>
 					</template>
 			</AppHeader>
-			<Loading v-if="loading"/>
+			<Loading v-if="loading && filter.offset==0"/>
 			<ScrollPanel class="absolute-scroll-panel" v-else-if="endpoints && endpoints.length >0">
 			<DataView class="message-list" :value="endpoints">
 					<template #list="slotProps">
@@ -119,6 +148,12 @@ const loadproxys = () => {
 											<Tag v-if="node.proxy?.deny" severity="secondary" value="Secondary" v-tooltip.bottom="node.proxy.deny.join('\n')">{{t('Deny')}} <Badge :value="node.proxy.deny.length"/></Tag> 
 										</div>
 								</div>
+							</div>
+							
+							<div v-if="more" class="message-item pointer text-center py-3 opacity-50" @click="nextEndpoints" >
+								<i v-if="!loading" class="pi pi-arrow-down mr-1 relative" style="top: 1px;"/> 
+								<i v-else class="pi pi-spin pi-spinner relative" style="top: 2px;margin: 0;width:16px;height: 16px;font-size: 16px;"></i>
+								{{t('More')}}
 							</div>
 					</template>
 			</DataView>

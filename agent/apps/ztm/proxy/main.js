@@ -28,6 +28,12 @@ export default function ({ app, mesh, utils }) {
       })))
     },
 
+    '/api/users': {
+      'GET': responder(() => api.allUsers().then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+		
     '/api/endpoints': {
       'GET': responder(() => api.allEndpoints().then(
         ret => ret ? response(200, ret) : response(404)
@@ -43,8 +49,14 @@ export default function ({ app, mesh, utils }) {
         var config = JSON.decode(req.body)
         return api.setEndpointConfig(ep, config).then(response(201))
       }),
-    },
+    }, 
 
+    '/api/groups': {
+      'GET': responder(({ ep }) => api.getGroups(ep).then(
+        ret => ret ? response(200, ret) : response(404)
+      )),
+    },
+    
     '*': {
       'GET': responder((_, req) => {
         return Promise.resolve(gui.serve(req) || response(404))

@@ -13,9 +13,17 @@ const props = defineProps({
 			type: String,
 			default: 'h'
 	},
+	listType: {
+			type: String,
+			default: null
+	},
 	listKey: {
 			type: String,
 			default: null
+	},
+	readonly: {
+			type: Boolean,
+			default: false
 	},
 	placeholder: {
 			type: String,
@@ -30,7 +38,7 @@ watch(() => props.list, () =>{
 	if(!props.list){
 		emits("update:list",[]);
 	}
-	if(props.list.length == 0){
+	if(props.list.length == 0 && props.listType != 'tag'){
 		
 		if(!props.listKey){
 			props.list.push('')
@@ -44,8 +52,14 @@ watch(() => props.list, () =>{
 	deep:true,
 	immediate:true
 })
+const newTag = ref('');
 const addTag = (tag) => {
-	if(!props.listKey){
+	if(props.listType == 'tag'){
+		if(!!tag){
+			props.list.push(tag);
+			newTag.value = "";
+		}
+	}else if(!props.listKey){
 		if(!!tag){
 			props.list.push("");
 		}
@@ -73,6 +87,22 @@ const typing = (e,idx) => {
 </script>
 
 <template>
+	<span v-if="props.listType == 'tag'">
+		<span v-for="(tag,tagidx) in props.list">
+			<Tag severity="secondary" v-if="tagidx<props.list.length" class="mr-2" >
+				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
+				<i v-if="!props.readonly" class="pi pi-times-circle ml-2 opacity-50" @click.stop="removeTag(tagidx)"/>
+			</Tag>
+		</span>
+		
+		<Tag v-if="!props.readonly" severity="secondary" class="pl-0 pr-3">
+				<span class="ml-2 font-medium">
+					<InputText @click.stop="()=>{}" @keyup.enter="addTag(newTag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" v-model="newTag"  type="text" />
+					<i class="pi pi-arrow-down-left" />
+				</span>
+		</Tag>
+	</span>
+	<span v-else>
 		<span v-if="props.direction == 'h'" v-for="(tag,tagidx) in props.list">
 			<Chip v-if="tagidx<props.list.length - 1" class="mr-2 custom-chip" >
 				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
@@ -112,6 +142,7 @@ const typing = (e,idx) => {
 			</Chip>
 			<slot v-else name="input"/>
 		</div>
+	</span>
 </template>
 
 <style scoped lang="scss">

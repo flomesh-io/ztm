@@ -7,6 +7,7 @@ import AccordionContent from 'primevue/accordioncontent';
 import Avatar from 'primevue/avatar';
 import AvatarGroup from 'primevue/avatargroup';
 import Badge from 'primevue/badge';
+import OverlayBadge from 'primevue/overlaybadge';
 import BlockUI from 'primevue/blockui';
 import Button from 'primevue/button';
 import Breadcrumb from 'primevue/breadcrumb';
@@ -118,6 +119,9 @@ import Forward from '@/components/share/Forward.vue';
 import WatchShared from '@/components/share/WatchShared.vue';
 import DrawMenu from '@/components/common/DrawMenu.vue';
 import UserAvatar from '@/components/common/Avatar.vue';
+import Ep from '@/components/common/Ep.vue';
+import EpSelector from '@/components/common/EpSelector.vue';
+import UserSelector from '@/components/common/UserSelector.vue';
 import FloatLabel from 'primevue/floatlabel';
 
 import { Field, Form, ErrorMessage } from 'vee-validate';
@@ -138,6 +142,7 @@ export function useComponent(app){
 	app.component('Avatar', Avatar);
 	app.component('AvatarGroup', AvatarGroup);
 	app.component('Badge', Badge);
+	app.component('OverlayBadge', OverlayBadge);
 	app.component('BlockUI', BlockUI);
 	app.component('Breadcrumb', Breadcrumb);
 	app.component('Button', Button);
@@ -246,4 +251,8 @@ export function useComponent(app){
 	app.component('WatchShared', WatchShared);
 	app.component('DrawMenu', DrawMenu);
 	app.component('UserAvatar', UserAvatar);
+	app.component('Ep', Ep);
+	app.component('EpSelector', EpSelector);
+	app.component('UserSelector', UserSelector);
+	
 }

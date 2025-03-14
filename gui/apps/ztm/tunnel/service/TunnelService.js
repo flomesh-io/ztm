@@ -1,12 +1,14 @@
 import { request,requestWithTimeout, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default class TunnelService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
 	getEndpoints() {
-		return request(`/api/endpoints`);
+		return ztmService.getEndpoints();
 	}
 	getInbounds(ep) {
 		return requestWithTimeout(3000, `/api/endpoints/${ep}/inbound`)
