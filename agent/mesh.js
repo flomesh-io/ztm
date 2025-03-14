@@ -1382,9 +1382,9 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     return function (id, name, options) {
       options = options || {}
       if (id instanceof Array) {
-        return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
-      } else {
         return discoverEndpoints(id)
+      } else {
+        return discoverEndpoints(id, name, options.username, options.keyword, options.offset, options.limit)
       }
     }
   }

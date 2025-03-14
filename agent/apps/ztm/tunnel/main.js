@@ -28,8 +28,14 @@ export default function ({ app, mesh, utils }) {
       })))
     },
 
-    '/api/endpoints': {
-      'GET': responder(() => api.allEndpoints().then(
+    '/api/tunnels': {
+      'GET': responder(() => api.allTunnels().then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+
+    '/api/tunnels/{proto}/{name}': {
+      'GET': responder(({ proto, name }) => api.getTunnel(proto, name).then(
         ret => ret ? response(200, ret) : response(404)
       ))
     },
@@ -94,8 +100,8 @@ export default function ({ app, mesh, utils }) {
   })
 
   var servePeer = utils.createServer({
-    '/api/tunnels': {
-      'GET': responderOwnerOnly(() => api.allTunnels(app.endpoint.id).then(
+    '/api/config': {
+      'GET': responderOwnerOnly(() => api.getConfig(app.endpoint.id).then(
         ret => ret ? response(200, ret) : response(404)
       ))
     },
