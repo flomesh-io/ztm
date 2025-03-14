@@ -1,7 +1,7 @@
 export default function ({ app, mesh }) {
 
   function watchGroups() {
-    mesh.watch('/shared/root/publish/groups').then((paths) => {
+    mesh.watch('/shared/root/groups').then((paths) => {
       paths.forEach(path => {
         mesh.read(path)
       })
@@ -35,10 +35,10 @@ export default function ({ app, mesh }) {
   }
 
   function deleteGroup(id) {
-    return mesh.read(`/shared/root/publish/groups/${id}.json`).then(
+    return mesh.stat(`/shared/root/groups/${id}.json`).then(
       data => {
-        if (data && data.toString()) {
-          mesh.erase(`/shared/root/publish/groups/${id}.json`)
+        if (data) {
+          mesh.erase(`/shared/root/groups/${id}.json`)
           return true
         } else {
           return false
@@ -49,16 +49,16 @@ export default function ({ app, mesh }) {
 
   function getGroupConfig(id) {
     if (id) {
-      return mesh.read(`/shared/root/publish/groups/${id}.json`).then(
+      return mesh.read(`/shared/root/groups/${id}.json`).then(
         data => {
           return data && data.toString() ? JSON.decode(data) : null
         }
       )
     } else {
       var datas = []
-      return mesh.dir(`/shared/root/publish/groups`).then(
+      return mesh.dir(`/shared/root/groups`).then(
         files => Promise.all(
-          files.map(file => mesh.read(`/shared/root/publish/groups/${file}`).then(
+          files.map(file => mesh.read(`/shared/root/groups/${file}`).then(
             data => {
               if (data && data.toString()) {
                 datas.push(JSON.decode(data))
@@ -71,7 +71,7 @@ export default function ({ app, mesh }) {
   }
   
   function setGroupConfig(id, config) {
-    return mesh.write(`/shared/root/publish/groups/${id}.json`, JSON.encode(config))
+    return mesh.write(`/shared/root/groups/${id}.json`, JSON.encode(config))
   }
 
   function allUsers() {
