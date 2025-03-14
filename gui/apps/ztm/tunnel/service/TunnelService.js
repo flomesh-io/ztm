@@ -13,16 +13,16 @@ export default class TunnelService {
 	getInbounds(ep) {
 		return requestWithTimeout(3000, `/api/endpoints/${ep}/inbound`)
 	}
-	getInbound({ep, proto, name}) {
-		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`);
+	getInbound({ep, protocol, name}) {
+		return request(`/api/endpoints/${ep}/inbound/${protocol}/${name}`);
 	}
 	getOutbounds(ep) {
 		return requestWithTimeout(3000, `/api/endpoints/${ep}/outbound`)
 	}
-	getOutbound({ep, proto, name}) {
-		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`);
+	getOutbound({ep, protocol, name}) {
+		return request(`/api/endpoints/${ep}/outbound/${protocol}/${name}`);
 	}
-	createOutbound({ep, proto, name, targets, entrances, users}) {
+	createOutbound({ep, protocol, name, targets, entrances, users}) {
 		const _targets = [];
 		targets.forEach((target) => {
 			const _target = {}
@@ -40,13 +40,13 @@ export default class TunnelService {
 				}
 			}
 		})
-		return request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"POST", {
+		return request(`/api/endpoints/${ep}/outbound/${protocol}/${name}`,"POST", {
 			targets: _targets, entrances, users: users||[]
 		});
 	}
-	deleteOutbound({ep, proto, name}, callback) {
+	deleteOutbound({ep, protocol, name}, callback) {
 		confirm.remove(() => {
-			request(`/api/endpoints/${ep}/outbound/${proto}/${name}`,"DELETE").then((res) => {
+			request(`/api/endpoints/${ep}/outbound/${protocol}/${name}`,"DELETE").then((res) => {
 				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
 				if(!!callback)
 				callback(res);
@@ -56,7 +56,7 @@ export default class TunnelService {
 			});
 		})
 	}
-	createInbound({ep, proto, name, listens, exits}) {
+	createInbound({ep, protocol, name, listens, exits}) {
 		const _listens = [];
 		listens.forEach((listen) => {
 			if(!!listen?.value){
@@ -74,86 +74,78 @@ export default class TunnelService {
 				}
 			}
 		})
-		return request(`/api/endpoints/${ep}/inbound/${proto}/${name}`,"POST", {
+		return request(`/api/endpoints/${ep}/inbound/${protocol}/${name}`,"POST", {
 			listens: _listens, exits
 		});
 	}
-	getTunnels(callback, error) {
-		this.getEndpoints().then((eps)=>{
-			let reqs = [];
-			// merge request
-			(eps||[]).forEach((ep)=>{
-				const outboundReq = this.getOutbounds(ep?.id).then((res)=> {
-					return { data:res, ep, type:'outbound' }
-				}).catch((e)=>{
-				})
-				reqs.push(outboundReq);
-				const inboundReq = this.getInbounds(ep?.id).then((res)=> {
-					return { data:res, ep, type:'inbound' }
-				}).catch((e)=>{
-				})
-				reqs.push(inboundReq)
+	getTunnels() {
+		return request(`/api/tunnels`);
+	}
+	getTunnel(d) {
+		let reqs = [];
+		// merge request
+		d.outbound.forEach((ep)=>{
+			const outboundReq = this.getOutbound({ep:ep?.id, protocol: d.protocol, name: d.name}).then((res)=> {
+				return { data:res, ep, type:'outbound' }
+			}).catch((e)=>{
 			})
+			reqs.push(outboundReq);
+		})
 			
-			return merge(reqs).then((allRes) => {
-				const tunnels = {};
-				// set tunnels
-				(allRes||[]).forEach((childres)=>{
-					if(!!childres?.data ){
-						childres.data.forEach((res)=>{
-							if(!!res.protocol && !!res.name){
-								const _key = `${res.protocol}/${res.name}`
-								if(!tunnels[_key]){
-									tunnels[_key] = {
-										name: res.name,
-										proto: res.protocol,
-										outbounds: [],
-										inbounds: [],
-									}
-								}
-								if(childres.type == "inbound"){
-									const listens = [];
-									if(!!res.listens){
-										res.listens.forEach((listen)=>{
-											listens.push({
-												...listen,
-												value:`${listen.ip}${!!listen.port?(':'+listen.port):''}`,
-											})
-										})
-									}
-									tunnels[_key].inbounds.push({
-										...res,
-										listens,
-										ep:childres.ep
-									})
-								}else{
-									const targets = [] 
-									if(!!res.targets){
-										res.targets.forEach((target)=>{
-											targets.push(`${target.host}${!!target.port?(':'+target.port):''}`)
-										})
-									}
-									tunnels[_key].outbounds.push({
-										...res,
-										targets,
-										ep:childres.ep
-									})
-								}
-							}
+			
+		d.inbound.forEach((ep)=>{
+			const inboundReq = this.getInbound({ep:ep?.id, protocol: d.protocol, name: d.name}).then((res)=> {
+				return { data:res, ep, type:'inbound' }
+			}).catch((e)=>{
+			})
+			reqs.push(inboundReq)
+		})
+		
+		return merge(reqs).then((allRes) => {
+			const tunnel = {
+				...d,
+				inbounds:[],
+				outbounds:[],
+			};
+			(allRes||[]).forEach((childres)=>{
+				if(!!childres?.data ){
+					let res = childres.data
+					if(childres.type == "inbound"){
+						const listens = [];
+						if(!!res.listens){
+							res.listens.forEach((listen)=>{
+								listens.push({
+									...listen,
+									value:`${listen.ip}${!!listen.port?(':'+listen.port):''}`,
+								})
+							})
+						}
+						tunnel.inbounds.push({
+							...res,
+							listens,
+							ep:childres.ep
+						})
+					}else{
+						const targets = [] 
+						if(!!res.targets){
+							res.targets.forEach((target)=>{
+								targets.push(`${target.host}${!!target.port?(':'+target.port):''}`)
+							})
+						}
+						tunnel.outbounds.push({
+							...res,
+							targets,
+							ep:childres.ep
 						})
 					}
-				})
-				if(!!callback)
-				callback(Object.values(tunnels),eps||[])
-			}).catch(()=>{
-				if(!!error)
-				error()
+				}
 			})
+			return tunnel
 		})
 	}
-	deleteInbound({ep, proto, name}, callback) {
+	deleteInbound({ep, protocol, name}, callback) {
 		confirm.remove(() => {
-			request(`/api/endpoints/${ep}/inbound/${proto}/${name}`,"DELETE").then((res) => {
+			request(`/api/endpoints/${ep}/inbound/${protocol}/${name}`,"DELETE").then((res) => {
 				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
 				if(!!callback)
 				callback(res);

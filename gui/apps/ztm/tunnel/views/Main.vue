@@ -9,7 +9,6 @@ const tunnelService = new TunnelService();
 const save = (tunnel) => {
 	loaddata(tunnel);
 }
-const endpointMap = ref({});
 onMounted(()=>{
 	loaddata()
 })
@@ -24,8 +23,7 @@ const tunnels = ref([]);
 const getTunnels = (tunnel) => {
 	loading.value = true;
 	loader.value = true;
-	endpointMap.value = {};
-	tunnelService.getTunnels((_tunnels,_eps)=>{
+	tunnelService.getTunnels().then((_tunnels)=>{
 		console.log("tunnels:")
 		console.log(_tunnels)
 		loading.value = false;
@@ -34,11 +32,8 @@ const getTunnels = (tunnel) => {
 		},2000)
 		error.value = null;
 		tunnels.value = _tunnels || [];
-		_eps.forEach((ep) => {
-			endpointMap.value[ep.id] = ep;
-		})
 		if(!!tunnel){
-			const _find = tunnels.value.find((_t) => _t.name == tunnel.name && _t.proto == tunnel.proto)
+			const _find = tunnels.value.find((_t) => _t.name == tunnel.name && _t.protocol == tunnel.protocol)
 			if(!!_find){
 				selectedTunnel.value = _find;
 				visibleEditor.value = true;
@@ -47,7 +42,7 @@ const getTunnels = (tunnel) => {
 				visibleEditor.value = false;
 			}
 		}
-	},()=>{
+	}).catch((e)=>{
 		loading.value = false;
 		loader.value = false;
 	});
@@ -70,9 +65,7 @@ const getTunnels = (tunnel) => {
 		<div class="flex-item h-full shadow" v-if="!!visibleEditor">
 			<div class="mobile-fixed h-full">
 				<TunnelEditor
-					:title="selectedTunnel?`${selectedTunnel?.proto}/${selectedTunnel?.name}`:null"
 					:d="selectedTunnel" 
-					:endpointMap="endpointMap"
 					@save="save" 
 					@back="() => {selectedTunnel=null;visibleEditor=false;}"/>
 			</div>

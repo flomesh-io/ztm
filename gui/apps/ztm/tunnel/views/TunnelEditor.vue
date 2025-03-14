@@ -8,7 +8,7 @@ import { useStore } from 'vuex';
 import _ from "lodash"
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
-const props = defineProps(['d','endpointMap']);
+const props = defineProps(['d']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
 const route = useRoute();
@@ -20,12 +20,12 @@ const info = computed(() => {
 const loading = ref(false);
 const newTunnel = {
 	name: "",
-	proto: "tcp",
+	protocol: "tcp",
 }
 const tunnel = ref(_.cloneDeep(newTunnel));
 const newOutbound = {
 	name: null,
-	proto: null,
+	protocol: null,
 	ep: info.value.endpoint?.id,
 	targets: [],
 	entrances: [],
@@ -36,7 +36,7 @@ const outbounds = ref([])
 
 const newInbound = {
 	name: null,
-	proto: null,
+	protocol: null,
 	ep: info.value.endpoint?.id,
 	listens: [],
 	exits: [],
@@ -70,7 +70,7 @@ const createTunnel = () => {
 		if(_inbound.listens.length>0 && !!_inbound.listens[0] && _inbound.ep){
 			reqs.push(tunnelService.createInbound({
 				..._inbound,
-				proto: tunnel.value.proto, 
+				protocol: tunnel.value.protocol, 
 				name: tunnel.value.name,
 				ep:_inbound.ep?.id
 			}).catch((e)=>{
@@ -83,7 +83,7 @@ const createTunnel = () => {
 		if(_outbound.targets.length>0 && !!_outbound.targets[0] && _outbound.ep){
 			reqs.push(tunnelService.createOutbound({
 				..._outbound,
-				proto: tunnel.value.proto, 
+				protocol: tunnel.value.protocol, 
 				name: tunnel.value.name,
 				ep:_outbound.ep?.id
 			}).catch((e)=>{
@@ -109,7 +109,7 @@ const commitIn = () => {
 	if(!props.d){
 		inbounds.value.push({
 			...inbound.value,
-			proto: tunnel.value.proto, 
+			protocol: tunnel.value.protocol, 
 			name: tunnel.value.name,
 			ep:{id:inbound.value.ep}
 		});
@@ -122,7 +122,7 @@ const commitIn = () => {
 		loading.value = true;
 		tunnelService.createInbound({
 			...inbound.value,
-			proto: tunnel.value.proto, 
+			protocol: tunnel.value.protocol, 
 			name: tunnel.value.name
 		})
 			.then(res => {
@@ -145,7 +145,7 @@ const commitOut = () => {
 	if(!props.d){
 		outbounds.value.push({
 			...outbound.value,
-			proto: tunnel.value.proto, 
+			protocol: tunnel.value.protocol, 
 			name: tunnel.value.name,
 			ep:{id:outbound.value.ep}
 		});
@@ -158,7 +158,7 @@ const commitOut = () => {
 		loading.value = true;
 		tunnelService.createOutbound({
 			...outbound.value,
-			proto: tunnel.value.proto, 
+			protocol: tunnel.value.protocol, 
 			name: tunnel.value.name
 		})
 			.then(res => {
@@ -176,17 +176,28 @@ const commitOut = () => {
 			}); 
 	}
 }
-
 const loaddata = () => {
-	if(!props.d){
+	if(!!props.d){
+		tunnelService.getTunnel(props.d).then((res)=>{
+			console.log('getTunnel',res);
+			tunnel.value = res;
+			inbounds.value = res.inbounds;
+			outbounds.value = res.outbounds;
+		})
+	} else {
 		tunnel.value = _.cloneDeep(newTunnel);
 		inbound.value = _.cloneDeep(newInbound);
 		outbound.value = _.cloneDeep(newOutbound);
-	} else {
-		tunnel.value = props.d;
-		inbounds.value = props.d.inbounds;
-		outbounds.value = props.d.outbounds;
 	}
+	// if(!props.d){
+	// 	tunnel.value = _.cloneDeep(newTunnel);
+	// 	inbound.value = _.cloneDeep(newInbound);
+	// 	outbound.value = _.cloneDeep(newOutbound);
+	// } else {
+	// 	tunnel.value = props.d;
+	// 	inbounds.value = props.d.inbounds;
+	// 	outbounds.value = props.d.outbounds;
+	// }
 }
 
 const inboundCreate = (t,index) => {
@@ -217,7 +228,7 @@ const inboundRemove = (t,index) => {
 		inbounds.value.splice(index,1)
 	} else {
 		tunnelService.deleteInbound({
-			ep:t.ep?.id, proto:tunnel.value.proto, name:tunnel.value.name
+			ep:t.ep?.id, protocol:tunnel.value.protocol, name:tunnel.value.name
 		},()=>{
 			emits("save",tunnel.value);
 		})
@@ -228,7 +239,7 @@ const outboundRemove = (t,index) => {
 		outbounds.value.splice(index,1)
 	} else {
 		tunnelService.deleteOutbound({
-			ep:t.ep?.id, proto:tunnel.value.proto, name:tunnel.value.name
+			ep:t.ep?.id, protocol:tunnel.value.protocol, name:tunnel.value.name
 		},()=>{
 			emits("save",tunnel.value);
 		})
@@ -253,7 +264,7 @@ watch(()=>props.d,()=>{
 	<div class="surface-ground h-full min-h-screen relative">
 		<AppHeader :back="back">
 				<template #center>
-					 <b>{{props.d?`${props.d?.proto}/${props.d?.name}`:'New Tunnel'}}</b>
+					 <b>{{props.d?`${props.d?.protocol}/${props.d?.name}`:'New Tunnel'}}</b>
 				</template>
 		
 				<template #end> 
@@ -286,13 +297,13 @@ watch(()=>props.d,()=>{
 									<FormItem :label="t('Protocol')" :border="false">
 										<Chip class="pl-0 pr-3">
 												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<RadioButton  :disabled="!!props.d" v-model="tunnel.proto" inputId="scopeType2" name="scopeType" value="tcp" />
+													<RadioButton  :disabled="!!props.d" v-model="tunnel.protocol" inputId="scopeType2" name="scopeType" value="tcp" />
 												</span>
 												<span class="ml-2 font-medium">TCP</span>
 										</Chip>
 										<Chip class="ml-2 pl-0 pr-3">
 												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-													<RadioButton  :disabled="!!props.d" v-model="tunnel.proto" inputId="scopeType3" name="scopeType" value="udp" />
+													<RadioButton  :disabled="!!props.d" v-model="tunnel.protocol" inputId="scopeType3" name="scopeType" value="udp" />
 												</span>
 												<span class="ml-2 font-medium">UDP</span>
 										</Chip>
@@ -383,7 +394,11 @@ watch(()=>props.d,()=>{
 															</div>
 															<div v-if="item.exits && item.exits.length>0">
 																<div class="font-semibold w-6rem" >{{t('Exits')}}:</div>
-																<div><Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" :value="props.endpointMap[exit]?.name || props.endpointMap[exit]?.username || props.endpointMap[exit]?.id" severity="secondary" /></div>
+																<div>
+																	<Tag class="block" :class="{'mt-1':idx==1}" v-for="(exit,idx) in item.exits" severity="secondary" >
+																		<Ep :endpoint="exit"/>
+																	</Tag>
+																</div>
 															</div>
 														</div>
 														<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
@@ -479,7 +494,7 @@ watch(()=>props.d,()=>{
 															<div class="flex flex-col justify-between items-start pr-2 ">
 																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																			<Ep :endpoint="item.ep?.id" />
-																			<Tag v-if="info.endpoint?.id == item.ep?.id" severity="contrast" >Local</Tag>
+																			<Tag v-if="info.endpoint?.id == item.ep?.id" severity="contrast" >{{t('Local')}}</Tag>
 																	</div>
 															</div>
 															<div class="flex flex-item gap-2 justify-content-center">
@@ -489,7 +504,11 @@ watch(()=>props.d,()=>{
 																</div>	
 																<div  class="flex flex-column" v-if="item.entrances && item.entrances.length>0">
 																	<div class="font-semibold w-5rem " >{{t('Entrances')}}:</div>
-																	<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" :value="props.endpointMap[entrance]?.name || props.endpointMap[entrance]?.username || props.endpointMap[entrance]?.id" severity="secondary" /></div>
+																	<div >
+																		<Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" severity="secondary" >
+																			<Ep :endpoint="entrance"/>
+																		</Tag>
+																	</div>
 																</div>
 																<div class="flex flex-column " v-if="item.users && item.users.length>0">
 																	<div class="font-semibold w-5rem ">{{t('Users')}}:</div>
