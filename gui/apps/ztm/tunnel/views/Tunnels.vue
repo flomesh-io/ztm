@@ -66,21 +66,23 @@ const edit = (d) => {
 const inboundsInfo = computed(() => (inbounds) => {
 	let rtn = "";
 	(inbounds || []).forEach((n)=>{
-		const _listens = [];
-		n.listens.forEach(m=>{
-			_listens.push(m.value)
-		})
-		rtn += `${n.ep?.username}:${n.ep?.name} => ${_listens.join(',')}\r\n`;
+		// const _listens = [];
+		// n.listens.forEach(m=>{
+		// 	_listens.push(m.value)
+		// })
+		rtn += `${n?.username}:${n?.name}\r\n`;
 	});
 	return rtn;
+	//${_listens.join(',')}
 })
 
 const outboundsInfo = computed(() => (outbounds) => {
 	let rtn = "";
 	(outbounds || []).forEach((n)=>{
-		rtn += `${n.ep?.username}:${n.ep?.name} => ${n.targets.join(',')}\r\n`;
+		rtn += `${n?.username}:${n?.name}\r\n`;
 	})
 	return rtn;
+	//{n.targets.join(',')
 })
 </script>
 
@@ -116,12 +118,12 @@ const outboundsInfo = computed(() => (outbounds) => {
 						</Column>
 						<Column :header="t('Inbound')">
 							<template #body="slotProps">
-								<Badge  v-tooltip="inboundsInfo(slotProps.data.inbounds)" v-if="slotProps.data.inbounds" :value="slotProps.data.inbounds.length"/>
+								<Badge  v-tooltip="inboundsInfo(slotProps.data.inbound)" v-if="slotProps.data.inbound" :value="slotProps.data.inbound.length"/>
 							</template>
 						</Column>
 						<Column :header="t('Outbound')">
 							<template #body="slotProps">
-								<Badge  v-tooltip="outboundsInfo(slotProps.data.outbounds)" v-if="slotProps.data.outbounds" :value="slotProps.data.outbounds.length"/>
+								<Badge  v-tooltip="outboundsInfo(slotProps.data.outbound)" v-if="slotProps.data.outbound" :value="slotProps.data.outbound.length"/>
 							</template>
 						</Column>
 						<Column :header="t('Action')"  style="width: 110px;">
@@ -137,10 +139,10 @@ const outboundsInfo = computed(() => (outbounds) => {
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between">
 											 <div>
-													<span class="block text-tip font-medium mb-3"><Tag severity="contrast" class="mr-1">{{tunnel.proto.toUpperCase()}}</Tag> {{tunnel.name}}</span>
+													<span class="block text-tip font-medium mb-3"><Tag severity="contrast" class="mr-1">{{tunnel.protocol.toUpperCase()}}</Tag> {{tunnel.name}}</span>
 													<div class="text-left w-full" >
-														<Tag v-tooltip="inboundsInfo(tunnel.inbounds)" severity="secondary" value="Secondary">{{t('Inbounds')}}: <Badge :value="tunnel.inbounds.length"/></Tag> 
-														<Tag v-tooltip="outboundsInfo(tunnel.outbounds)" class="ml-2" severity="secondary" value="Secondary">{{t('Outbounds')}}: <Badge :value="tunnel.outbounds.length"/></Tag> 
+														<Tag v-tooltip="inboundsInfo(tunnel.inbound)" severity="secondary" value="Secondary">{{t('Inbounds')}}: <Badge :value="tunnel.inbound.length"/></Tag> 
+														<Tag v-tooltip="outboundsInfo(tunnel.outbound)" class="ml-2" severity="secondary" value="Secondary">{{t('Outbounds')}}: <Badge :value="tunnel.outbound.length"/></Tag> 
 													</div>
 											 </div>
 											 <div class="flex">
