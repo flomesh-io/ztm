@@ -65,7 +65,7 @@ export default function ({ api, utils }) {
             notes: objectTypeNotes,
             action: (args) => {
               switch (validateObjectType(args, 'get')) {
-                case 'tunnel': return getTunnels()
+                case 'tunnel': return getTunnel()
                 case 'inbound': return getInbound()
                 case 'outbound': return getOutbound()
               }
@@ -135,60 +135,26 @@ export default function ({ api, utils }) {
       return Promise.resolve(flush())
     }
 
-    function getTunnels() {
-      var tcp = {}
-      var udp = {}
-      var tunnels = { tcp, udp }
-      return api.allEndpoints().then(
-        endpoints => Promise.all(endpoints.map(
-          ep => api.allTunnels(ep.id).then(
-            ret => {
-              if (ret) {
-                ret.inbound?.forEach?.(i => {
-                  var list = (tunnels[i.protocol][i.name] ??= [])
-                  list.push({
-                    ep: ep.name,
-                    in: i,
-                  })
-                })
-                ret.outbound?.forEach?.(o => {
-                  var list = (tunnels[o.protocol][o.name] ??= [])
-                  list.push({
-                    ep: ep.name,
-                    out: o,
-                  })
-                })
-              }
-            }
-          )
-        ))
-      ).then(() => {
-        var list = [
-          ...Object.keys(tcp).sort().map(name => ({ name: `tcp/${name}`, io: tcp[name] })),
-          ...Object.keys(udp).sort().map(name => ({ name: `udp/${name}`, io: udp[name] })),
-        ]
-        printTable(list, {
-          'NAME': r => r.name,
-          'INBOUND': r => {
-            var ib = r.io.filter(i => i.in)
-            if (ib.length === 0) return '-'
-            var i = ib[0]
-            var l = i.in.listens.map(l => `${l.ip}:${l.port}`).join(', ')
-            var s = `${i.ep} (${l})`
-            if (ib.length > 1) s += ` + ${ib.length - 1} more`
-            return s
-          },
-          'OUTBOUND': r => {
-            var ob = r.io.filter(o => o.out)
-            if (ob.length === 0) return '-'
-            var o = ob[0]
-            var t = o.out.targets.map(t => `${t.host}:${t.port}`).join(', ')
-            var s = `${o.ep} (${t})`
-            if (ob.length > 1) s += ` + ${ob.length - 1} more`
-            return s
-          },
-        })
-      })
+    function getTunnel() {
+      return api.allTunnels().then(
+        list => {
+          printTable(list, {
+            'NAME': r => r.name,
+            'INBOUND': r => {
+              var ib = r.inbound
+              if (ib.length === 0) return '-'
+              if (ib.length > 10) ib.length = 10
+              return ib.map(ep => ep.name).join(', ')
+            },
+            'OUTBOUND': r => {
+              var ob = r.outbound
+              if (ob.length === 0) return '-'
+              if (ob.length > 10) ob.length = 10
+              return ob.map(ep => ep.name).join(', ')
+            },
+          })
+        }
+      )
     }
 
     function getInbound() {

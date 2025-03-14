@@ -18,21 +18,53 @@ export default function ({ app, mesh }) {
     throw res?.head?.statusText || 'No response from peer'
   }
 
-  function allEndpoints(id, name) {
-    return mesh.discover(id, name)
-  }
-
-  function allTunnels(ep) {
+  function getConfig(ep) {
     if (ep === app.endpoint.id) {
       return getLocalConfig()
     } else {
       return mesh.request(ep, new Message(
         {
           method: 'GET',
-          path: `/api/tunnels`,
+          path: `/api/config`,
         }
       )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
+  }
+
+  function allTunnels(ep) {
+    var inboundPattern = new http.Match(getInboundPathname('{username}', '{protocol}', '{name}', '{ep}'))
+    var outboundPattern = new http.Match(getOutboundPathname('{username}', '{protocol}', '{name}', '{ep}'))
+    return mesh.list('/shared').then(
+      files => {
+        var tcp = {}
+        var udp = {}
+        var tunnels = { tcp, udp }
+        var endpoints = {}
+        Object.keys(files).forEach(filename => {
+          var params = inboundPattern(filename) || outboundPattern(filename)
+          if (params) {
+            var tunnel = (tunnels[params.protocol][params.name] ??= {
+              protocol: params.protocol,
+              name: params.name,
+              inbound: [],
+              outbound: [],
+            })
+            var ep = (endpoints[params.ep] ??= {})
+            if (filename.endsWith('/inbound.json')) tunnel.inbound.push(ep)
+            if (filename.endsWith('/outbound.json')) tunnel.outbound.push(ep)
+          }
+        })
+        return mesh.discover(Object.keys(endpoints)).then(
+          list => {
+            list.forEach(ep => Object.assign(endpoints[ep.id], ep))
+            return [
+              ...Object.values(tcp),
+              ...Object.values(udp),
+            ]
+          }
+        )
+      }
+    )
   }
 
   function allInbound(ep) {
@@ -65,6 +97,37 @@ export default function ({ app, mesh }) {
         }
       )).then(res => checkResponse(res, body => JSON.decode(body)))
     }
+  }
+
+  function getTunnel(protocol, name) {
+    var inboundPattern = new http.Match(getInboundPathname('{username}', protocol, name, '{ep}'))
+    var outboundPattern = new http.Match(getOutboundPathname('{username}', protocol, name, '{ep}'))
+    return mesh.list('/shared').then(
+      files => {
+        var inbound = []
+        var outbound = []
+        var endpoints = {}
+        Object.keys(files).forEach(filename => {
+          var params = inboundPattern(filename) || outboundPattern(filename)
+          if (params) {
+            var ep = (endpoints[params.ep] ??= {})
+            if (filename.endsWith('/inbound.json')) inbound.push(ep)
+            if (filename.endsWith('/outbound.json')) outbound.push(ep)
+          }
+        })
+        return mesh.discover(Object.keys(endpoints)).then(
+          list => {
+            list.forEach(ep => Object.assign(endpoints[ep.id], ep))
+            return {
+              protocol,
+              name,
+              inbound,
+              outbound,
+            }
+          }
+        )
+      }
+    )
   }
 
   function getInbound(ep, protocol, name) {
@@ -122,6 +185,10 @@ export default function ({ app, mesh }) {
         }
         setLocalConfig(config)
         applyLocalConfig(config)
+        mesh.write(getInboundPathname(app.username, protocol, name, ep), JSON.encode({
+          name: app.endpoint.name,
+          exits,
+        }))
       })
     } else {
       return mesh.request(ep, new Message(
@@ -154,6 +221,11 @@ export default function ({ app, mesh }) {
         }
         setLocalConfig(config)
         applyLocalConfig(config)
+        mesh.write(getOutboundPathname(app.username, protocol, name, ep), JSON.encode({
+          name: app.endpoint.name,
+          entrances,
+          users,
+        }))
       })
     } else {
       return mesh.request(ep, new Message(
@@ -175,6 +247,7 @@ export default function ({ app, mesh }) {
           all.splice(i, 1)
           setLocalConfig(config)
           applyLocalConfig(config)
+          mesh.erase(getInboundPathname(app.username, protocol, name, ep))
         }
       })
     } else {
@@ -196,6 +269,7 @@ export default function ({ app, mesh }) {
           all.splice(i, 1)
           setLocalConfig(config)
           applyLocalConfig(config)
+          mesh.erase(getOutboundPathname(app.username, protocol, name, ep))
         }
       })
     } else {
@@ -216,6 +290,30 @@ export default function ({ app, mesh }) {
 
   function setLocalConfig(config) {
     mesh.write('/local/config.json', JSON.encode(config))
+  }
+
+  function publishConfig(config) {
+    var ep = app.endpoint.id
+    config.inbound.forEach(i => {
+      var protocol = i.protocol
+      var name = i.name
+      var exits = i.exits || []
+      mesh.write(getInboundPathname(app.username, protocol, name, ep), JSON.encode({
+        name: app.endpoint.name,
+        exits,
+      }))
+    })
+    config.outbound.forEach(o => {
+      var protocol = o.protocol
+      var name = o.name
+      var entrances = o.entrances || []
+      var users = o.users || []
+      mesh.write(getOutboundPathname(app.username, protocol, name, ep), JSON.encode({
+        name: app.endpoint.name,
+        entrances,
+        users,
+      }))
+    })
   }
 
   function applyLocalConfig(config) {
@@ -273,11 +371,26 @@ export default function ({ app, mesh }) {
           break
       }
 
+      var filenamePattern = new http.Match(getOutboundPathname('{username}', protocol, name, '{ep}'))
+
       var p = pipeline($=>$
         .onStart(() =>
           ((i.exits && i.exits.length > 0)
             ? Promise.resolve(i.exits)
-            : mesh.discover().then(list => list.filter(ep => ep.online).map(ep => ep.id))
+            : mesh.list('/shared').then(
+              files => {
+                var eps = []
+                Object.keys(files).forEach(path => {
+                  var params = filenamePattern(path)
+                  if (params) {
+                    eps.push(params.ep)
+                  }
+                })
+                return mesh.discover(eps).then(
+                  endpoints => endpoints.filter(ep => ep.online).map(ep => ep.id)
+                )
+              }
+            )
           ).then(exits => Promise.any(
             exits.map(
               id => getOutbound(id, protocol, name).then(
@@ -393,13 +506,25 @@ export default function ({ app, mesh }) {
     return true
   }
 
-  getLocalConfig().then(applyLocalConfig)
+  function getInboundPathname(username, protocol, name, ep) {
+    return `/shared/${username}/${protocol}/${name}/${ep}/inbound.json`
+  }
+
+  function getOutboundPathname(username, protocol, name, ep) {
+    return `/shared/${username}/${protocol}/${name}/${ep}/outbound.json`
+  }
+
+  getLocalConfig().then(config => {
+    publishConfig(config)
+    applyLocalConfig(config)
+  })
 
   return {
-    allEndpoints,
+    getConfig,
     allTunnels,
     allInbound,
     allOutbound,
+    getTunnel,
     getInbound,
     getOutbound,
     setInbound,
