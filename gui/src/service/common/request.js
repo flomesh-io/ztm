@@ -30,7 +30,7 @@ function getUrl(url){
 		}
 	}
 	const devPath = localStorage.getItem("DEV_BASE")
-	if(!!devPath){
+	if(!!devPath && url.indexOf('/api/meshes/')==-1){
 		return `${devPath}${url}`
 	}else if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
 		return `${path}${url}`

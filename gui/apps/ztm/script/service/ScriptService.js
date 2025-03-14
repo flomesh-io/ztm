@@ -1,12 +1,14 @@
 import { request, merge, spread, localRequest } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default class ScriptService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
 	getEndpoints() {
-		return request(`/api/endpoints`);
+		return ztmService.getEndpoints();
 	}
 	getPubScripts(cb) {
 		const reqs = []

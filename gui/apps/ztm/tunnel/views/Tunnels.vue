@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted,onActivated, computed,watch } from "vue";
 import { useRouter } from 'vue-router'
-import TunnelService from '../service/TunnelService';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
@@ -10,7 +9,6 @@ const store = useStore();
 
 const confirm = useConfirm();
 const router = useRouter();
-const tunnelService = new TunnelService();
 const scopeType = ref('All');
 const portMap = ref({});
 

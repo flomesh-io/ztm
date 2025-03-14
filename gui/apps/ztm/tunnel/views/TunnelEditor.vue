@@ -11,8 +11,6 @@ const { t } = useI18n();
 const props = defineProps(['d','endpointMap']);
 const emits = defineEmits(['save','back']);
 const store = useStore();
-const endpoints = ref([]);
-const users = ref([]);
 const route = useRoute();
 const toast = useToast();
 const tunnelService = new TunnelService();
@@ -45,20 +43,7 @@ const newInbound = {
 }
 const inbound = ref(_.cloneDeep(newInbound))
 const inbounds = ref([])
-const getEndpoints = () => {
-	const _users = [];
-	tunnelService.getEndpoints()
-		.then(res => {
-			console.log("Endpoints:")
-			console.log(res)
-			endpoints.value = res || [];
-			endpoints.value.forEach((ep)=>{
-				_users.push(ep.username);
-			});
-			users.value = Array.from(new Set(_users));
-		})
-		.catch(err => console.log('Request Failed', err)); 
-}
+
 const enabled = computed(() => {
 	return !!tunnel.value.name
 	&& ( 
@@ -126,7 +111,7 @@ const commitIn = () => {
 			...inbound.value,
 			proto: tunnel.value.proto, 
 			name: tunnel.value.name,
-			ep:endpoints.value.find((_ep)=>_ep?.id == inbound.value.ep)
+			ep:{id:inbound.value.ep}
 		});
 		inboundEditor.value = false;
 		inbound.value = _.cloneDeep(newInbound);
@@ -162,7 +147,7 @@ const commitOut = () => {
 			...outbound.value,
 			proto: tunnel.value.proto, 
 			name: tunnel.value.name,
-			ep:endpoints.value.find((_ep)=>_ep?.id == outbound.value.ep)
+			ep:{id:outbound.value.ep}
 		});
 		outboundEditor.value = false;
 		outbound.value = _.cloneDeep(newOutbound);
@@ -202,7 +187,6 @@ const loaddata = () => {
 		inbounds.value = props.d.inbounds;
 		outbounds.value = props.d.outbounds;
 	}
-	getEndpoints();
 }
 
 const inboundCreate = (t,index) => {
@@ -252,19 +236,6 @@ const outboundRemove = (t,index) => {
 }
 
 const visibleOutboundType = ref(false);
-const outboundType = ref('');
-const outboundTypeEnter = () => {
-	if(!!outboundType.value){
-		if(!users.value.find((u)=>u==outboundType.value)){
-			users.value.push(outboundType.value);
-		}
-		if(!outbound.value.users.find((u)=>u==outboundType.value)){
-			outbound.value.users.push(outboundType.value);
-		}
-		outboundType.value = "";
-	}
-	visibleOutboundType.value = false;
-}
 const inboundRestrict = ref(false);
 const outboundRestrict = ref(false);
 onMounted(() => {
@@ -357,23 +328,16 @@ watch(()=>props.d,()=>{
 													<i class="pi pi-chart-scatter"/>
 												</span>
 												<span class="font-medium">
-													<Select
-													 :disabled="!!props.pid"
-														v-model="inbound.ep" 
-														:options="endpoints" 
-														optionLabel="name" 
-														optionValue="id"
-														:placeholder="t('Endpoint')" 
-														class="flex">
-															<template #option="slotProps">
-																{{ slotProps.option.name }}
-																<Tag v-if="info?.endpoint?.id == slotProps.option.id" value="Local" class="ml-2" severity="contrast"/>
-															</template>
-														</Select>
+													<EpSelector 
+														:app="true" 
+														:disabled="!!props.pid"
+														:multiple="false" 
+														:endpoint="info?.endpoint" 
+														v-model="inbound.ep" />
 												</span>
 										</Chip>
 									</FormItem>
-									<FormItem label="Listens">
+									<FormItem :label="t('Listens')">
 										<ChipList direction="v" icon="pi-desktop" :placeholder="t('ip:port')" v-model:list="inbound.listens" listKey="value"/>
 									</FormItem>
 									<FormItem label=""  :border="inboundRestrict">
@@ -385,19 +349,11 @@ watch(()=>props.d,()=>{
 														<i class="pi pi-chart-scatter"/>
 													</span>
 													<span class="font-medium">
-														<MultiSelect
-															v-model="inbound.exits" 
-															:options="endpoints" 
-															optionLabel="name" 
-															optionValue="id"
-															:filter="endpoints.length>=8"
-															:placeholder="t('Endpoints')" 
-															class="flex" :maxSelectedLabels="3">
-																<template #option="slotProps">
-																	{{ slotProps.option.name }}
-																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
-																</template>
-															</MultiSelect>
+														<EpSelector 
+															:app="true" 
+															:multiple="true" 
+															:endpoint="info?.endpoint" 
+															v-model="inbound.exits" />
 												</span>
 										</Chip>
 									</FormItem>
@@ -411,7 +367,7 @@ watch(()=>props.d,()=>{
 												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 														<div class="flex flex-col pr-2 ">
 															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																{{ item.ep?.name }}
+																<Ep :endpoint="item.ep?.id" />
 																<Tag v-if="info.endpoint?.id == item.ep?.id"  severity="contrast" >{{t('Local')}}</Tag>
 															</div>
 														</div>
@@ -466,19 +422,12 @@ watch(()=>props.d,()=>{
 														<i class="pi pi-chart-scatter"/>
 													</span>
 													<span class="font-medium">
-														<Select
-														 :disabled="!!props.pid"
-															v-model="outbound.ep" 
-															:options="endpoints" 
-															optionLabel="name" 
-															optionValue="id"
-															:placeholder="t('Endpoint')" 
-															class="flex">
-																<template #option="slotProps">
-																	{{ slotProps.option.name }}
-																	<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
-																</template>
-															</Select>
+														<EpSelector 
+															:app="true" 
+															:disabled="!!props.pid"
+															:multiple="false" 
+															:endpoint="info?.endpoint" 
+															v-model="outbound.ep" />
 													</span>
 											</Chip>
 										</FormItem>
@@ -495,19 +444,11 @@ watch(()=>props.d,()=>{
 															<i class="pi pi-chart-scatter"/>
 														</span>
 														<span class="font-medium">
-															<MultiSelect
-																v-model="outbound.entrances" 
-																:options="endpoints" 
-																optionLabel="name" 
-																optionValue="id"
-																:filter="endpoints.length>=8"
-																:placeholder="t('Endpoints')" 
-																class="flex" :maxSelectedLabels="3">
-																	<template #option="slotProps">
-																		{{ slotProps.option.name }}
-																		<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
-																	</template>
-																</MultiSelect>
+															<EpSelector 
+																:app="true" 
+																:multiple="true" 
+																:endpoint="info?.endpoint" 
+																v-model="outbound.entrances" />
 													</span>
 											</Chip>
 										</FormItem>
@@ -517,18 +458,11 @@ watch(()=>props.d,()=>{
 															<i class="pi pi-users"/>
 														</span>
 														<span class="font-medium">
-															<MultiSelect
-																v-model="outbound.users" 
-																:options="users" 
-																:filter="users.length>=8"
-																:placeholder="t('Users')" 
-																class="flex" :maxSelectedLabels="3">
-																
-																<template #dropdownicon>
-																	<i v-if="!visibleOutboundType" @click.stop="() => visibleOutboundType = true" class="pi pi-plus-circle" />
-																</template>
-															</MultiSelect>
-															<InputText v-if="!!visibleOutboundType" @keyup.enter="outboundTypeEnter" :placeholder="t('Add')" class="add-tag-input w-full" style="padding-left: 10px;" :unstyled="true" v-model="outboundType" type="text" />
+															<UserSelector 
+																:app="true" 
+																:multiple="true" 
+																:user="info?.username" 
+																v-model="outbound.users" />
 													</span>
 											</Chip>
 										</FormItem>
@@ -544,7 +478,8 @@ watch(()=>props.d,()=>{
 													<div class="flex py-2 gap-4 md:gap-1" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 															<div class="flex flex-col justify-between items-start pr-2 ">
 																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																			{{ item.ep?.name }} <Tag v-if="info.endpoint?.id == item.ep?.id" severity="contrast" >Local</Tag>
+																			<Ep :endpoint="item.ep?.id" />
+																			<Tag v-if="info.endpoint?.id == item.ep?.id" severity="contrast" >Local</Tag>
 																	</div>
 															</div>
 															<div class="flex flex-item gap-2 justify-content-center">

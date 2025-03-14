@@ -186,11 +186,71 @@ export default class ZtmService {
 	getEndpointStats(mesh) {
 		return request(`/api/meshes/${mesh}/stats/endpoints`);
 	}
-	getEndpoints(mesh) {
-		return request(`/api/meshes/${mesh}/endpoints`);
+	makePaging(params) {
+		let paramsAry = [];
+		if(params && Object.keys(params).length>0){
+			if(params?.id){
+				paramsAry.push(`id=${encodeURIComponent(params.id)}`)
+			}
+			if(params?.user){
+				paramsAry.push(`user=${encodeURIComponent(params.user)}`)
+			}
+			if(params?.name){
+				paramsAry.push(`name=${encodeURIComponent(params.name)}`)
+			}
+			if(params?.keyword){
+				paramsAry.push(`keyword=${encodeURIComponent(params.keyword)}`)
+			}
+			if(params?.offset){
+				paramsAry.push(`offset=${params.offset}`)
+			}
+			if(params?.limit){
+				paramsAry.push(`limit=${params.limit}`)
+			}
+			return `?${paramsAry.join('&')}`
+		} else {
+			return '';
+		}
+	}
+	getAppMesh(){
+		const devPath = localStorage.getItem("DEV_BASE")
+		const match1 = location.href.match(/meshes\/(.*?)\/apps/);
+		const match2 = devPath.match(/meshes\/(.*?)\/apps/);
+		if(match1 && match1[1]){
+			return match1[1];
+		} else if(!!devPath && match2 && match2[1]) {
+			return match2[1];
+		} else {
+			return "";
+		}
+	}
+	getEndpoint(mesh, ep) {
+		let _mesh = mesh;
+		if(!_mesh){
+			_mesh = this.getAppMesh()
+		}
+		console.log(ep)
+		return request(`/api/meshes/${_mesh}/endpoints/${ep}`);
+	}
+	getEndpoints(mesh, params) {
+		let _mesh = mesh;
+		if(!_mesh){
+			_mesh = this.getAppMesh()
+		}
+		return request(`/api/meshes/${_mesh}/endpoints${this.makePaging(params)}`);
+	}
+	getUsers(mesh, params) {
+		let _mesh = mesh;
+		if(!_mesh){
+			_mesh = this.getAppMesh()
+		}
+		return request(`/api/meshes/${_mesh}/users${this.makePaging(params)}`);
 	}
 	getVersion() {
 		return request(`/api/version`);
+	}
+	changeEpLabels(mesh, ep, labels) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/labels`, "POST", labels);
 	}
 	deleteMesh(name,callback) {
 		confirm.remove(() => {

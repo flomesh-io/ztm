@@ -21,7 +21,7 @@ const scopeType = ref('All');
 const portMap = ref({});
 const endpoints = ref([]);
 
-const props = defineProps(['file','current','loading','endpoints'])
+const props = defineProps(['file','current','loading'])
 const emits = defineEmits([
 	'download',
 	'upload',
@@ -124,18 +124,15 @@ const saveAcl = () => {
 }
 
 const getEndpoints = (callback) => {
-	fileService.getEndpoints().then((res)=>{
+	fileService.getEndpoints(null,{
+		user: info.value?.username
+	}).then((res)=>{
 		endpoints.value = res || [];
 		if(callback){
 			callback()
 		}
 	})
 }
-const filterEps = computed(()=>(users)=>{
-	const usernames = Object.keys(users);
-	usernames.push(info.value?.username);
-	return _.filter(props.endpoints, (item) => !_.includes(usernames, item.username));
-})
 
 const isPC = computed(()=>{
 	const pm = platform();
@@ -242,12 +239,6 @@ const filterMirrors = computed(()=>{
 			m.data.mode = (m.data?.download && m.data?.upload)?'2-Way Sync':(m.data?.download?'Download':((m.data?.upload?'Upload':null)))
 		}
 		return m?.data?.download || m?.data?.upload;
-	})
-})
-const filterUnMirrorEps = computed(()=>{
-	return endpoints.value.filter((ep)=> {
-		const _find = filterMirrors.value.find((m) => m?.ep?.id == ep?.id);
-		return !_find || (!_find?.data?.download && !_find?.data?.upload)
 	})
 })
 const postMirror = (ep, download, upload, callback) => {
@@ -537,7 +528,7 @@ onMounted(()=>{
 								<Select size="small" class="w-full small"  v-model="props.file.access.users[slotProps.option]" :options="[{name:t('Readonly'),id:'readonly'},{name:t('Block'),id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
 							</div>
 						<div class="pl-1">
-							<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary" />
+							<Button @click="delUser(slotProps.option)" icon="pi pi-minus" severity="secondary"  size="small"/>
 						</div>
 						</div>
 				</template>
@@ -547,13 +538,19 @@ onMounted(()=>{
 				<template #footer>
 					<div class="flex items-center pt-1 pb-2 ">
 						<div class="flex-item pr-1">
-							<Select size="small" class="w-full"  v-model="acl.user" :options="filterEps(props.file.access.users)" optionLabel="username" optionValue="username" :filter="filterEps(props.file.access.users).length>8" placeholder="Endpoint"/>
+							<UserSelector
+								:app="true" 
+								size="small"
+								class="w-full"
+								:multiple="false" 
+								:user="info?.username" 
+								v-model="acl.user" />
 						</div>
 						<div class="flex-item">
 							<Select size="small" class="w-full"  v-model="acl.permission" :options="[{name:'Readonly',id:'readonly'},{name:'Block',id:'block'}]" optionLabel="name" optionValue="id" placeholder="Permission"/>
 						</div>
 						<div class="pl-1">
-							<Button :disabled="!acl.user" @click="addUser" icon="pi pi-plus" severity="secondary" />
+							<Button :disabled="!acl.user" @click="addUser" icon="pi pi-plus" severity="secondary"  size="small"/>
 						</div>
 					</div>
 				</template>
@@ -583,7 +580,7 @@ onMounted(()=>{
 										placeholder="Mode"/>
 								</div>
 								<div class="pl-2">
-									<Button @click="delMirror(slotProps.option)" icon="pi pi-minus" severity="secondary" />
+									<Button @click="delMirror(slotProps.option)" icon="pi pi-minus" severity="secondary"  size="small"/>
 								</div>
 							</div>
 					</template>
@@ -593,14 +590,17 @@ onMounted(()=>{
 					<template #footer>
 						<div class="flex items-center pt-1 pb-2">
 							<div class="flex-item pr-1">
-								<Select size="small" class="w-full"  v-model="mirror.user" :options="filterUnMirrorEps" optionLabel="name" optionValue="id" :filter="filterUnMirrorEps.length>8" :placeholder="t('Endpoint')">
-									<template #option="slotProps">
-										{{ slotProps.option.name }}
-										<Tag v-if="info?.endpoint?.id == slotProps.option.id" :value="t('Local')" class="ml-2" severity="contrast"/>
-									</template>
-								</Select>
+								<EpSelector 
+									class="w-full"
+									size="small"
+									:app="true" 
+									:user="info?.username"
+									:multiple="false" 
+									:endpoint="info?.endpoint" 
+									v-model="mirror.user" />
 							</div>
 							<div class="flex-item">
+								
 								<Select 
 									size="small" 
 									class="w-full" 
@@ -609,7 +609,7 @@ onMounted(()=>{
 									placeholder="Mode"/>
 							</div>
 							<div class="pl-2 ">
-								<Button :disabled="!mirror.user" @click="addMirror" icon="pi pi-plus" severity="secondary" />
+								<Button :disabled="!mirror.user" @click="addMirror" icon="pi pi-plus" severity="secondary"  size="small"/>
 							</div>
 						</div>
 					</template>

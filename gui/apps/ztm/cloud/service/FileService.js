@@ -3,6 +3,8 @@ import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { platform } from '@/utils/platform';
 import { homeDir, documentDir } from '@tauri-apps/api/path';
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default class FileService {
 	/*
 
@@ -26,8 +28,8 @@ export default class FileService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
-	getEndpoints() {
-		return request(`/api/endpoints`);
+	getEndpoints(mesh,params) {
+		return ztmService.getEndpoints(mesh,params);
 	}
 	getDir() {
 		return documentDir();

@@ -1,18 +1,29 @@
 import { request, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
+import ZtmService from '@/service/ZtmService';
+const ztmService = new ZtmService();
 export default class ProxyService {
 	getInfo() {
 		return request(`/api/appinfo`);
 	}
-	getEndpoints() {
-		return request(`/api/endpoints`);
+	getGroups() {
+		return request(`/api/groups`);
+	}
+	getUsers() {
+		return request(`/api/users`);
+	}
+	getEndpoints(mesh,params) {
+		return ztmService.getEndpoints(mesh,params);
 	}
 	getProxy(ep) {
 		return request(`/api/endpoints/${ep}/config`)
 	}
-	setProxy({ep, listen, targets, allow, deny, exclusions}) {
+	setProxy({ep, listen, targets, allow, deny, exclusions, rules}) {
 		const body = {};
+		if(!!rules && rules.length>0){
+			body.rules = rules
+		}
 		if(!!listen){
 			body.listen = listen
 		}

@@ -2,6 +2,7 @@
 import { ref,onActivated,onMounted,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
+import UsersService from '@/service/UsersService';
 import EndpointDetail from './EndpointDetail.vue'
 import { useStore } from 'vuex';
 import { useConfirm } from "primevue/useconfirm";
@@ -17,12 +18,12 @@ extend(locale.value)
 const store = useStore();
 const router = useRouter();
 const ztmService = new ZtmService();
+const usersService = new UsersService();
 const confirm = useConfirm();
 const loading = ref(false);
 const toast = useToast();
 const loader = ref(false);
 const status = ref({});
-const endpoints = ref([]);
 const stats = ref({})
 const meshes = computed(() => {
 	return store.getters['account/meshes']
@@ -39,12 +40,6 @@ const timeago = computed(() => (ts) => {
 		return label + "None";
 	}
 })
-onActivated(()=>{
-	getEndpoints();
-})
-onMounted(()=>{
-	getStatsTimer();
-})
 const getStats = () => {
 	
 	ztmService.getEndpointStats(selectedMesh.value?.name)
@@ -59,40 +54,57 @@ const getStatsTimer = () => {
 		getStatsTimer();
 	},3000)
 }
-const getEndpoints = () => {
+const users = ref([]);
+const usersMap = ref({});
+const endpointsMap = ref({});
+const filter = ref({
+	keyword:'',
+	limit:50,
+	offset:0
+})
+const more = ref({
+	default:false,
+})
+const searchUsers = () => {
+	filter.value.offset = 0;
+	more.value.default = false;
+	loadusers();
+}
+const nextUsers = () => {
+	filter.value.offset += filter.value.limit;
+	more.value.default = false;
+	loadusers();
+}
+const loadusers = () => {
+	
 	loading.value = true;
 	loader.value = true;
-	ztmService.getEndpoints(selectedMesh.value?.name)
+	ztmService.getUsers(selectedMesh.value?.name,filter.value)
 		.then(res => {
-			console.log("Endpoints:")
-			console.log(res)
+			if(filter.value.offset == 0){
+				users.value = res || [];
+			} else {
+				users.value = users.value.concat(res);
+			}
+			more.value.default = res.length == filter.value.limit;
+			res.forEach((user)=>{
+				usersMap.value[user?.name] = user
+			})
 			loading.value = false;
 			setTimeout(() => {
 				loader.value = false;
 			},2000)
-			endpoints.value = res || [];
-			endpoints.value.forEach((ep,ei)=>{
-				ep.key = `${ei}`;
-				ep.index = ei;
-				ep.type = "ep";
-				ep.label = ep?.name;
-				ep.leaf = false;
-				ep.loading = false;
-			});
 		})
 		.catch(err => console.log('Request Failed', err)); 
 }
-
+const loadepByUser = (user) => {
+	ztmService.getEndpoints(selectedMesh.value?.name, {user} )
+		.then(res => {
+			usersMap.value[user].endpoints.instances = res;
+		})
+		.catch(err => console.log('Request Failed', err)); 
+}
 const typing = ref('');
-
-watch(()=>selectedMesh,()=>{
-	if(selectedMesh.value){
-		getEndpoints();
-	}
-},{
-	deep:true,
-	immediate:true
-})
 
 const selectEp = ref();
 const select = (node) => {
@@ -154,6 +166,135 @@ const newInvite = () => {
 	username.value = "";
 	identity.value = "";
 }
+const groups = ref([])
+const loadgroup = () => {
+	usersService.getGroups().then(data => {
+		groups.value = data||[];
+	})
+}
+const removeGroupUser = (group,user) => {
+	usersService.exitGroupUser({
+		group,user,callback(){
+			loadgroup()
+		}
+	})
+}
+
+const visibleUserSelector = ref(false);
+const selectedUsers = ref({});
+const usersTree = computed(()=>{
+	const _users = [];
+	users.value.forEach((user,index)=>{
+		_users.push({
+			key:user?.name,
+			label:user?.name,
+			data:user?.name,
+		})
+	});
+	return _users;
+})
+const selectedGroup = ref({});
+const selectGroup = (group,type) => {
+	selectedGroup.value = group;
+	selectedUsers.value = {};
+	if(type == 'adduser'){
+		(group?.users || []).forEach((user)=>{
+			selectedUsers.value[user] = {checked:true}
+		})
+		visibleUserSelector.value = true;
+	} else {
+		groupname.value = group?.name;
+		visibleCreateGroup.value = true;
+	}
+}
+const load = () => {
+	loadusers();
+	loadgroup();
+}
+const saving = ref(false);
+const appendUsers = () => {
+	saving.value = true;
+	const _users = Object.keys(selectedUsers.value);
+	usersService.appendGroupUser({
+		users: _users,
+		group: selectedGroup.value?.id,
+		callback(){
+			visibleUserSelector.value = false;
+			saving.value = false;
+			loadgroup();
+			toast.add({ severity: 'success', summary:'Tips', detail: `${_users.length} user appended to ${selectedGroup.value?.name}.`, life: 3000 });
+		}
+	})
+}
+const removeGroup = (group) => {
+	usersService.removeGroup({
+		group: group?.id,
+		callback(){
+			loadgroup()
+		}
+	})
+}
+const groupname = ref('');
+const visibleCreateGroup = ref(false);
+const newGroup = () => {
+	visibleCreateGroup.value = true;
+	groupname.value = "";
+	selectedGroup.value = {};
+}
+const postGroup = () => {
+	saving.value = true;
+	if(selectedGroup.value?.id){
+		usersService.setGroupName({
+			group: selectedGroup.value?.id,
+			name: groupname.value,
+			callback(){
+				toast.add({ severity: 'success', summary:'Tips', detail: `${groupname.value} updated.`, life: 3000 });
+				groupname.value = "";
+				visibleCreateGroup.value = false;
+				saving.value = false;
+				setTimeout(()=>{
+					loadgroup();
+				},1000)
+			}
+		})
+	} else {
+		usersService.newGroup({
+			name: groupname.value,
+			users: [],
+			callback(){
+				toast.add({ severity: 'success', summary:'Tips', detail: `${groupname.value} created.`, life: 3000 });
+				groupname.value = "";
+				visibleCreateGroup.value = false;
+				saving.value = false;
+				setTimeout(()=>{
+					loadgroup();
+				},1000)
+			}
+		})
+	}
+}
+const changeLabels = (ep) => {
+	ztmService.changeEpLabels(selectedMesh.value?.name, ep?.id, ep?.labels||[])
+		.then(data => {})
+		.catch(err => console.log('Request Failed', err)); 
+}
+onActivated(()=>{
+	load()
+})
+onMounted(()=>{
+	getStatsTimer();
+})
+
+watch(()=>selectedMesh,()=>{
+	if(selectedMesh.value){
+		load()
+	}
+},{
+	deep:true,
+	immediate:true
+})
+// || true to open dev manage
+const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 </script>
 
 <template>
@@ -162,69 +303,213 @@ const newInvite = () => {
 		<div class="relative h-full min-h-screen" :class="{'w-22rem':!!selectEp,'w-full':!selectEp,'mobile-hidden':!!selectEp}">
 			<AppHeader :main="true">
 					<template #center>
-						<b>{{t('Endpoints')}} ({{endpoints.length}})</b>
+						<IconField>
+							<InputIcon class="pi pi-search" />
+							<InputText style="background-color: transparent;" v-model="filter.keyword" :placeholder="t('Search')" @input="searchUsers"/>
+						</IconField>
 					</template>
 			
 					<template #end> 
-						<Button icon="pi pi-refresh" text @click="getEndpoints"  :loading="loader"/>
-						<Button v-if="selectedMesh?.agent?.username == 'root'" icon="pi pi-plus"  v-tooltip="t('Invite')"  @click="newInvite"/>
+						<Button icon="pi pi-refresh" text @click="load"  :loading="loader"/>
+						<Button text v-if="manage" icon="iconfont icon-add-user"  v-tooltip="t('Invite')"  @click="newInvite"/>
+						<Button text v-if="manage" icon="iconfont icon-add-group-right"  v-tooltip="t('Create Group')"  @click="newGroup"/>
 					</template>
 			</AppHeader>
 			
-			<Dialog class="noheader" v-model:visible="visibleImport" modal :dismissableMask="true">
-				<div class="p-2" v-if="!permit">
-					<div class="w-full">
-						<CertificateUploder placeholder="Identity" v-model="identity" label="Identity"/>
-					</div>
-					<div class="flex mt-2 w-full">
-						<InputText size="small" :placeholder="t('Username')" v-model="username"  class="flex-item"></InputText>
-						<Button size="small" :disabled="!username || username == 'root'" :label="t('Invite')" class="ml-2"  @click="inviteEp"></Button>
-					</div>
-				</div>
-				<div class="p-2" v-else>
-					<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="permitStr"/>
-					<div class="flex mt-1">
-						<Button size="small"  :label="t('Copy')" class="flex-item mr-1"  @click="copy"></Button>
-						<Button size="small"  :label="t('Download')" class="flex-item"  @click="download"></Button>
-					</div>
-				</div>
-			</Dialog>
-			<Loading v-if="loading"/>
-			<ScrollPanel class="absolute-scroll-panel" v-else-if="endpoints && endpoints.length >0">
-			<DataView class="message-list" :value="endpoints">
-					<template #list="slotProps">
-							<div class="flex flex-col message-item pointer" v-for="(node, index) in slotProps.items" :key="index" @click="select(node)">
-								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-										<div class="w-40 relative">
-											<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
-										</div>
-										<div class="flex-item">
-												<div class="flex">
-													<div class="flex-item pt-1">
-														<b>{{ node.label || node.id }} <span v-if="!!node.username">({{node.username}})</span></b>
-														<span v-if="node.isLocal" class="ml-2 relative" style="top: -1px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+			<Loading v-if="loading && filter.offset==0"/>
+			<ScrollPanel class="absolute-scroll-panel" v-else-if="Object.keys(usersMap).length >0">
+				<Accordion value="all">
+					<AccordionPanel class="small" value="all">
+						<AccordionHeader class="small">{{t('Default')}} ({{users.length}})</AccordionHeader>
+						<AccordionContent>
+							<DataView class="message-list" :value="users" >
+									<template #empty>
+										<div class="p-4">{{emptyMsg}}</div>
+									</template>
+									<template #list="slotProps">
+											<div class="flex flex-col message-item pointer" v-for="(user, index) in slotProps.items" :key="index" >
+												<div v-if="user.endpoints?.count <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(user.endpoints?.instances[0])">
+													<div class="flex-item flex gap-2">
+														<UserAvatar :size="28" :username="user.name"/>
+														<b class="line-height-4">{{ user.name }} </b>
+														<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+														<b class="line-height-4">{{user.endpoints?.instances[0].name || user.endpoints?.instances[0].id}}</b>
+														<span v-if="user.endpoints?.instances[0]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+														<ChipList @change="changeLabels(user.endpoints?.instances[0])" class="ml-2 relative" style="top: 4px;" :readonly="user.endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="user.endpoints.instances[0].labels"/>
 													</div>
-													<div class="flex">
-														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[node.id]">↑{{bitUnit(stats[node.id]?.send)}}</span>
-														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[node.id]">↓{{bitUnit(stats[node.id]?.receive)}}</span>
-														<Status :run="node.online" :tip="timeago(node.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+													<div class="flex" v-if="!selectEp">
+														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↑{{bitUnit(stats[user.endpoints?.instances[0].id]?.send)}}</span>
+														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↓{{bitUnit(stats[user.endpoints?.instances[0].id]?.receive)}}</span>
+														<Status :run="user.endpoints?.instances[0]?.online" :tip="timeago(user.endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+													</div>
+												</div>
+												
+												<Accordion v-else class="w-full block" :value="user.name">
+													<AccordionPanel>
+														<AccordionHeader class="flex">
+															<div class="flex-item flex gap-2" @click="loadepByUser(user.name)">
+																<UserAvatar :size="28" :username="user.name"/>
+																<b class="line-height-4">{{ user.name }}</b>
+																<OverlayBadge :value="user.endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
+															</div>
+														</AccordionHeader>
+														<AccordionContent>	
+															<div class="flex flex-col message-item pointer" v-for="(ep, index) in (usersMap[user.name]?.endpoints?.instances||[])" :key="index" >
+																<div class="flex flex-col py-3 pr-3 pl-2 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(ep)">
+																	<div class="flex-item flex gap-2">
+																		<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+																		<b class="line-height-4">{{ep.name || ep.id}}</b>
+																		<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+																		<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != user.name" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="ep.labels"/>
+																	</div>
+																	<div class="flex" v-if="!selectEp">
+																		<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
+																		<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
+																		<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+																	</div>
+																</div>
+															</div>
+														</AccordionContent>
+													</AccordionPanel>
+												</Accordion>
+											</div>
+									</template>
+							</DataView>
+							<div v-if="more.default" class="message-item pointer text-center py-3 opacity-50" @click="nextUsers" >
+								<i v-if="!loading" class="pi pi-arrow-down mr-1 relative" style="top: 1px;"/> 
+								<i v-else class="pi pi-spin pi-spinner relative" style="top: 2px;margin: 0;width:16px;height: 16px;font-size: 16px;"></i>
+								{{t('More')}}
+							</div>
+							
+						</AccordionContent>
+					</AccordionPanel>
+					<AccordionPanel class="small" v-for="(group,index) in groups" :key="index" :value="group.id">
+							<AccordionHeader class="small flex">
+								<div class="flex-item">{{ group?.name }} <span v-if="group.users?.length>0">({{group.users.length}})</span></div>
+								<Button @click.stop="selectGroup(group,'rename')" size="small" icon="pi pi-pen-to-square" text v-if="!selectEp && manage"/>
+								<Button @click.stop="selectGroup(group,'adduser')" size="small" icon="iconfont icon-add-user" text v-if="!selectEp && manage"/>
+								<Button severity="secondary" @click.stop="removeGroup(group)" class="mr-2" size="small" icon="pi pi-trash" text v-if="!selectEp && manage"/>
+							</AccordionHeader>
+							<AccordionContent>
+								<DataView v-if="group.users && group.users.length>0" class="message-list" :value="group.users.filter((u)=>u.indexOf(filter.keyword)>=0)">
+										<template #empty>
+											<div class="p-4">{{emptyMsg}}</div>
+										</template>
+										<template #list="slotProps">
+												<div class="flex flex-col message-item pointer" v-for="(key, index) in slotProps.items" :key="index" >
+													<div v-if="usersMap[key]?.endpoints?.count <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(usersMap[key].endpoints?.instances[0])">
+														<div class="flex-item flex gap-2">
+															<UserAvatar :size="28" :username="key"/>
+															<b class="line-height-4">{{ key }} </b>
+															<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+															<b class="line-height-4">{{usersMap[key].endpoints?.instances[0].name || usersMap[key].endpoints?.instances[0].id}}</b>
+															<span v-if="usersMap[key].endpoints?.instances[0]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+															<ChipList @change="changeLabels(usersMap[key].endpoints?.instances[0])" class="ml-2 relative" style="top: 4px;" :readonly="usersMap[key].endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Tag')" listType="tag" v-if="!selectEp && usersMap[key]?.endpoints?.instances[0]?.labels" v-model:list="usersMap[key].endpoints.instances[0].labels"/>
+														</div>
+														<div class="flex" v-if="!selectEp">
+															<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↑{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.send)}}</span>
+															<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↓{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.receive)}}</span>
+															<Status :run="usersMap[key].endpoints?.instances[0]?.online" :tip="timeago(usersMap[key].endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+															<Button severity="secondary" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="manage"/>
+														</div>
 													</div>
 													
+													<Accordion v-else-if="!!usersMap[key]" class="w-full block" :value="key">
+														<AccordionPanel>
+															<AccordionHeader class="flex">
+																<div class="flex-item flex gap-2" @click="loadepByUser(key)">
+																	<UserAvatar :size="28" :username="key"/>
+																	<b class="line-height-4">{{ key }}</b>
+																	<OverlayBadge :value="usersMap[key].endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
+																</div>
+																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
+															</AccordionHeader>
+															<AccordionContent>	
+																<div class="flex flex-col message-item pointer" v-for="(ep, index) in usersMap[key].endpoints?.instances" :key="index" >
+																	<div class="flex flex-col py-3 pr-3 pl-2 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(ep)">
+																		<div class="flex-item flex gap-2">
+																			<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+																			<b class="line-height-4">{{ep.name || ep.id}}</b>
+																			<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+																			<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != key" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="ep.labels"/>
+																		</div>
+																		<div class="flex" v-if="!selectEp">
+																			<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
+																			<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
+																			<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+																		</div>
+																	</div>
+																</div>
+															</AccordionContent>
+														</AccordionPanel>
+													</Accordion>
 												</div>
-										</div>
+										</template>
+								</DataView>
+								<div class="py-4 text-center" v-else>
+									<Button @click.stop="selectGroup(group,'adduser')" :label="t('Append Users')" icon="iconfont icon-add-user" v-if="!selectEp && manage">
+									</Button>
 								</div>
-							</div>
-					</template>
-			</DataView>
+							</AccordionContent>
+					</AccordionPanel>
+				</Accordion>
+			
 			</ScrollPanel>
 			<Empty v-else :title="emptyMsg"/>
 		</div>
 
 		<div class="flex-item" v-if="!!selectEp">
 			<div class="shadow mobile-fixed">
-				<EndpointDetail @back="() => selectEp=false" :ep="selectEp" @reload="getEndpoints"/>
+				<EndpointDetail @back="() => selectEp=false" :ep="selectEp" @reload="loadusers"/>
 			</div>
 		</div>
+		
+		<Dialog class="noheader" v-model:visible="visibleUserSelector" modal :style="{ width: '25rem' }">
+				<AppHeader :back="() => visibleUserSelector = false" :main="false">
+						<template #center>
+							<b>{{t('Append Users')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedUsers).length>0" :value="Object.keys(selectedUsers).length"/></b>
+						</template>
+				
+						<template #end> 
+							<Button :loading="saving" icon="pi pi-check" @click="appendUsers" :disabled="Object.keys(selectedUsers).length==0"/>
+						</template>
+				</AppHeader>
+				<UserSelector
+					:app="true" 
+					size="small"
+					class="w-full"
+					:mesh="selectedMesh"
+					multiple="tree" 
+					:user="selectedMesh?.agent?.username" 
+					v-model="selectedUsers" />
+		</Dialog>
+		
+		<Dialog class="noheader" v-model:visible="visibleImport" modal :dismissableMask="true">
+			<div class="p-2" v-if="!permit">
+				<div class="w-full">
+					<CertificateUploder placeholder="Identity" v-model="identity" label="Identity"/>
+				</div>
+				<div class="flex mt-2 w-full">
+					<InputText size="small" :placeholder="t('Username')" v-model="username"  class="flex-item"></InputText>
+					<Button size="small" :disabled="!username || username == 'root'" :label="t('Invite')" class="ml-2"  @click="inviteEp"></Button>
+				</div>
+			</div>
+			<div class="p-2" v-else>
+				<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="permitStr"/>
+				<div class="flex mt-1">
+					<Button size="small"  :label="t('Copy')" class="flex-item mr-1"  @click="copy"></Button>
+					<Button size="small"  :label="t('Download')" class="flex-item"  @click="download"></Button>
+				</div>
+			</div>
+		</Dialog>
+		<Dialog class="noheader" v-model:visible="visibleCreateGroup" modal :dismissableMask="true">
+			<div class="p-2" >
+				<div class="flex mt-2 w-full">
+					<InputText size="small" :placeholder="t('Group Name')" v-model="groupname"  class="flex-item"></InputText>
+					<Button size="small" :loading="saving" :disabled="!groupname" :label="!!selectedGroup?.id?t('Save'):t('Create')" class="ml-2"  @click="postGroup"></Button>
+				</div>
+			</div>
+		</Dialog>
 	</div>
 </template>
 
@@ -239,5 +524,33 @@ const newInvite = () => {
 }
 :deep(.p-tabview-panels){
 	padding: 0;
+}
+:deep(.p-accordionheader){
+	padding-top: 14px;
+	padding-bottom: 14px;
+	padding-left: 14px;
+	padding-right: 14px;
+	color: inherit;
+	border-radius: 0 !important;
+}
+
+:deep(.p-accordionheader.small){
+	padding-top: 8px;
+	padding-bottom: 8px;
+	font-size: 12px;
+	background-color: var(--surface-subground) !important;
+}
+:deep(.small.p-accordionpanel){
+	border-bottom: 1px solid var(--surface-border) !important;
+}
+:deep(.p-accordioncontent-content){
+	padding: 0;
+}
+:deep(.p-accordionheader-toggle-icon){
+	opacity: 0.5;
+}
+:deep(.p-accordionpanel){
+	border-width: 0 !important;
+	border-radius: 0 !important;
 }
 </style>

@@ -23,11 +23,15 @@ const meshes = computed(() => {
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+const selectEndpoints = ref([]);
 const loaddata = () => {
 	
+	if(!!selectedMesh.value?.agent?.id && !selectEndpoints.value?.length){
+		selectEndpoints.value = [ selectedMesh.value.agent.id ];
+	}
 	loading.value = true;
 	loader.value = true;
-	getEndpoints();
+	mergeLogs();
 }
 const mergeLogs = () => {
 	logs.value = [];
@@ -35,29 +39,7 @@ const mergeLogs = () => {
 		getLogs(ep);
 	})
 }
-const selectEndpoints = ref([]);
 const endpoints = ref([]);
-const getEndpoints = (callback) => {
-	if(!selectedMesh.value){
-		loading.value = false;
-		loader.value = false;
-		return
-	}
-	loading.value = true;
-	loader.value = true;
-	ztmService.getEndpoints(selectedMesh.value?.name)
-		.then(res => {
-			endpoints.value = res || [];
-			if(!!selectedMesh.value?.agent?.id){
-				selectEndpoints.value = [ selectedMesh.value.agent.id ];
-			}
-			mergeLogs();
-		})
-		.catch(err => {
-			loading.value = false;
-			loader.value = false;
-		}); 
-}
 const getLogs = (ep) => {
 	ztmService.getLogs(selectedMesh.value?.name, ep)
 		.then(res => {
@@ -113,8 +95,7 @@ onActivated(()=>{
 		<template #content>
 			<InputGroup class="search-bar" >
 				<Button icon="pi pi-chart-scatter" />
-				<MultiSelect v-if="!!endpoints && endpoints.length>0" v-model="selectEndpoints" @change="mergeLogs" :options="endpoints" optionLabel="name" optionValue="id" :filter="endpoints.length>8" :placeholder="t('Endpoints')"
-				            :maxSelectedLabels="2" style="max-width: 200px;" />
+				<EpSelector v-if="selectedMesh" :multiple="true" :mesh="selectedMesh" v-model="selectEndpoints" @select="mergeLogs"/>
 				<Textarea @keyup="watchEnter" v-model="typing" :autoResize="true" class="drak-input bg-gray-900 text-white flex-1" :placeholder="t('Type keyword')" rows="1" cols="30" />
 				<Button :disabled="!typing" icon="pi pi-search"/>
 			</InputGroup>

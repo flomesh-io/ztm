@@ -6,9 +6,11 @@ import _ from 'lodash';
 import { openFolder } from '@/utils/file';
 import { platform } from '@/utils/platform';
 import userSvg from "@/assets/img/user.png";
+import { useI18n } from 'vue-i18n';
+const { t, locale } = useI18n();
 const store = useStore();
 const chatService = new ChatService();
-const props = defineProps(['room','users']);
+const props = defineProps(['room']);
 const emits = defineEmits(['back','history','update:room']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -18,18 +20,6 @@ const visibleUserSelector = ref(false);
 const isPC = computed(()=>{
 	const pm = platform();
 	return pm != 'ios' && pm != 'android' && pm != 'web';
-})
-const usersTree = computed(()=>{
-	const users = _.union(props?.users || [], props?.room?.members || []);
-	const _users = [];
-	users.filter((user) => user != selectedMesh.value?.agent?.username).forEach((user,index) => {
-		_users.push({
-			key:user,
-			label:user,
-			data:user,
-		})
-	});
-	return _users;
 })
 const selectedNewChatUsers = ref({});
 
@@ -108,7 +98,7 @@ watch(() => props.room, () => {
 	
 	<AppHeader :back="back">
 	    <template #center>
-	      <b>Setting</b>
+	      <b>{{t('Setting')}}</b>
 	    </template>
 	    <template #end> 
 				<Button :loading="loading" icon="pi pi-cog"  severity="secondary" text />
@@ -143,20 +133,20 @@ watch(() => props.room, () => {
 			<Button :disabled="!newName" @click="saveName" :loading="saving" v-if="newName != props.room?.name" icon="pi pi-check" text severity="success" />
 		</li>
 		<li class="nav-li flex" v-else-if="props.room.peer">
-			<b class="opacity-70">Peer</b>
+			<b class="opacity-70">{{t('Peer')}}</b>
 			<div class="flex-item text-right pr-3">
 				<img :src="userSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/> {{props.room.peer}}
 			</div>
 		</li>
 		<li class="nav-li flex" @click="history">
-			<b class="opacity-70">History</b>
+			<b class="opacity-70">{{t('History')}}</b>
 			<div class="flex-item">
 				
 			</div>
 			<i class="pi pi-angle-right"/>
 		</li>
 		<li v-if="isPC" class="nav-li flex" @click="openBox">
-			<b class="opacity-70">Files</b>
+			<b class="opacity-70">{{t('Files')}}</b>
 			<div class="flex-item">
 			</div>
 			<i class="pi pi-external-link"/>
@@ -169,24 +159,23 @@ watch(() => props.room, () => {
 	</ul>
 	
 	<Dialog class="noheader" v-model:visible="visibleUserSelector" modal header="Invite" :style="{ width: '25rem' }">
-			
 			<AppHeader :back="() => visibleUserSelector = false" :main="false">
 					<template #center>
-						<b>Invite <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
+						<b>{{t('Invite')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
 					</template>
 			
 					<template #end> 
 						<Button icon="pi pi-check" @click="appendGroupUsers" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
 					</template>
 			</AppHeader>
-			<Tree :filter="usersTree.length>8" filterMode="lenient" v-model:selectionKeys="selectedNewChatUsers" :value="usersTree" selectionMode="checkbox" class="w-full md:w-[30rem]">
-				<template #nodeicon="slotProps">
-						<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
-				</template>
-				<template #default="slotProps">
-						<b class="px-2">{{ slotProps.node?.label }}</b>
-				</template>
-			</Tree>
+			<UserSelector
+				:app="true" 
+				size="small"
+				class="w-full"
+				:mesh="selectedMesh"
+				multiple="tree" 
+				:user="selectedMesh?.agent?.username" 
+				v-model="selectedNewChatUsers" />
 	</Dialog>
 </template>
 
