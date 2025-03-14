@@ -252,7 +252,9 @@ const postGroup = () => {
 				groupname.value = "";
 				visibleCreateGroup.value = false;
 				saving.value = false;
-				loadgroup();
+				setTimeout(()=>{
+					loadgroup();
+				},1000)
 			}
 		})
 	} else {
@@ -264,7 +266,9 @@ const postGroup = () => {
 				groupname.value = "";
 				visibleCreateGroup.value = false;
 				saving.value = false;
-				loadgroup();
+				setTimeout(()=>{
+					loadgroup();
+				},1000)
 			}
 		})
 	}
@@ -313,12 +317,15 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 			</AppHeader>
 			
 			<Loading v-if="loading && filter.offset==0"/>
-			<ScrollPanel class="absolute-scroll-panel" v-else-if="users && users.length >0">
+			<ScrollPanel class="absolute-scroll-panel" v-else-if="Object.keys(usersMap).length >0">
 				<Accordion value="all">
 					<AccordionPanel class="small" value="all">
 						<AccordionHeader class="small">{{t('Default')}} ({{users.length}})</AccordionHeader>
 						<AccordionContent>
-							<DataView class="message-list" :value="users">
+							<DataView class="message-list" :value="users" >
+									<template #empty>
+										<div class="p-4">{{emptyMsg}}</div>
+									</template>
 									<template #list="slotProps">
 											<div class="flex flex-col message-item pointer" v-for="(user, index) in slotProps.items" :key="index" >
 												<div v-if="user.endpoints?.count <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(user.endpoints?.instances[0])">
@@ -384,7 +391,10 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 								<Button severity="secondary" @click.stop="removeGroup(group)" class="mr-2" size="small" icon="pi pi-trash" text v-if="!selectEp && manage"/>
 							</AccordionHeader>
 							<AccordionContent>
-								<DataView v-if="group.users && group.users.length>0" class="message-list" :value="group.users">
+								<DataView v-if="group.users && group.users.length>0" class="message-list" :value="group.users.filter((u)=>u.indexOf(filter.keyword)>=0)">
+										<template #empty>
+											<div class="p-4">{{emptyMsg}}</div>
+										</template>
 										<template #list="slotProps">
 												<div class="flex flex-col message-item pointer" v-for="(key, index) in slotProps.items" :key="index" >
 													<div v-if="usersMap[key]?.endpoints?.count <= 1" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(usersMap[key].endpoints?.instances[0])">
