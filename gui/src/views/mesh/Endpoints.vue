@@ -360,7 +360,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																		<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 																		<b class="line-height-4">{{ep.name || ep.id}}</b>
 																		<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
-																		<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="ep.labels"/>
+																		<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != user.name" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="ep.labels"/>
 																	</div>
 																	<div class="flex" v-if="!selectEp">
 																		<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
@@ -431,7 +431,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																			<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
 																			<b class="line-height-4">{{ep.name || ep.id}}</b>
 																			<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
-																			<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="ep.labels"/>
+																			<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != key" :placeholder="t('Tag')" listType="tag" v-if="!selectEp" v-model:list="ep.labels"/>
 																		</div>
 																		<div class="flex" v-if="!selectEp">
 																			<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
