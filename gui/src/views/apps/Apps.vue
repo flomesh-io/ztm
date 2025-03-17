@@ -74,8 +74,12 @@ const loaddata = () => {
 const appLoading = ref({})
 const manage = ref(false);
 const mergeApps = computed(()=>{
-	return (!props.noInners?innerApps.value:innerApps.value).concat(meshApps.value||[]).concat(uninstallApps.value);
-	//return [{ "name": "tunnel", "tag": "", "provider": "ztm", "isBuiltin": true, "isDownloaded": false, "isPublished": false, "isRunning": false }]
+	const _apps = (!props.noInners?innerApps.value:innerApps.value).concat(meshApps.value||[]).concat(uninstallApps.value);
+	if(hasTauri.value){
+		return _apps;
+	} else {
+		return _apps.filter((app) => `${app?.provider||''}/${app.name}` != 'ztm/users')
+	}
 })
 
 const installAPP = (app, options, base) => {
