@@ -8,7 +8,8 @@ export default class ProxyService {
 		return request(`/api/appinfo`);
 	}
 	getGroups() {
-		return request(`/api/groups`);
+		const	_mesh = ztmService.getAppMesh()
+		return request(`/api/meshes/${_mesh}/apps/ztm/users/api/groups`);
 	}
 	getUsers() {
 		return request(`/api/users`);
