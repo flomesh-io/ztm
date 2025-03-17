@@ -29,6 +29,9 @@ function getUrl(url){
 			path = params.join("/")
 		}
 	}
+	if(url.indexOf('/api/meshes/')==0){
+		path = '';
+	}
 	const devPath = localStorage.getItem("DEV_BASE")
 	if(!!devPath && url.indexOf('/api/meshes/')==-1){
 		return `${devPath}${url}`

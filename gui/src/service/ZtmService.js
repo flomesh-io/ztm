@@ -215,7 +215,7 @@ export default class ZtmService {
 	getAppMesh(){
 		const devPath = localStorage.getItem("DEV_BASE")
 		const match1 = location.href.match(/meshes\/(.*?)\/apps/);
-		const match2 = devPath.match(/meshes\/(.*?)\/apps/);
+		const match2 = (devPath||'').match(/meshes\/(.*?)\/apps/);
 		if(match1 && match1[1]){
 			return match1[1];
 		} else if(!!devPath && match2 && match2[1]) {
