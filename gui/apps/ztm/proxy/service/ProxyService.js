@@ -20,7 +20,7 @@ export default class ProxyService {
 	getProxy(ep) {
 		return request(`/api/endpoints/${ep}/config`)
 	}
-	setProxy({ep, listen, targets, allow, deny, exclusions, rules}) {
+	setProxy({ep, listen, targets, exclusions, rules}) {
 		const body = {};
 		if(!!rules && rules.length>0){
 			body.rules = rules
@@ -35,14 +35,6 @@ export default class ProxyService {
 		const _exclusions = !!exclusions?exclusions.filter((t)=>!!t):[];
 		if(_exclusions.length > 0){
 			body.exclusions = _exclusions
-		}
-		const _allow = !!allow?allow.filter((t)=>!!t):[];
-		if(_allow.length > 0){
-			body.allow = _allow
-		}
-		const _deny = !!deny?deny.filter((t)=>!!t):[];
-		if(_deny.length > 0){
-			body.deny = _deny
 		}
 		return request(`/api/endpoints/${ep}/config`,"POST", body)
 	}
