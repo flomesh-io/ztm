@@ -21,14 +21,6 @@ export default function ({ app, mesh }) {
     )
   }
 
-  function getUserGroups(user) {
-    return getGroupConfig().then(
-      config => config.filter(
-        g => g.users.includes(user)
-      )
-    )
-  }
-
   function getGroup(id) {
     return getGroupConfig(id)
   }
@@ -110,7 +102,6 @@ export default function ({ app, mesh }) {
     getGroup,
     setGroup,
     deleteGroup,
-    getUserGroups,
     allUsers,
     getUser,
   }
