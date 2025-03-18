@@ -37,7 +37,7 @@
 							severity="secondary"
               v-if="d.length > min"
               @click="remove(item)"
-              class="ml-1"
+              class="ml-1 mb-1"
             />
             <Button
 							size="small"

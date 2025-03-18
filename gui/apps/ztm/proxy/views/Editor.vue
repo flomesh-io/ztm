@@ -18,14 +18,11 @@ const info = computed(() => {
 	return store.getters['app/info']
 });
 const loading = ref(false);
-const allow = ref('');
-const deny = ref('');
 const newConfig = {
 	listen: "",
 	targets: [],
 	exclusions: [],
-	allow: [],
-	deny: [],
+	rules:[]
 }
 const config = ref(_.cloneDeep(newConfig));
 
@@ -42,15 +39,17 @@ const save = () => {
 		listen: config.value.listen,
 		targets: config.value.targets,
 		exclusions: config.value.exclusions,
-		allow: allow.value?allow.value.split("\n").join(";").split(";"):[],
-		deny: deny.value?deny.value.split("\n").join(";").split(";"):[],
 	}
 	if(rules && rules.length>0){
 		rules.forEach(rule => {
-			rule.allow = rule.allowStr?rule.allowStr.split("\n").join(";").split(";"):[];
-			rule.deny = rule.denyStr?rule.denyStr.split("\n").join(";").split(";"):[];
-			delete rule.allowStr;
-			delete rule.denyStr;
+			rule.targets = rule.targetsStr?rule.targetsStr.split("\n").join(";").split(";"):[];
+			delete rule.targetsStr;
+			if(!rule.users?.length){
+				delete rule.users
+			}
+			if(!rule.groups?.length){
+				delete rule.groups
+			}
 		});
 		_data.rules = rules;
 	}
@@ -71,23 +70,18 @@ const getGroups = () => {
 		groups.value = res || [];
 	})
 }
-const enableRoutingRules = ref(false);
 const loaddata = () => {
 	proxyService.getProxy(props?.ep?.id).then((res)=>{
 		config.value.listen = res.listen || "";
 		config.value.targets = res.targets || [];
 		config.value.exclusions = res.exclusions || [];
-		config.value.allow = res.allow || [];
-		config.value.deny = res.deny || [];
-		allow.value = (res?.allow||[]).join("\n")
-		deny.value = (res?.deny||[]).join("\n")
 		if(res?.rules && res.rules.length>0){
 			config.value.rules = res.rules;
 			config.value.rules.forEach(rule => {
-				rule.allowStr = (rule?.allow).join("\n")
-				rule.denyStr = (rule?.deny).join("\n")
+				rule.targetsStr = (rule?.targets||[]).join("\n")
 			})
-			enableRoutingRules.value = true;
+		} else {
+			config.value.rules =  [];
 		}
 	})
 	getGroups();
@@ -98,10 +92,10 @@ onMounted(() => {
 const placeholder = ref(t('domain | ip')+`...`);
 const newRule = {
 	users:[],
-	group:'',
-	allow: [],
-	allowStr: '',
-	denyStr: '',
+	groups:[],
+	action:'allow',
+	targets: [],
+	targetsStr: '',
 }
 const rule = ref(_.cloneDeep(newRule))
 const addRule = () => {
@@ -171,84 +165,51 @@ const ruleType = ref(t('Users'))
 							e.g. '*.example.com' | '0.0.0.0/0'
 						</div>
 						<div class="grid mt-5 w-full" >
-							<div class="col-12 p-0">
-								<FormItem :label="t('Using Rules')" :border="false">
-									<ToggleSwitch v-model="enableRoutingRules" @click="changeEnableRoutingRules"/>
-								</FormItem>
-							</div>
-							<div class="col-12 p-0" v-if="!!enableRoutingRules">
+							<div class="col-12 p-0" >
 								<FormItem :label="t('Rules')" :border="false">
-									<div class="flex w-full mb-4" v-for="(rule,index) in config.rules">
-										<div style="min-width: 200px;" class="p-1" v-if="rule.users && rule.users.length>0">
-											<FloatLabel>
-												<UserSelector
-													:app="true" 
-													size="small"
-													:multiple="true" 
-													:user="info?.username" 
-													v-model="rule.users" />
-												<label >{{t('Users')}}</label>
-											</FloatLabel>
-										</div>
-										<div style="min-width: 200px;" class="p-1" v-else>
-											<FloatLabel>
-												<Select size="small" class="w-full" v-model="rule.group" :options="groups"  :placeholder="t('Group')" optionLabel="name" optionValue="id"/>
-												<label >{{t('Group')}}</label>
-											</FloatLabel>
-										</div>
-										<div class="flex-item p-1">
-											<FloatLabel>
-												<Textarea class="w-full"  v-model="rule.allowStr" rows="3" cols="20" />
-												<label>{{t('Allow')}}</label>
-											</FloatLabel>
-											<div class="opacity-60">
-												e.g. '*.example.com' | '0.0.0.0/0'
+									<InputList 
+									:d="config.rules"
+									:attrs="newRule"
+									:min="0"
+									class="flex w-full">
+										<template #default="{ item, listIndex }">
+											<div class="pb-3 w-full flex">
+												<div class="p-1">
+													<SelectButton class="w-10rem" size="small" v-model="item.action" optionValue="value" optionLabel="label" :options="[{label:t('Allow'),value:'allow'},{label:t('Deny'),value:'deny'}]" />
+												</div>
+												<div  class="p-1" >
+													<FloatLabel>
+														<UserSelector
+															:app="true" 
+															size="small"
+															:multiple="true" 
+															style="min-width: 150px;"
+															:user="info?.username" 
+															placeholder=""
+															v-model="item.users" />
+														<label >{{(!item.users?.length && !item.groups?.length)?t('All Users'):t('Users')}}</label>
+													</FloatLabel>
+												</div>
+												<div  class="p-1">
+													<FloatLabel>
+														<MultiSelect size="small" class="w-full" style="min-width: 150px;" v-model="item.groups" :options="groups"  placeholder="" optionLabel="name" optionValue="id"/>
+														<label >{{(!item.users?.length && !item.groups?.length)?t('All Groups'):t('Groups')}}</label>
+													</FloatLabel>
+												</div>
+												<div class="flex-item p-1">
+													<FloatLabel>
+														<Textarea class="w-full"  v-model="item.targetsStr" rows="3" cols="20" />
+														<label>{{t('Targets')}}</label>
+													</FloatLabel>
+													<div class="opacity-60">
+														e.g. '*.example.com;0.0.0.0/0'
+													</div>
+												</div>
 											</div>
-										</div>
-										<div class="flex-item p-1">
-											<FloatLabel>
-												<Textarea class="w-full" v-model="rule.denyStr" rows="3" cols="20" />
-												<label>{{t('Deny')}}</label>
-											</FloatLabel>
-										</div>
-										<div class="p-1">
-											<Button @click="() => config.rules.splice(index,1)" icon="pi pi-minus" size="small" severity="secondary" />
-										</div>
-									</div>
-									<div class="flex items-center pt-1 pb-2 ">
-										<div class="px-1">
-											<SelectButton class="w-10rem" size="small" v-model="ruleType" :options="[t('Users'),t('Group')]" />
-										</div>
-										<div v-if="ruleType == t('Users')" class="flex-item p-1">
-											<UserSelector
-												:app="true" 
-												size="small"
-												:multiple="true" 
-												:user="info?.username" 
-												v-model="rule.users" />
-										</div>
-										<div v-else class="flex-item p-1">
-											<Select size="small" style="max-width: 200px;" class="w-full" v-model="rule.group" :options="groups" :placeholder="t('Group')" optionLabel="name" optionValue="id"/>
-										</div>
-										<div class="p-1">
-											<Button :disabled="(!rule.users || rule.users.length ==0) && !rule.group" @click="addRule" icon="pi pi-plus" size="small" severity="secondary" />
-										</div>
-									</div>
+										</template>
+									</InputList>
 								</FormItem>
 							</div>
-							<div v-if="!enableRoutingRules" class="col-12 md:col-6 p-0">
-								<FormItem :label="t('Allow')" :border="false">
-									<Textarea class="w-full" :placeholder="placeholder" v-model="allow" rows="3" cols="20" />
-								</FormItem>
-							</div>
-							<div v-if="!enableRoutingRules" class="col-12 md:col-6 p-0">
-								<FormItem :label="t('Deny')" :border="false">
-									<Textarea class="w-full" :placeholder="placeholder" v-model="deny" rows="3" cols="20" />
-								</FormItem>
-							</div>
-						</div>
-						<div class="absolute opacity-60" style="padding-left: 100px;margin-top: -15px">
-							e.g. '*.example.com' | '0.0.0.0/0'
 						</div>
 					</div>
 				</div>
