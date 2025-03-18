@@ -174,6 +174,7 @@ const ruleType = ref(t('Users'))
 									class="flex w-full">
 										<template #default="{ item, listIndex }">
 											<div class="pb-3 w-full flex">
+												<Badge class="mr-1" style="margin-top: 10px;" :value="listIndex+1"/>
 												<div class="p-1">
 													<SelectButton class="w-10rem" size="small" v-model="item.action" optionValue="value" optionLabel="label" :options="[{label:t('Allow'),value:'allow'},{label:t('Deny'),value:'deny'}]" />
 												</div>
