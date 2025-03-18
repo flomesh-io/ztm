@@ -252,6 +252,7 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
         },
         mesh: {
           name: meshEnv.name,
+          discoverUsers: meshEnv.discoverUsers(provider, appname),
           discover: meshEnv.discover(provider, appname),
           connect,
           request,

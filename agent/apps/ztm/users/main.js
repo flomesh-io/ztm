@@ -10,12 +10,8 @@ export default function ({ app, mesh, utils }) {
   var gui = new http.Directory(os.path.join(app.root, 'gui'))
   var response = utils.createResponse
   var responder = utils.createResponder
-  var responderOwnerOnly = (f) => responder((params, req) => (
-    $ctx.peer.username === app.username ? f(params, req) : Promise.resolve(response(403))
-  ))
 
   var serveUser = utils.createServer({
-
     '/cli': {
       'CONNECT': utils.createCLIResponder(cli),
     },
@@ -32,38 +28,34 @@ export default function ({ app, mesh, utils }) {
     //
     // Groups
     //
+
     '/api/groups': {
       'GET': responder(({}) => {
-        return api.getGroups().then(
+        return api.allGroups().then(
           ret => ret ? response(200, ret) : response(404)
         )
       }),
     },
+
     '/api/groups/{group}': {
       'GET': responder(({group}) => {
         return api.getGroup(group).then(
           ret => ret ? response(200, ret) : response(404)
         )
       }),
+
       'POST': responder(({group}, req) => {
         var obj = JSON.decode(req.body)
         var name = obj.name
         var users = obj.users
-        return api.setGroups(group, name, users).then(
+        return api.setGroup(group, name, users).then(
           ret => response(ret ? 201 : 403)
         )
       }),
+
       'DELETE': responder(({group}) => {
         return api.deleteGroup(group).then(
           ret => response(ret ? 200 : 404)
-        )
-      }),
-    },
-
-    '/api/groups/user/{user}': {
-      'GET': responder(({user}) => {
-        return api.getUserGroups(user).then(
-          ret => ret ? response(200, ret) : response(404)
         )
       }),
     },
@@ -72,6 +64,14 @@ export default function ({ app, mesh, utils }) {
       'GET': responder(() => api.allUsers().then(
         ret => ret ? response(200, ret) : response(404)
       ))
+    },
+
+    '/api/users/{user}': {
+      'GET': responder(({user}) => {
+        return api.getUser(user).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
     },
 
     '*': {
@@ -84,12 +84,45 @@ export default function ({ app, mesh, utils }) {
   var servePeer = utils.createServer({
   })
 
+  var serveSelf = utils.createServer({
+    '/api/groups': {
+      'GET': responder(({}) => {
+        return api.allGroups().then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+    },
+
+    '/api/groups/{group}': {
+      'GET': responder(({group}) => {
+        return api.getGroup(group).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+    },
+
+    '/api/users': {
+      'GET': responder(() => api.allUsers().then(
+        ret => ret ? response(200, ret) : response(404)
+      ))
+    },
+
+    '/api/users/{user}': {
+      'GET': responder(({user}) => {
+        return api.getUser(user).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+    },
+  })
+
   return pipeline($=>$
     .onStart(c => void ($ctx = c))
     .pipe(() => {
       switch ($ctx.source) {
         case 'user': return serveUser
         case 'peer': return servePeer
+        case 'self': return serveSelf
       }
     })
   )

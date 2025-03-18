@@ -26,6 +26,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   var meshEnv = {
     name: meshName,
     url: `http://${listen}/api/meshes/${meshName}`,
+    discoverUsers: discoverUsersFromApp,
     discover: discoverFromApp,
     connect: connectFromApp,
     fs: makeAppFilesystem,
@@ -1377,6 +1378,13 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   //
   // Mesh API exposed to apps
   //
+
+  function discoverUsersFromApp(provider, app) {
+    return function (name, options) {
+      options = options || {}
+      return discoverUsers(name, options.keyword, options.offset, options.limit)
+    }
+  }
 
   function discoverFromApp(provider, app) {
     return function (id, name, options) {
