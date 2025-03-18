@@ -4,28 +4,8 @@ export default function ({ app, mesh }) {
 
   var currentConfig = null
   var currentListen = ''
+  var currentRules = []
   var currentLogger = null
-
-  function allEndpoints() {
-    return mesh.discover()
-  }
-
-  function allUsers() {
-    return mesh.discover().then(
-      endpoints => {
-        var users = []
-        var set = new Set
-        endpoints.forEach(ep => {
-          var user = ep.username
-          if (!set.has(user)) {
-            users.push(user)
-            set.add(user)
-          }
-        })
-        return users.sort()
-      }
-    )
-  }
   
   function getEndpointCA(ep) {
     if (ep === app.endpoint.id) {
@@ -57,28 +37,11 @@ export default function ({ app, mesh }) {
     }
   }
 
-  function getGroups(ep) {
-    var data = null
-    return pipeline($=>$
-      .onStart(new Message({ method: 'GET', path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups` }))
-      .encodeHTTPRequest()
-      .connect(
-        () => `localhost:7777`
-      )
-      .decodeHTTPResponse()
-      .replaceMessage(res => {
-        data = JSON.decode(res.body)
-        return new StreamEnd
-      })
-      ).spawn().then(() => {
-        return data
-      })
-  }
-  
   function setEndpointConfig(ep, config) {
     if (ep === app.endpoint.id) {
       setLocalConfig(config)
       applyConfig(config)
+      applyRules(config)
       return Promise.resolve()
     } else {
       return mesh.request(ep, new Message(
@@ -157,6 +120,61 @@ export default function ({ app, mesh }) {
     }
   }
 
+  function applyRules(config) {
+    // config.rules = [{
+    //   users: [string],
+    //   groups: [string],
+    //   targets: [string],
+    //   action: 'allow' | 'deny',
+    // }]
+    var groups = {}
+    var rules = (config.rules || []).map(rule => {
+      if (rule.groups instanceof Array) {
+        rule.groups.forEach(gid => groups[gid] ??= {})
+      }
+      return rule
+    })
+    return Promise.all(
+      Object.keys(groups).map(
+        gid => queryGroupMembers.spawn(gid).then(
+          result => {
+            if (result) {
+              var members = groups[gid]
+              result.users.forEach(
+                username => members[username] = true
+              )
+            }
+          }
+        )
+      )
+    ).then(() => {
+      currentRules = rules.map(rule => {
+        var users = {}
+        if (rule.users instanceof Array) {
+          rule.users.forEach(username => users[username] = true)
+        }
+        if (rule.groups instanceof Array) {
+          rule.groups.forEach(gid => Object.assign(users, groups[gid]))
+        }
+        return {
+          users: Object.keys(users),
+          targets: rule.targets || [],
+          action: rule.action,
+        }
+      })
+    })
+  }
+
+  var $result = null
+
+  var queryGroupMembers = pipeline($=>$
+    .onStart(gid => new Message({ method: 'GET', path: `/api/groups/${gid}` }))
+    .muxHTTP().to($=>$.pipe(mesh.connect({ app: 'users' })))
+    .handleMessage(res => $result = (res?.head?.status === 200 ? JSON.decode(res.body) : null))
+    .replaceMessage(new StreamEnd)
+    .onEnd(() => $result)
+  )
+
   var matchPathTargets = new http.Match('/api/targets/*')
 
   var $ctx
@@ -170,37 +188,21 @@ export default function ({ app, mesh }) {
       if (params) {
         $target = params['*']
         $host = $target.substring(0, $target.lastIndexOf(':'))
-
-        var ha = new http.Agent('localhost:7777');
-        var options = {
-          method: 'GET',
-          path: `/api/meshes/${mesh.name}/apps/ztm/users/api/groups/user/${$ctx.peer.username}`
-        };
-
-        return ha.request(options.method, options.path).then(res => {
-          var body = JSON.decode(res.body);
-          var group
-
-          if (body && body.length > 0) {
-            group = body[0].id;
-          }
-
-          if (!isExit(currentConfig, $host) || !isAllowed(currentConfig, $host, group)) {
-            currentLogger?.log?.({
-              event: {
-                time: new Date().toUTCString(),
-                username: $ctx.peer.username,
-                endpoint: $ctx.peer.id,
-                ip: $ctx.peer.ip,
-                target: $target,
-                denied: true,
-              }
-            })
-            return new Message({ status: 403 })
-          }
-          app.log(`Forward to ${$target}`)
-          return new Message({ status: 200 })
-        })
+        if (!isExit(currentConfig, $host) || !isAllowed(currentRules, $host, $ctx.peer.username)) {
+          currentLogger?.log?.({
+            event: {
+              time: new Date().toUTCString(),
+              username: $ctx.peer.username,
+              endpoint: $ctx.peer.id,
+              ip: $ctx.peer.ip,
+              target: $target,
+              denied: true,
+            }
+          })
+          return new Message({ status: 403 })
+        }
+        app.log(`Forward to ${$target}`)
+        return new Message({ status: 200 })
       } else {
         return new Message({ status: 404 })
       }
@@ -374,49 +376,21 @@ export default function ({ app, mesh }) {
     }
   }
 
-  function isAllowed(config, host, group) {
-    if (config?.rules) {
-      // rules with user or group list TODO
-      /*
-      config.rules is:
-      [{
-        users<string name ary> | group<string>,
-        allow,
-        deny
-      }]
-      */
-      var allowed = true;
-      for (var i = 0; i < config.rules.length; i++) {
-        var rule = config.rules[i];
-        var userMatch = rule.users?.includes($ctx.peer.username);
-        var groupMatch = rule.group && rule.group === group;
-
-        if (userMatch || groupMatch) {
-          if (rule.deny && hasDomain(rule.deny, host)) {
-            allowed = false;
-            break;
-          }
-          if (rule.allow && hasDomain(rule.allow, host)) {
-            allowed = true;
-          } else if (!rule.allow && !rule.deny) {
-            allowed = true; // If no allow/deny, default allow
+  function isAllowed(rules, host, username) {
+    var rule = rules.find(
+      rule => {
+        if (rule.users.length > 0 && !rule.users.includes(username)) return false
+        if (rule.targets.length > 0) {
+          if (IP.isV4(host) || IP.isV6(host)) {
+            if (!hasIP(rule.targets, host)) return false
+          } else {
+            if (!hasDomain(rule.targets, host)) return false
           }
         }
-      }
-
-      return allowed;
-    } else {
-      // keep simple allow | deny
-      if (IP.isV4(host) || IP.isV6(host)) {
-        if (hasIP(config?.deny, host)) return false
-        if (config?.allow?.length > 0) return hasIP(config.allow, host)
-        return true
-      } else {
-        if (hasDomain(config?.deny, host)) return false
-        if (config?.allow?.length > 0) return hasDomain(config.allow, host)
         return true
       }
-    }
+    )
+    return rule ? rule.action === 'allow' : true
   }
 
   function hasDomain(list, host) {
@@ -444,14 +418,24 @@ export default function ({ app, mesh }) {
     )
   }
 
-  getLocalConfig().then(applyConfig)
+  getLocalConfig().then(config => {
+    applyConfig(config)
+    applyRules(config)
+
+    function updateRules() {
+      new Timeout(10).wait().then(
+        () => applyRules(currentConfig)
+      ).then(
+        () => updateRules()
+      )
+    }
+
+    updateRules()
+  })
 
   return {
-    allEndpoints,
-    allUsers,
     getEndpointCA,
     getEndpointConfig,
-    getGroups,
     setEndpointConfig,
     acceptPeer,
   }

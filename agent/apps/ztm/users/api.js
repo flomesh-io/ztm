@@ -8,13 +8,14 @@ export default function ({ app, mesh }) {
       watchGroups()
     })
   }
+
   watchGroups()
 
-  function setGroups(id, name, users) {
-    return setGroupConfig(id, {id, name, users}).then(() => true)
+  function setGroup(id, name, users) {
+    return setGroupConfig(id, { name, users }).then(true)
   }
 
-  function getGroups() {
+  function allGroups() {
     return getGroupConfig().then(
       config => config || null
     )
@@ -29,9 +30,7 @@ export default function ({ app, mesh }) {
   }
 
   function getGroup(id) {
-    return getGroupConfig(id).then(
-      config => config || null
-    )
+    return getGroupConfig(id)
   }
 
   function deleteGroup(id) {
@@ -51,52 +50,68 @@ export default function ({ app, mesh }) {
     if (id) {
       return mesh.read(`/shared/root/groups/${id}.json`).then(
         data => {
-          return data && data.toString() ? JSON.decode(data) : null
+          try {
+            var group = JSON.decode(data)
+            group.id = id
+            return group
+          } catch {
+            return null
+          }
         }
       )
     } else {
-      var datas = []
       return mesh.dir(`/shared/root/groups`).then(
-        files => Promise.all(
-          files.map(file => mesh.read(`/shared/root/groups/${file}`).then(
-            data => {
-              if (data && data.toString()) {
-                datas.push(JSON.decode(data))
-              }
+        filenames =>Promise.all(
+          filenames.filter(fn => fn.endsWith('.json')).map(
+            filename => {
+              return mesh.read(`/shared/root/groups/${filename}`).then(
+                data => {
+                  try {
+                    var group = JSON.decode(data)
+                    group.id = filename.substring(0, filename.length - 5)
+                    return group
+                  } catch {
+                    return null
+                  }
+                }
+              )
             }
-          ))
-        ).then(() => datas)
+          )
+        ).then(
+          groups => groups.filter(g=>g)
+        )
       )
     }
   }
-  
+
   function setGroupConfig(id, config) {
     return mesh.write(`/shared/root/groups/${id}.json`, JSON.encode(config))
   }
 
   function allUsers() {
-    return mesh.discover().then(
-      endpoints => {
-        var users = []
-        var set = new Set
-        endpoints.forEach(ep => {
-          var user = ep.username
-          if (!set.has(user)) {
-            users.push(user)
-            set.add(user)
-          }
-        })
-        return users.sort()
-      }
+    return mesh.discoverUsers()
+  }
+
+  function getUser(username) {
+    return getGroupConfig().then(
+      groups => ({
+        name: username,
+        groups: groups.filter(
+          g => g.users.includes(username)
+        ).map(
+          g => ({ id: g.id, name: g.name })
+        )
+      })
     )
   }
-  
+
   return {
-    getGroups,
-    setGroups,
+    allGroups,
     getGroup,
+    setGroup,
     deleteGroup,
     getUserGroups,
     allUsers,
+    getUser,
   }
 }
