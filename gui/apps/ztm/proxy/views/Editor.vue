@@ -202,7 +202,7 @@ const ruleType = ref(t('Users'))
 														<Textarea class="w-full"  v-model="item.targetsStr" rows="3" cols="20" />
 														<label>{{t('Targets')}}</label>
 													</FloatLabel>
-													<div class="opacity-60">
+													<div class="opacity-60" v-if="listIndex+1 == config.rules.length">
 														e.g. '*.example.com;0.0.0.0/0'
 													</div>
 												</div>
