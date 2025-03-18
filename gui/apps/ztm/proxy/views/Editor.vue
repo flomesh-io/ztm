@@ -94,8 +94,8 @@ const newRule = {
 	users:[],
 	groups:[],
 	action:'allow',
-	targets: [],
-	targetsStr: '',
+	targets: ['*'],
+	targetsStr: '*',
 }
 const rule = ref(_.cloneDeep(newRule))
 const addRule = () => {
