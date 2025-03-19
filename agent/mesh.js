@@ -238,9 +238,9 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var filesystemSending = null
     sendFilesystemUpdate()
 
-    function sendFilesystemUpdate() {
+    function sendFilesystemUpdate(delay) {
       if (closed) return
-      new Timeout(1).wait().then(() => {
+      new Timeout(delay || 1).wait().then(() => {
         if (filesystemUpdate) {
           filesystemSending = filesystemUpdate
           filesystemUpdate = null
@@ -257,16 +257,17 @@ export default function (rootDir, listen, config, onConfigUpdate) {
               JSON.encode(filesystemSending)
             )
           ).then(res => {
-            if (res && res.head.status === 201) {
+            if (res?.head?.status === 201) {
               logInfo(`Sent filesystem to ${address} (size = ${size})`)
               filesystemSending = null
+              sendFilesystemUpdate(1)
             } else {
               logError(`Unable to send filesystem to ${address} (status = ${res?.head?.status})`)
+              sendFilesystemUpdate(10)
             }
-            sendFilesystemUpdate()
           })
         } else {
-          sendFilesystemUpdate()
+          sendFilesystemUpdate(1)
         }
       })
     }
@@ -277,9 +278,9 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var aclSending = null
     sendACLUpdate()
 
-    function sendACLUpdate() {
+    function sendACLUpdate(delay) {
       if (closed) return
-      new Timeout(1).wait().then(() => {
+      new Timeout(delay || 1).wait().then(() => {
         if (aclUpdate) {
           aclSending = aclUpdate
           aclUpdate = null
@@ -296,16 +297,17 @@ export default function (rootDir, listen, config, onConfigUpdate) {
               JSON.encode(aclSending)
             )
           ).then(res => {
-            if (res && res.head.status === 201) {
+            if (res?.head?.status === 201) {
               logInfo(`Sent ACL to ${address} (size = ${size})`)
               aclSending = null
+              sendACLUpdate(1)
             } else {
               logError(`Unable to send ACL to ${address} (status = ${res?.head?.status})`)
+              sendACLUpdate(10)
             }
-            sendACLUpdate()
           })
         } else {
-          sendACLUpdate()
+          sendACLUpdate(1)
         }
       })
     }
@@ -462,7 +464,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
               )
             )
           } else {
-            return {}
+            return null
           }
         }
       )
@@ -1040,7 +1042,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     } else {
       return hubs[0].discoverFiles().then(files => {
         var apps = []
-        Object.keys(files).forEach(pathname => {
+        Object.keys(files || {}).forEach(pathname => {
           if (!pathname.startsWith('/shared/')) return
           pathname = pathname.substring(8)
           var i = pathname.indexOf('/')
@@ -1350,6 +1352,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
   function startWatchingFiles() {
     discoverFiles(fsLastChangeTime, true).then(files => {
+      if (!files) {
+        new Timeout(10).wait().then(startWatchingFiles)
+        return
+      }
       var paths = Object.keys(files)
       if (paths.length > 0) {
         fsLastChangeTime = Object.values(files).map(f => f.since).reduce(
@@ -1449,7 +1455,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       return discoverFiles().then(
         files => {
           var list = {}
-          Object.entries(files).forEach(([path, stat]) => {
+          Object.entries(files || {}).forEach(([path, stat]) => {
             var localPath = pathToLocal(path)
             if (localPath && localPath.startsWith(prefix)) {
               list[localPath] = stat
@@ -1467,7 +1473,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         files => {
           var set = new Set
           var list = []
-          Object.keys(files).forEach(path => {
+          Object.keys(files || {}).forEach(path => {
             var localPath = pathToLocal(path)
             if (localPath && localPath.startsWith(prefix)) {
               var path = localPath.substring(prefix.length)
