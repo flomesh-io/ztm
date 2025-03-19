@@ -54,10 +54,12 @@ const select = () => {
 		emits('update:modelValue',selectUser.value);
 	}
 }
+const treeFilter = ref('');
 const selectFilter = (v) => {
 	filter.value.keyword = v?.value||"";
 	getUsers();
 }
+const appendUsers = ref([]);
 const usersTree = computed(()=>{
 	const _users = [];
 	users.value.forEach((user,index)=>{
@@ -67,30 +69,71 @@ const usersTree = computed(()=>{
 			data:user?.name,
 		})
 	});
-	return _users;
-})
+	const _users2 = [];
+	appendUsers.value.forEach((user,index)=>{
+		_users2.push({
+			key:user?.name,
+			label:user?.name,
+			data:user?.name,
+		})
+	});
+	return Array.from(
+	  new Map([..._users, ..._users2].map(item => [item.key, item])).values()
+	);
+});
+
+const usersMerge = computed(()=>{
+	return Array.from(
+	  new Map([...users.value, ...appendUsers.value].map(item => [item.name, item])).values()
+	);
+});
+const usersFilterPlus = computed(()=>{
+	return !!usersMerge.value.find((u)=>u.key == filter.value.keyword)
+});
 watch(()=>props.modelValue,()=>{
 	if(props.modelValue){
+		let _users = [];
 		if(props.multiple == 'tree'){
 			selectedTreeUsers.value = props.modelValue
+			_users = Object.keys(props.modelValue);
 		}else if(!!props.multiple){
 			selectUsers.value = props.modelValue
+			_users = props.modelValue;
 		}else{
-			selectUser.value = props.modelValue
+			selectUser.value = props.modelValue;
+			_users = props.modelValue;
 		}
+		_users.forEach((_user)=>{
+			appendUsers.value.push({name:_user})
+		})
 	}
 },{deep:true,immediate:true});
+const treeFilterPlus = computed(()=>{
+	return !!usersTree.value.find((u)=>u.key == filter.value.keyword)
+});
+const addUser = ()=>{
+	appendUsers.value.push({name:filter.value.keyword});
+	selectedTreeUsers.value[filter.value.keyword] = {checked:true};
+	selectUsers.value.push(filter.value.keyword)
+	selectFilter({value:''})
+	select();
+}
 onMounted(()=>{
 	getUsers();
 })
 </script>
 
 <template>
+	<div v-if="props.multiple == 'tree'" >
+	<div class="px-4 mt-4">
+		<InputGroup >
+			<InputGroupAddon><i class="pi pi-search"/></InputGroupAddon>
+			<InputText  v-model="filter.keyword" :placeholder="t('User')" @input="getUsers()"/>
+			<InputGroupAddon><Button icon="pi pi-plus" severity="secondary" :disabled="treeFilterPlus || !filter.keyword"  @click="addUser" /></InputGroupAddon>
+		</InputGroup>
+	</div>
 	<Tree 
-		v-if="props.multiple == 'tree'" 
-		:filter="true" 
-		@filter="selectFilter" 
-		filterMode="lenient" 
+		
 		v-model:selectionKeys="selectedTreeUsers" 
 		:value="usersTree" 
 		@node-select="select"
@@ -103,6 +146,7 @@ onMounted(()=>{
 				<b class="px-2">{{ slotProps.node?.label }}</b>
 		</template>
 	</Tree>
+	</div>
 	<MultiSelect 
 		v-else-if="props.multiple" 
 		@filter="selectFilter" 
@@ -111,16 +155,22 @@ onMounted(()=>{
 		:size="props.size"
 		maxSelectedLabels="2" 
 		:loading="loading"  
+		:resetFilterOnHide="true"
 		:emptyMessage="t('No User')"
 		v-model="selectUsers" 
 		@change="select" 
-		:options="users" 
+		:options="usersMerge" 
 		optionLabel="name" 
 		optionValue="name" 
 		:filter="true" 
 		:placeholder="t('Users')"
 	  :selectedItemsLabel="`${selectUsers.length} ${t('Users')}`" 
 		style="max-width: 200px;" >
+		<template #footer v-if="!usersFilterPlus && !!filter.keyword">
+			<div class="text-center pb-2 px-3">
+					<Button severity="secondary" class="w-full" size="small" icon="pi pi-plus" :label="t('Add')" @click.stop="addUser" />
+			</div>
+		</template>
 		<template #option="slotProps">
 			<i class="pi pi-user mr-1"/>
 			{{ slotProps.option.name }}
@@ -134,8 +184,9 @@ onMounted(()=>{
 		:size="props.size"
 		@change="select" 
 		:emptyMessage="t('No User')"
-		:options="users" 
+		:options="usersMerge" 
 		@filter="selectFilter" 
+		:editable="true"
 		:loading="loading"  
 		optionLabel="name" 
 		optionValue="name"
