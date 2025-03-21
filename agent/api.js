@@ -21,10 +21,12 @@ function init(dirname, listen) {
         os.path.join(rootDir, 'meshes', name),
         agentListen, mesh,
         function (newMesh) {
-          mesh = newMesh
-          db.setMesh(name, mesh)
+          db.setMesh(name, newMesh)
         }
       )
+      if (!mesh.agent?.offline) {
+        meshes[name].start()
+      }
     }
   )
 }
@@ -70,8 +72,14 @@ function setMesh(name, mesh) {
   mesh.agent.listen = agentListen
   meshes[name] = Mesh(
     os.path.join(rootDir, 'meshes', mesh.name),
-    mesh
+    agentListen, mesh,
+    function (newMesh) {
+      db.setMesh(name, newMesh)
+    }
   )
+  if (!mesh.agent.offline) {
+    meshes[name].start()
+  }
   return getMesh(name)
 }
 
