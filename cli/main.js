@@ -227,6 +227,48 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `Enable a mesh`,
+        usage: 'enable <object type> <object name>',
+        notes: `
+          Available object types include:
+            mesh
+        `,
+        options: `
+          -p, --permit  <pathname>  Specify a new permit to be used to join the mesh
+                                    Only applicable when enabling a mesh
+        `,
+        action: (args) => {
+          var type = args['<object type>']
+          var name = args['<object name>']
+          switch (type) {
+            case 'mesh': return enableMesh(name, args['--permit'])
+            default: return invalidObjectType(type, 'enable')
+          }
+        }
+      },
+
+      {
+        title: `Disable a mesh`,
+        usage: 'disable <object type> <object name>',
+        notes: `
+          Available object types include:
+            mesh
+        `,
+        options: `
+          --erase-permit  Erase the permit that was used to join the mesh
+                          Only applicable when disabling a mesh
+        `,
+        action: (args) => {
+          var type = args['<object type>']
+          var name = args['<object name>']
+          switch (type) {
+            case 'mesh': return disableMesh(name, args['--erase-permit'])
+            default: return invalidObjectType(type, 'disable')
+          }
+        }
+      },
+
+      {
         title: `List objects of a certain type`,
         usage: 'get <object type> [object name]',
         notes: `
@@ -861,30 +903,9 @@ function join(name, epName, permitPathname) {
   var meshName = normalizeName(name)
   if (!epName) throw 'endpoint name not specified (with option --as)'
   if (!permitPathname) throw 'permit file not specified (with option --permit)'
-  var permit = JSON.decode(os.read(permitPathname))
-  if (!permit.ca) throw 'permit missing CA certificate'
-  if (!permit.agent?.certificate) throw 'permit missing user certificate'
-  if (!(permit.bootstraps instanceof Array)) throw 'permit missing bootstraps'
-  if (permit.bootstraps.some(
-    addr => {
-      if (typeof addr !== 'string') return true
-      var i = addr.lastIndexOf(':')
-      if (i < 0) return true
-      var n = Number.parseInt(addr.substring(i+1))
-      if (0 < n && n < 65536) return false
-      return true
-    }
-  )) throw 'invalid bootstrap address'
-  var json = {
-    ca: permit.ca,
-    agent: {
-      name: epName,
-      certificate: permit.agent.certificate,
-    },
-    bootstraps: permit.bootstraps,
-  }
-  if (permit.agent.privateKey) json.agent.privateKey = permit.agent.privateKey
-  return client.post(`/api/meshes/${uri(meshName)}`, JSON.encode(json))
+  var permit = validatePermit(permitPathname)
+  permit.agent.name = epName
+  return client.post(`/api/meshes/${uri(meshName)}`, JSON.encode(permit))
 }
 
 //
@@ -894,6 +915,44 @@ function join(name, epName, permitPathname) {
 function leave(name) {
   var meshName = normalizeName(name)
   return client.delete(`/api/meshes/${uri(meshName)}`)
+}
+
+//
+// Command: enable
+//
+
+function enableMesh(name, permitPathname) {
+  var meshName = normalizeName(name)
+  var path = `/api/meshes/${uri(meshName)}`
+  return client.get(path).then(ret => {
+    var permit = JSON.decode(ret)
+    if (permitPathname) {
+      var newPermit = validatePermit(permitPathname)
+      permit.ca = newPermit.ca || permit.ca
+      permit.agent.certificate = newPermit.agent.certificate || permit.agent.certificate
+    }
+    if (!permit.ca) throw `Missing CA certificate`
+    if (!permit.agent.certificate) throw `Missing agent certificate`
+    permit.agent.offline = false
+    return client.post(path, JSON.encode(permit))
+  })
+}
+
+//
+// Command: disable
+//
+
+function disableMesh(name, erasePermit) {
+  var meshName = normalizeName(name)
+  var path = `/api/meshes/${uri(meshName)}`
+  return client.get(path).then(ret => {
+    var permit = JSON.decode(ret)
+    permit.agent.offline = true
+    if (erasePermit) {
+      permit.agent.certificate = ''
+    }
+    return client.post(path, JSON.encode(permit))
+  })
 }
 
 //
@@ -910,7 +969,11 @@ function getMesh(name) {
         'JOINED AS': m => m.agent.name,
         'USER': m => m.agent.username,
         'HUBS': m => m.bootstraps.join(','),
-        'STATUS': m => m.connected ? 'Connected' : `ERROR: ${m.errors[0]?.message}`,
+        'STATUS': m => {
+          if (m.connected) return 'Connected'
+          if (m.agent.offline) return 'Offline'
+          return `ERROR: ${m.errors[0]?.message}`
+        }
       }
     )
   })
@@ -1369,6 +1432,41 @@ function normalizeAppName(name) {
   }
   if (!app) throw `invalid app name '${name}'`
   return { provider, name: app, tag }
+}
+
+function validatePermit(pathname) {
+  var data = os.read(pathname)
+  if (!data) throw `file not found: ${pathname}`
+  try {
+    var permit = JSON.decode(data)
+  } catch {
+    throw `invalid format of permit: ${pathname}`
+  }
+  if (!permit.ca) throw 'permit missing CA certificate'
+  if (!permit.agent?.certificate) throw 'permit missing user certificate'
+  if (!(permit.bootstraps instanceof Array)) throw 'permit missing bootstraps'
+  if (permit.bootstraps.some(
+    addr => {
+      if (typeof addr !== 'string') return true
+      var i = addr.lastIndexOf(':')
+      if (i < 0) return true
+      var n = Number.parseInt(addr.substring(i+1))
+      if (0 < n && n < 65536) return false
+      return true
+    }
+  )) throw 'invalid bootstrap address'
+  var info = {
+    ca: permit.ca,
+    agent: {
+      certificate: permit.agent.certificate,
+      labels: permit.agent.labels || [],
+    },
+    bootstraps: permit.bootstraps,
+  }
+  if (permit.agent.privateKey) {
+    info.agent.privateKey = permit.agent.privateKey
+  }
+  return info
 }
 
 function allEndpoints(mesh, keyword) {

@@ -112,6 +112,7 @@ function main(listen) {
     //     username: string
     //     certificate: string (PEM)
     //     privateKey: string (PEM)
+    //     offline: boolean?
     //   bootstraps: string[] (host:port)
     //   connected: boolean
     //   errors: string[]

@@ -229,14 +229,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       )
     )
 
-    // Establish a pull session to the hub
-    reverseServer.spawn()
-
-    // Start advertising filesystem
+    // Advertising filesystem
     var filesystemLatest = null
     var filesystemUpdate = null
     var filesystemSending = null
-    sendFilesystemUpdate()
 
     function sendFilesystemUpdate(delay) {
       if (closed) return
@@ -272,11 +268,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       })
     }
 
-    // Start advertising ACL
+    // Advertising ACL
     var aclLatest = null
     var aclUpdate = null
     var aclSending = null
-    sendACLUpdate()
 
     function sendACLUpdate(delay) {
       if (closed) return
@@ -310,6 +305,13 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           sendACLUpdate(1)
         }
       })
+    }
+
+    // Start communication with the hub
+    function start() {
+      reverseServer.spawn()
+      sendFilesystemUpdate()
+      sendACLUpdate()
     }
 
     function heartbeat() {
@@ -553,6 +555,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     }
 
     return {
+      start,
       isConnected: () => connections.size > 0,
       address,
       heartbeat,
@@ -826,8 +829,25 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     addr => Hub(addr)
   )
 
-  // Start sending heartbeats
-  heartbeat()
+  // Start communication with the mesh
+  function start() {
+    hubs.forEach(hub => hub.start())
+
+    heartbeat()
+    advertiseFilesystem()
+
+    db.allApps(meshName).forEach(app => {
+      if (app.state === 'running' && app.username === username) {
+        var appname = app.name
+        if (app.tag) appname += '@' + app.tag
+        startApp(config.agent.id, app.provider, appname)
+      }
+    })
+  
+    logInfo(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
+  }
+
+  // Send heartbeats
   function heartbeat() {
     if (!exited) {
       hubs.forEach(h => h.heartbeat())
@@ -839,6 +859,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
   // Certificate expiration
   function getCertificateDays() {
+    if (!agentCert) return 0
     return Math.floor((agentCert.notAfter - Date.now()) / (24*60*60*1000))
   }
 
@@ -848,20 +869,6 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     if (days > 100) return Promise.resolve()
     return hubs[0].renewCertificate()
   }
-
-  // Advertise the filesystem
-  advertiseFilesystem()
-
-  // Start apps
-  db.allApps(meshName).forEach(app => {
-    if (app.state === 'running' && app.username === username) {
-      var appname = app.name
-      if (app.tag) appname += '@' + app.tag
-      startApp(config.agent.id, app.provider, appname)
-    }
-  })
-
-  logInfo(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
 
   function selectHub(ep) {
     return hubs[0].findEndpoint(ep).then(
@@ -1657,6 +1664,8 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         name: config.agent.name,
         username,
         certificate: config.agent.certificate,
+        labels: agentLabels,
+        offline: config.agent.offline || false,
       },
       bootstraps: [...config.bootstraps],
       connected: isConnected(),
@@ -1746,6 +1755,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   return {
     config,
     username,
+    start,
     isConnected,
     getStatus,
     getLog,
