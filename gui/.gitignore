@@ -21,6 +21,7 @@ coverage
 /release
 /download/*
 /public/demo
+/public/login
 /agent
 /src-tauri/agent
 /public/agent

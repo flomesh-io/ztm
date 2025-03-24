@@ -38,7 +38,7 @@ const props = defineProps(['embed']);
 const emits = defineEmits(['collapse']);
 const router = useRouter();
 const logoHover = ref(false);
-
+const VITE_APP_AUTH_URL = import.meta.env.VITE_APP_AUTH_URL;
 const platform = computed(() => {
 	return store.getters['account/platform']
 });
@@ -91,6 +91,7 @@ const loaddata = (reload) => {
 	if(!reload){
 		loading.value = true;
 	}
+	autoReg(true);
 	ztmService.getMeshes()
 		.then(res => {
 			loading.value = false;
@@ -165,26 +166,25 @@ const clickPause = () => {
 	pause();
 }
 
-const logout = () => {
-    confirm.require({
-        message: 'Are you sure you want to exit?',
-        header: 'Logout',
-        icon: 'pi pi-exclamation-triangle',
-        accept: () => {
-					removeAuthorization(AUTH_TYPE.BASIC);
-					store.commit('account/setUser', null);
-          // router.push('/login');
-        },
-        reject: () => {
-            
-        }
-    });
-};
 const clickCollapse = (path) => {
 	router.push(path)
 }
 const goLogin = () => {
-	router.push('/login');
+	// router.push('/login');
+	console.log('goLogin');
+	if(!auth.value?.permit){
+		ztmService.identity().then((res)=>{
+			const url = `${VITE_APP_AUTH_URL}?id=${res.split("\n").join(";")}`;
+			location.href = url;
+			// openWebview({
+			// 	url:`http://127.0.0.1:8848/ztm/gui/public/login/index.html?id=${res.split("\n").join(";")}`,
+			// 	name:'Login',
+			// 	width:480,
+			// 	height:460,
+			// 	proxy:''
+			// });
+		});
+	}
 }
 const goConsole = () => {
 	router.push('/mesh');
@@ -217,8 +217,74 @@ const choose_button_click = ()=>{
 		console.log(choose_button)
 		choose_button.click()
 	},100)
-} 
+}
+const auth = ref({})
 const joinMesh = () => {
+	const body = {
+		...auth.value.permit,
+		name: 'Main',
+		agent: {
+			offline: false,
+			...auth.value.permit.agent,
+			name: auth.value?.username,
+		}
+	}
+	console.log('joinMesh',body)
+	ztmService.joinMesh('Main', body).then(res => {
+		auth.value.permit = true;
+		invoke('set_store_list',{ key: 'auth', value: [auth.value]}).then((res)=>{
+			setTimeout(() => {
+				loaddata();
+			},1000)
+		});
+	})
+};
+const logout = () => {
+	
+	confirm.require({
+			message: 'Are you sure you want to exit?',
+			header: 'Logout',
+			icon: 'pi pi-exclamation-triangle',
+			accept: () => {
+				removeAuthorization(AUTH_TYPE.BASIC);
+				store.commit('account/setUser', null);
+				const body = {
+					name: 'Main',
+					agent: {
+						offline: true,
+						certificate: '',
+						name: auth.value?.username,
+					}
+				}
+				console.log('logout',body)
+				ztmService.joinMesh('Main', body).then(res => {
+					auth.value.permit = false;
+					invoke('set_store_list',{ key: 'auth', value: [{username:auth.value?.username}]}).then((res)=>{
+						setTimeout(() => {
+							loaddata();
+						},1000)
+					});
+				})
+			},
+			reject: () => {
+					
+			}
+	});
+	
+}
+const autoReg = (join) => {
+	console.log('autoReg')
+	invoke('get_store_list',{ key: 'auth' }).then((res)=>{
+	console.log(res)
+		auth.value = res && res[0] ? res[0] : {};
+		if(join){
+			if(!!auth.value?.username && !!auth.value?.permit && auth.value?.permit != true){
+				joinMesh();
+			}
+		}
+	});
+}
+const goJoinMesh = () => {
 	openWebview({
 		url:'/#/mesh',
 		name:'ZTMGui',
@@ -280,7 +346,11 @@ const toggleUsermenu = (event) => {
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);
 }
+const isLogined = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit == true && !!meshes.value.find((m)=> m.name == 'Main')))
+const needLogin = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit != true || !meshes.value.find((m)=> m.name == 'Main')))
 onMounted(() => {
+	// invoke('set_store_list',{ key: 'auth', value: []}).then((res)=>{});
+	autoReg();
 	pipyInit();
 	timmer();
 	fsInit();
@@ -295,9 +365,11 @@ onMounted(() => {
 	  <div class="wave"></div>
 	  <div class="wave"></div>
 		<PipyVersion class="left-fixed" :playing="playing"/>
-		<div class="userinfo" v-if="user"  @click="toggleUsermenu">
-			<Avatar icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
-			<span>{{user?.id}}</span>
+		<div class="userinfo" >
+			<Avatar @click="toggleUsermenu" icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
+			<span @click="toggleUsermenu">{{auth?.username || user?.id}}</span>
+			<span v-if="isLogined">, </span>
+			<a v-if="isLogined" @click="logout" href="javascript:void(0)" class="ml-2" style=" font-size:8pt;color:#fff;opacity:0.7;text-decoration: underline;">{{t('Sign Out')}}</a>
 		</div>
 		<Menu ref="usermenu" id="user_menu" :model="usermenuitems" :popup="true" />
 		<div class="infotop">
@@ -308,7 +380,7 @@ onMounted(() => {
 				<!-- <FileImportSelector icon="pi pi-download" :path="``" class="pointer ml-2" placeholder="Import" @saved="()=>{}"></FileImportSelector> -->
 			</div>
 			<div class="mt-4">
-				<Button v-if="!user" class="w-20rem" @click="goLogin">Login</Button>
+				<Button v-if="needLogin" class="w-20rem" @click="goLogin">{{!!auth.permit?t('Connecting'):t('Sign In')}}</Button>
 				<Select 
 				v-else
 				:options="meshes" 
@@ -321,7 +393,7 @@ onMounted(() => {
 				:placeholder="placeholder" 
 				class="transparent">
 				    <template #dropdownicon>
-							<i @click="joinMesh" v-if="!meshes || meshes.length == 0" v-tooltip.left="errorMsg||'Join Mesh'" class="pi pi-plus text-white-alpha-70 text-xl" />
+							<i @click="goJoinMesh" v-if="!meshes || meshes.length == 0" v-tooltip.left="errorMsg||'Join Mesh'" class="pi pi-plus text-white-alpha-70 text-xl" />
 							<i v-else-if="!!errorMsg" v-tooltip.left="errorMsg" class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl" />
 							<i v-else v-tooltip="placeholder" class="pi pi-sort-down-fill text-white-alpha-70 text-sm" />
 				    </template>
@@ -332,7 +404,7 @@ onMounted(() => {
 				        </div>
 				    </template>
 				    <template #empty>
-							No mesh.
+							{{t('No Mesh')}}.
 				    </template>
 						<template #value="slotProps">
 								<div  v-if="slotProps.value" class="flex align-items-center">
@@ -359,7 +431,7 @@ onMounted(() => {
 			</div> -->
 
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button @click="joinMesh" v-tooltip="t('Join Mesh')" class="pointer" severity="help" rounded text aria-label="Filter" >
+				<Button @click="goJoinMesh" v-tooltip="t('Join Mesh')" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
 				</Button>
 			</div>
