@@ -98,12 +98,6 @@ function getPermit(mesh, username, identity) {
   return m.issuePermit(username, identity)
 }
 
-function delPermit(mesh, username) {
-  var m = meshes[mesh]
-  if (!m) return Promise.resolve(false)
-  return m.revokePermit(username)
-}
-
 function allEndpoints(mesh, id, name, user, keyword, offset, limit) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve([])
@@ -167,6 +161,12 @@ function allUsers(mesh, name, keyword, offset, limit) {
       return results
     }
   )
+}
+
+function delUser(mesh, name) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve([])
+  return m.evictUser(name)
 }
 
 function allFiles(mesh, since) {
@@ -280,13 +280,13 @@ export default {
   setMesh,
   delMesh,
   getPermit,
-  delPermit,
   allEndpoints,
   getEndpoint,
   getEndpointLabels,
   setEndpointLabels,
   getEndpointLog,
   allUsers,
+  delUser,
   allFiles,
   getFileInfo,
   delFileInfo,

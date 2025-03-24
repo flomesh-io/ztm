@@ -34,6 +34,14 @@ function open(pathname) {
       since REAL NOT NULL
     )
   `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS evictions (
+      username TEXT PRIMARY KEY,
+      evicted_at REAL NOT NULL,
+      expires_at REAL NOT NULL
+    )
+  `)
 }
 
 function getCert(name) {
@@ -184,6 +192,54 @@ function setACL(pathname, access, since) {
   }
 }
 
+function recordToEviction(rec) {
+  return {
+    username: rec.username,
+    time: rec.evicted_at,
+    expiration: rec.expires_at,
+  }
+}
+
+function allEvictions() {
+  return (
+    db.sql('SELECT * FROM evictions')
+      .exec()
+      .map(recordToEviction)
+  )
+}
+
+function getEviction(username) {
+  return (
+    db.sql('SELECT * FROM evictions WHERE username = ?')
+      .bind(1, username)
+      .exec()
+      .map(recordToEviction)[0]
+  )
+}
+
+function setEviction(username, time, expiration) {
+  var obj = getEviction(username)
+  if (obj) {
+    db.sql('UPDATE evictions SET evicted_at = ?, expires_at = ? WHERE username = ?')
+      .bind(1, time)
+      .bind(2, expiration)
+      .bind(3, username)
+      .exec()
+  } else {
+    db.sql('INSERT INTO evictions(username, evicted_at, expires_at) VALUES(?, ?, ?)')
+      .bind(1, username)
+      .bind(2, time)
+      .bind(3, expiration)
+      .exec()
+  }
+}
+
+function delEviction(username) {
+  db.sql(`DELETE FROM evictions WHERE username = ?`)
+    .bind(1, username)
+    .exec()
+}
+
 export default {
   open,
   getCert,
@@ -198,4 +254,8 @@ export default {
   allACL,
   getACL,
   setACL,
+  allEvictions,
+  getEviction,
+  setEviction,
+  delEviction,
 }

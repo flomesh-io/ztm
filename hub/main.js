@@ -14,6 +14,16 @@ var routes = Object.entries({
     'POST': () => signCertificate,
   },
 
+  '/api/evictions': {
+    'GET': () => getEvictions,
+  },
+
+  '/api/evictions/{username}': {
+    'GET': () => getEviction,
+    'POST': () => postEviction,
+    'DELETE': () => deleteEviction,
+  },
+
   '/api/endpoints': {
     'GET': () => getEndpoints,
   },
@@ -102,6 +112,15 @@ var sessions = {}
 var dedicatedSessions = {}
 
 //
+// connections[username] = new Set({
+//   certificate: algo.Certificate,
+//   evict: function,
+// })
+//
+
+var connections = {}
+
+//
 // files[pathname] = {
 //   '#': '012345678abcdef',  // hash
 //   '$': 12345,              // size (-1 if deleted)
@@ -130,6 +149,12 @@ var fileWatchers = []
 //
 
 var acl = {}
+
+//
+// evictions[username] = number (timestamp in seconds)
+//
+
+var evictions = {}
 
 var caCert = null
 var myCert = null
@@ -270,6 +295,10 @@ function start(listen) {
     )
   )
 
+  db.allEvictions().forEach(e => {
+    evictions[e.username] = e.time
+  })
+
   pipy.listen(listen, $=>$
     .onStart(
       function (conn) {
@@ -278,6 +307,8 @@ function start(listen) {
           port: conn.remotePort,
           via: `${conn.localAddress}:${conn.localPort}`,
           username: undefined,
+          certificate: undefined,
+          connection: undefined,
           endpointID: undefined,
           sessionID: undefined,
         }
@@ -289,12 +320,31 @@ function start(listen) {
         key: myKey,
       },
       trusted: [caCert],
+      verify: (ok, cert) => {
+        if (!ok) return false
+        var username = cert.subject?.commonName
+        var time = evictions[username]
+        if (time && time * 1000 >= cert.notBefore) {
+          return false
+        }
+        return true
+      },
       onState: (tls) => {
         if (tls.state === 'connected') {
+          $ctx.certificate = tls.peer
           $ctx.username = tls.peer?.subject?.commonName
         }
       }
     }).to($=>$
+      .insert(() => new Promise(resolve => {
+        var conn = {
+          certificate: $ctx.certificate,
+          evict: () => resolve(new StreamEnd),
+        }
+        connections[$ctx.username] ??= new Set
+        connections[$ctx.username].add(conn)
+        $ctx.connection = conn
+      }))
       .demuxHTTP().to($=>$
         .pipe(
           function (evt) {
@@ -307,6 +357,7 @@ function start(listen) {
           }
         )
       )
+      .onEnd(() => { connections[$ctx.username].delete($ctx.connection) })
     )
   )
 
@@ -349,6 +400,60 @@ var signCertificate = pipeline($=>$
       return ca.signCertificate(name, pkey).then(
         cert => response(201, cert.toPEM().toString())
       )
+    }
+  )
+)
+
+var getEvictions = pipeline($=>$
+  .replaceMessage(
+    function () {
+      return response(200, db.allEvictions())
+    }
+  )
+)
+
+var getEviction = pipeline($=>$
+  .replaceMessage(
+    function () {
+      var name = URL.decodeComponent($params.username)
+      var info = db.getEviction(name)
+      return info ? response(200, info) : response(404)
+    }
+  )
+)
+
+var postEviction = pipeline($=>$
+  .replaceMessage(
+    function (req) {
+      var query = new URL(req.head.path).searchParams
+      var time = Number.parseFloat(query.get('time'))
+      var expr = Number.parseFloat(query.get('expiration'))
+      var name = URL.decodeComponent($params.username)
+      if (name === 'root' || $ctx.username !== 'root') return response(403)
+      if (Number.isNaN(time)) return response(400)
+      var old = db.getEviction(name)
+      if (old && old.time >= time) return response(200)
+      if (Number.isNaN(expr) || expr <= time) expr = time + 365 * 24 * 60 * 60
+      db.setEviction(name, time, expr)
+      evictions[name] = time
+      connections[name]?.forEach?.(conn => {
+        if (conn.certificate.notBefore <= time * 1000) {
+          conn.evict()
+        }
+      })
+      return response(201)
+    }
+  )
+)
+
+var deleteEviction = pipeline($=>$
+  .replaceMessage(
+    function () {
+      var name = URL.decodeComponent($params.username)
+      if (name === 'root' || $ctx.username !== 'root') return response(403)
+      db.delEviction(name)
+      delete evictions[name]
+      return response(204)
     }
   )
 )
