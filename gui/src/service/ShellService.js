@@ -47,7 +47,6 @@ export default class ShellService {
 		}
 	}
 	async takePipyVersion (apiGet) {
-		console.log("takePipyVersion");
 		if(false){
 			let command = await Command.sidecar("bin/ztmctl", ['version','--json','','','','']);
 			await command.spawn();

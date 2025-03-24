@@ -25,8 +25,8 @@ const platform = computed(() => {
 const loading = ref(false);
 const loader = ref(false);
 
-const deleteMesh = (mesh) => {
-	const name = mesh?.name;
+const deleteMesh = () => {
+	const name = selectMesh.value?.name;
 	if(!name){
 		return
 	}
@@ -54,12 +54,14 @@ const join = () => {
 const visibleEditor = ref(false);
 const selectedMenu = ref();
 const actionMenu = ref();
-const editMesh = (mesh)=> {
-	selectedMenu.value = mesh;
+const editMesh = ()=> {
+	selectedMenu.value = selectMesh.value;
 	visibleEditor.value = true;
 }
-const showAtionMenu = (event) => {
+const selectMesh = ref()
+const showAtionMenu = (event, mesh) => {
 	actionMenu.value[0].toggle(event);
+	selectMesh.value = mesh;
 };
 
 const emptyMsg = computed(()=>{
@@ -125,6 +127,10 @@ const tryMesh = () => {
 const openTryMesh = () => {
 	visibleTry.value = true;
 }
+const addMesh = () => {
+	selectMesh.value = null;
+	visibleEditor.value = true;
+}
 watch(()=> meshes, ()=>{
 	if(selectedMesh.value && !meshes.value.find((mesh)=> mesh?.name == selectedMesh.value?.name)){
 		store.commit('account/setSelectedMesh', null);
@@ -156,7 +162,7 @@ onMounted(() => {
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
 						<Button v-if="hasPubHub && !!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="t('Live Sample')" icon="pi pi-sparkles" text @click="openTryMesh" />
-						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="t('Join')" @click="() => visibleEditor = true"/>
+						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="t('Join')" @click="addMesh"/>
 					</template>
 			</AppHeader>
 			<Loading v-if="loading"/>
@@ -172,7 +178,7 @@ onMounted(() => {
 													</span>
 													<Status :run="mesh.connected" :errors="mesh.errors" :text="mesh.connected?t('Connected'):t('Disconnect')" />
 											 </div>
-											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event)" aria-haspopup="true" aria-controls="actionMenu" />
+											 <Button size="small" type="button" severity="secondary" icon="pi pi-ellipsis-v" @click="showAtionMenu($event,mesh)" aria-haspopup="true" aria-controls="actionMenu" />
 											 <Menu ref="actionMenu" :model="[{
 															label: t('Actions'),
 															items: [
@@ -180,14 +186,14 @@ onMounted(() => {
 																			label: t('Edit'),
 																			icon: 'pi pi-pencil',
 																			command: () => {
-																				editMesh(mesh);
+																				editMesh();
 																			}
 																	},
 																	{
 																			label: t('Leave'),
 																			icon: 'pi pi-trash',
 																			command: () => {
-																				deleteMesh(mesh)
+																				deleteMesh()
 																			}
 																	}
 															]
