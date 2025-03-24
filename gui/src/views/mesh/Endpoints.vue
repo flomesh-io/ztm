@@ -226,6 +226,11 @@ const appendUsers = () => {
 		}
 	})
 }
+const removeUser = (username) => {
+	ztmService.deleteUser(selectedMesh.value?.name, username, ()=>{
+		load()
+	})
+}
 const removeGroup = (group) => {
 	usersService.removeGroup({
 		group: group?.id,
@@ -341,6 +346,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↑{{bitUnit(stats[user.endpoints?.instances[0].id]?.send)}}</span>
 														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↓{{bitUnit(stats[user.endpoints?.instances[0].id]?.receive)}}</span>
 														<Status :run="user.endpoints?.instances[0]?.online" :tip="timeago(user.endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+														<Button severity="secondary" size="small" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
 													</div>
 												</div>
 												
@@ -352,6 +358,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																<b class="line-height-4">{{ user.name }}</b>
 																<OverlayBadge :value="user.endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 															</div>
+															<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
 														</AccordionHeader>
 														<AccordionContent>	
 															<div class="flex flex-col message-item pointer" v-for="(ep, index) in (usersMap[user.name]?.endpoints?.instances||[])" :key="index" >
@@ -410,7 +417,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 															<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↑{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.send)}}</span>
 															<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↓{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.receive)}}</span>
 															<Status :run="usersMap[key].endpoints?.instances[0]?.online" :tip="timeago(usersMap[key].endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
-															<Button severity="secondary" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="manage"/>
+															<Button severity="secondary" size="small" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 														</div>
 													</div>
 													
@@ -422,7 +429,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																	<b class="line-height-4">{{ key }}</b>
 																	<OverlayBadge :value="usersMap[key].endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 																</div>
-																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
+																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 															</AccordionHeader>
 															<AccordionContent>	
 																<div class="flex flex-col message-item pointer" v-for="(ep, index) in usersMap[key].endpoints?.instances" :key="index" >

@@ -160,6 +160,19 @@ export default class ZtmService {
 			});
 		});
 	}
+	
+	deleteUser(mesh, username, callback) {
+		confirm.remove(() => {
+			request(`/api/meshes/${mesh}/users/${username}`,"DELETE").then((res) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: `${username} leaved.`, life: 3000 });
+				if(!!callback)
+				callback(res);
+			}).catch(err => {
+				if(!!callback)
+				callback(res);
+			});
+		});
+	}
 	getMeshes() {
 		return request('/api/meshes');
 	}
