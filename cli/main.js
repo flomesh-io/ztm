@@ -890,7 +890,7 @@ function invite(name, identity, permit, mesh) {
 function evict(name, mesh) {
   if (!mesh) throw `no mesh specified`
   var username = normalizeName(name)
-  return client.delete(`/api/meshes/${uri(mesh.name)}/permits/${uri(username)}`).catch(
+  return client.delete(`/api/meshes/${uri(mesh.name)}/users/${uri(username)}`).catch(
     err => Promise.reject(err.status === 404 ? `user '${username}' not found` : err)
   )
 }

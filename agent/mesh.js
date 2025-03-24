@@ -493,8 +493,17 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       )
     }
 
-    function revokePermit(username) {
-      return Promise.resolve(true)
+    function evictUser(username) {
+      username = URL.encodeComponent(username)
+      var time = Math.floor(Date.now() / 1000)
+      return requestHub.spawn(
+        new Message({ method: 'POST', path: `/api/evictions/${username}?time=${time}`})
+      ).then(
+        function (res) {
+          var status = res?.head?.status
+          return (200 <= status && status <= 299)
+        }
+      )
     }
 
     function findEndpoint(ep) {
@@ -567,7 +576,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       discoverUsers,
       discoverFiles,
       issuePermit,
-      revokePermit,
+      evictUser,
       findEndpoint,
       findFile,
       getEndpointStats,
@@ -906,8 +915,8 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     return hubs[0].issuePermit(username, identity)
   }
 
-  function revokePermit(username) {
-    return hubs[0].revokePermit(username)
+  function evictUser(username) {
+    return hubs[0].evictUser(username)
   }
 
   function findEndpoint(ep) {
@@ -1765,7 +1774,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     remoteGetLabels,
     remoteSetLabels,
     issuePermit,
-    revokePermit,
+    evictUser,
     findEndpoint,
     findFile,
     findApp,

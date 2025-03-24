@@ -210,14 +210,6 @@ function main(listen) {
           ret => ret ? response(200, ret) : response(403)
         )
       },
-
-      'DELETE': function ({ mesh, username }) {
-        mesh = URL.decodeComponent(mesh)
-        username = URL.decodeComponent(username)
-        return api.delPermit(mesh, username).then(
-          ret => ret ? response(204) : response(404)
-        )
-      },
     },
 
     //
@@ -326,6 +318,24 @@ function main(listen) {
           offset, limit
         ).then(
           ret => response(200, ret)
+        )
+      },
+    },
+
+    '/api/meshes/{mesh}/users/{username}': {
+      'GET': function ({ mesh, username }, req) {
+        mesh = URL.decodeComponent(mesh)
+        username = URL.decodeComponent(username)
+        return api.allUsers(mesh, username).then(
+          ret => ret.length > 0 ? response(200, ret[0]) : response(404)
+        )
+      },
+
+      'DELETE': function ({ mesh, username }) {
+        mesh = URL.decodeComponent(mesh)
+        username = URL.decodeComponent(username)
+        return api.delUser(mesh, username).then(
+          () => response(204)
         )
       },
     },
