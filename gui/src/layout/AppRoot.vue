@@ -273,9 +273,7 @@ const logout = () => {
 	
 }
 const autoReg = (join) => {
-	console.log('autoReg')
 	invoke('get_store_list',{ key: 'auth' }).then((res)=>{
-	console.log(res)
 		auth.value = res && res[0] ? res[0] : {};
 		if(join){
 			if(!!auth.value?.username && !!auth.value?.permit && auth.value?.permit != true){
