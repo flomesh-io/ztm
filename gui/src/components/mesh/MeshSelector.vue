@@ -46,7 +46,16 @@ watch(()=>storeMesh,()=>{
 	deep:true
 })
 const loaddata = () => {
-	selected.value = props.modelValue || (props.form?meshes.value[0]?.name:meshes.value[0]);
+	if(props.modelValue){
+		selected.value = props.modelValue
+	} else if(props.form){
+	 selected.value = meshes.value[0]?.name
+	} else if(storeMesh.value){
+		selected.value = storeMesh.value
+	} else  {
+		selected.value = meshes.value[0]
+	}
+	
 	emits('select',selected.value);
 	if(props.form)
 	emits('update:modelValue',selected.value);

@@ -128,9 +128,6 @@ const menuClick = (e) => {
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const focusMenu = ref(route.path);
 
-const load = (d) => {
-	store.commit('account/setMeshes', d);
-}
 const unread = computed(() => {
 	return store.getters["notice/unread"];
 });
