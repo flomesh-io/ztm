@@ -157,6 +157,8 @@ const startPipy = async () => {
 		errors.value.push(error);
 		// console.error(`command error: "${error}"`)
 	});
+	// shellService.startProxy('127.0.0.1:6667');
+	// shellService.pauseProxy();
 }
 const pause = async () => {
 	await shellService.pausePipy(getPort());

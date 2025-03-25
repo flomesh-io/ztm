@@ -2,11 +2,14 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { merge } from '@/service/common/request';
 import ProxyService from '../service/ProxyService';
+import ShellService from '@/service/ShellService';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
 import _ from "lodash"
 import { useI18n } from 'vue-i18n';
+import { platform } from '@/utils/platform';
+import { invoke } from '@tauri-apps/api/core';
 const { t } = useI18n();
 const props = defineProps(['ep']);
 const emits = defineEmits(['save','back']);
@@ -14,6 +17,7 @@ const store = useStore();
 const route = useRoute();
 const toast = useToast();
 const proxyService = new ProxyService();
+const shellService = new ShellService();
 const info = computed(() => {
 	return store.getters['app/info']
 });
@@ -86,9 +90,6 @@ const loaddata = () => {
 	})
 	getGroups();
 }
-onMounted(() => {
-	loaddata();
-});
 const placeholder = ref(t('domain | ip')+`...`);
 const newRule = {
 	users:[],
@@ -111,7 +112,29 @@ const changeEnableRoutingRules = () => {
 		}
 	},300)
 }
-const ruleType = ref(t('Users'))
+const pm = ref(platform());
+const hasSysProxy = computed(()=> props.ep?.id == info.value?.endpoint?.id && !!pm.value && pm.value!='ios' && pm.value!='android' && pm.value!='web')
+const ruleType = ref(t('Users'));
+const proxy = ref(false)
+const openProxy = () => {
+	shellService.startProxy(config.value.listen);
+	proxy.value = true;
+	toast.add({ severity: 'success', summary:'Tips', detail: 'System Proxy Opened.', life: 3000 });
+	invoke('set_store_list',{ key: 'proxy', value: [config.value.listen]}).then((res)=>{});
+}
+const closeProxy = () => {
+	shellService.pauseProxy();
+	proxy.value = false;
+	toast.add({ severity: 'success', summary:'Tips', detail: 'System Proxy Closed.', life: 3000 });
+	invoke('set_store_list',{ key: 'proxy', value: []}).then((res)=>{});
+}
+
+onMounted(() => {
+	loaddata();
+	invoke('get_store_list',{ key: 'proxy' }).then((res)=>{
+		proxy.value = !!res && !!res[0]
+	});
+});
 </script>
 
 <template>
@@ -124,7 +147,7 @@ const ruleType = ref(t('Users'))
 					<span v-else>{{t('Loading')}}...</span>
 				</template>
 				<template #end> 
-					<Button :loading="loading" icon="pi pi-check" :label="t('Save')" aria-label="Submit" size="small" @click="save"/>
+					<Button :loading="loading"  :label="t('Save')" aria-label="Submit" size="small" @click="save"/>
 				</template>
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
@@ -134,7 +157,7 @@ const ruleType = ref(t('Users'))
 				<div v-else class="surface-ground surface-section h-full p-4" >
 					<div class="mb-4" v-if="!props.d">
 						<div class="grid w-full" >
-							<div class="col-12 p-0">
+							<div class="col-12 md:col-6 p-0">
 								<FormItem :label="t('Listen')" :border="false">
 									<Chip class="pl-0 pr-3 mr-2">
 											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -144,6 +167,12 @@ const ruleType = ref(t('Users'))
 												<InputText :unstyled="true" v-model="config.listen"  class="add-tag-input xxl"  :placeholder="t('ip:port')" />
 											</span>
 									</Chip>
+								</FormItem>
+							</div>
+							<div class="col-12 md:col-6 p-0">
+								<FormItem :label="t('System Proxy')" :border="false">
+									<Button v-if="hasSysProxy && !proxy" :disabled="!config.listen" severity="success"  :label="t('Open')" aria-label="Submit" size="small" @click="openProxy"/>
+									<Button v-else-if="hasSysProxy" severity="secondary" icon="pi pi-spin pi-spinner"  :label="t('Close')" aria-label="Submit" size="small" @click="closeProxy"/>
 								</FormItem>
 							</div>
 						</div>

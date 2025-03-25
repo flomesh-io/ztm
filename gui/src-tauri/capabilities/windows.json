@@ -158,6 +158,19 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
+          "name": "proxy-windows",
+          "cmd": "./scripts/proxy-win.ps1",
+          "sidecar": false,
+					"args": [
+					  {
+					    "validator": ".+"
+					  },
+					  {
+					    "validator": ".*"
+					  }
+					]
+        },
+        {
           "name": "ls",
           "cmd": "ls",
           "sidecar": false
