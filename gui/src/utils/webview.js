@@ -8,9 +8,13 @@ import { invoke } from '@tauri-apps/api/core';
 const openWebview = (app, broswer)=>{
 	try{
 		const platform = store.getters['account/platform'];
+		const mesh = store.getters['account/selectedMesh'];
+		if(app.url.indexOf('/#/') == 0 && !!mesh?.name){
+			app.url += `?mesh=${mesh.name}`;
+		}
+		console.log(app.url);
 		if(!window.__TAURI_INTERNALS__  ){
 			//|| platform=='android' || platform=='ios'
-			// if(app.url.indexOf('/#/') == 0){
 			if(!!app.url){	
 				store.commit('notice/setApp', app);
 			}

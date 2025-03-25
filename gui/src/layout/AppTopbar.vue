@@ -138,9 +138,7 @@ const menuClick = (e) => {
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const focusMenu = ref(route.path);
 
-const load = (d) => {
-	store.commit('account/setMeshes', d);
-}
+const load = (d) => {}
 
 const select = (selected) => {
 	store.commit('account/setSelectedMesh', selected);
