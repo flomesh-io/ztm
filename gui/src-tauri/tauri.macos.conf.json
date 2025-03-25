@@ -2,7 +2,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": [],
+    "resources": ["scripts/proxy-mac.sh"],
     "externalBin": ["bin/ztmctl"],
     "icon": [
       "icons/32x32.png",

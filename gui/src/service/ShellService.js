@@ -222,4 +222,15 @@ export default class ShellService {
 			await relaunch();
 		}
 	}
+	
+	async startProxy (port){
+		const pm = platform();
+		const command = Command.create(`proxy-${pm}`, ['register', port]);
+		command.execute();
+	}
+	async pauseProxy (){
+		const pm = platform();
+		const command = Command.create(`proxy-${pm}`, ['unregister','']);
+		command.execute();
+	}
 }
