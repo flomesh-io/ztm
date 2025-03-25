@@ -48,6 +48,7 @@ log = "0.4"
 rsa = "0.9.6"
 rand = "0.8"
 rust-argon2 = "2.1.0"
+deranged = "=0.4.0"
 
 [target."cfg(any(target_os = \"ios\"))".dependencies]
 objc = "0.2.7"
