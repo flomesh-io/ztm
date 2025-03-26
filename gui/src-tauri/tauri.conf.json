@@ -38,7 +38,7 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "rpm"],
-    "resources": [],
+    "resources": ["scripts/proxy-linux.sh"],
     "externalBin": ["bin/ztmctl"],
     "icon": [
       "icons/32x32.png",
