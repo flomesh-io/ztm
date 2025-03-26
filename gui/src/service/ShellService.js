@@ -225,12 +225,23 @@ export default class ShellService {
 	
 	async startProxy (port){
 		const pm = platform();
-		const command = Command.create(`proxy-${pm}`, ['register', port]);
-		command.execute();
+		//
+		if(pm == 'windows'){
+			const command = Command.create(`proxy-${pm}`, ['-ExecutionPolicy','Bypass','-File','.\scripts\proxy-win.ps1','register', port]);
+			command.execute();
+		} else {
+			const command = Command.create(`proxy-${pm}`, ['register', port]);
+			command.execute();
+		}
 	}
 	async pauseProxy (){
 		const pm = platform();
-		const command = Command.create(`proxy-${pm}`, ['unregister','']);
-		command.execute();
+		if(pm == 'windows'){
+			const command = Command.create(`proxy-${pm}`, ['-ExecutionPolicy','Bypass','-File','.\scripts\proxy-win.ps1','unregister', '']);
+			command.execute();
+		} else {
+			const command = Command.create(`proxy-${pm}`, ['unregister','']);
+			command.execute();
+		}
 	}
 }
