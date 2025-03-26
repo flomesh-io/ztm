@@ -25,7 +25,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": [],
+    "resources": ["scripts/proxy-win.cmd"],
     "externalBin": ["bin/ztmctl"],
     "icon": [
       "icons/32x32.png",
