@@ -159,21 +159,9 @@
       "allow": [
         {
           "name": "proxy-windows",
-          "cmd": "powershell",
+          "cmd": "./scripts/proxy-win.cmd",
           "sidecar": false,
 					"args": [
-					  {
-					    "validator": ".+"
-					  },
-					  {
-					    "validator": ".+"
-					  },
-					  {
-					    "validator": ".+"
-					  },
-					  {
-					    "validator": ".+"
-					  },
 					  {
 					    "validator": ".+"
 					  },
