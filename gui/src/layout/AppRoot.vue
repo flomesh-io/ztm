@@ -23,6 +23,8 @@ import { fsInit, downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 import toast from "@/utils/toast";
 import { useI18n } from 'vue-i18n';
+
+const DEFAULT_MESH_NAME = 'Default';
 const { t } = useI18n(); 
 const store = useStore();
 const playing = ref(false);
@@ -67,7 +69,6 @@ const placeholder = computed(() => {
 		return `${_vs}${meshes.value.length} ${meshes.value.length>1?units:unit} ${t('Joined')}.`;
 	}
 });
-
 const selectedMesh = ref(null);
 const changeMesh = (d) => {
 	store.commit('account/setSelectedMesh', d?.value||d);
@@ -102,8 +103,15 @@ const loaddata = (reload) => {
 				store.commit('account/setMeshes', res);
 			}
 			if(!!res && res.length>0 && (!storeMesh.value || !meshes.value.find((mesh)=> mesh?.name == storeMesh.value?.name))){
-				store.commit('account/setSelectedMesh', res[0]);
-				selectedMesh.value = res[0];
+				const find_default = meshes.value.find((mesh)=> mesh?.name == DEFAULT_MESH_NAME);
+				if(!find_default){
+					store.commit('account/setSelectedMesh', res[0]);
+					selectedMesh.value = res[0];
+				} else {
+					store.commit('account/setSelectedMesh', find_default);
+					selectedMesh.value = find_default;
+				}
+				
 			}
 			if(!merged.value && playing.value && (res.length == 0)){
 				merged.value = true;
@@ -224,7 +232,7 @@ const auth = ref({})
 const joinMesh = () => {
 	const body = {
 		...auth.value.permit,
-		name: 'Main',
+		name: DEFAULT_MESH_NAME,
 		agent: {
 			offline: false,
 			...auth.value.permit.agent,
@@ -232,7 +240,7 @@ const joinMesh = () => {
 		}
 	}
 	console.log('joinMesh',body)
-	ztmService.joinMesh('Main', body).then(res => {
+	ztmService.joinMesh(DEFAULT_MESH_NAME, body).then(res => {
 		auth.value.permit = true;
 		invoke('set_store_list',{ key: 'auth', value: [auth.value]}).then((res)=>{
 			setTimeout(() => {
@@ -251,7 +259,7 @@ const logout = () => {
 				removeAuthorization(AUTH_TYPE.BASIC);
 				store.commit('account/setUser', null);
 				const body = {
-					name: 'Main',
+					name: DEFAULT_MESH_NAME,
 					agent: {
 						offline: true,
 						certificate: '',
@@ -259,7 +267,7 @@ const logout = () => {
 					}
 				}
 				console.log('logout',body)
-				ztmService.joinMesh('Main', body).then(res => {
+				ztmService.joinMesh(DEFAULT_MESH_NAME, body).then(res => {
 					auth.value.permit = false;
 					invoke('set_store_list',{ key: 'auth', value: [{username:auth.value?.username}]}).then((res)=>{
 						setTimeout(() => {
@@ -346,8 +354,8 @@ const toggleUsermenu = (event) => {
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);
 }
-const isLogined = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit == true && !!meshes.value.find((m)=> m.name == 'Main')))
-const needLogin = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit != true || !meshes.value.find((m)=> m.name == 'Main')))
+const isLogined = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit == true && !!meshes.value.find((m)=> m.name == DEFAULT_MESH_NAME)))
+const needLogin = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit != true || !meshes.value.find((m)=> m.name == DEFAULT_MESH_NAME)))
 onMounted(() => {
 	// invoke('set_store_list',{ key: 'auth', value: []}).then((res)=>{});
 	autoReg();
