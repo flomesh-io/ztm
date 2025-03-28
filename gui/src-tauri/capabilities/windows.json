@@ -159,7 +159,7 @@
       "allow": [
         {
           "name": "proxy-windows",
-          "cmd": "./scripts/proxy-win.cmd",
+          "cmd": "$RESOURCE/scripts/proxy-win.cmd",
           "sidecar": false,
 					"args": [
 					  {
