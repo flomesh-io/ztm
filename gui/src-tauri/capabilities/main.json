@@ -159,7 +159,7 @@
       "allow": [
         {
           "name": "proxy-macos",
-          "cmd": "./scripts/proxy-mac.sh",
+          "cmd": "$RESOURCE/scripts/proxy-mac.sh",
           "sidecar": false,
 					"args": [
 					  {
@@ -172,7 +172,7 @@
         },
         {
           "name": "proxy-linux",
-          "cmd": "./scripts/proxy-linux.sh",
+          "cmd": "$RESOURCE/scripts/proxy-linux.sh",
           "sidecar": false,
 					"args": [
 					  {
