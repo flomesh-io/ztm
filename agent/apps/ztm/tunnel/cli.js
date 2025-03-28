@@ -139,18 +139,18 @@ export default function ({ api, utils }) {
       return api.allTunnels().then(
         list => {
           printTable(list, {
-            'NAME': r => r.name,
+            'NAME': r => `${r.protocol}/${r.name}`,
             'INBOUND': r => {
               var ib = r.inbound
               if (ib.length === 0) return '-'
               if (ib.length > 10) ib.length = 10
-              return ib.map(ep => ep.name).join(', ')
+              return ib.map(ep => ep.name || ep.id).join(', ')
             },
             'OUTBOUND': r => {
               var ob = r.outbound
               if (ob.length === 0) return '-'
               if (ob.length > 10) ob.length = 10
-              return ob.map(ep => ep.name).join(', ')
+              return ob.map(ep => ep.name || ep.id).join(', ')
             },
           })
         }
@@ -193,54 +193,15 @@ export default function ({ api, utils }) {
 
     function describeTunnel(tunnelName) {
       var obj = validateObjectName(tunnelName)
-      var protocol = obj.protocol
-      var name = obj.name
-      var inbound = []
-      var outbound = []
-      return api.allEndpoints().then(
-        endpoints => Promise.all(endpoints.map(
-          ep => api.allTunnels(ep.id).then(
-            ret => {
-              if (ret) {
-                ret.inbound?.forEach?.(i => {
-                  if (i.protocol === protocol && i.name === name) {
-                    inbound.push({ ep, in: i })
-                  }
-                })
-                ret.outbound?.forEach?.(o => {
-                  if (o.protocol === protocol && o.name === name) {
-                    outbound.push({ ep, out: o })
-                  }
-                })
-              }
-            }
-          )
-        ))
-      ).then(() => {
-        output(`Tunnel: ${protocol}/${name}\n`)
+      return api.getTunnel(obj.protocol, obj.name).then(tunnel => {
+        output(`Tunnel: ${tunnel.protocol}/${tunnel.name}\n`)
         output(`Inbound:\n`)
-        inbound.forEach(i => {
-          output(`  Endpoint: ${i.ep.name} (${i.ep.id})\n`)
-          output(`    Listens:\n`)
-          i.in.listens.forEach(l => output(`      ${l.ip}:${l.port}\n`))
-          output(`    Exits:\n`)
-          i.in.exits.forEach(e => output(`      ${e}\n`))
-          if (i.in.exits.length === 0) output(`      (all endpoints)\n`)
+        tunnel.inbound.forEach(ep => {
+          output(`  Endpoint: ${ep.name || '(n/a)'} (${ep.id})\n`)
         })
         output(`Outbound:\n`)
-        outbound.forEach(o => {
-          output(`  Endpoint: ${o.ep.name} (${o.ep.id})\n`)
-          output(`    Targets:\n`)
-          o.out.targets.forEach(t => output(`      ${t.host}:${t.port}\n`))
-          output(`    Entrances:\n`)
-          o.out.entrances.forEach(e => output(`      ${e}\n`))
-          if (o.out.entrances.length === 0) output(`      (all endpoints)\n`)
-          output(`    Users:\n`)
-          if (o.out.users && o.out.users.length > 0) {
-            o.out.users.forEach(u => output(`      ${u}\n`))
-          } else {
-            output(`      (all users)\n`)
-          }
+        tunnel.outbound.forEach(ep => {
+          output(`  Endpoint: ${ep.name || '(n/a)'} (${ep.id})\n`)
         })
       })
     }
