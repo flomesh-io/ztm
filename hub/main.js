@@ -7,7 +7,12 @@ import cmdline from './cmdline.js'
 var routes = Object.entries({
 
   '/api/status': {
-    'POST': () => findCurrentEndpointSession() ? postStatus : noSession,
+    'GET': () => getHubStatus,
+    'POST': () => findCurrentEndpointSession() ? postAgentStatus : noSession,
+  },
+
+  '/api/log': {
+    'GET': () => getHubLog,
   },
 
   '/api/sign/{name}': {
@@ -22,6 +27,10 @@ var routes = Object.entries({
     'GET': () => getEviction,
     'POST': () => postEviction,
     'DELETE': () => deleteEviction,
+  },
+
+  '/api/hubs': {
+    'GET': () => getHubs,
   },
 
   '/api/endpoints': {
@@ -108,6 +117,7 @@ var routes = Object.entries({
 //
 
 var endpoints = {}
+var endpointList = []
 var sessions = {}
 var dedicatedSessions = {}
 
@@ -156,22 +166,44 @@ var acl = {}
 
 var evictions = {}
 
+//
+// Instance state
+//
+
 var caCert = null
 var myCert = null
 var myKey = null
+var myID = algo.uuid()
 var myNames = []
+var myZone = ''
+var startTime = Date.now()
+var logBuffer = []
+var maxAgents = 0
+
+//
+// CLI
+//
 
 function main() {
   return cmdline(pipy.argv, {
     commands: [{
       title: 'ZTM Hub Service',
       options: `
-        -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-        -l, --listen  <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
-        -n, --names   <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
-            --ca      <url>             Specify the location of an external CA service if any
+        -d, --data        <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+        -l, --listen      <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
+        -n, --names       <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
+            --ca          <url>             Specify the location of an external CA service if any
+            --zone        <zone>            Specify the region where the hub is deployed
+            --max-agents  <number>          Specify the maximum number of agents the hub can handle
       `,
       action: (args) => {
+        myZone = args['--zone']
+
+        maxAgents = Number.parseInt(args['--max-agents'] || 100)
+        if (Number.isNaN(maxAgents) || maxAgents < 2) {
+          throw 'invalid value for option --max-agents'
+        }
+
         var dbPath = args['--data'] || '~/.ztm'
         if (dbPath.startsWith('~/')) {
           dbPath = os.home() + dbPath.substring(1)
@@ -265,6 +297,10 @@ var $trafficPeerSend
 var $trafficPeerRecv
 var $trafficLinkSend
 var $trafficLinkRecv
+
+//
+// Start hub service
+//
 
 function start(listen) {
   db.allFiles().forEach(f => {
@@ -361,14 +397,34 @@ function start(listen) {
     )
   )
 
-  console.info('Hub started at', listen)
+  logInfo(`Hub started at ${listen}`)
 
   startPing()
   clearOutdatedEndpoints()
   measureTraffic()
 }
 
-var postStatus = pipeline($=>$
+var getHubStatus = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      return response(200, {
+        id: myID,
+        since: startTime,
+        zone: myZone || null,
+        ports: myNames,
+        capacity: {
+          agents: maxAgents,
+        },
+        load: {
+          agents: endpointList.length,
+        },
+      })
+    }
+  )
+)
+
+var postAgentStatus = pipeline($=>$
   .replaceMessage(
     function (req) {
       var info = JSON.decode(req.body)
@@ -390,6 +446,17 @@ var postStatus = pipeline($=>$
   )
 )
 
+var getHubLog = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      var user = $ctx.username
+      if (user !== 'root') return response(403)
+      return response(200, logBuffer)
+    }
+  )
+)
+
 var signCertificate = pipeline($=>$
   .replaceMessage(
     function (req) {
@@ -405,6 +472,7 @@ var signCertificate = pipeline($=>$
 )
 
 var getEvictions = pipeline($=>$
+  .replaceData()
   .replaceMessage(
     function () {
       return response(200, db.allEvictions())
@@ -413,6 +481,7 @@ var getEvictions = pipeline($=>$
 )
 
 var getEviction = pipeline($=>$
+  .replaceData()
   .replaceMessage(
     function () {
       var name = URL.decodeComponent($params.username)
@@ -423,6 +492,7 @@ var getEviction = pipeline($=>$
 )
 
 var postEviction = pipeline($=>$
+  .replaceData()
   .replaceMessage(
     function (req) {
       var query = new URL(req.head.path).searchParams
@@ -447,6 +517,7 @@ var postEviction = pipeline($=>$
 )
 
 var deleteEviction = pipeline($=>$
+  .replaceData()
   .replaceMessage(
     function () {
       var name = URL.decodeComponent($params.username)
@@ -454,6 +525,20 @@ var deleteEviction = pipeline($=>$
       db.delEviction(name)
       delete evictions[name]
       return response(204)
+    }
+  )
+)
+
+var getHubs = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      return response(200, {
+        [myID]: {
+          zone: myZone || null,
+          ports: myNames,
+        }
+      })
     }
   )
 )
@@ -474,7 +559,7 @@ var getEndpoints = pipeline($=>$
       if (name) name = URL.decodeComponent(name)
       if (user) user = URL.decodeComponent(user)
       if (keyword) keyword = URL.decodeComponent(keyword)
-      return response(200, Object.values(endpoints).filter(
+      return response(200, endpointList.filter(
         ep => {
           if (id || name) {
             if (ep.id !== id && ep.name !== name) {
@@ -546,7 +631,7 @@ var getUsers = pipeline($=>$
       if (name) name = URL.decodeComponent(name)
       if (keyword) keyword = URL.decodeComponent(keyword)
       var users = {}
-      Object.values(endpoints).forEach(
+      endpointList.forEach(
         ep => {
           var name = ep.username
           var user = (users[name] ??= {
@@ -826,13 +911,13 @@ var connectEndpoint = pipeline($=>$
       $hub = new pipeline.Hub
       if (sid) {
         dedicatedSessions[sid] = $hub
-        console.info(`Endpoint ${endpointName(id)} established session ${sid}`)
+        logInfo(`Endpoint ${endpointName(id)} established session ${sid}`)
       } else {
         makeEndpoint(id).name = name
         sessions[id] ??= new Set
         sessions[id].add($hub)
         collectMyNames($ctx.via)
-        console.info(`Endpoint ${endpointName(id)} joined, connections = ${sessions[id].size}`)
+        logInfo(`Endpoint ${endpointName(id)} joined, connections = ${sessions[id].size}`)
       }
       return response(200)
     }
@@ -844,10 +929,10 @@ var connectEndpoint = pipeline($=>$
       var sid = $ctx.sessionID
       if (sid) {
         delete dedicatedSessions[sid]
-        console.info(`Endpoint ${endpointName(id)} dropped session ${sid}`)
+        logInfo(`Endpoint ${endpointName(id)} dropped session ${sid}`)
       } else {
         sessions[id]?.delete?.($hub)
-        console.info(`Endpoint ${endpointName(id)} left, connections = ${sessions[id]?.size || 0}`)
+        logInfo(`Endpoint ${endpointName(id)} left, connections = ${sessions[id]?.size || 0}`)
       }
     })
   )
@@ -869,7 +954,7 @@ var connectApp = pipeline($=>$
           () => {
             $hubSelected = dedicatedSessions[$sessionID]
             if ($hubSelected) {
-              console.info(`Forward to app ${app} at ${endpointName(id)} via session ${$sessionID}`)
+              logInfo(`Forward to app ${app} at ${endpointName(id)} via session ${$sessionID}`)
               setupMetrics()
               return response(200)
             } else {
@@ -878,7 +963,7 @@ var connectApp = pipeline($=>$
           }
         )
       } else {
-        console.info(`Forward to app ${app} at ${endpointName(id)}`)
+        logInfo(`Forward to app ${app} at ${endpointName(id)}`)
         setupMetrics()
         return response(200)
       }
@@ -988,7 +1073,7 @@ function startPing() {
               } else {
                 var hubs = sessions[$pingID]
                 hubs?.delete?.($hubSelected)
-                console.info(`Endpoint ${endpointName($pingID)} ping failure, connections = ${hubs?.size || 0}`)
+                logInfo(`Endpoint ${endpointName($pingID)} ping failure, connections = ${hubs?.size || 0}`)
               }
               return new StreamEnd
             }
@@ -1008,11 +1093,13 @@ function startPing() {
 function clearOutdatedEndpoints() {
   new Timeout(60).wait().then(() => {
     var outdated = []
-    Object.values(endpoints).filter(ep => isEndpointOutdated(ep)).forEach(
+    endpointList.filter(ep => isEndpointOutdated(ep)).forEach(
       (ep) => {
-        console.info(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
+        logInfo(`Endpoint ${ep.name} (uuid = ${ep.id}) outdated`)
         if (sessions[ep.id]?.size === 0) {
           outdated.push(ep.id)
+          var i = endpointList.indexOf(ep)
+          if (i >= 0) endpointList.splice(i, 1)
           delete endpoints[ep.id]
         }
       }
@@ -1103,10 +1190,31 @@ var noSession = pipeline($=>$
   .replaceMessage(response(404, 'No agent session established yet'))
 )
 
+function log(type, msg) {
+  if (logBuffer.length > 1000) {
+    logBuffer.splice(0, agentLog.length - 1000)
+  }
+  logBuffer.push({
+    time: new Date().toISOString(),
+    type,
+    message: msg,
+  })
+}
+
+function logInfo(msg) {
+  log('info', msg)
+  console.info(msg)
+}
+
+function logError(msg) {
+  log('error', msg)
+  console.error(msg)
+}
+
 function collectMyNames(addr) {
   if (myNames.indexOf(addr) < 0) {
     myNames.push(addr)
-    Object.values(endpoints).forEach(
+    endpointList.forEach(
       ep => {
         if (ep.isConnected) ep.hubs.push(addr)
       }
@@ -1124,11 +1232,12 @@ function makeEndpoint(id) {
       ip: $ctx.ip,
       port: $ctx.port,
       via: $ctx.via,
-      hubs: [...myNames],
+      hubs: [myID],
       heartbeat: Date.now(),
       ping: null,
       isConnected: true,
     }
+    endpointList.push(ep)
   } else {
     ep.username = $ctx.username
   }

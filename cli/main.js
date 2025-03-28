@@ -274,6 +274,7 @@ function doCommand(meshName, epName, argv, program) {
         notes: `
           Available object types include:
             mesh     meshes
+            hub      hubs
             endpoint endpoints ep
             file     files
             app      apps
@@ -285,6 +286,9 @@ function doCommand(meshName, epName, argv, program) {
             case 'mesh':
             case 'meshes':
               return getMesh(name)
+            case 'hub':
+            case 'hubs':
+              return selectMesh(meshName).then(mesh => getHub(name, mesh))
             case 'endpoint':
             case 'endpoints':
             case 'ep':
@@ -306,6 +310,7 @@ function doCommand(meshName, epName, argv, program) {
         notes: `
           Available object types include:
             mesh
+            hub
             endpoint ep
             file
             app
@@ -315,6 +320,7 @@ function doCommand(meshName, epName, argv, program) {
           var name = args['<object name>']
           switch (type) {
             case 'mesh': return describeMesh(name)
+            case 'hub': return selectMesh(meshName).then(mesh => describeHub(name, mesh))
             case 'endpoint': case 'ep': return selectMesh(meshName).then(mesh => describeEndpoint(name, mesh))
             case 'file': return selectMesh(meshName).then(mesh => describeFile(name, mesh))
             case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => describeApp(name, mesh, ep))
@@ -399,13 +405,15 @@ function doCommand(meshName, epName, argv, program) {
           Available object types include:
             app
             endpoint ep
+            hub
         `,
         action: (args) => {
           var type = args['<object type>']
           var name = args['[object name]']
           switch (type) {
-            case 'endpoint': case 'ep': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => logEndpoint(name, mesh, ep))
             case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => logApp(name, mesh, ep))
+            case 'endpoint': case 'ep': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => logEndpoint(name, mesh, ep))
+            case 'hub': return selectMesh(meshName).then(mesh => logHub(name, mesh))
             default: return invalidObjectType(type, 'log')
           }
         }
@@ -979,9 +987,24 @@ function getMesh(name) {
   })
 }
 
+function getHub(name, mesh) {
+  return client.get(`/api/meshes/${uri(mesh.name)}/hubs`).then(ret => {
+    var list = Object.entries(JSON.decode(ret))
+    printTable(
+      list.filter(([k, v]) => !name || k === name || v.some(s => s.indexOf(name) >= 0)),
+      {
+        'NAMES': ([_, v]) => v.ports.join(', '),
+        'ZONE': ([_, v]) => v.zone,
+        'CONNECTED': ([_, v]) => v.connected ? 'Yes' : '',
+        'ID': ([k]) => k,
+      }
+    )
+  })
+}
+
 function getEndpoint(name, mesh) {
   var keyword = normalizeName(name)
-  var q = keyword ? '?keyword=' + URL.encodeComponent(keyword) : ''
+  var q = keyword ? '?keyword=' + uri(keyword) : ''
   return client.get(`/api/meshes/${uri(mesh.name)}/endpoints${q}`).then(ret => {
     printTable(
       JSON.decode(ret),
@@ -1099,6 +1122,27 @@ function describeMesh(name) {
     }
   }).catch(err => {
     throw (err.status === 404 ? `mesh '${meshName}' not found` : err)
+  })
+}
+
+function describeHub(name, mesh) {
+  return selectHub(name, mesh).then(
+    id => client.get(`/api/meshes/${uri(mesh.name)}/hubs/${id}`)
+  ).then(ret => {
+    var hub = JSON.decode(ret)
+    var cap = hub.capacity
+    var use = hub.load
+    println(`Hub: ${hub.id}`)
+    println(`Zone: ${hub.zone || '(not set)'}`)
+    println(`Ports:`)
+    printTable(hub.ports, {
+      'NAME': p => p.name,
+      'STATUS': p => p.online ? 'Online' : 'Offline',
+      'PING': p => p.ping === null ? 'n/a' : p.ping + 'ms',
+    }, 2)
+    println(`Load:`)
+    println(`  Agents: ${use.agents}/${cap.agents}`)
+    println(`Connected: ${hub.connected ? 'Yes' : 'No'}`)
   })
 }
 
@@ -1273,6 +1317,21 @@ function unpublishFile(name, mesh) {
 // Command: log
 //
 
+function logApp(name, mesh, ep) {
+  var appName = normalizeAppName(name)
+  if (!appName) throw 'missing app name'
+  return selectApp(appName, mesh, ep).then(app => {
+    if (!app) throw `app not found: ${name}`
+    var provider = app.provider
+    var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
+    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}/log`)
+  }).then(ret => {
+    JSON.decode(ret).forEach(l => {
+      println(l.time, l.message)
+    })
+  })
+}
+
 function logEndpoint(name, mesh, ep) {
   var epName = normalizeName(name)
   return (epName ? selectEndpoint(epName, mesh) : Promise.resolve(ep)).then(
@@ -1284,15 +1343,10 @@ function logEndpoint(name, mesh, ep) {
   })
 }
 
-function logApp(name, mesh, ep) {
-  var appName = normalizeAppName(name)
-  if (!appName) throw 'missing app name'
-  return selectApp(appName, mesh, ep).then(app => {
-    if (!app) throw `app not found: ${name}`
-    var provider = app.provider
-    var tagname = app.tag ? `${app.name}@${app.tag}` : app.name
-    return client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(tagname)}/log`)
-  }).then(ret => {
+function logHub(name, mesh) {
+  return selectHub(name, mesh).then(
+    id => client.get(`/api/meshes/${uri(mesh.name)}/hubs/${id}/log`)
+  ).then(ret => {
     JSON.decode(ret).forEach(l => {
       println(l.time, l.message)
     })
@@ -1370,10 +1424,10 @@ function callApp(argv, mesh, ep) {
 
     var program = `ztm ${name}`
     var url = `/api/meshes/${uri(mesh.name)}/apps/${uri(app.provider)}/${uri(tagname)}/cli`
-    url += '?argv=' + URL.encodeComponent(JSON.stringify([program, ...argv]))
-    url += '&cwd=' + URL.encodeComponent(os.path.resolve())
+    url += '?argv=' + uri(JSON.stringify([program, ...argv]))
+    url += '&cwd=' + uri(os.path.resolve())
     url += '&ep_id=' + ep.id
-    url += '&ep_name=' + URL.encodeComponent(ep.name)
+    url += '&ep_name=' + uri(ep.name)
 
     pipy.tty.raw = true
 
@@ -1470,7 +1524,7 @@ function validatePermit(pathname) {
 }
 
 function allEndpoints(mesh, keyword) {
-  var q = keyword ? '?keyword=' + URL.encodeComponent(keyword) : ''
+  var q = keyword ? '?keyword=' + uri(keyword) : ''
   return client.get(`/api/meshes/${uri(mesh.name)}/endpoints${q}`).then(ret => {
     var endpoints = {}
     JSON.decode(ret).forEach(ep => endpoints[ep.id] = ep)
@@ -1498,10 +1552,21 @@ function selectMesh(name) {
   )
 }
 
+function selectHub(name, mesh) {
+  if (!mesh) throw 'no mesh specified'
+  return client.get(`/api/meshes/${uri(mesh.name)}/hubs`).then(ret => {
+    var list = Object.entries(JSON.decode(ret))
+    var dups = list.filter(([k, v]) => k === name || v.ports.includes(name))
+    if (dups.length === 1) return dups[0][0]
+    if (dups.length === 0) throw `hub '${name}' not found`
+    throw `ambiguous hub name '${name}'`
+  })
+}
+
 function selectEndpoint(name, mesh) {
   if (!mesh) throw 'no mesh specified'
   if (name) {
-    var key = URL.encodeComponent(name)
+    var key = uri(name)
     return client.get(`/api/meshes/${uri(mesh.name)}/endpoints?id=${key}&name=${key}`).then(ret => {
       var list = JSON.decode(ret)
       var ep = list.find(ep => ep.id === name)

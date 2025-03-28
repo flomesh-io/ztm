@@ -98,6 +98,24 @@ function getPermit(mesh, username, identity) {
   return m.issuePermit(username, identity)
 }
 
+function allHubs(mesh) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve([])
+  return m.discoverHubs()
+}
+
+function getHub(mesh, id) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve(null)
+  return m.findHub(id)
+}
+
+function getHubLog(mesh, id) {
+  var m = meshes[mesh]
+  if (!m) return Promise.resolve([])
+  return m.findHubLog(id)
+}
+
 function allEndpoints(mesh, id, name, user, keyword, offset, limit) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve([])
@@ -280,6 +298,9 @@ export default {
   setMesh,
   delMesh,
   getPermit,
+  allHubs,
+  getHub,
+  getHubLog,
   allEndpoints,
   getEndpoint,
   getEndpointLabels,
