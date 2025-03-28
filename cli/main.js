@@ -123,15 +123,20 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
-          -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-                                          Only applicable to hubs and agents
-          -l, --listen  <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                          Only applicable to hubs and agents
-          -n, --names   <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
-                                          Only applicable to hubs
-              --ca      <url>             Specify the location of an external CA service if any
-          -p, --permit  <pathname>        Specify an optional output filename for the root user's permit
-                                          Only applicable to hubs
+          -d, --data        <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+                                              Only applicable to hubs and agents
+          -l, --listen      <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+                                              Only applicable to hubs and agents
+          -n, --names       <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+                                              Only applicable to hubs
+              --ca          <url>             Specify the location of an external CA service if any
+                                              Only applicable to hubs
+              --zone        <zone>            Specify the region where the hub is deployed
+                                              Only applicable to hubs
+              --max-agents  <number>          Specify the maximum number of agents the hub can handle
+                                              Only applicable to hubs
+          -p, --permit      <pathname>        Specify an optional output filename for the root user's permit
+                                              Only applicable to hubs
         `,
         notes: `Available object types include: hub, agent, app`,
         action: (args) => {
@@ -166,18 +171,22 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub or agent in foreground mode`,
         usage: 'run <object type>',
         options: `
-          -d, --data    <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-          -l, --listen  <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-          -n, --names   <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
-                                          Only applicable to hubs
-              --ca      <url>             Specify the location of an external CA service if any
-                                          Only applicable to hubs
-          -p, --permit  <pathname>        An optional output filename for generating the root user's permit when starting a hub
-                                          Or an input filename to load the user permit when joining a mesh while starting an agent
-              --join    <mesh>            If specified, join a mesh with the given name
-                                          Only applicable to agents
-              --join-as <endpoint>        When joining a mesh, give the current endpoint a name
-                                          Only applicable to agents
+          -d, --data        <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+          -l, --listen      <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+          -n, --names       <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+                                              Only applicable to hubs
+              --ca          <url>             Specify the location of an external CA service if any
+                                              Only applicable to hubs
+              --zone        <zone>            Specify the region where the hub is deployed
+                                              Only applicable to hubs
+              --max-agents  <number>          Specify the maximum number of agents the hub can handle
+                                              Only applicable to hubs
+          -p, --permit      <pathname>        An optional output filename for generating the root user's permit when starting a hub
+                                              Or an input filename to load the user permit when joining a mesh while starting an agent
+              --join        <mesh>            If specified, join a mesh with the given name
+                                              Only applicable to agents
+              --join-as     <endpoint>        When joining a mesh, give the current endpoint a name
+                                              Only applicable to agents
         `,
         notes: `Available object types include: hub, agent`,
         action: (args) => {
@@ -540,11 +549,15 @@ function startHub(args) {
   }
   if ('--names' in args) opts['--names'] = args['--names']
   if ('--ca' in args) opts['--ca'] = args['--ca']
+  if ('--zone' in args) opts['--zone'] = args['--zone']
+  if ('--max-agents' in args) opts['--max-agents'] = args['--max-agents']
   var optsChanged = (
     ('--data' in args) ||
     ('--listen' in args) ||
     ('--names' in args) ||
-    ('--ca' in args)
+    ('--ca' in args) ||
+    ('--zone' in args) ||
+    ('--max-agents' in args)
   )
   if (optsChanged || !hasService('hub')) {
     return initHub(args).then(
@@ -838,7 +851,13 @@ function runHub(args, program) {
         '--data', args['--data'] || '~/.ztm',
         '--listen', args['--listen'] || '0.0.0.0:8888',
       ]
+      if ('--names' in args) {
+        command.push('--names')
+        args['--names'].forEach(name => command.push(name))
+      }
       if ('--ca' in args) command.push('--ca', args['--ca'])
+      if ('--zone' in args) command.push('--zone', args['--zone'])
+      if ('--max-agents' in args) command.push('--max-agents', args['--max-agents'])
       return exec(command)
     }
   )
