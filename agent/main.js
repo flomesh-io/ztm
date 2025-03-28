@@ -213,6 +213,50 @@ function main(listen) {
     },
 
     //
+    // Hub
+    //   id: string (UUID)
+    //   zone: string
+    //   since: number
+    //   ports: [{
+    //     name: string,
+    //     ping: number,
+    //     online: boolean,
+    //   }]
+    //   capacity:
+    //     agents: number
+    //   load:
+    //     agents: number
+    //   connected: boolean
+    //
+
+    '/api/meshes/{mesh}/hubs': {
+      'GET': function ({ mesh }, req) {
+        mesh = URL.decodeComponent(mesh)
+        return api.allHubs(mesh).then(
+          ret => response(200, ret)
+        )
+      },
+    },
+
+    '/api/meshes/{mesh}/hubs/{id}': {
+      'GET': function ({ mesh, id }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.getHub(mesh, id).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      },
+    },
+
+    '/api/meshes/{mesh}/hubs/{id}/log': {
+      'GET': function ({ mesh, id }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.getHubLog(mesh, id).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      },
+    },
+
+    //
     // Endpoint
     //   id: string (UUID)
     //   name: string
