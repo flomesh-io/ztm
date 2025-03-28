@@ -49,14 +49,14 @@ export default function ({ app, mesh }) {
               inbound: [],
               outbound: [],
             })
-            var ep = (endpoints[params.ep] ??= {})
+            var ep = (endpoints[params.ep] ??= { id: params.ep })
             if (filename.endsWith('/inbound.json')) tunnel.inbound.push(ep)
             if (filename.endsWith('/outbound.json')) tunnel.outbound.push(ep)
           }
         })
         return mesh.discover(Object.keys(endpoints)).then(
           list => {
-            list.forEach(ep => Object.assign(endpoints[ep.id], ep))
+            list.filter(ep => ep).forEach(ep => Object.assign(endpoints[ep.id], ep))
             return [
               ...Object.values(tcp),
               ...Object.values(udp),
@@ -110,14 +110,14 @@ export default function ({ app, mesh }) {
         Object.keys(files).forEach(filename => {
           var params = inboundPattern(filename) || outboundPattern(filename)
           if (params) {
-            var ep = (endpoints[params.ep] ??= {})
+            var ep = (endpoints[params.ep] ??= { id: params.ep })
             if (filename.endsWith('/inbound.json')) inbound.push(ep)
             if (filename.endsWith('/outbound.json')) outbound.push(ep)
           }
         })
         return mesh.discover(Object.keys(endpoints)).then(
           list => {
-            list.forEach(ep => Object.assign(endpoints[ep.id], ep))
+            list.filter(ep => ep).forEach(ep => Object.assign(endpoints[ep.id], ep))
             return {
               protocol,
               name,
@@ -387,7 +387,7 @@ export default function ({ app, mesh }) {
                   }
                 })
                 return mesh.discover(eps).then(
-                  endpoints => endpoints.filter(ep => ep.online).map(ep => ep.id)
+                  endpoints => endpoints.filter(ep => ep?.online).map(ep => ep.id)
                 )
               }
             )
