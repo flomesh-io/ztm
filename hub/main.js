@@ -408,6 +408,7 @@ var getHubStatus = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
+      collectMyNames($ctx.via)
       return response(200, {
         id: myID,
         since: startTime,
@@ -533,6 +534,7 @@ var getHubs = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
+      collectMyNames($ctx.via)
       return response(200, {
         [myID]: {
           zone: myZone || null,

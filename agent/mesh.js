@@ -93,7 +93,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   var hubCache = new algo.Cache({ ttl: 60 })
 
   var hubClients = new algo.Cache(
-    target => new http.Agent(target, { tls: tlsOptions })
+    target => new http.Agent(target, {
+      tls: tlsOptions,
+      connectTimeout: 10,
+    })
   )
 
   //
@@ -865,7 +868,8 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       logInfo(`Start from bootstraps ${config.bootstraps.join(', ')}`)
       return pickHub().then(hub => {
         if (!hub) {
-          logError(`No hub found`)
+          meshErrors.length = 0
+          meshError(`No hub found`)
           return new Timeout(10).wait().then(searchHub)
         }
         return hub
