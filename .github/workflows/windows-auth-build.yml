@@ -33,7 +33,9 @@ jobs:
     - name: build app
       run: |
         cd gui
-        set NODE_OPTIONS=--max_old_space_size=4096 && set VITE_APP_AUTH_URL=${{ vars.APP_AUTH_URL }} && yarn build:base 
+        $env:NODE_OPTIONS="--max_old_space_size=4096"
+        $env:VITE_APP_AUTH_URL="${{ vars.APP_AUTH_URL }}"
+        yarn build:base
 
     - name: Rename
       run: Rename-Item -Path './gui/src-tauri/target/release/bundle/nsis/ztm_${{ vars.APP_VERSION }}_x64-setup.exe' -NewName 'ztm-app-v${{ vars.APP_VERSION }}-win_x86_64.exe'
