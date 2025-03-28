@@ -207,8 +207,8 @@ onMounted(() => {
 				</div>
 			</div>
 			</ScrollPanel>
-			<Empty v-else-if="hasPubHub" :title="emptyMsg" cancelButton="Live Sample" @cancel="openTryMesh" button="Join Mesh" @primary="() => visibleEditor = true"/>
-			<Empty v-else :title="emptyMsg" button="Join Mesh" @primary="() => visibleEditor = true"/>
+			<Empty v-else-if="hasPubHub" :title="emptyMsg" cancelButton="Live Sample" @cancel="openTryMesh" :button="t('Join Mesh')" @primary="() => visibleEditor = true"/>
+			<Empty v-else :title="emptyMsg" :button="t('Join Mesh')" @primary="() => visibleEditor = true"/>
 		
 		</div>
 		<div class="flex-item h-full" v-if="!!visibleEditor">
