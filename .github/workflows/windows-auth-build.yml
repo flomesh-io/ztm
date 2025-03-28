@@ -1,0 +1,44 @@
+name: windows-auth-build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
+    - uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: "~3.25.0"  # <--= optional, use most recent 3.25.x version
+        ninjaVersion: "^1.11.1"
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - run: npm install -g win-node-env
+    - name: Install NASM
+      uses: ilammy/setup-nasm@v1
+    - name: build child app
+      run: |
+        cd gui
+        yarn install
+        set NODE_OPTIONS=--max_old_space_size=4096 && yarn build:apps
+    - name: build ztm
+      run: |
+        ./build.cmd
+        copy ./bin/ztm.exe './gui/src-tauri/bin/ztmctl-x86_64-pc-windows-msvc.exe'
+    - name: build app
+      run: |
+        cd gui
+        set NODE_OPTIONS=--max_old_space_size=4096 && VITE_APP_AUTH_URL=${{ vars.APP_AUTH_URL }} yarn build:base 
+
+    - name: Rename
+      run: Rename-Item -Path './gui/src-tauri/target/release/bundle/nsis/ztm_${{ vars.APP_VERSION }}_x64-setup.exe' -NewName 'ztm-app-v${{ vars.APP_VERSION }}-win_x86_64.exe'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ztm-app-v${{ vars.APP_VERSION }}-win_x86_64
+        path: ./gui/src-tauri/target/release/bundle/nsis/ztm-app-v${{ vars.APP_VERSION }}-win_x86_64.exe
