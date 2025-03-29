@@ -1194,7 +1194,7 @@ var noSession = pipeline($=>$
 
 function log(type, msg) {
   if (logBuffer.length > 1000) {
-    logBuffer.splice(0, agentLog.length - 1000)
+    logBuffer.splice(0, logBuffer.length - 1000)
   }
   logBuffer.push({
     time: new Date().toISOString(),
