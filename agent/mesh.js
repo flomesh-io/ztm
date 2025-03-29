@@ -89,6 +89,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   var hubs = []
+  var hubsTimeout = new Set
 
   var hubCache = new algo.Cache({ ttl: 60 })
 
@@ -1015,10 +1016,13 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   function getHubStatus(name) {
     return hubClients.get(name).request('GET', '/api/status').then(
       res => {
-        if (res?.head?.status === 200) {
+        var status = res?.head?.status
+        if (status === 200) {
           try {
             return JSON.decode(res.body)
           } catch {}
+        } else if (status === 504) {
+          hubsTimeout.add(name)
         }
         return null
       }
@@ -1045,7 +1049,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         var list = endpoint.hubs || []
         return Promise.all(list.map(
           id => listHubPorts(id).then(
-            ports => Promise.all(ports.map(
+            ports => Promise.all(ports.filter(name => !hubsTimeout.has(name)).map(
               name => {
                 var t = Date.now()
                 return getHubStatus(name).then(

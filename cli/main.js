@@ -1157,7 +1157,7 @@ function describeHub(name, mesh) {
     printTable(hub.ports, {
       'NAME': p => p.name,
       'STATUS': p => p.online ? 'Online' : 'Offline',
-      'PING': p => p.ping === null ? 'n/a' : p.ping + 'ms',
+      'PING': p => typeof p.ping === 'number' ? p.ping + 'ms' : 'n/a',
     }, 2)
     println(`Load:`)
     println(`  Agents: ${use.agents}/${cap.agents}`)
