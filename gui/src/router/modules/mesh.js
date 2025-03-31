@@ -28,6 +28,16 @@ const mesh = {
 				name: 'ep log',
 				component: () => import('@/views/log/EpLog.vue')
 		},
+		{
+				path: '/mesh/cloud',
+				name: 'cloud',
+				component: () => import('@/views/chat/Main.vue')
+		},
+		{
+				path: '/mesh/chat',
+				name: 'chat',
+				component: () => import('@/views/chat/Main.vue')
+		},
   ],
 };
 
