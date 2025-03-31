@@ -8,8 +8,14 @@ const menus = {
 				label: 'Endpoints',short:'EP', svg: '#svg-endpoint', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
+				label: 'Chat',short:'Chat', svg: '#svg-log', route: '/mesh/chat'
 		},
+		{
+				label: 'Cloud',short:'Cloud', svg: '#svg-cloud', app: '/api/meshes/Local/apps/ztm/cloud/'
+		},
+		// {
+		// 		label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
+		// },
 	],
 	web: [
 		{
@@ -19,11 +25,17 @@ const menus = {
 				label: 'Endpoints',short:'EP', svg: '#svg-endpoint', route: '/mesh/endpoints'
 		},
 		{
-				label: 'Apps',short:'Apps', svg: '#svg-grid', route: '/mesh/apps'
+				label: 'Chat',short:'Chat', svg: '#svg-chat', route: '/mesh/chat'
 		},
 		{
-				label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
+				label: 'Cloud',short:'Cloud', svg: '#svg-cloud', app: '/api/meshes/Local/apps/ztm/cloud/'
 		},
+		{
+				label: 'Apps',short:'Apps', svg: '#svg-grid', route: '/mesh/apps'
+		},
+		// {
+		// 		label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
+		// },
 	],
 };
 

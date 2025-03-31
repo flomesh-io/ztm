@@ -1,6 +1,5 @@
 import _ from "lodash";
 import mesh from "./modules/mesh";
-import chat from "./modules/chat";
 import app from "./modules/app";
 import AppLayout from '@/layout/AppLayout.vue';
 
@@ -34,12 +33,8 @@ const options = {
 		{
 			...app
 		},
-		{
-			...chat
-		},
     {
         path: '/',
-        component: AppLayout,
 				redirect: "/root",
         children: [
 					mesh
@@ -48,5 +43,8 @@ const options = {
   ],
 };
 
+if(!window.__TAURI_INTERNALS__ ){
+	options.routes[options.routes.length -1].component = AppLayout;
+}
 options.initRoutes = _.cloneDeep(options.routes);
 export default options;

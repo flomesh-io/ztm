@@ -10,6 +10,7 @@ import { useStore } from 'vuex';
 import { isAdmin } from "@/service/common/authority-utils";
 import { useConfirm } from "primevue/useconfirm";
 import { useI18n } from 'vue-i18n';
+import { openWebview } from '@/utils/webview';
 const { t } = useI18n();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -135,6 +136,18 @@ const select = (selected) => {
 	store.commit('account/setSelectedMesh', selected);
 }
 
+const goApp = (item) => {
+	const webviewOptions = {
+		url: item.app,
+		name: item.label,
+		width:item?.width || 1280,
+		height:item?.height || 860,
+		proxy:''
+	}
+	console.log(webviewOptions)
+	openWebview(webviewOptions);
+	focusMenu.value = item.app;
+}
 </script>
 
 <template>
@@ -142,7 +155,7 @@ const select = (selected) => {
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">
-									<Badge v-if="item.label == 'Apps' && unread>0" :value="unread" severity="danger" class="absolute" style="margin-left: 24px;top:3px"/>
+									<Badge v-if="item.label == 'Chat' && unread>0" :value="unread" severity="danger" class="absolute" style="margin-left: 24px;top:3px"/>
 									<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
 										<use :xlink:href="item.svg"></use>
 									</svg>
@@ -150,6 +163,14 @@ const select = (selected) => {
 									<div class="text-sm" >{{ t(item.short) }}</div>
 							</a>
 					</router-link>
+					<a :class="{'actived':focusMenu == item.app}" class="flex flex-column" v-else-if="!!item.app" v-ripple href="javascript:void(0)" @click="goApp(item)" v-bind="props.action">
+							<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
+								<use :xlink:href="item.svg"></use>
+							</svg>
+							<div v-else class="menu-icon" :class="item.icon" />
+							<div class="text-sm">{{ t(item.label) }} </div>
+							<!-- <span v-if="hasSubmenu" class="pi pi-fw pi-angle-right ml-2 relative" style="top: 2px;" /> -->
+					</a>
 			</template>
 	</Menubar>
 	<!-- <div v-if="isMobile" class="empty-bottom"/> -->

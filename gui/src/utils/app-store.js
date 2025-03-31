@@ -6,6 +6,8 @@ import scriptIcon from "@/assets/img/apps/script.png";
 import chatIcon from "@/assets/img/apps/chat.png";
 import usersIcon from "@/assets/img/apps/users.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
+import meshIcon from "@/assets/img/apps/mesh.png";
+import epIcon from "@/assets/img/apps/ep.png";
 import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
 import cloudIcon from "@/assets/img/apps/cloud.png";
@@ -19,12 +21,19 @@ import { platform } from '@tauri-apps/plugin-os';
 const defaultApp = [{
 		name: "setting",
 	},{
-		name: "ZTMGui",
-		label: "ZTM Gui",
+		name: "Meshes",
+		label: "Meshes",
 		url:'/#/mesh/list',
 		width:1280,
 		height:860,
-		icon: consoleIcon,
+		icon: meshIcon,
+	},{
+		name: "Endpoints",
+		label: "Endpoints",
+		url:'/#/mesh/endpoints',
+		width:1280,
+		height:860,
+		icon: epIcon,
 	},{
 	// 	name: "ZTMCli",
 	// 	label: "ZTM Cli",
@@ -34,7 +43,7 @@ const defaultApp = [{
 	// 	icon: terminal,
 	// },{
 		name: "ZTMLog",
-		label: "ZTM Log",
+		label: "System Log",
 		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
@@ -55,11 +64,18 @@ const mobileApp = [{
 		name: "setting",
 	},{
 		name: "ZTMLog",
-		label: "ZTM Log",
+		label: "System Log",
 		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
 		icon: ztmlog,
+	},{
+		name: "EPLog",
+		label: "EP Log",
+		url:'/#/mesh/log',
+		width:1280,
+		height:860,
+		icon: eplog,
 	},{
 		name: "browser",
 	},{
@@ -67,11 +83,18 @@ const mobileApp = [{
 	}];
 const webApp = [{
 		name: "ZTMLog",
-		label: "ZTM Log",
+		label: "System Log",
 		url:'/#/app/ztmlog',
 		width:455,
 		height:600,
 		icon: ztmlog,
+	},{
+		name: "EPLog",
+		label: "EP Log",
+		url:'/#/mesh/log',
+		width:1280,
+		height:860,
+		icon: eplog,
 	},{
 		name: "rdp",
 	}];
@@ -106,7 +129,7 @@ const appMapping = {
 	},
 	"ztm/chat": {
 		icon: chatIcon,
-		url:'/#/chat/rooms',
+		url:'/#/mesh/chat',
 		component: ChatComponent,
 		name: "Chat",
 		width:330,
