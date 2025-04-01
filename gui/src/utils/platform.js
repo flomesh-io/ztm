@@ -17,6 +17,12 @@ function isSafariOrMacOS() {
     return isSafari || isMacOS;
 }
 
+
+const isPC = ()=>{
+	const pm = platform();
+	return pm != 'ios' && pm != 'android' && pm != 'web';
+}
+
 export {
-	platform, isSafariOrMacOS
+	platform, isSafariOrMacOS, isPC
 };

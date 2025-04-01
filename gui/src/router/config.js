@@ -2,6 +2,7 @@ import _ from "lodash";
 import mesh from "./modules/mesh";
 import app from "./modules/app";
 import AppLayout from '@/layout/AppLayout.vue';
+import { isPC } from '@/utils/platform';
 
 const options = {
   routes: [
@@ -43,7 +44,7 @@ const options = {
   ],
 };
 
-if(!window.__TAURI_INTERNALS__ ){
+if(!isPC()){
 	options.routes[options.routes.length -1].component = AppLayout;
 }
 options.initRoutes = _.cloneDeep(options.routes);
