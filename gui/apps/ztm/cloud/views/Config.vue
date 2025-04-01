@@ -5,7 +5,7 @@ import FileService from '../service/FileService';
 import { checker, bitUnit, openFile, isImage, saveFile,labels,colors,icons } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
-import { platform } from '@/utils/platform';
+import { isPC } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
@@ -134,10 +134,7 @@ const getEndpoints = (callback) => {
 	})
 }
 
-const isPC = computed(()=>{
-	const pm = platform();
-	return pm != 'ios' && pm != 'android' && pm != 'web';
-})
+const hasPC = computed(()=> isPC())
 const acl = ref({
 	user:'',
 	permission: 'readonly'
@@ -366,7 +363,7 @@ const actions = computed(()=>{
 					openPreviewFile(props.file)
 				}
 			})
-		} else if(isPC.value) {
+		} else if(hasPC.value) {
 			_actions.push({
 				label: t('Open'),
 				icon: 'pi pi-external-link',

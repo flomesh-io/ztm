@@ -7,7 +7,7 @@ import chatIcon from "@/assets/img/apps/chat.png";
 import usersIcon from "@/assets/img/apps/users.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
 import meshIcon from "@/assets/img/apps/mesh.png";
-import epIcon from "@/assets/img/apps/ep.png";
+import epIcon from "@/assets/img/apps/ep2.png";
 import setting from "@/assets/img/apps/setting.png";
 import consoleIcon from "@/assets/img/apps/console.png";
 import cloudIcon from "@/assets/img/apps/cloud.png";

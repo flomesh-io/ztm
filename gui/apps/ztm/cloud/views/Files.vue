@@ -5,7 +5,7 @@ import FileService from '../service/FileService';
 import { checker, bitUnit, openFile, isImage, writeMobileFile,labels, colors,icons } from '@/utils/file';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
-import { platform } from '@/utils/platform';
+import { isPC } from '@/utils/platform';
 import { copy } from '@/utils/clipboard';
 import { merge } from '@/service/common/request';
 import { useToast } from "primevue/usetoast";
@@ -196,14 +196,11 @@ const openPreview = (item) => {
 	
 	fileConfig.value.close();
 }
-const isPC = computed(()=>{
-	const pm = platform();
-	return pm != 'ios' && pm != 'android' && pm != 'web';
-})
+const hasPC = computed(()=> isPC())
 const openPreviewFile = (item) => {
 	
 	if(!detailData.value[item.path]?.error){
-		if(isPC.value && detailData.value[item.path]?.state != 'missing'){
+		if(hasPC.value && detailData.value[item.path]?.state != 'missing'){
 			openFile(`${localDir.value}${item?.path}`);
 		} else if(detailData.value[item.path]?.state != 'new') {
 			openPreview(item);
@@ -227,7 +224,7 @@ const back = () => {
 	}
 }
 const showBack = computed(()=>{
-	return !isPC.value;
+	return !hasPC.value;
 })
 const changePath = (item) => {
 	if(item == 0 || (item == -1 && itemsBreadcrumb.value.length <= 0)){

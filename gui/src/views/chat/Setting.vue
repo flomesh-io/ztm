@@ -4,7 +4,7 @@ import { useStore } from 'vuex';
 import ChatService from '@/service/ChatService';
 import _ from 'lodash';
 import { openFolder } from '@/utils/file';
-import { platform } from '@/utils/platform';
+import { isPC } from '@/utils/platform';
 import userSvg from "@/assets/img/user.png";
 import { useI18n } from 'vue-i18n';
 const { t, locale } = useI18n();
@@ -17,10 +17,7 @@ const selectedMesh = computed(() => {
 });
 const visibleUserSelector = ref(false);
 
-const isPC = computed(()=>{
-	const pm = platform();
-	return pm != 'ios' && pm != 'android' && pm != 'web';
-})
+const hasPC = computed(()=> isPC());
 const selectedNewChatUsers = ref({});
 
 const loading = ref(false);
@@ -145,7 +142,7 @@ watch(() => props.room, () => {
 			</div>
 			<i class="pi pi-angle-right"/>
 		</li>
-		<li v-if="isPC" class="nav-li flex" @click="openBox">
+		<li v-if="hasPC" class="nav-li flex" @click="openBox">
 			<b class="opacity-70">{{t('Files')}}</b>
 			<div class="flex-item">
 			</div>
