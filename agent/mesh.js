@@ -2,6 +2,17 @@ import db from './db.js'
 import initFilesystem from './fs.js'
 import initApps from './apps.js'
 
+try {
+  var ztmVersion = JSON.decode(pipy.load('version.json'))
+} catch {
+  var ztmVersion = {}
+}
+
+var agentVersion = {
+  ztm: ztmVersion,
+  pipy: { ...pipy.version },
+}
+
 export default function (rootDir, listen, config, onConfigUpdate) {
   var meshName = config.name
   var username
@@ -324,7 +335,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           { method: 'POST', path: '/api/status' },
           JSON.encode({
             name: config.agent.name,
-            labels: agentLabels,
+            agent: {
+              version: agentVersion,
+              labels: agentLabels,
+            }
           })
         )
       )
@@ -988,6 +1002,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
                     hubCache.set(k, hub = {
                       zone: v.zone,
                       ports: [],
+                      version: v.version,
                     })
                     hubs[k] = hub
                   }

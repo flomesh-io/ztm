@@ -42,12 +42,13 @@ COMMIT=`git log -1 --format=%H`
 COMMIT_DATE=`git log -1 --format=%cD`
 
 VERSION_JSON="{
-  \"version\": \"$VERSION\",
+  \"tag\": \"$VERSION\",
   \"commit\": \"$COMMIT\",
   \"date\": \"$COMMIT_DATE\"
 }"
 
 echo "$VERSION_JSON" > cli/version.json
+echo "$VERSION_JSON" > hub/version.json
 echo "$VERSION_JSON" > agent/version.json
 
 echo "VERSION=\"$VERSION\"" > version.env

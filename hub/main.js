@@ -4,6 +4,17 @@ import db from './db.js'
 import ca from './ca.js'
 import cmdline from './cmdline.js'
 
+try {
+  var ztmVersion = JSON.decode(pipy.load('version.json'))
+} catch {
+  var ztmVersion = {}
+}
+
+var hubVersion = {
+  ztm: ztmVersion,
+  pipy: { ...pipy.version },
+}
+
 var routes = Object.entries({
 
   '/api/status': {
@@ -105,6 +116,18 @@ var routes = Object.entries({
 // endpoints[uuid] = {
 //   id: 'uuid',
 //   name: 'ep-xxx',
+//   version: {
+//     ztm: {
+//       tag: string,
+//       commit: string,
+//       date: string,
+//     },
+//     pipy: {
+//       tag: string,
+//       commit: string,
+//       date: string,
+//     },
+//   },
 //   labels: ['a:b', 'c:d'],
 //   username: 'root',
 //   ip: 'x.x.x.x',
@@ -420,6 +443,7 @@ var getHubStatus = pipeline($=>$
         load: {
           agents: endpointList.length,
         },
+        version: hubVersion,
       })
     }
   )
@@ -429,7 +453,8 @@ var postAgentStatus = pipeline($=>$
   .replaceMessage(
     function (req) {
       var info = JSON.decode(req.body)
-      var labels = info.labels
+      var version = info.agent?.version
+      var labels = info.agent?.labels
       if (labels instanceof Array) {
         labels = labels.filter(l => typeof l === 'string')
       } else {
@@ -438,6 +463,7 @@ var postAgentStatus = pipeline($=>$
       Object.assign(
         $endpoint, {
           name: info.name,
+          version,
           labels,
           heartbeat: Date.now(),
         }
@@ -539,6 +565,7 @@ var getHubs = pipeline($=>$
         [myID]: {
           zone: myZone || null,
           ports: myNames,
+          version: { ztm: { tag: hubVersion.ztm.tag }},
         }
       })
     }
@@ -584,7 +611,10 @@ var getEndpoints = pipeline($=>$
         ep => ({
           id: ep.id,
           name: ep.name,
-          labels: ep.labels || [],
+          agent: {
+            version: { ztm: { tag: ep.version?.ztm?.tag }},
+            labels: ep.labels || [],
+          },
           username: ep.username,
           ip: ep.ip,
           port: ep.port,
@@ -606,7 +636,10 @@ var getEndpoint = pipeline($=>$
       return response(200, {
         id: ep.id,
         name: ep.name,
-        labels: ep.labels || [],
+        agent: {
+          version: ep.version,
+          labels: ep.labels || [],
+        },
         username: ep.username,
         certificate: ep.certificate,
         ip: ep.ip,

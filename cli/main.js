@@ -468,13 +468,13 @@ function version(args) {
     println(JSON.stringify(info))
   } else {
     println(`ZTM:`)
-    println(`  Version : ${info.ztm?.version}`)
-    println(`  Commit  : ${info.ztm?.commit}`)
-    println(`  Date    : ${info.ztm?.date}`)
+    println(`  Tag    : ${info.ztm?.tag}`)
+    println(`  Commit : ${info.ztm?.commit}`)
+    println(`  Date   : ${info.ztm?.date}`)
     println(`Pipy:`)
-    println(`  Version : ${info.pipy?.version}`)
-    println(`  Commit  : ${info.pipy?.commit}`)
-    println(`  Date    : ${info.pipy?.date}`)
+    println(`  Tag    : ${info.pipy?.tag}`)
+    println(`  Commit : ${info.pipy?.commit}`)
+    println(`  Date   : ${info.pipy?.date}`)
   }
 }
 
@@ -1015,6 +1015,7 @@ function getHub(name, mesh) {
         'NAMES': ([_, v]) => v.ports.join(', '),
         'ZONE': ([_, v]) => v.zone,
         'CONNECTED': ([_, v]) => v.connected ? 'Yes' : '',
+        'VERSION': ([_, v]) => v.version?.ztm?.tag || 'n/a',
         'ID': ([k]) => k,
       }
     )
@@ -1034,8 +1035,9 @@ function getEndpoint(name, mesh) {
         'PORT': ep => ep.port,
         'STATUS': ep => ep.online ? 'Online' : 'Offline',
         'PING': ep => ep.ping ? ep.ping + 'ms' : 'n/a',
+        'VERSION': ep => ep.agent?.version?.ztm?.tag || 'n/a',
         'LABELS': ep => {
-          var labels = ep.labels || []
+          var labels = ep.agent?.labels || []
           if (labels.length > 3) {
             labels.length = 3
             labels[3] = '...'
@@ -1162,6 +1164,15 @@ function describeHub(name, mesh) {
     println(`Load:`)
     println(`  Agents: ${use.agents}/${cap.agents}`)
     println(`Connected: ${hub.connected ? 'Yes' : 'No'}`)
+    printTable([
+      { name: 'ztm', version: hub?.version?.ztm },
+      { name: 'pipy', version: hub?.version?.pipy },
+    ], {
+      '': r => r.name,
+      'TAG': r => r.version?.tag || 'n/a',
+      'COMMIT': r => r.version?.commit || 'n/a',
+      'DATE': r => r.version?.date || 'n/a',
+    }, 2)
   })
 }
 
@@ -1181,7 +1192,17 @@ function describeEndpoint(name, mesh) {
     println(`Heartbeat: ${new Date(ep.heartbeat).toUTCString()}`)
     println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
     println(`Status:`, ep.online ? 'Online' : 'Offline')
-    println(`Labels:`, ep.labels?.length > 0 ? ep.labels.join(' ') : '(none)')
+    println(`Version:`)
+    printTable([
+      { name: 'ztm', version: ep.agent?.version?.ztm },
+      { name: 'pipy', version: ep.agent?.version?.pipy },
+    ], {
+      '': r => r.name,
+      'TAG': r => r.version?.tag || 'n/a',
+      'COMMIT': r => r.version?.commit || 'n/a',
+      'DATE': r => r.version?.date || 'n/a',
+    }, 2)
+    println(`Labels:`, ep.agent?.labels?.length > 0 ? ep.agent?.labels.join(' ') : '(none)')
   })
 }
 

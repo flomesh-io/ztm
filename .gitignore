@@ -3,6 +3,7 @@
 
 bin/
 cli/version.json
+hub/version.json
 agent/version.json
 agent/gui
 agent/apps/*/*/gui
