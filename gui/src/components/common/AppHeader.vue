@@ -2,7 +2,7 @@
 import { ref, computed,onActivated,onMounted,useSlots } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { platform } from '@/utils/platform';
+import { platform, isPC } from '@/utils/platform';
 import XeyeSvg from "@/assets/img/logo.png";
 const slots = useSlots();
 const props = defineProps(['main','back','child'])
@@ -29,6 +29,7 @@ const toggleLeft = () => {
 const pm = computed(() => {
 	return platform()
 });
+const hasPC = computed(() => isPC());
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const home = () => {
 	if(hasTauri.value){
@@ -60,12 +61,12 @@ onMounted(()=>{
 				<Button v-else-if="props.main && (isMobile || pm =='android'|| pm =='ios')" @click.stop="toggleLeft" class="mobile-show"   text >
 					<img class="logo pointer" :src="XeyeSvg" width="28px" height="28px"/>
 				</Button>
-				<Button v-else-if="props.main" @click="home"  text >
+				<Button v-else-if="props.main && pm == 'web'" @click="home"  text >
 					<svg class="svg text-primary-500 linear" aria-hidden="true">
 						<use xlink:href="#svg-home"></use>
 					</svg>
 				</Button>
-				<Button v-else-if="!(props.child && pm !='android' && pm !='ios' && pm !='web' && !!pm)" @click="back" icon="pi pi-angle-left" severity="secondary" text />
+				<Button v-else-if="!(props.child && hasPC())" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>
 	
 			<template #center>
