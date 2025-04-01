@@ -1,5 +1,5 @@
 <script setup>
-import { ref,onActivated,watch, computed } from "vue";
+import { ref,onMounted,watch, computed } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
 import AppService from '@/service/AppService';
@@ -55,6 +55,14 @@ const removeEp = () => {
 		});
 }
 const meshApps = ref([]);
+const detail = ref({})
+const loadEp = () => {
+	ztmService.getEndpoint(selectedMesh.value?.name, props.ep.id).then((res)=>{
+		detail.value = res;
+	}).catch((e)=>{
+		console.log(e)
+	});
+}
 const loadApps = () => {
 	appService.getEpApps(selectedMesh.value?.name, props.ep.id).then((res)=>{
 		console.log("start getApps")
@@ -64,6 +72,9 @@ const loadApps = () => {
 		console.log(e)
 	});
 }
+onMounted(()=>{
+	loadEp();
+})
 </script>
 
 <template>
@@ -91,7 +102,7 @@ const loadApps = () => {
 						<i class="pi pi-info-circle mr-2" />{{t('Info')}}
 					</div>
 				</template>
-				<EndpointInfo :ep="props.ep"/>
+				<EndpointInfo :ep="{...props.ep,...detail}"/>
 			</TabPanel>
 			<TabPanel>
 				<template #header>

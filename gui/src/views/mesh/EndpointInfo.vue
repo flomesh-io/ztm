@@ -1,10 +1,23 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
+import ZtmService from '@/service/ZtmService';
 const { t } = useI18n();
+const store = useStore();
+const ztmService = new ZtmService();
 const props = defineProps(['ep','loading']);
 const windowWidth = computed(() =>  window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
+
+const selectedMesh = computed(() => {
+	return store.getters["account/selectedMesh"]
+});
+const changeLabels = (ep) => {
+	ztmService.changeEpLabels(selectedMesh.value?.name, ep?.id, ep?.labels||[])
+		.then(data => {})
+		.catch(err => console.log('Request Failed', err)); 
+}
 </script>
 
 <template>
@@ -52,6 +65,12 @@ const isMobile = computed(() => windowWidth.value<=768);
 									{{props.ep?.port || t('Unknow')}}
 								</span>
 						</Chip>
+					</FormItem>
+					<FormItem :label="t('Labels')" v-if="props.ep?.labels">
+						<ChipList @change="changeLabels(props.ep)"  :readonly="!props.ep.isLocal" :placeholder="t('New Label')" listType="tag"  v-model:list="props.ep.labels"/>
+					</FormItem>
+					<FormItem :label="t('Version')" v-if="props.ep?.agent">
+						<Tag class="mr-2" v-for="(vk) in Object.keys(props.ep?.agent.version)" :key="vk">{{vk}}: {{props.ep?.agent.version[vk]?.tag}}</Tag>
 					</FormItem>
 				</ul>
 			</div>
