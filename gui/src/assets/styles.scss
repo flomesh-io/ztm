@@ -795,6 +795,9 @@ pre.app-code code{
 .transparent{
 	background-color: transparent !important;
 }
+.transparent.p-togglebutton .p-togglebutton-content{
+	background-color: transparent;
+}
 .transparent.p-select .p-select-label.p-placeholder{
 	padding-right: 0 !important;
 }
@@ -1448,4 +1451,7 @@ fieldset{
 }
 .ztm-browser-bar{
 	display: none !important;
+}
+.grayfilter{
+	filter: grayscale(100%);
 }
