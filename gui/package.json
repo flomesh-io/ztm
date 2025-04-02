@@ -41,8 +41,8 @@
     "download-ztm-android": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/ztm/arm64-v8a/library/libztm.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/lib/libztm.so ../src-android/app/src/main/assets/libztm.so && cp -f ./usr/local/lib/libc++_shared.so ../src-android/app/src/main/assets/libc++_shared.so"
   },
   "dependencies": {
-    "@primevue/core": "4.2.5",
-    "@primevue/themes": "4.2.5",
+    "@primevue/core": "4.3.3",
+    "@primevue/themes": "4.3.3",
     "@tauri-apps/api": "2.1.1",
     "@tauri-apps/plugin-clipboard-manager": "2.2.0",
     "@tauri-apps/plugin-dialog": "2.2.0",
@@ -70,7 +70,7 @@
     "nprogress": "^0.2.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
-    "primevue": "4.2.5",
+    "primevue": "4.3.3",
     "tauri-plugin-keychain": "^2.0.1",
     "tauri-plugin-share": "^2.0.4",
     "uuid": "^10.0.0",

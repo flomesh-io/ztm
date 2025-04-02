@@ -52,6 +52,18 @@ const removeApp = (app) => {
 		})
 	}
 }
+
+const disabledApp = (app, isDisabled) => {
+	appService.disabledApp({
+		mesh:selectedMesh.value?.name,
+		ep:props.embedEp?.id || selectedMesh.value?.agent?.id,
+		provider:app.provider||'ztm',
+		app:app.name,
+		isDisabled
+	}).then(()=>{
+		emits('reload');
+	})
+}
 const startApp = (app) => {
 	appService.startApp({
 		mesh:selectedMesh.value?.name,
@@ -106,13 +118,12 @@ onMounted(()=>{
 	<div class="grid text-center" >
 			<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in (props.meshApps||[])">
 				<div class="flex">
-					<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+					<img :class="app.isDisabled?'grayfilter':''" :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="26" height="26" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
 					<div class="flex-item text-left pl-3" :class="{'text-white-alpha-80':!props.theme}" style="line-height: 40px;">
 						<b>{{ t(app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name) }}</b> | 
 						<i class="iconfont icon-provider" v-if="app?.provider == (props.embedEp?.username || selectedMesh.value?.agent?.username)"/>
 						{{app.provider}}
 					</div>
-					
 					<Button v-if="!!app.provider && !app.shortcut" v-tooltip.left="t('App Log')" icon="pi pi-file" severity="help" text rounded aria-label="Filter" @click="logApp(app)" >
 					</Button>
 					<Button v-if="app.isRunning === false" v-tooltip.left="t('Start')" icon="pi pi-caret-right" severity="help" text rounded aria-label="Filter" @click="startApp(app)" >
@@ -128,6 +139,12 @@ onMounted(()=>{
 					</Button>
 					<Button v-if="app.provider != 'ztm' || app.shortcut" v-tooltip.left="t('Delete')" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 					</Button>
+					
+					<ToggleSwitch @click="disabledApp(app,!app.isDisabled)" v-tooltip.left="!app.isDisabled?t('Click to disabled'):t('Click to enabled')" class="relative ml-1" style="top:6px" v-model="app.isDisabled" :trueValue="false" :falseValue="true">
+						<template #handle="{ checked }">
+								<i :class="['!text-xs pi', { 'pi-check': checked, 'pi-times': !checked }]" />
+						</template>
+					</ToggleSwitch>
 				</div>
 			</div>
 			<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in shortcutApps">

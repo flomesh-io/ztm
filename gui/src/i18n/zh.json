@@ -16,6 +16,8 @@
 	"New Label": "新的标签",
 	"Label": "标签",
 	"Labels": "标签",
+	"Click to enabled":"切换到可用",
+	"Click to disabled":"切换到禁用",
 	"System Log": "系统日志",
 	"System Proxy": "系统代理",
 	"Close": "关闭",

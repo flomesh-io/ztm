@@ -376,6 +376,13 @@ export default class AppService {
 	}) {
 		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {});
 	}
+	disabledApp({
+		mesh, ep, provider, app, isDisabled
+	}) {
+		return request(`/api/meshes/${mesh}/endpoints/${ep}/apps/${provider}/${app}`, "POST", {
+			isDisabled
+		});
+	}
 	startApp({
 		mesh, ep, provider, app
 	}) {
