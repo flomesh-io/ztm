@@ -241,6 +241,7 @@ function doCommand(meshName, epName, argv, program) {
         notes: `
           Available object types include:
             mesh
+            app
         `,
         options: `
           -p, --permit  <pathname>  Specify a new permit to be used to join the mesh
@@ -251,6 +252,7 @@ function doCommand(meshName, epName, argv, program) {
           var name = args['<object name>']
           switch (type) {
             case 'mesh': return enableMesh(name, args['--permit'])
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => enableApp(name, mesh, ep))
             default: return invalidObjectType(type, 'enable')
           }
         }
@@ -262,6 +264,7 @@ function doCommand(meshName, epName, argv, program) {
         notes: `
           Available object types include:
             mesh
+            app
         `,
         options: `
           --erase-permit  Erase the permit that was used to join the mesh
@@ -272,6 +275,7 @@ function doCommand(meshName, epName, argv, program) {
           var name = args['<object name>']
           switch (type) {
             case 'mesh': return disableMesh(name, args['--erase-permit'])
+            case 'app': return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => disableApp(name, mesh, ep))
             default: return invalidObjectType(type, 'disable')
           }
         }
@@ -965,6 +969,20 @@ function enableMesh(name, permitPathname) {
   })
 }
 
+function enableApp(name, mesh, ep) {
+  var appName = normalizeAppName(name)
+  if (!appName) throw 'missing app name'
+  return selectApp(appName, mesh, ep).then(app => {
+    if (!app) throw `app not found: ${name}`
+    var provider = app.provider
+    var name = app.tag ? `${app.name}@${app.tag}` : app.name
+    return client.post(
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(name)}`,
+      JSON.encode({ isDisabled: false })
+    )
+  })
+}
+
 //
 // Command: disable
 //
@@ -979,6 +997,20 @@ function disableMesh(name, erasePermit) {
       permit.agent.certificate = ''
     }
     return client.post(path, JSON.encode(permit))
+  })
+}
+
+function disableApp(name, mesh, ep) {
+  var appName = normalizeAppName(name)
+  if (!appName) throw 'missing app name'
+  return selectApp(appName, mesh, ep).then(app => {
+    if (!app) throw `app not found: ${name}`
+    var provider = app.provider
+    var name = app.tag ? `${app.name}@${app.tag}` : app.name
+    return client.post(
+      `/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}/apps/${uri(provider)}/${uri(name)}`,
+      JSON.encode({ isDisabled: true })
+    )
   })
 }
 
@@ -1109,6 +1141,7 @@ function getApp(name, mesh, ep) {
           if (app.isBuiltin) states.push('builtin')
           if (app.isDownloaded) states.push('downloaded')
           if (app.isPublished) states.push('published')
+          if (app.isDisabled) states.push('disabled')
           if (app.isRunning) states.push('running')
           return states.join(', ')
         }
@@ -1245,6 +1278,7 @@ function describeApp(name, mesh, ep) {
     println(`  Builtin   : ${app.isBuiltin ? 'Yes' : 'No'}`)
     println(`  Downloaded: ${app.isDownloaded ? 'Yes' : 'No'}`)
     println(`  Published : ${app.isPublished ? 'Yes' : 'No'}`)
+    println(`  Disabled  : ${app.isDisabled ? 'Yes' : 'No'}`)
     println(`  Running   : ${app.isRunning ? 'Yes' : 'No'}`)
   })
 }

@@ -1153,12 +1153,14 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       var isDownloaded = apps.isDownloaded(provider, app)
       var isPublished = Boolean(fs.stat(`/shared/${provider}/pkg/${app}`))
       if (isPublished || isDownloaded || isBuiltin) {
+        var nt = getAppNameTag(app)
         return Promise.resolve({
           ...getAppNameTag(app),
           provider,
           isBuiltin: isBuiltin && !isDownloaded,
           isDownloaded,
           isPublished,
+          isDisabled: isAppDisabled(provider, app),
           isRunning: apps.isRunning(provider, app),
         })
       } else {
@@ -1214,6 +1216,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           isBuiltin: false,
           isDownloaded: true,
           isPublished: false,
+          isDisabled: isAppDisabled(app.provider, app.name),
           isRunning: apps.isRunning(app.provider, app.name),
         })
       })
@@ -1237,6 +1240,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             isBuiltin: false,
             isDownloaded: false,
             isPublished: true,
+            isDisabled: isAppDisabled(provider, app),
             isRunning: apps.isRunning(provider, app),
           })
         }
@@ -1256,6 +1260,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             isBuiltin: false,
             isDownloaded: false,
             isPublished: false,
+            isDisabled: isAppDisabled(app.provider, appname),
             isRunning: apps.isRunning(app.provider, appname),
           })
         })
@@ -1273,6 +1278,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             isBuiltin: true,
             isDownloaded: false,
             isPublished: false,
+            isDisabled: isAppDisabled(provider, appname),
             isRunning: apps.isRunning(provider, appname),
           })
         })
@@ -1410,7 +1416,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         : installApp(ep, provider, app)
       ).then(() => {
         var nt = getAppNameTag(app)
-        db.setApp(meshName, provider, nt.name, nt.tag, { state: 'stopped' })
+        db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
         try {
           apps.start(provider, app, username)
           return new Timeout(1).wait().then(() => {
@@ -1418,7 +1424,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             logInfo(`App ${provider}/${app} started locally`)
           })
         } catch (e) {
-          db.setApp(meshName, provider, nt.name, nt.tag, { state: 'failed' })
+          db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
           var msg = e?.message || e?.toString?.() || 'undefined'
           if (e?.stack) msg += ', stack: ' + e.stack.toString()
           logError(`App ${provider}/${app} failed to start due to exception: ${msg}`)
@@ -1469,6 +1475,58 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     }
   }
 
+  function disableApp(ep, provider, app) {
+    if (ep === config.agent.id) {
+      return stopApp(ep, provider, app).then(() => {
+        var nt = getAppNameTag(app)
+        db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
+      })
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({ isDisabled: true })
+        ).then(
+          res => {
+            if (res.head?.status === 201) {
+              logInfo(`App ${provider}/${app} disabled remotely`)
+            } else {
+              logError(`App ${provider}/${app} remote disabling failed, status = ${res.head?.status} ${res.head?.statusText}, body: ${res.body?.toString?.()}`)
+            }
+          }
+        )
+      )
+    }
+  }
+
+  function enableApp(ep, provider, app) {
+    if (ep === config.agent.id) {
+      var nt = getAppNameTag(app)
+      db.setApp(meshName, provider, nt.name, nt.tag, { state: apps.isRunning(provider, app) ? 'running' : 'stopped' })
+      return Promise.resolve()
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
+          {}, JSON.encode({ isDisabled: false })
+        ).then(
+          res => {
+            if (res.head?.status === 201) {
+              logInfo(`App ${provider}/${app} enabled remotely`)
+            } else {
+              logError(`App ${provider}/${app} remote enabling failed, status = ${res.head?.status} ${res.head?.statusText}, body: ${res.body?.toString?.()}`)
+            }
+          }
+        )
+      )
+    }
+  }
+
+  function isAppDisabled(provider, app) {
+    var nt = getAppNameTag(app)
+    return db.getApp(meshName, provider, nt.name, nt.tag)?.state === 'disabled'
+  }
+
   function dumpAppLog(ep, provider, app) {
     if (ep === config.agent.id) {
       return Promise.resolve(apps.log(provider, app))
@@ -1490,6 +1548,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   function connectApp(provider, app, peerUsername) {
     if (!apps.isRunning(provider, app)) {
       if (peerUsername !== username) return Promise.reject()
+      if (isAppDisabled(provider, app)) return Promise.reject()
       return startApp(config.agent.id, provider, app).then(
         () => apps.connect(provider, app)
       )
@@ -2026,6 +2085,9 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     uninstallApp,
     startApp,
     stopApp,
+    disableApp,
+    enableApp,
+    isAppDisabled,
     dumpAppLog,
     connectApp,
     setACL,
