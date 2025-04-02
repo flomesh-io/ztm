@@ -33,7 +33,7 @@ defineExpose({ restartPipy })
 	<div class="pipyinfo">
 		<div class="pipystatus">
 			<img :src="PipySvg" height="25"/>
-			<span v-if="!!version" class="label">{{version?.pipy?.version}}</span>
+			<span v-if="!!version" class="label">{{version?.pipy?.tag}}</span>
 			<a v-else class="label link pointer" href="https://flomesh.io/pipy/download" target="_blank"><b>Download</b></a>
 		</div>
 		<i class="pi pi-refresh" :class="{'spiner': restart}" @click="restartPipy"/>
