@@ -48,7 +48,7 @@ const user = computed(() => {
 	return store.getters['account/user'];
 });
 const ztmVersion = computed(() => {
-	return !!version.value?.ztm?.version? `${version.value?.ztm?.version}` : "";
+	return !!version.value?.ztm?.tag? `${version.value?.ztm?.tag}` : "";
 });
 const meshes = ref([]);
 const placeholder = computed(() => {
