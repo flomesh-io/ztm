@@ -157,7 +157,7 @@ onMounted(() => {
 				<div v-else class="surface-ground surface-section h-full p-4" >
 					<div class="mb-4" v-if="!props.d">
 						<div class="grid w-full" >
-							<div class="col-12 md:col-6 p-0">
+							<div class="col-12 p-0" :class="hasSysProxy?'md:col-6':''">
 								<FormItem :label="t('Listen')" :border="false">
 									<Chip class="pl-0 pr-3 mr-2">
 											<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -169,10 +169,10 @@ onMounted(() => {
 									</Chip>
 								</FormItem>
 							</div>
-							<div class="col-12 md:col-6 p-0">
+							<div class="col-12 md:col-6 p-0" v-if="hasSysProxy">
 								<FormItem :label="t('System Proxy')" :border="false">
-									<Button v-if="hasSysProxy && !proxy" :disabled="!config.listen" severity="success"  :label="t('Open')" aria-label="Submit" size="small" @click="openProxy"/>
-									<Button v-else-if="hasSysProxy" severity="secondary" icon="pi pi-spin pi-spinner"  :label="t('Close')" aria-label="Submit" size="small" @click="closeProxy"/>
+									<Button v-if="!proxy" :disabled="!config.listen" severity="success"  :label="t('Open')" aria-label="Submit" size="small" @click="openProxy"/>
+									<Button v-else severity="secondary" icon="pi pi-spin pi-spinner"  :label="t('Close')" aria-label="Submit" size="small" @click="closeProxy"/>
 								</FormItem>
 							</div>
 						</div>
