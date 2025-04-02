@@ -6,7 +6,14 @@ export default function ({ app, mesh }) {
   var currentListen = ''
   var currentRules = []
   var currentLogger = null
-  
+
+  app.onExit(() => {
+    if (currentListen) {
+      pipy.listen(currentListen, null)
+      currentListen = ''
+    }
+  })
+
   function getEndpointCA(ep) {
     if (ep === app.endpoint.id) {
       if (certGen) {
@@ -40,6 +47,7 @@ export default function ({ app, mesh }) {
   function setEndpointConfig(ep, config) {
     if (ep === app.endpoint.id) {
       setLocalConfig(config)
+      publishConfig(config)
       applyConfig(config)
       applyRules(config)
       return Promise.resolve()
@@ -65,6 +73,9 @@ export default function ({ app, mesh }) {
 
   function setLocalConfig(config) {
     mesh.write('/local/config.json', JSON.encode(config))
+  }
+
+  function publishConfig(config) {
     var pathname = `/shared/${app.username}/${app.endpoint.id}/config.json`
     if (config?.targets instanceof Array && config.targets.length > 0) {
       mesh.write(pathname, JSON.encode({
@@ -419,6 +430,7 @@ export default function ({ app, mesh }) {
   }
 
   getLocalConfig().then(config => {
+    publishConfig(config)
     applyConfig(config)
     applyRules(config)
 

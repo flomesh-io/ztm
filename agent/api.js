@@ -248,6 +248,13 @@ function setApp(mesh, ep, provider, app, state) {
     if (ret) return
     return m.installApp(ep, provider, app)
   }).then(() => {
+    if (!('isDisabled' in state)) return
+    if (state.isDisabled) {
+      return m.disableApp(ep, provider, app)
+    } else {
+      return m.enableApp(ep, provider, app)
+    }
+  }).then(() => {
     if (!('isRunning' in state)) return
     if (state.isRunning) {
       return m.startApp(ep, provider, app)

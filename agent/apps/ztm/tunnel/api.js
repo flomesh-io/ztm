@@ -2,6 +2,16 @@ export default function ({ app, mesh }) {
   var currentListens = []
   var currentOutbound = {}
 
+  app.onExit(() => {
+    currentListens.forEach(l => {
+      var protocol = l.protocol
+      var ip = l.ip
+      var port = l.port
+      pipy.listen(`${ip}:${port}`, protocol, null)
+    })
+    currentListens = []
+  })
+
   function getListenStatus(protocol, listen) {
     var ip = listen.ip
     var port = listen.port
