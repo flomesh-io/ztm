@@ -56,7 +56,7 @@ const MyPreset = definePreset(Aura, {
 						hoverground: "#eaf1f2",
 						html: "#ffffff",
 						tip: "{gray.600}"
-					}
+					},
 				},
 				dark: {
 					"primary-color": "{primary.600}",
