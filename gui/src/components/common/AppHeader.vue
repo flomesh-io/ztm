@@ -66,7 +66,7 @@ onMounted(()=>{
 						<use xlink:href="#svg-home"></use>
 					</svg>
 				</Button>
-				<Button v-else-if="!(props.child && hasPC())" @click="back" icon="pi pi-angle-left" severity="secondary" text />
+				<Button v-else-if="!(props.child && hasPC)" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 			</template>
 	
 			<template #center>
