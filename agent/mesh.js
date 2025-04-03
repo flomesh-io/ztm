@@ -827,6 +827,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     })
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
+        .handleData(() => { $lastReceivedTime = Date.now() })
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
           if (isDedicated) q += '&dedicated'
@@ -840,6 +841,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
+              .insert(() => checkTimeout())
               .connect(() => $selectedHub, connectOptions)
             )
           )
@@ -851,6 +853,16 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       ),
     })
   )
+
+  var $lastReceivedTime = 0
+
+  function checkTimeout() {
+    if (Date.now() - $lastReceivedTime > 60000) {
+      return new StreamEnd
+    } else {
+      return new Timeout(10).wait().then(checkTimeout)
+    }
+  }
 
   // HTTP agents for ad-hoc agent-to-hub sessions
   var httpAgents = new algo.Cache(

@@ -123,20 +123,22 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
-          -d, --data        <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-                                              Only applicable to hubs and agents
-          -l, --listen      <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                              Only applicable to hubs and agents
-          -n, --names       <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
-                                              Only applicable to hubs
-              --ca          <url>             Specify the location of an external CA service if any
-                                              Only applicable to hubs
-              --zone        <zone>            Specify the region where the hub is deployed
-                                              Only applicable to hubs
-              --max-agents  <number>          Specify the maximum number of agents the hub can handle
-                                              Only applicable to hubs
-          -p, --permit      <pathname>        Specify an optional output filename for the root user's permit
-                                              Only applicable to hubs
+          -d, --data          <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+                                                Only applicable to hubs and agents
+          -l, --listen        <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+                                                Only applicable to hubs and agents
+          -n, --names         <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+                                                Only applicable to hubs
+              --ca            <url>             Specify the location of an external CA service if any
+                                                Only applicable to hubs
+              --zone          <zone>            Specify the region where the hub is deployed
+                                                Only applicable to hubs
+              --max-agents    <number>          Specify the maximum number of agents the hub can handle
+                                                Only applicable to hubs
+              --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
+                                                Only applicable to hubs
+          -p, --permit        <pathname>        Specify an optional output filename for the root user's permit
+                                                Only applicable to hubs
         `,
         notes: `Available object types include: hub, agent, app`,
         action: (args) => {
@@ -171,22 +173,24 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub or agent in foreground mode`,
         usage: 'run <object type>',
         options: `
-          -d, --data        <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-          -l, --listen      <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-          -n, --names       <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
-                                              Only applicable to hubs
-              --ca          <url>             Specify the location of an external CA service if any
-                                              Only applicable to hubs
-              --zone        <zone>            Specify the region where the hub is deployed
-                                              Only applicable to hubs
-              --max-agents  <number>          Specify the maximum number of agents the hub can handle
-                                              Only applicable to hubs
-          -p, --permit      <pathname>        An optional output filename for generating the root user's permit when starting a hub
-                                              Or an input filename to load the user permit when joining a mesh while starting an agent
-              --join        <mesh>            If specified, join a mesh with the given name
-                                              Only applicable to agents
-              --join-as     <endpoint>        When joining a mesh, give the current endpoint a name
-                                              Only applicable to agents
+          -d, --data          <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+          -l, --listen        <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+          -n, --names         <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+                                                Only applicable to hubs
+              --ca            <url>             Specify the location of an external CA service if any
+                                                Only applicable to hubs
+              --zone          <zone>            Specify the region where the hub is deployed
+                                                Only applicable to hubs
+              --max-agents    <number>          Specify the maximum number of agents the hub can handle
+                                                Only applicable to hubs
+              --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
+                                                Only applicable to hubs
+          -p, --permit        <pathname>        An optional output filename for generating the root user's permit when starting a hub
+                                                Or an input filename to load the user permit when joining a mesh while starting an agent
+              --join          <mesh>            If specified, join a mesh with the given name
+                                                Only applicable to agents
+              --join-as       <endpoint>        When joining a mesh, give the current endpoint a name
+                                                Only applicable to agents
         `,
         notes: `Available object types include: hub, agent`,
         action: (args) => {
@@ -555,13 +559,15 @@ function startHub(args) {
   if ('--ca' in args) opts['--ca'] = args['--ca']
   if ('--zone' in args) opts['--zone'] = args['--zone']
   if ('--max-agents' in args) opts['--max-agents'] = args['--max-agents']
+  if ('--max-sessions' in args) opts['--max-sessions'] = args['--max-sessions']
   var optsChanged = (
     ('--data' in args) ||
     ('--listen' in args) ||
     ('--names' in args) ||
     ('--ca' in args) ||
     ('--zone' in args) ||
-    ('--max-agents' in args)
+    ('--max-agents' in args) ||
+    ('--max-sessions' in args)
   )
   if (optsChanged || !hasService('hub')) {
     return initHub(args).then(
@@ -862,6 +868,7 @@ function runHub(args, program) {
       if ('--ca' in args) command.push('--ca', args['--ca'])
       if ('--zone' in args) command.push('--zone', args['--zone'])
       if ('--max-agents' in args) command.push('--max-agents', args['--max-agents'])
+      if ('--max-sessions' in args) command.push('--max-sessions', args['--max-sessions'])
       return exec(command)
     }
   )
@@ -1067,6 +1074,7 @@ function getEndpoint(name, mesh) {
         'PORT': ep => ep.port,
         'STATUS': ep => ep.online ? 'Online' : 'Offline',
         'PING': ep => ep.ping ? ep.ping + 'ms' : 'n/a',
+        'ID': ep => ep.id,
         'VERSION': ep => ep.agent?.version?.ztm?.tag || 'n/a',
         'LABELS': ep => {
           var labels = ep.agent?.labels || []
@@ -1196,7 +1204,9 @@ function describeHub(name, mesh) {
     }, 2)
     println(`Load:`)
     println(`  Agents: ${use.agents}/${cap.agents}`)
+    println(`  Sessions: ${use.sessions}/${cap.sessions}`)
     println(`Connected: ${hub.connected ? 'Yes' : 'No'}`)
+    println(`Version:`)
     printTable([
       { name: 'ztm', version: hub?.version?.ztm },
       { name: 'pipy', version: hub?.version?.pipy },
@@ -1222,9 +1232,9 @@ function describeEndpoint(name, mesh) {
     ep.hubs.forEach(h => println(' ', h))
     println(`IP: ${ep.ip}`)
     println(`Port: ${ep.port}`)
-    println(`Heartbeat: ${new Date(ep.heartbeat).toUTCString()}`)
     println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
     println(`Status:`, ep.online ? 'Online' : 'Offline')
+    println(`Labels:`, ep.agent?.labels?.length > 0 ? ep.agent?.labels.join(' ') : '(none)')
     println(`Version:`)
     printTable([
       { name: 'ztm', version: ep.agent?.version?.ztm },
@@ -1235,7 +1245,6 @@ function describeEndpoint(name, mesh) {
       'COMMIT': r => r.version?.commit || 'n/a',
       'DATE': r => r.version?.date || 'n/a',
     }, 2)
-    println(`Labels:`, ep.agent?.labels?.length > 0 ? ep.agent?.labels.join(' ') : '(none)')
   })
 }
 
