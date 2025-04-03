@@ -201,7 +201,14 @@ var myNames = []
 var myZone = ''
 var startTime = Date.now()
 var logBuffer = []
+
+//
+// Instance capacity
+//
+
 var maxAgents = 0
+var maxForwardings = 0
+var numForwardings = 0
 
 //
 // CLI
@@ -212,12 +219,13 @@ function main() {
     commands: [{
       title: 'ZTM Hub Service',
       options: `
-        -d, --data        <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-        -l, --listen      <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
-        -n, --names       <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
-            --ca          <url>             Specify the location of an external CA service if any
-            --zone        <zone>            Specify the region where the hub is deployed
-            --max-agents  <number>          Specify the maximum number of agents the hub can handle
+        -d, --data          <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+        -l, --listen        <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
+        -n, --names         <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
+            --ca            <url>             Specify the location of an external CA service if any
+            --zone          <zone>            Specify the region where the hub is deployed
+            --max-agents    <number>          Specify the maximum number of agents the hub can handle
+            --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
       `,
       action: (args) => {
         myZone = args['--zone']
@@ -225,6 +233,11 @@ function main() {
         maxAgents = Number.parseInt(args['--max-agents'] || 100)
         if (Number.isNaN(maxAgents) || maxAgents < 2) {
           throw 'invalid value for option --max-agents'
+        }
+
+        maxForwardings = Number.parseInt(args['--max-sessions'] || 1000)
+        if (Number.isNaN(maxForwardings) || maxForwardings < 10) {
+          throw 'invalid value for option --max-sessions'
         }
 
         var dbPath = args['--data'] || '~/.ztm'
@@ -439,9 +452,11 @@ var getHubStatus = pipeline($=>$
         ports: myNames,
         capacity: {
           agents: maxAgents,
+          sessions: maxForwardings,
         },
         load: {
           agents: endpointList.length,
+          sessions: numForwardings,
         },
         version: hubVersion,
       })
@@ -941,6 +956,9 @@ var connectEndpoint = pipeline($=>$
       var name = URL.decodeComponent(url.searchParams.get('name') || '(unknown)')
       var sid = url.searchParams.get('sid')
       var id = $params.ep
+      if (endpointList.length >= maxAgents && !(id in endpoints)) {
+        return response(429, 'Too many agents')
+      }
       $ctx.endpointID = id
       $ctx.sessionID = sid
       $hub = new pipeline.Hub
@@ -982,6 +1000,7 @@ var connectApp = pipeline($=>$
       if (!ep) return response(404, 'Endpoint not found')
       sessions[id]?.forEach?.(h => $hubSelected = h)
       if (!$hubSelected) return response(404, 'Agent not found')
+      if (numForwardings >= maxForwardings) return response(429, 'Too many forwarding sessions')
       var query = new URL(req.head.path).searchParams.toObject()
       if ('dedicated' in query) {
         $sessionID = algo.uuid()
@@ -1015,6 +1034,7 @@ var connectApp = pipeline($=>$
       }
     }
   ).to($=>$
+    .onStart(() => { numForwardings++ })
     .handleData(data => {
       var size = data.size
       trafficTotalSend.increase(size)
@@ -1042,6 +1062,7 @@ var connectApp = pipeline($=>$
       $trafficPeerSend.increase(size)
       $trafficLinkRecv.increase(size)
     })
+    .onEnd(() => { numForwardings-- })
   )
 )
 
