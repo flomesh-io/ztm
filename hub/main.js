@@ -40,7 +40,11 @@ var routes = Object.entries({
     'DELETE': () => deleteEviction,
   },
 
-  '/api/hubs': {
+  '/api/zones': {
+    'GET': () => getZones,
+  },
+
+  '/api/zones/{zone}/hubs': {
     'GET': () => getHubs,
   },
 
@@ -223,12 +227,12 @@ function main() {
         -l, --listen        <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
         -n, --names         <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
             --ca            <url>             Specify the location of an external CA service if any
-            --zone          <zone>            Specify the region where the hub is deployed
+            --zone          <zone>            Specify the zone that the hub is deployed in
             --max-agents    <number>          Specify the maximum number of agents the hub can handle
             --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
       `,
       action: (args) => {
-        myZone = args['--zone']
+        myZone = args['--zone'] || 'default'
 
         maxAgents = Number.parseInt(args['--max-agents'] || 100)
         if (Number.isNaN(maxAgents) || maxAgents < 2) {
@@ -571,14 +575,24 @@ var deleteEviction = pipeline($=>$
   )
 )
 
+var getZones = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      collectMyNames($ctx.via)
+      return response(200, [myZone])
+    }
+  )
+)
+
 var getHubs = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
       collectMyNames($ctx.via)
+      if (URL.decodeComponent($params.zone) !== myZone) return response(200, {})
       return response(200, {
         [myID]: {
-          zone: myZone || null,
           ports: myNames,
           version: { ztm: { tag: hubVersion.ztm.tag }},
         }
