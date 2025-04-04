@@ -131,7 +131,7 @@ function doCommand(meshName, epName, argv, program) {
                                                 Only applicable to hubs
               --ca            <url>             Specify the location of an external CA service if any
                                                 Only applicable to hubs
-              --zone          <zone>            Specify the region where the hub is deployed
+              --zone          <zone>            Specify the zone that the hub is deployed in
                                                 Only applicable to hubs
               --max-agents    <number>          Specify the maximum number of agents the hub can handle
                                                 Only applicable to hubs
@@ -179,7 +179,7 @@ function doCommand(meshName, epName, argv, program) {
                                                 Only applicable to hubs
               --ca            <url>             Specify the location of an external CA service if any
                                                 Only applicable to hubs
-              --zone          <zone>            Specify the region where the hub is deployed
+              --zone          <zone>            Specify the zone that the hub is deployed in
                                                 Only applicable to hubs
               --max-agents    <number>          Specify the maximum number of agents the hub can handle
                                                 Only applicable to hubs

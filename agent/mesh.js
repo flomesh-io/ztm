@@ -99,10 +99,9 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     trusted: caCert ? [caCert] : null,
   }
 
-  var hubs = []
-  var hubsTimeout = new Set
-
+  var hubActive = []
   var hubCache = new algo.Cache({ ttl: 60 })
+  var hubUnreachable = new Set
 
   var hubClients = new algo.Cache(
     target => new http.Agent(target, {
@@ -872,7 +871,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   // Start communication with the mesh
   function start() {
     searchHub().then(hub => {
-      hubs[0] = Hub(hub.id, hub.zone, hub.name)
+      hubActive[0] = Hub(hub.id, hub.zone, hub.name)
 
       heartbeat()
       advertiseFilesystem()
@@ -904,12 +903,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     }
 
     function monitorHub() {
-      var hub = hubs[0]
+      var hub = hubActive[0]
       if (hub && hub.isFailed()) {
         logError(`Hub seems down: ${hub.address} (ID = ${hub.id})`)
-        hubs.forEach(h => h.leave())
+        hubActive.forEach(h => h.leave())
         searchHub().then(hub => {
-          hubs[0] = Hub(hub.id, hub.zone, hub.name)
+          hubActive[0] = Hub(hub.id, hub.zone, hub.name)
           new Timeout(1).wait().then(monitorHub)
         })
       } else {
@@ -919,67 +918,62 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function pickHub() {
-    return listHubs(config.bootstraps).then(hubs => {
-      var zones = {}
-      Object.entries(hubs).forEach(
-        ([k, v]) => {
-          var list = (zones[v.zone || ''] ??= [])
-          list.push(k)
-        }
-      )
-
-      return Promise.all(
-        Object.entries(zones).map(([zone, list]) => {
-          return probe()
-          function probe() {
-            if (list.length === 0) return null
-            var i = Math.floor(Math.random() * list.length)
-            var id = list[i]
-            list.splice(i, 1)
-            var hub = hubs[id]
-            return Promise.all(hub.ports.map(
-              name => {
-                var label = zone ? `${name} in ${zone}` : name
-                var t = Date.now()
-                return getHubStatus(name).then(res => {
-                  if (res?.id !== id) {
-                    logInfo(`Probed hub ${label} and got no valid response`)
-                    return null
-                  } else {
-                    var latency = Date.now() - t
-                    var capacity = res.capacity?.agents || Number.POSITIVE_INFINITY
-                    var load = res.load?.agents || 0
-                    logInfo(`Probed hub ${label} and got response in ${latency}ms: capacity = ${capacity}, load = ${load}`)
-                    return { id, name, zone, latency, load: load / capacity }
-                  }
-                })
-              }
-            )).then(results => {
-              var best = results.filter(r => r).reduce(
-                (a, b) => {
-                  if (Math.abs(a.latency - b.latency) < 10) {
-                    return a.load <= b.load ? a : b
-                  } else {
-                    return a.latency <= b.latency ? a : b
-                  }
-                }
-              )
-              return best || probe()
-            })
-          }
-        })
-      ).then(
+    return listZones(config.bootstraps).then(
+      zones => Promise.all(zones.map(
+        zone => listZoneHubs(config.bootstraps, zone).then(
+          hubs => probe(hubs)
+        )
+      )).then(
         results => results.filter(r => r).reduce(
           (a, b) => a.latency <= b.latency ? a : b
         )
       )
-    })
+    )
+
+    function probe(hubs) {
+      var list = Object.entries(hubs)
+      if (list.length === 0) return null
+      var i = Math.floor(Math.random() * list.length)
+      var id = list[i][0]
+      var hub = list[i][1]
+      delete hubs[id]
+      return Promise.all(hub.ports.map(
+        name => {
+          var zone = hub.zone
+          var label = zone ? `${name} in ${zone}` : name
+          var t = Date.now()
+          return getHubStatus(name).then(res => {
+            if (res?.id !== id) {
+              logInfo(`Probed hub ${label} and got no valid response`)
+              return null
+            } else {
+              var latency = Date.now() - t
+              var capacity = res.capacity?.agents || Number.POSITIVE_INFINITY
+              var load = res.load?.agents || 0
+              logInfo(`Probed hub ${label} and got response in ${latency}ms: capacity = ${capacity}, load = ${load}`)
+              return { id, name, zone, latency, load: load / capacity }
+            }
+          })
+        }
+      )).then(results => {
+        var best = results.filter(r => r).reduce(
+          (a, b) => {
+            if (Math.abs(a.latency - b.latency) < 10) {
+              return a.load <= b.load ? a : b
+            } else {
+              return a.latency <= b.latency ? a : b
+            }
+          }
+        )
+        return best || probe()
+      })
+    }
   }
 
   // Send heartbeats
   function heartbeat() {
     if (!exited) {
-      hubs.forEach(h => h.heartbeat())
+      hubActive.forEach(h => h.heartbeat())
       renewCertificate().then(() => {
         new Timeout(15).wait().then(heartbeat)
       })
@@ -996,27 +990,42 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   function renewCertificate() {
     var days = getCertificateDays()
     if (days > 100) return Promise.resolve()
-    return hubs[0].renewCertificate()
+    return hubActive[0].renewCertificate()
   }
 
-  function listHubs(bootstraps) {
-    var hubs = {}
-    hubCache.clear()
+  function listZones(bootstraps) {
+    var all = {}
     return Promise.allSettled(bootstraps.map(
-      name => hubClients.get(name).request('GET', '/api/hubs').then(
+      name => hubClients.get(name).request('GET', '/api/zones').then(
+        res => {
+          if (res?.head?.status === 200) {
+            try {
+              var list = JSON.decode(res.body)
+              if (list instanceof Array) list.forEach(zone => all[zone] = true)
+            } catch {}
+          }
+        }
+      )
+    )).then(() => Object.keys(all))
+  }
+
+  function listZoneHubs(bootstraps, zone) {
+    var all = {}
+    return Promise.allSettled(bootstraps.map(
+      name => hubClients.get(name).request('GET', `/api/zones/${zone}/hubs`).then(
         res => {
           if (res?.head?.status === 200) {
             try {
               Object.entries(JSON.decode(res.body)).forEach(
                 ([k, v]) => {
-                  var hub = hubs[k]
+                  var hub = hubCache.get(k)
                   if (!hub) {
-                    hubCache.set(k, hub = {
-                      zone: v.zone,
+                    hub = {
+                      zone,
                       ports: [],
                       version: v.version,
-                    })
-                    hubs[k] = hub
+                    }
+                    hubCache.set(k, hub)
                   }
                   var ports = hub.ports
                   v.ports.forEach(name => {
@@ -1024,19 +1033,40 @@ export default function (rootDir, listen, config, onConfigUpdate) {
                       ports.push(name)
                     }
                   })
+                  all[k] = hub
                 }
               )
             } catch {}
           }
         }
       )
-    )).then(() => hubs)
+    )).then(() => all)
+  }
+
+  function listAllHubs(bootstraps) {
+    hubCache.clear()
+    var all = {}
+    return listZones(bootstraps).then(
+      zones => Promise.all(zones.map(
+        zone => listZoneHubs(bootstraps, zone).then(
+          hubs => Object.entries(hubs).forEach(
+            ([id, hub]) => {
+              var ports = (all[id] ??= hub).ports
+              hub.ports.forEach(name => {
+                if (!ports.includes(name)) {
+                  ports.push(name)
+                }
+              })
+            }
+          )
+        )))
+    ).then(() => all)
   }
 
   function listHubPorts(id) {
     return (hubCache.has(id)
       ? Promise.resolve(hubCache.get(id).ports)
-      : listHubs(config.bootstraps).then(hubs => hubs[id]?.ports || [])
+      : listAllHubs(config.bootstraps).then(hubs => hubs[id]?.ports || [])
     )
   }
 
@@ -1049,7 +1079,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             return JSON.decode(res.body)
           } catch {}
         } else if (status === 504) {
-          hubsTimeout.add(name)
+          hubUnreachable.add(name)
         }
         return null
       }
@@ -1070,13 +1100,13 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function selectHub(ep) {
-    return hubs[0].findEndpoint(ep).then(
+    return hubActive[0].findEndpoint(ep).then(
       function (endpoint) {
         if (!endpoint) return null
         var list = endpoint.hubs || []
         return Promise.all(list.map(
           id => listHubPorts(id).then(
-            ports => Promise.all(ports.filter(name => !hubsTimeout.has(name)).map(
+            ports => Promise.all(ports.filter(name => !hubUnreachable.has(name)).map(
               name => {
                 var t = Date.now()
                 return getHubStatus(name).then(
@@ -1111,15 +1141,15 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         }
       }
     })
-    hubs[0].advertiseFilesystem(files)
+    hubActive[0].advertiseFilesystem(files)
   }
 
   function issuePermit(username, identity) {
-    return hubs[0].issuePermit(username, identity)
+    return hubActive[0].issuePermit(username, identity)
   }
 
   function evictUser(username) {
-    return hubs[0].evictUser(username)
+    return hubActive[0].evictUser(username)
   }
 
   function findHub(id) {
@@ -1137,7 +1167,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         }))
       })).then(ports => {
         res.ports = ports
-        res.connected = hubs.some(h => h.id === id)
+        res.connected = hubActive.some(h => h.id === id)
         return res
       })
     ).catch(() => null)
@@ -1152,11 +1182,11 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function findEndpoint(ep) {
-    return hubs[0].findEndpoint(ep)
+    return hubActive[0].findEndpoint(ep)
   }
 
   function findFile(pathname) {
-    return hubs[0].findFile(pathname)
+    return hubActive[0].findFile(pathname)
   }
 
   function findApp(ep, provider, app) {
@@ -1192,11 +1222,11 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function discoverHubs() {
-    return listHubs(config.bootstraps).then(
+    return listAllHubs(config.bootstraps).then(
       all => {
         Object.entries(all).forEach(
           ([k, v]) => {
-            if (hubs.some(h => h.id === k)) {
+            if (hubActive.some(h => h.id === k)) {
               all[k] = { ...v, connected: true }
             }
           }
@@ -1207,15 +1237,15 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function discoverEndpoints(id, name, user, keyword, offset, limit) {
-    return hubs[0].discoverEndpoints(id, name, user, keyword, offset, limit)
+    return hubActive[0].discoverEndpoints(id, name, user, keyword, offset, limit)
   }
 
   function discoverUsers(name, keyword, offset, limit) {
-    return hubs[0].discoverUsers(name, keyword, offset, limit)
+    return hubActive[0].discoverUsers(name, keyword, offset, limit)
   }
 
   function discoverFiles(since, wait) {
-    return hubs[0].discoverFiles(since, wait)
+    return hubActive[0].discoverFiles(since, wait)
   }
 
   function discoverApps(ep) {
@@ -1309,7 +1339,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         })
       )
     } else {
-      return hubs[0].discoverFiles().then(files => {
+      return hubActive[0].discoverFiles().then(files => {
         var apps = []
         Object.keys(files || {}).forEach(pathname => {
           if (!pathname.startsWith('/shared/')) return
@@ -1575,11 +1605,11 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       users: access.users || null,
       since: Date.now(),
     }
-    hubs[0].advertiseACL(acl)
+    hubActive[0].advertiseACL(acl)
   }
 
   function checkACL(pathname, username) {
-    return hubs[0].checkACL(pathname, username)
+    return hubActive[0].checkACL(pathname, username)
   }
 
   function downloadFile(ep, hash) {
@@ -1957,17 +1987,17 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function getEndpointStats(ep) {
-    return hubs[0].getEndpointStats(ep)
+    return hubActive[0].getEndpointStats(ep)
   }
 
   function leave() {
-    hubs.forEach(hub => hub.leave())
+    hubActive.forEach(hub => hub.leave())
     exited = true
     logInfo(`Left ${meshName} as ${config.agent.name} (uuid = ${config.agent.id})`)
   }
 
   function isConnected() {
-    return hubs.some(h => h.isConnected())
+    return hubActive.some(h => h.isConnected())
   }
 
   function getStatus() {
