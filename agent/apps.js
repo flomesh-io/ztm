@@ -222,19 +222,26 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
 
       var connect = meshEnv.connect(provider, appname)
 
+      var $target
+      var $response
+
+      var httpPipeline = pipeline($=>$
+        .onStart((ep, req) => {
+          $target = ep
+          return req
+        })
+        .muxHTTP(() => $target).to($=>$
+          .pipe(() => connect($target, { dedicated: true }))
+        )
+        .replaceMessage(res => {
+          $response = res
+          return new StreamEnd
+        })
+        .onEnd(() => $response)
+      )
+
       var request = function (ep, req) {
-        var $response
-        return pipeline($=>$
-          .onStart(req)
-          .muxHTTP().to($=>$
-            .pipe(connect(ep))
-          )
-          .replaceMessage(res => {
-            $response = res
-            return new StreamEnd
-          })
-          .onEnd(() => $response)
-        ).spawn()
+        return httpPipeline.spawn(ep, req)
       }
 
       entryPipeline = mainFunc({
