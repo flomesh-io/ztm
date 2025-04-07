@@ -241,7 +241,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         .to($=>$
           .muxHTTP({ version: 2 }).to($=>$
             .connectTLS({ ...tlsOptions }).to($=>$
-              .connect(address, { idleTimeout: 60 })
+              .connect(address) // { idleTimeout: 60 } caused the proxy app finding no exits
             )
           )
         )
