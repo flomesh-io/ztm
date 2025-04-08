@@ -824,6 +824,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
   var toRemoteApp = (ep, provider, app, isDedicated, connectOptions) => pipeline($=>$
     .onStart(() => {
+      $lastDataTime = {}
       $selectedEp = ep
       return selectHub(ep).then(hub => {
         $selectedHub = hub
@@ -832,7 +833,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     })
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
-        .handleData(() => { $lastReceivedTime = Date.now() })
+        .handleData(() => { $lastDataTime.value = Date.now() })
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
           if (isDedicated) q += '&dedicated'
@@ -846,11 +847,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              .insert(() => checkTimeout())
+              // .insert(() => checkTimeout()) // TODO: Enable session timeout
               .connect(() => $selectedHub, connectOptions)
             )
           )
         )
+        .handleData(() => { $lastDataTime.value = Date.now() })
       ),
       'deny': ($=>$
         .onStart(() => logError(`No route to endpoint ${ep}`))
@@ -859,10 +861,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     })
   )
 
-  var $lastReceivedTime = 0
+  var $lastDataTime = null
 
   function checkTimeout() {
-    if (Date.now() - $lastReceivedTime > 60000) {
+    if (Date.now() - $lastDataTime.value > 60000) {
       return new StreamEnd
     } else {
       return new Timeout(10).wait().then(checkTimeout)
