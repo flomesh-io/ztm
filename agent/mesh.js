@@ -847,7 +847,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              // .insert(() => checkTimeout()) // TODO: Enable session timeout
+              .insert(() => checkTimeout())
               .connect(() => $selectedHub, connectOptions)
             )
           )
