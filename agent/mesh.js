@@ -134,7 +134,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
     // Long-lived agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
-      .muxHTTP(() => '', { version: 2 }).to($=>$
+      .muxHTTP(() => '', {
+        version: 2,
+        ping: () => new Timeout(10).wait().then(new Data),
+      }).to($=>$
         .connectTLS({
           ...tlsOptions,
           onState: (session) => {
@@ -239,9 +242,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           }
         )
         .to($=>$
-          .muxHTTP({ version: 2 }).to($=>$
+          .muxHTTP({
+            version: 2,
+            ping: () => new Timeout(10).wait().then(new Data),
+          }).to($=>$
             .connectTLS({ ...tlsOptions }).to($=>$
-              .connect(address) // { idleTimeout: 60 } caused the proxy app finding no exits
+              .connect(address)
             )
           )
         )
