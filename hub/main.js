@@ -15,6 +15,12 @@ var hubVersion = {
   pipy: { ...pipy.version },
 }
 
+try {
+  var cluster = pipy.import('./cluster.js')
+} catch {
+  var cluster = null
+}
+
 var routes = Object.entries({
 
   '/api/status': {
@@ -122,6 +128,7 @@ var routes = Object.entries({
 //   name: 'ep-xxx',
 //   version: {
 //     ztm: {
+//       edition: string,
 //       tag: string,
 //       commit: string,
 //       date: string,
@@ -227,10 +234,12 @@ function main() {
         -l, --listen        <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
         -n, --names         <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
             --ca            <url>             Specify the location of an external CA service if any
-            --zone          <zone>            Specify the zone that the hub is deployed in
             --max-agents    <number>          Specify the maximum number of agents the hub can handle
             --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
-      `,
+      ` + (cluster ? `
+            --peer          <host:port>       Specify the bootstrap address of the hub cluster
+            --zone          <zone>            Specify the zone that the hub is deployed in
+      ` : ''),
       action: (args) => {
         myZone = args['--zone'] || 'default'
 
@@ -278,7 +287,7 @@ function main() {
             ca.signCertificate('hub', pkey).then(crt => myCert = crt),
           ])
         }).then(() => {
-          start(args['--listen'] || '0.0.0.0:8888')
+          start(args['--listen'] || '0.0.0.0:8888', args['--peer'])
         })
       }
     }],
@@ -342,7 +351,7 @@ var $trafficLinkRecv
 // Start hub service
 //
 
-function start(listen) {
+function start(listen, peer) {
   db.allFiles().forEach(f => {
     files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.since)
   })
@@ -375,73 +384,83 @@ function start(listen) {
     evictions[e.username] = e.time
   })
 
-  pipy.listen(listen, $=>$
-    .onStart(
-      function (conn) {
-        $ctx = {
-          ip: conn.remoteAddress,
-          port: conn.remotePort,
-          via: `${conn.localAddress}:${conn.localPort}`,
-          username: undefined,
-          certificate: undefined,
-          connection: undefined,
-          endpointID: undefined,
-          sessionID: undefined,
-        }
-      }
-    )
-    .acceptTLS({
-      certificate: {
-        cert: myCert,
-        key: myKey,
-      },
-      trusted: [caCert],
-      verify: (ok, cert) => {
-        if (!ok) return false
-        var username = cert.subject?.commonName
-        var time = evictions[username]
-        if (time && time * 1000 >= cert.notBefore) {
-          return false
-        }
-        return true
-      },
-      onState: (tls) => {
-        if (tls.state === 'connected') {
-          $ctx.certificate = tls.peer
-          $ctx.username = tls.peer?.subject?.commonName
-        }
-      }
-    }).to($=>$
-      .insert(() => new Promise(resolve => {
-        var conn = {
-          certificate: $ctx.certificate,
-          evict: () => resolve(new StreamEnd),
-        }
-        connections[$ctx.username] ??= new Set
-        connections[$ctx.username].add(conn)
-        $ctx.connection = conn
-      }))
-      .demuxHTTP().to($=>$
-        .pipe(
-          function (evt) {
-            if (evt instanceof MessageStart) {
-              var path = evt.head.path
-              var route = routes.find(r => Boolean($params = r.match(path)))
-              if (route) return route.handler($params, evt)
-              return notFound
-            }
+  return (cluster
+    ? cluster.init(peer)
+    : Promise.resolve()
+  ).then(() => {
+
+    pipy.listen(listen, $=>$
+      .onStart(
+        function (conn) {
+          $ctx = {
+            ip: conn.remoteAddress,
+            port: conn.remotePort,
+            via: `${conn.localAddress}:${conn.localPort}`,
+            username: undefined,
+            certificate: undefined,
+            connection: undefined,
+            endpointID: undefined,
+            sessionID: undefined,
           }
-        )
+        }
       )
-      .onEnd(() => { connections[$ctx.username].delete($ctx.connection) })
+      .acceptTLS({
+        certificate: {
+          cert: myCert,
+          key: myKey,
+        },
+        trusted: [caCert],
+        verify: (ok, cert) => {
+          if (!ok) return false
+          var username = cert.subject?.commonName
+          var time = evictions[username]
+          if (time && time * 1000 >= cert.notBefore) {
+            return false
+          }
+          return true
+        },
+        onState: (tls) => {
+          if (tls.state === 'connected') {
+            $ctx.certificate = tls.peer
+            $ctx.username = tls.peer?.subject?.commonName
+          }
+        }
+      }).to($=>$
+        .insert(() => new Promise(resolve => {
+          var conn = {
+            certificate: $ctx.certificate,
+            evict: () => resolve(new StreamEnd),
+          }
+          connections[$ctx.username] ??= new Set
+          connections[$ctx.username].add(conn)
+          $ctx.connection = conn
+        }))
+        .demuxHTTP().to($=>$
+          .pipe(
+            function (evt) {
+              if (evt instanceof MessageStart) {
+                var path = evt.head.path
+                var route = routes.find(r => Boolean($params = r.match(path)))
+                if (route) return route.handler($params, evt)
+                return notFound
+              }
+            }
+          )
+        )
+        .onEnd(() => { connections[$ctx.username].delete($ctx.connection) })
+      )
     )
-  )
 
-  logInfo(`Hub started at ${listen}`)
+    if (cluster) {
+      logInfo(`Hub instance started in zone '${myZone}' listening at ${listen}`)
+    } else {
+      logInfo(`Hub started at ${listen}`)
+    }
 
-  startPing()
-  clearOutdatedEndpoints()
-  measureTraffic()
+    startPing()
+    clearOutdatedEndpoints()
+    measureTraffic()
+  })
 }
 
 var getHubStatus = pipeline($=>$
@@ -594,7 +613,12 @@ var getHubs = pipeline($=>$
       return response(200, {
         [myID]: {
           ports: myNames,
-          version: { ztm: { tag: hubVersion.ztm.tag }},
+          version: {
+            ztm: {
+              edition: hubVersion.ztm.edition,
+              tag: hubVersion.ztm.tag,
+            }
+          },
         }
       })
     }
@@ -641,7 +665,11 @@ var getEndpoints = pipeline($=>$
           id: ep.id,
           name: ep.name,
           agent: {
-            version: { ztm: { tag: ep.version?.ztm?.tag }},
+            version: {
+              ztm: {
+                edition: ep.version?.ztm?.edition,
+                tag: ep.version?.ztm?.tag,
+              }},
             labels: ep.labels || [],
           },
           username: ep.username,

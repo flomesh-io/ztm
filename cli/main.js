@@ -5,6 +5,12 @@ import ca from './ca.js'
 import client from './client.js'
 import cmdline from './cmdline.js'
 
+try {
+  var ztmVersion = JSON.decode(pipy.load('version.json'))
+} catch {
+  var ztmVersion = {}
+}
+
 //
 // Main
 //
@@ -131,15 +137,19 @@ function doCommand(meshName, epName, argv, program) {
                                                 Only applicable to hubs
               --ca            <url>             Specify the location of an external CA service if any
                                                 Only applicable to hubs
-              --zone          <zone>            Specify the zone that the hub is deployed in
-                                                Only applicable to hubs
+
               --max-agents    <number>          Specify the maximum number of agents the hub can handle
                                                 Only applicable to hubs
               --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
                                                 Only applicable to hubs
           -p, --permit        <pathname>        Specify an optional output filename for the root user's permit
                                                 Only applicable to hubs
-        `,
+        ` + (ztmVersion.edition === 'Enterprise' ? `
+              --peer          <host:port>       Specify the bootstrap address of the hub cluster
+                                                Only applicable to hubs
+              --zone          <zone>            Specify the zone that the hub is deployed in
+                                                Only applicable to hubs
+        ` : ''),
         notes: `Available object types include: hub, agent, app`,
         action: (args) => {
           var type = args['<object type>']
@@ -179,8 +189,6 @@ function doCommand(meshName, epName, argv, program) {
                                                 Only applicable to hubs
               --ca            <url>             Specify the location of an external CA service if any
                                                 Only applicable to hubs
-              --zone          <zone>            Specify the zone that the hub is deployed in
-                                                Only applicable to hubs
               --max-agents    <number>          Specify the maximum number of agents the hub can handle
                                                 Only applicable to hubs
               --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
@@ -191,7 +199,12 @@ function doCommand(meshName, epName, argv, program) {
                                                 Only applicable to agents
               --join-as       <endpoint>        When joining a mesh, give the current endpoint a name
                                                 Only applicable to agents
-        `,
+        ` + (ztmVersion.edition === 'Enterprise' ? `
+              --peer          <host:port>       Specify the bootstrap address of the hub cluster
+                                                Only applicable to hubs
+              --zone          <zone>            Specify the zone that the hub is deployed in
+                                                Only applicable to hubs
+        ` : ''),
         notes: `Available object types include: hub, agent`,
         action: (args) => {
           var type = args['<object type>']
@@ -467,15 +480,15 @@ function doCommand(meshName, epName, argv, program) {
 //
 
 function version(args) {
-  try { var data = JSON.decode(pipy.load('version.json')) } catch {}
   var info = {
-    ztm: data,
+    ztm: ztmVersion,
     pipy: pipy.version,
   }
   if (args['--json']) {
     println(JSON.stringify(info))
   } else {
     println(`ZTM:`)
+    println(`  Edition: ${info.ztm?.edition}`)
     println(`  Tag    : ${info.ztm?.tag}`)
     println(`  Commit : ${info.ztm?.commit}`)
     println(`  Date   : ${info.ztm?.date}`)
@@ -557,6 +570,7 @@ function startHub(args) {
   }
   if ('--names' in args) opts['--names'] = args['--names']
   if ('--ca' in args) opts['--ca'] = args['--ca']
+  if ('--peer' in args) opts['--peer'] = args['--peer']
   if ('--zone' in args) opts['--zone'] = args['--zone']
   if ('--max-agents' in args) opts['--max-agents'] = args['--max-agents']
   if ('--max-sessions' in args) opts['--max-sessions'] = args['--max-sessions']
@@ -565,6 +579,7 @@ function startHub(args) {
     ('--listen' in args) ||
     ('--names' in args) ||
     ('--ca' in args) ||
+    ('--peer' in args) ||
     ('--zone' in args) ||
     ('--max-agents' in args) ||
     ('--max-sessions' in args)
@@ -1054,6 +1069,7 @@ function getHub(name, mesh) {
         'NAMES': ([_, v]) => v.ports.join(', '),
         'ZONE': ([_, v]) => v.zone,
         'CONNECTED': ([_, v]) => v.connected ? 'Yes' : '',
+        'EDITION': ([_, v]) => v.version?.ztm?.edition || 'n/a',
         'VERSION': ([_, v]) => v.version?.ztm?.tag || 'n/a',
         'ID': ([k]) => k,
       }
@@ -1075,6 +1091,7 @@ function getEndpoint(name, mesh) {
         'STATUS': ep => ep.online ? 'Online' : 'Offline',
         'PING': ep => ep.ping ? ep.ping + 'ms' : 'n/a',
         'ID': ep => ep.id,
+        'EDITION': ep => ep.agent?.version?.ztm?.edition || 'n/a',
         'VERSION': ep => ep.agent?.version?.ztm?.tag || 'n/a',
         'LABELS': ep => {
           var labels = ep.agent?.labels || []
@@ -1212,6 +1229,7 @@ function describeHub(name, mesh) {
       { name: 'pipy', version: hub?.version?.pipy },
     ], {
       '': r => r.name,
+      'EDITION': r => r.version?.edition || 'n/a',
       'TAG': r => r.version?.tag || 'n/a',
       'COMMIT': r => r.version?.commit || 'n/a',
       'DATE': r => r.version?.date || 'n/a',
@@ -1241,6 +1259,7 @@ function describeEndpoint(name, mesh) {
       { name: 'pipy', version: ep.agent?.version?.pipy },
     ], {
       '': r => r.name,
+      'EDITION': r => r.version?.edition || 'n/a',
       'TAG': r => r.version?.tag || 'n/a',
       'COMMIT': r => r.version?.commit || 'n/a',
       'DATE': r => r.version?.date || 'n/a',

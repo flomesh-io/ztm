@@ -32,6 +32,12 @@ npm install --no-audit
 
 cd "$ZTM_DIR"
 
+if test -e "hub/cluster.js"; then
+  EDITION="Enterprise"
+else
+  EDITION="Community"
+fi
+
 if [ -n "$ZTM_VERSION" ]; then
   VERSION="$ZTM_VERSION"
 else
@@ -42,6 +48,7 @@ COMMIT=`git log -1 --format=%H`
 COMMIT_DATE=`git log -1 --format=%cD`
 
 VERSION_JSON="{
+  \"edition\":\"$EDITION\",
   \"tag\": \"$VERSION\",
   \"commit\": \"$COMMIT\",
   \"date\": \"$COMMIT_DATE\"
