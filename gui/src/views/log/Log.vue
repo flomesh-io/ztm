@@ -52,7 +52,7 @@ const isMobile = computed(() => windowWidth.value<=768);
 
 <template>
 		<DataTable scrollable :size="isMobile?'small':''" v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]"  :value="logs" tableStyle="min-width: 50rem">
-			<Column frozen style="width: 160px;" :header="t('Time')" sortable field="time">
+			<Column frozen style="width: 100px;" :header="t('Time')" sortable field="time">
 				<template #body="slotProps">
 					{{timeago(slotProps.data.time)}}
 				</template>
