@@ -233,7 +233,7 @@ const pay = () => {
 
 <template>
 	
-	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh - 20px)`}">
+	<div class="surface-ground h-full" :style="{'minHeight':`calc(100vh)`}">
 		<AppHeader :back="back">
 				<template #center>
 					<b>{{props.title||t('Join Mesh')}}</b>
