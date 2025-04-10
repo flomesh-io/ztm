@@ -27,7 +27,7 @@ $gutter: 1rem; //for primeflex grid system
 	padding:0;
 	position: fixed;
 	bottom: 0px;
-	z-index: 2;
+	z-index: 1;
 	left: 0;
 	right: 0;
 	// overflow: hidden;
@@ -551,6 +551,16 @@ pre.app-code code{
 	outline: none;
 	border-radius: 0;
 	
+}
+iframe{
+	z-index: 2;
+}
+.p-inputgroup>.p-component{
+	border-radius:0px !important;
+}
+.p-inputgroup .p-selectbutton .p-togglebutton-content{
+	line-height: 20px;
+	display: block;
 }
 .vertical-organization .vertical-node .item:last-child .p-inputtext{
 	border-style: none;
