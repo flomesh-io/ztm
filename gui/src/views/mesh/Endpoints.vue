@@ -76,7 +76,6 @@ const nextUsers = () => {
 	loadusers();
 }
 const loadusers = () => {
-	
 	loading.value = true;
 	loader.value = true;
 	ztmService.getUsers(selectedMesh.value?.name,filter.value)
@@ -95,7 +94,11 @@ const loadusers = () => {
 				loader.value = false;
 			},2000)
 		})
-		.catch(err => console.log('Request Failed', err)); 
+		.catch(err => {
+			console.log('Request Failed', err);
+			loading.value = false;
+			loader.value = false;
+		}); 
 }
 const loadepByUser = (user) => {
 	ztmService.getEndpoints(selectedMesh.value?.name, {user} )
