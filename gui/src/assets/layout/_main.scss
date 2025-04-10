@@ -13,18 +13,19 @@ body {
     color: var(--text-color);
     background-color: var(--surface-html);
     margin: 0;
-    padding: 0;
+		padding: 0;
     min-height: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-
 a {
     text-decoration: none;
 }
 
 .layout-wrapper {
-    min-height: 100vh;
+		position: relative;
+		padding: env(safe-area-inset-top, 0) 0 0 0;
+		min-height: calc(100vh - env(safe-area-inset-bottom, 0));
 		display: flex;
 		flex-direction: row;
 }

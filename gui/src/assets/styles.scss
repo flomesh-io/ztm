@@ -709,8 +709,12 @@ pre.app-code code{
 	width: 80%;
 	overflow: hidden;
 	position: relative;
+	opacity: 0;
+	transition: .3s opacity;
 	z-index: 0;
-	
+	.e-card{
+		padding-top: env(safe-area-inset-top, 0);
+	}
 	.e-card,.infotop,.config-pannel,.container{
 		right: 20% !important;
 	}
@@ -721,7 +725,9 @@ pre.app-code code{
 		width: 18rem;
 	}
 }
-
+.embed-root.show{
+	opacity: 1;
+}
 .p-button:not(.p-button-icon-only){
 	min-width: 3.5rem;
 }
@@ -746,24 +752,37 @@ pre.app-code code{
 .absolute-scroll-panel.bar{
 	margin-top: 75px;
 }
-.ios.layout-wrapper{
-	 min-height: calc(100vh - 80px);
-}
+
 .ios{
 	.p-scrollpanel-content{
-		height: calc(100% + calc(2 * var(--scrollpanel-bar-size)) - 80px);
+		height: calc(100% + calc(2* var(--scrollpanel-bar-size)) - env(safe-area-inset-bottom, 0) - env(safe-area-inset-top, 0));
 	}
 	.layout-main-container,.min-h-screen{
-		 min-height: calc(100vh - 80px) !important;
+		min-height: calc(100vh - env(safe-area-inset-bottom, 0) - env(safe-area-inset-top, 0)) !important;
 	}
 	.empty-bottom{
-		height: 145px;
+		height: calc(65px + env(safe-area-inset-bottom, 0));
 	}
 	.app-bottom-bar.p-menubar{
 		bottom: unset;
-		top:calc(100vh - 145px);
+		top:calc(100vh - 65px - env(safe-area-inset-bottom, 0));
 		// background: #1e1e1e;
-		height: 100px !important;
+		height: calc(65px + env(safe-area-inset-bottom, 0));
+	}
+}
+
+@media screen and (min-width: 768px){
+	.p-tabview .p-tabview-panels{
+		padding: 0.875rem 1.125rem 1.125rem 1.125rem;
+	}
+		
+	.ios{
+		.p-scrollpanel-content{
+			height: calc(100% + calc(2* var(--scrollpanel-bar-size)) - env(safe-area-inset-bottom, 0) - env(safe-area-inset-top, 0));
+		}
+		.layout-main-container,.min-h-screen{
+			 min-height: calc(100vh - env(safe-area-inset-bottom, 0) - env(safe-area-inset-top, 0)) !important;
+		}
 	}
 }
 // .surface-border.flex-wrap>div{
@@ -1037,7 +1056,7 @@ fieldset{
 }
 .nopd-header.p-toolbar{
 	overflow: hidden;
-	padding: 0;
+	padding: env(safe-area-inset-top, 0) 0 0 0;
 	box-shadow: none;
 	border-radius: 0;
 	// background-color: var(--surface-bg);
@@ -1382,9 +1401,11 @@ fieldset{
 		// min-height: 300px;
 	}
 	.nopd-header{
-		height: 3.5rem;
+		height: calc(3.5rem + env(safe-area-inset-top, 0));
 		z-index: 2;
-		position: fixed;top: 0;
+		position: fixed;
+		top: 0;
+		padding-top: env(safe-area-inset-top, 0);
 		width: 100%;
 		.p-button.p-button-icon-only{
 			width: 3.5rem;
@@ -1406,23 +1427,6 @@ fieldset{
 		margin-top: -30px;
 		height: 80px;
 		background: var(--toolbar-background);
-	}
-}
-@media screen and (min-width: 768px){
-	.p-tabview .p-tabview-panels{
-		padding: 0.875rem 1.125rem 1.125rem 1.125rem;
-	}
-		
-	.ios.layout-wrapper{
-		 min-height: calc(100vh - 25px);
-	}
-	.ios{
-		.p-scrollpanel-content{
-			height: calc(100% + calc(2 * var(--scrollpanel-bar-size)) - 25px);
-		}
-		.layout-main-container,.min-h-screen{
-			 min-height: calc(100vh - 25px) !important;
-		}
 	}
 }
 @media screen and (min-width: 768px) and (max-width: 1024px){

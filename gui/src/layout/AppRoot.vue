@@ -480,7 +480,7 @@ onMounted(() => {
 	.userinfo{
 		text-align: right;
 		position: absolute;
-		top: 10px;
+		top: calc(10px + env(safe-area-inset-bottom, 0));
 		right: 15px;
 		color: rgba(255,255,255,0.7);
 		font-weight: bold;
@@ -634,7 +634,7 @@ onMounted(() => {
 	.left-fixed{
 		position: absolute;
 		left: 15px;
-		top: 12px;
+		top: calc(12px + env(safe-area-inset-bottom, 0));
 	}
 	.config-pannel{
 		position: fixed;
