@@ -48,7 +48,7 @@ onMounted(()=>{
 </script>
 
 <template>
-	<div class="col-12 min-h-screen pl-0 pr-0" style="background: rgba(56, 4, 40, 0.9);">
+	<div class="col-12 min-h-screen pl-0 pr-0 pt-0" style="background: rgba(56, 4, 40, 0.9);">
 		<AppHeader>
 				<template #start>
 					<Button @click="close" icon="pi pi-angle-left" severity="secondary" text />
@@ -99,8 +99,3 @@ onMounted(()=>{
 	</div>
 </template>
 
-<style lang="scss" scoped>
-	:deep(.empty-header){
-		height: 60px;
-	}
-</style>
