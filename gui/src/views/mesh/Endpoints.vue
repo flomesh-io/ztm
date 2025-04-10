@@ -417,8 +417,8 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 															<ChipList @change="changeLabels(usersMap[key].endpoints?.instances[0])" class="ml-2 relative" style="top: 4px;" :readonly="usersMap[key].endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp && usersMap[key]?.endpoints?.instances[0]?.labels" v-model:list="usersMap[key].endpoints.instances[0].labels"/>
 														</div>
 														<div class="flex" v-if="!selectEp">
-															<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↑{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.send)}}</span>
-															<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↓{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.receive)}}</span>
+															<span class="py-1 px-2 opacity-70" v-if="!isMobile && !selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↑{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.send)}}</span>
+															<span class="py-1 px-2 opacity-70 mr-4" v-if="!isMobile && !selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↓{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.receive)}}</span>
 															<Status :run="usersMap[key].endpoints?.instances[0]?.online" :tip="timeago(usersMap[key].endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 															<Button severity="secondary" size="small" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 														</div>
@@ -444,8 +444,8 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																			<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != key" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="ep.labels"/>
 																		</div>
 																		<div class="flex" v-if="!selectEp">
-																			<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
-																			<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
+																			<span class="py-1 px-2 opacity-70" v-if="!isMobile && !selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
+																			<span class="py-1 px-2 opacity-70 mr-4" v-if="!isMobile && !selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
 																			<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
 																		</div>
 																	</div>
