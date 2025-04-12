@@ -145,7 +145,7 @@ function doCommand(meshName, epName, argv, program) {
           -p, --permit        <pathname>        Specify an optional output filename for the root user's permit
                                                 Only applicable to hubs
         ` + (ztmVersion.edition === 'Enterprise' ? `
-              --peer          <host:port>       Specify the bootstrap address of the hub cluster
+              --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
                                                 Only applicable to hubs
               --zone          <zone>            Specify the zone that the hub is deployed in
                                                 Only applicable to hubs
@@ -200,7 +200,7 @@ function doCommand(meshName, epName, argv, program) {
               --join-as       <endpoint>        When joining a mesh, give the current endpoint a name
                                                 Only applicable to agents
         ` + (ztmVersion.edition === 'Enterprise' ? `
-              --peer          <host:port>       Specify the bootstrap address of the hub cluster
+              --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
                                                 Only applicable to hubs
               --zone          <zone>            Specify the zone that the hub is deployed in
                                                 Only applicable to hubs
@@ -570,7 +570,7 @@ function startHub(args) {
   }
   if ('--names' in args) opts['--names'] = args['--names']
   if ('--ca' in args) opts['--ca'] = args['--ca']
-  if ('--peer' in args) opts['--peer'] = args['--peer']
+  if ('--bootstrap' in args) opts['--bootstrap'] = args['--bootstrap']
   if ('--zone' in args) opts['--zone'] = args['--zone']
   if ('--max-agents' in args) opts['--max-agents'] = args['--max-agents']
   if ('--max-sessions' in args) opts['--max-sessions'] = args['--max-sessions']
@@ -579,7 +579,7 @@ function startHub(args) {
     ('--listen' in args) ||
     ('--names' in args) ||
     ('--ca' in args) ||
-    ('--peer' in args) ||
+    ('--bootstrap' in args) ||
     ('--zone' in args) ||
     ('--max-agents' in args) ||
     ('--max-sessions' in args)
