@@ -237,7 +237,7 @@ function main() {
             --max-agents    <number>          Specify the maximum number of agents the hub can handle
             --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
       ` + (cluster ? `
-            --peer          <host:port>       Specify the bootstrap address of the hub cluster
+            --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
             --zone          <zone>            Specify the zone that the hub is deployed in
       ` : ''),
       action: (args) => {
@@ -287,7 +287,7 @@ function main() {
             ca.signCertificate('hub', pkey).then(crt => myCert = crt),
           ])
         }).then(() => {
-          start(args['--listen'] || '0.0.0.0:8888', args['--peer'])
+          start(args['--listen'] || '0.0.0.0:8888', args['--bootstrap'])
         })
       }
     }],
@@ -351,7 +351,7 @@ var $trafficLinkRecv
 // Start hub service
 //
 
-function start(listen, peer) {
+function start(listen, bootstrap) {
   db.allFiles().forEach(f => {
     files[f.pathname] = makeFileInfo(f.hash, f.size, f.time, f.since)
   })
@@ -384,10 +384,23 @@ function start(listen, peer) {
     evictions[e.username] = e.time
   })
 
-  return (cluster
-    ? cluster.init(peer)
-    : Promise.resolve()
-  ).then(() => {
+  return (cluster ? cluster.init({
+    bootstrap,
+    id: myID,
+    zone: myZone,
+    ports: [...myNames],
+    tls: {
+      ca: caCert,
+      cert: myCert,
+      key: myKey,
+    },
+    events: {
+      file: (path, info) => updateFileInfo(path, info, null, true),
+      acl: (username, path, access, since) => updateACL(username, path, access, since),
+      eviction: (username, time, expiration) => updateEviction(username, time, expiration),
+    },
+    log,
+  }) : Promise.resolve()).then(() => {
 
     pipy.listen(listen, $=>$
       .onStart(
@@ -442,9 +455,11 @@ function start(listen, peer) {
                 var path = evt.head.path
                 var route = routes.find(r => Boolean($params = r.match(path)))
                 if (route) return route.handler($params, evt)
+                if (cluster) return cluster.request(evt) || notFound
                 return notFound
               }
-            }
+            },
+            () => $ctx
           )
         )
         .onEnd(() => { connections[$ctx.username].delete($ctx.connection) })
@@ -460,7 +475,8 @@ function start(listen, peer) {
     startPing()
     clearOutdatedEndpoints()
     measureTraffic()
-  })
+
+  }).catch(() => {})
 }
 
 var getHubStatus = pipeline($=>$
@@ -566,17 +582,7 @@ var postEviction = pipeline($=>$
       var name = URL.decodeComponent($params.username)
       if (name === 'root' || $ctx.username !== 'root') return response(403)
       if (Number.isNaN(time)) return response(400)
-      var old = db.getEviction(name)
-      if (old && old.time >= time) return response(200)
-      if (Number.isNaN(expr) || expr <= time) expr = time + 365 * 24 * 60 * 60
-      db.setEviction(name, time, expr)
-      evictions[name] = time
-      connections[name]?.forEach?.(conn => {
-        if (conn.certificate.notBefore <= time * 1000) {
-          conn.evict()
-        }
-      })
-      return response(201)
+      return response(updateEviction(name, time, expr) ? 201 : 200)
     }
   )
 )
@@ -587,8 +593,7 @@ var deleteEviction = pipeline($=>$
     function () {
       var name = URL.decodeComponent($params.username)
       if (name === 'root' || $ctx.username !== 'root') return response(403)
-      db.delEviction(name)
-      delete evictions[name]
+      updateEviction(name, null)
       return response(204)
     }
   )
@@ -861,27 +866,14 @@ var postACL = pipeline($=>$
       var username = $endpoint.username
       var matchAppSharedRoot = new http.Match(`/apps/{provider}/{appname}/shared/${username}`)
       var matchAppSharedPath = new http.Match(`/apps/{provider}/{appname}/shared/${username}/*`)
-      var accessByPath = Object.fromEntries((acl[username] || []).map(
-        data => [data.pathname, data]
-      ))
       Object.entries(body).forEach(
         ([k, v]) => {
           if (!k.startsWith('/apps/')) return
           if (!matchAppSharedRoot(k) && !matchAppSharedPath(k)) return
           if (typeof v !== 'object') return
-          var access = { all: v.all, users: v.users }
-          var since = v.since
-          var data = makeACL(k, access, since)
-          if (data) {
-            var last = accessByPath[k]
-            if (!last || last.since < since) {
-              accessByPath[k] = data
-              db.setACL(k, access, since)
-            }
-          }
+          updateACL(username, k, { all: v.all, users: v.users }, v.since)
         }
       )
-      acl[username] = Object.keys(accessByPath).sort().map(k => accessByPath[k])
       return new Message({ status: 201 })
     }
   )
@@ -1349,6 +1341,28 @@ function findCurrentEndpointSession() {
   return true
 }
 
+function updateEviction(username, time, expiration) {
+  if (username === 'root') return false
+  var old = db.getEviction(username)
+  if (old && old.time >= time) return false
+  if (time) {
+    if (!expiration || Number.isNaN(expiration) || expiration <= time) {
+      expiration = time + 365 * 24 * 60 * 60
+    }
+    db.setEviction(username, time, expiration)
+    evictions[username] = time
+    connections[username]?.forEach?.(conn => {
+      if (conn.certificate.notBefore <= time * 1000) {
+        conn.evict()
+      }
+    })
+  } else {
+    db.delEviction(username)
+    delete evictions[username]
+  }
+  return true
+}
+
 function makeACL(pathname, access, since) {
   if (typeof access !== 'object') return
   if (typeof access.all !== 'string' && access.all !== null) return
@@ -1363,6 +1377,29 @@ function makeACL(pathname, access, since) {
   }
 }
 
+function updateACL(username, path, access, since) {
+  var updated = false
+  var data = makeACL(path, access, since)
+  if (data) {
+    var list = (acl[username] ??= [])
+    var pos = list.findIndex(a => a.pathname >= path)
+    if (pos < 0) {
+      list.push(data)
+      db.setACL(path, access, since)
+      updated = true
+    } else if (list[pos].since < since) {
+      if (list[pos].pathname === path) {
+        list[pos] = data
+      } else {
+        list.splice(pos, 0, data)
+      }
+      db.setACL(path, access, since)
+      updated = true
+    }
+  }
+  return updated
+}
+
 function makeFileInfo(hash, size, time, since) {
   return {
     '#': hash,
@@ -1374,38 +1411,46 @@ function makeFileInfo(hash, size, time, since) {
 }
 
 function updateFileInfo(pathname, f, ep, update) {
+  var updated = false
   var e = files[pathname]
   if (e || update) {
     if (!e) {
       e = files[pathname] = makeFileInfo('', 0, 0, 0)
-      fileList = null // mark as updated
+      fileList = null // mark as changed
     }
     var t1 = e['T']
     var h1 = e['#']
     var t2 = f['T']
     var h2 = f['#']
     if (h2 === h1) {
-      var sources = e['@']
-      if (!sources.includes(ep)) sources.push(ep)
+      if (ep) {
+        var sources = e['@']
+        if (!sources.includes(ep)) {
+          sources.push(ep)
+        }
+      }
       if (update && t2 > t1) {
         e['T'] = t2
         e['+'] = Date.now()
+        updated = true
       }
     } else if (t2 > t1 && update) {
       e['#'] = h2
       e['$'] = f['$']
       e['T'] = t2
       e['+'] = Date.now()
-      e['@'] = [ep]
+      e['@'] = ep ? [ep] : []
       db.setFile(pathname, {
         hash: h2,
         size: e['$'],
         time: t2,
         since: e['+'],
       })
+      updated = true
     }
     fileWatchers = fileWatchers.filter(f => !f())
   }
+  return updated
 }
 
 function getAllFiles() {
