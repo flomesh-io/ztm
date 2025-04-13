@@ -106,6 +106,29 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `Export or import the CA certificate`,
+        usage: 'ca <import|export>',
+        options: `
+          -d, --data  <dir>       Specify the location of ZTM storage (default: ~/.ztm)
+              --cert  <filename>  Specify the certificate file to import or export
+              --key   <filename>  Specify the private key file to import or export
+        `,
+        action: (args) => {
+          var op = args['<import|export>']
+          var dataDir = args['--data']
+          var crtPath = args['--cert']
+          var keyPath = args['--key']
+          if (!crtPath) throw 'missing option: --cert'
+          if (!keyPath) throw 'missing option: --key'
+          switch (op) {
+            case 'import': return importCA(dataDir, crtPath, keyPath)
+            case 'export': return exportCA(dataDir, crtPath, keyPath)
+            default: throw 'invalid operation: ' + op
+          }
+        }
+      },
+
+      {
         title: `Print the identity of the current running agent`,
         usage: 'identity',
         action: identity,
@@ -518,6 +541,50 @@ function config(args) {
 }
 
 //
+// Command: ca
+//
+
+function importCA(dataDir, crtPath, keyPath) {
+  initHubDB(dataDir)
+
+  try {
+    var crt = new crypto.Certificate(os.read(crtPath))
+  } catch {
+    return error(`cannot read certificate from file: ${crtPath}`)
+  }
+
+  try {
+    var key = new crypto.PrivateKey(os.read(keyPath))
+  } catch {
+    return error(`cannot read private key from file: ${keyPath}`)
+  }
+
+  db.setCert('ca', crt.toPEM().toString())
+  db.setKey('ca', key.toPEM().toString())
+}
+
+function exportCA(dataDir, crtPath, keyPath) {
+  initHubDB(dataDir)
+
+  var crt = db.getCert('ca')
+  var key = db.getKey('ca')
+
+  if (!crt || !key) return error('CA certificate not found')
+
+  try {
+    os.write(crtPath, crt)
+  } catch {
+    return error(`cannot write to file: ${crtPath}`)
+  }
+
+  try {
+    os.write(keyPath, key)
+  } catch {
+    return error(`cannot write to file: ${keyPath}`)
+  }
+}
+
+//
 // Command: identity
 //
 
@@ -621,14 +688,11 @@ function startApp(name, mesh, ep) {
   })
 }
 
-function initHub(args) {
-  var dbPath = args['--data'] || '~/.ztm'
+function initHubDB(path) {
+  var dbPath = path || '~/.ztm'
   if (dbPath.startsWith('~/')) {
     dbPath = os.home() + dbPath.substring(1)
   }
-
-  var names = args['--names'] || []
-  if (names.length === 0) throw 'at least one hub address (host:port) is required (with option --names)'
 
   try {
     dbPath = os.path.resolve(dbPath)
@@ -648,6 +712,13 @@ function initHub(args) {
     println('ztm:', e.toString())
     exit(0)
   }
+}
+
+function initHub(args) {
+  var names = args['--names'] || []
+  if (names.length === 0) throw 'at least one hub address (host:port) is required (with option --names)'
+
+  initHubDB(args['--data'])
 
   var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
   var pkey = new crypto.PublicKey(key)

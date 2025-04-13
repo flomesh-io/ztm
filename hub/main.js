@@ -284,7 +284,7 @@ function main() {
           var pkey = new crypto.PublicKey(myKey)
           return Promise.all([
             ca.getCertificate('ca').then(crt => caCert = crt),
-            ca.signCertificate('hub', pkey).then(crt => myCert = crt),
+            ca.signCertificate('hub/' + myID, pkey).then(crt => myCert = crt),
           ])
         }).then(() => {
           start(args['--listen'] || '0.0.0.0:8888', args['--bootstrap'])
@@ -614,18 +614,23 @@ var getHubs = pipeline($=>$
   .replaceMessage(
     function () {
       collectMyNames($ctx.via)
-      if (URL.decodeComponent($params.zone) !== myZone) return response(200, {})
-      return response(200, {
-        [myID]: {
-          ports: myNames,
-          version: {
-            ztm: {
-              edition: hubVersion.ztm.edition,
-              tag: hubVersion.ztm.tag,
-            }
-          },
-        }
-      })
+      if (cluster) {
+        var hubs = cluster.getHubs($params.zone)
+        return hubs ? response(200, hubs) : response(404)
+      } else {
+        if (URL.decodeComponent($params.zone) !== myZone) return response(404)
+        return response(200, {
+          [myID]: {
+            ports: myNames,
+            version: {
+              ztm: {
+                edition: hubVersion.ztm.edition,
+                tag: hubVersion.ztm.tag,
+              }
+            },
+          }
+        })
+      }
     }
   )
 )

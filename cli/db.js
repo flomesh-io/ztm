@@ -29,7 +29,7 @@ function getCert(name) {
 }
 
 function setCert(name, data) {
-  if (getKey(name)) {
+  if (getCert(name)) {
     db.sql(`UPDATE certificates SET data = ? WHERE name = ?`)
       .bind(1, data)
       .bind(2, name)

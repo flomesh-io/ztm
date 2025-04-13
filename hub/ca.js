@@ -8,7 +8,7 @@ function init(url) {
   if (url) {
     caURL = new URL(url)
   } else {
-    if (!db.getKey('ca')) {
+    if (!db.getCert('ca') || !db.getKey('ca')) {
       var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
       var cert = new crypto.Certificate({
         subject: { CN: 'ca' },
@@ -19,7 +19,6 @@ function init(url) {
       db.setCert('ca', cert.toPEM().toString())
       db.setKey('ca', key.toPEM().toString())
     }
-
     caCert = new crypto.Certificate(db.getCert('ca'))
     caKey = new crypto.PrivateKey(db.getKey('ca'))
   }
