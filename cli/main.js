@@ -1139,7 +1139,7 @@ function getHub(name, mesh) {
       {
         'NAMES': ([_, v]) => v.ports.join(', '),
         'ZONE': ([_, v]) => v.zone,
-        'CONNECTED': ([_, v]) => v.connected ? 'Yes' : '',
+        'ATTACHED': ([_, v]) => v.connected ? 'Yes' : '',
         'EDITION': ([_, v]) => v.version?.ztm?.edition || 'n/a',
         'VERSION': ([_, v]) => v.version?.ztm?.tag || 'n/a',
         'ID': ([k]) => k,

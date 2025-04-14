@@ -879,7 +879,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   // Start communication with the mesh
   function start() {
     searchHub().then(hub => {
-      hubActive[0] = Hub(hub.id, hub.zone, hub.name)
+      hubActive[0] = Hub(hub.id, hub.zone, hub.port)
 
       heartbeat()
       advertiseFilesystem()
@@ -892,7 +892,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         }
       })
 
-      var hubLabel = hub.zone ? `${hub.name} in ${hub.zone}` : hub.name
+      var hubLabel = hub.zone ? `${hub.port} in ${hub.zone}` : hub.port
       logInfo(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id}) via hub ${hubLabel}`)
 
       monitorHub()
@@ -916,7 +916,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         logError(`Hub seems down: ${hub.address} (ID = ${hub.id})`)
         hubActive.forEach(h => h.leave())
         searchHub().then(hub => {
-          hubActive[0] = Hub(hub.id, hub.zone, hub.name)
+          hubActive[0] = Hub(hub.id, hub.zone, hub.port)
           new Timeout(1).wait().then(monitorHub)
         })
       } else {
@@ -926,56 +926,69 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function pickHub() {
-    return listZones(config.bootstraps).then(
-      zones => Promise.all(zones.map(
-        zone => listZoneHubs(config.bootstraps, zone).then(
-          hubs => probe(hubs)
-        )
-      )).then(
-        results => results.filter(r => r).reduce(
-          (a, b) => a.latency <= b.latency ? a : b
-        )
-      )
-    )
-
-    function probe(hubs) {
-      var list = Object.entries(hubs)
-      if (list.length === 0) return null
-      var i = Math.floor(Math.random() * list.length)
-      var id = list[i][0]
-      var hub = list[i][1]
-      delete hubs[id]
-      return Promise.all(hub.ports.map(
-        name => {
-          var zone = hub.zone
-          var label = zone ? `${name} in ${zone}` : name
+    function pickPort(id, zone, ports) {
+      return Promise.all(ports.map(
+        port => {
           var t = Date.now()
-          return getHubStatus(name).then(res => {
+          return getHubStatus(port).then(res => {
             if (res?.id !== id) {
-              logInfo(`Probed hub ${label} and got no valid response`)
+              logInfo(`Probed hub ${port} and got no valid response`)
               return null
             } else {
               var latency = Date.now() - t
               var capacity = res.capacity?.agents || Number.POSITIVE_INFINITY
               var load = res.load?.agents || 0
-              logInfo(`Probed hub ${label} and got response in ${latency}ms: capacity = ${capacity}, load = ${load}`)
-              return { id, name, zone, latency, load: load / capacity }
+              logInfo(`Probed hub ${port} and got response in ${latency}ms: capacity = ${capacity}, load = ${load}`)
+              return { id, zone, port, latency, load: load / capacity }
             }
           })
         }
-      )).then(results => {
-        var best = results.filter(r => r).reduce(
-          (a, b) => {
-            if (Math.abs(a.latency - b.latency) < 10) {
-              return a.load <= b.load ? a : b
-            } else {
-              return a.latency <= b.latency ? a : b
-            }
-          }
+      )).then(results => (
+        results.filter(r => r).reduce(
+          (a, b) => a.latency <= b.latency ? a : b
         )
-        return best || probe()
-      })
+      ))
     }
+
+    function pickRandom(hubs) {
+      var keys = Object.keys(hubs)
+      var id = keys[Math.floor(Math.random() * keys.length)]
+      if (id) {
+        var hub = hubs[id]
+        delete hubs[id]
+        return pickPort(id, hub.zone, hub.ports).then(result => result || pickRandom(hubs))
+      } else {
+        return null
+      }
+    }
+
+    return listZones(config.bootstraps).then(
+      zones => Promise.all(zones.map(
+        zone => listZoneHubs(config.bootstraps, zone).then(
+          hubs => pickRandom(hubs)
+        )
+      ))
+    ).then(
+      results => results.filter(r => r).reduce(
+        (a, b) => a.latency <= b.latency ? a : b
+      )?.zone
+    ).then(
+      zone => !zone ? null : listZoneHubs(config.bootstraps, zone).then(
+        hubs => Promise.all(Object.entries(hubs).map(
+          ([id, hub]) => pickPort(id, hub.zone, hub.ports)
+        )).then(
+          results => results.filter(r => r).reduce(
+            (a, b) => {
+              if (Math.abs(a.latency - b.latency) < 10) {
+                return a.load <= b.load ? a : b
+              } else {
+                return a.latency <= b.latency ? a : b
+              }
+            }
+          )
+        )
+      )
+    )
   }
 
   // Send heartbeats

@@ -384,99 +384,104 @@ function start(listen, bootstrap) {
     evictions[e.username] = e.time
   })
 
-  return (cluster ? cluster.init({
-    bootstrap,
-    id: myID,
-    zone: myZone,
-    ports: [...myNames],
-    tls: {
-      ca: caCert,
-      cert: myCert,
-      key: myKey,
-    },
-    events: {
-      file: (path, info) => updateFileInfo(path, info, null, true),
-      acl: (username, path, access, since) => updateACL(username, path, access, since),
-      eviction: (username, time, expiration) => updateEviction(username, time, expiration),
-    },
-    log,
-  }) : Promise.resolve()).then(() => {
+  if (cluster) {
+    cluster.init({
+      bootstrap,
+      id: myID,
+      zone: myZone,
+      ports: [...myNames],
+      tls: {
+        ca: caCert,
+        cert: myCert,
+        key: myKey,
+      },
+      events: {
+        file: (path, info) => updateFileInfo(path, info, null, true),
+        acl: (username, path, access, since) => updateACL(username, path, access, since),
+        eviction: (username, time, expiration) => updateEviction(username, time, expiration),
+      },
+      log,
+    })
+  }
 
-    pipy.listen(listen, $=>$
-      .onStart(
-        function (conn) {
-          $ctx = {
-            ip: conn.remoteAddress,
-            port: conn.remotePort,
-            via: `${conn.localAddress}:${conn.localPort}`,
-            username: undefined,
-            certificate: undefined,
-            connection: undefined,
-            endpointID: undefined,
-            sessionID: undefined,
-          }
+  pipy.listen(listen, $=>$
+    .onStart(
+      function (conn) {
+        $ctx = {
+          ip: conn.remoteAddress,
+          port: conn.remotePort,
+          via: `${conn.localAddress}:${conn.localPort}`,
+          username: undefined,
+          certificate: undefined,
+          connection: undefined,
+          endpointID: undefined,
+          sessionID: undefined,
         }
-      )
-      .acceptTLS({
-        certificate: {
-          cert: myCert,
-          key: myKey,
-        },
-        trusted: [caCert],
-        verify: (ok, cert) => {
-          if (!ok) return false
-          var username = cert.subject?.commonName
-          var time = evictions[username]
-          if (time && time * 1000 >= cert.notBefore) {
-            return false
-          }
-          return true
-        },
-        onState: (tls) => {
-          if (tls.state === 'connected') {
-            $ctx.certificate = tls.peer
-            $ctx.username = tls.peer?.subject?.commonName
-          }
-        }
-      }).to($=>$
-        .insert(() => new Promise(resolve => {
-          var conn = {
-            certificate: $ctx.certificate,
-            evict: () => resolve(new StreamEnd),
-          }
-          connections[$ctx.username] ??= new Set
-          connections[$ctx.username].add(conn)
-          $ctx.connection = conn
-        }))
-        .demuxHTTP().to($=>$
-          .pipe(
-            function (evt) {
-              if (evt instanceof MessageStart) {
-                var path = evt.head.path
-                var route = routes.find(r => Boolean($params = r.match(path)))
-                if (route) return route.handler($params, evt)
-                if (cluster) return cluster.request(evt) || notFound
-                return notFound
-              }
-            },
-            () => $ctx
-          )
-        )
-        .onEnd(() => { connections[$ctx.username].delete($ctx.connection) })
-      )
+      }
     )
+    .acceptTLS({
+      certificate: {
+        cert: myCert,
+        key: myKey,
+      },
+      trusted: [caCert],
+      verify: (ok, cert) => {
+        if (!ok) return false
+        var username = cert.subject?.commonName
+        var time = evictions[username]
+        if (time && time * 1000 >= cert.notBefore) {
+          return false
+        }
+        return true
+      },
+      onState: (tls) => {
+        if (tls.state === 'connected') {
+          $ctx.certificate = tls.peer
+          $ctx.username = tls.peer?.subject?.commonName
+        }
+      }
+    }).to($=>$
+      .insert(() => new Promise(resolve => {
+        var conn = {
+          certificate: $ctx.certificate,
+          evict: () => resolve(new StreamEnd),
+        }
+        connections[$ctx.username] ??= new Set
+        connections[$ctx.username].add(conn)
+        $ctx.connection = conn
+      }))
+      .demuxHTTP().to($=>$
+        .pipe(
+          function (evt) {
+            if (evt instanceof MessageStart) {
+              var path = evt.head.path
+              var route = routes.find(r => Boolean($params = r.match(path)))
+              if (route) return route.handler($params, evt)
+              if (cluster) return cluster.request(evt) || notFound
+              return notFound
+            }
+          },
+          () => $ctx
+        )
+      )
+      .onEnd(() => { connections[$ctx.username].delete($ctx.connection) })
+    )
+  )
 
-    if (cluster) {
+  if (cluster) {
+    cluster.bootstrap(bootstrap).then(() => {
       logInfo(`Hub instance started in zone '${myZone}' listening at ${listen}`)
-    } else {
-      logInfo(`Hub started at ${listen}`)
-    }
+    }).catch(() => {
+      logError(`Unable to bootstrap hub instance in zone '${myZone}'`)
+      pipy.exit(-1)
+    })
+  } else {
+    logInfo(`Hub started at ${listen}`)
+  }
 
-    startPing()
-    clearOutdatedEndpoints()
-    measureTraffic()
-
-  }).catch(() => {})
+  startPing()
+  clearOutdatedEndpoints()
+  measureTraffic()
 }
 
 var getHubStatus = pipeline($=>$
@@ -604,7 +609,11 @@ var getZones = pipeline($=>$
   .replaceMessage(
     function () {
       collectMyNames($ctx.via)
-      return response(200, [myZone])
+      if (cluster) {
+        return response(200, cluster.getZones())
+      } else {
+        return response(200, [myZone])
+      }
     }
   )
 )
