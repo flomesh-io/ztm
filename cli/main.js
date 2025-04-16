@@ -1293,7 +1293,7 @@ function describeHub(name, mesh) {
     println(`Load:`)
     println(`  Agents: ${use.agents}/${cap.agents}`)
     println(`  Sessions: ${use.sessions}/${cap.sessions}`)
-    println(`Connected: ${hub.connected ? 'Yes' : 'No'}`)
+    println(`Attached: ${hub.connected ? 'Yes' : 'No'}`)
     println(`Version:`)
     printTable([
       { name: 'ztm', version: hub?.version?.ztm },
@@ -1314,27 +1314,38 @@ function describeEndpoint(name, mesh) {
     ep => client.get(`/api/meshes/${uri(mesh.name)}/endpoints/${ep.id}`)
   ).then(ret => {
     var ep = JSON.decode(ret)
-    println(`Endpoint: ${ep.name}${ep.isLocal ? ' (local)' : ''}`)
-    println(`ID: ${ep.id}`)
-    println(`Username: ${ep.username}`)
-    println(`Hubs:`)
-    ep.hubs.forEach(h => println(' ', h))
-    println(`IP: ${ep.ip}`)
-    println(`Port: ${ep.port}`)
-    println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
-    println(`Status:`, ep.online ? 'Online' : 'Offline')
-    println(`Labels:`, ep.agent?.labels?.length > 0 ? ep.agent?.labels.join(' ') : '(none)')
-    println(`Version:`)
-    printTable([
-      { name: 'ztm', version: ep.agent?.version?.ztm },
-      { name: 'pipy', version: ep.agent?.version?.pipy },
-    ], {
-      '': r => r.name,
-      'EDITION': r => r.version?.edition || 'n/a',
-      'TAG': r => r.version?.tag || 'n/a',
-      'COMMIT': r => r.version?.commit || 'n/a',
-      'DATE': r => r.version?.date || 'n/a',
-    }, 2)
+    return Promise.all(
+      ep.hubs.map(id => client.get(`/api/meshes/${uri(mesh.name)}/hubs/${id}`).then(
+        data => {
+          try {
+            var info = JSON.decode(data)
+          } catch {}
+          return { id, ports: info?.ports || [] }
+        }
+      ))
+    ).then(hubs => {
+      println(`Endpoint: ${ep.name}${ep.isLocal ? ' (local)' : ''}`)
+      println(`ID: ${ep.id}`)
+      println(`Username: ${ep.username}`)
+      println(`Hubs:`)
+      hubs.forEach(h => println(' ', h.id, h.ports.map(p => p.name).join(', ')))
+      println(`IP: ${ep.ip}`)
+      println(`Port: ${ep.port}`)
+      println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
+      println(`Status:`, ep.online ? 'Online' : 'Offline')
+      println(`Labels:`, ep.agent?.labels?.length > 0 ? ep.agent?.labels.join(' ') : '(none)')
+      println(`Version:`)
+      printTable([
+        { name: 'ztm', version: ep.agent?.version?.ztm },
+        { name: 'pipy', version: ep.agent?.version?.pipy },
+      ], {
+        '': r => r.name,
+        'EDITION': r => r.version?.edition || 'n/a',
+        'TAG': r => r.version?.tag || 'n/a',
+        'COMMIT': r => r.version?.commit || 'n/a',
+        'DATE': r => r.version?.date || 'n/a',
+      }, 2)
+    })
   })
 }
 
