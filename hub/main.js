@@ -396,6 +396,7 @@ function start(listen, bootstrap) {
         key: myKey,
       },
       events: {
+        list: (id, name, user, keyword, limit, offset) => listEndpoints(id, name, user, keyword, limit, offset),
         file: (path, info) => updateFileInfo(path, info, null, true),
         acl: (username, path, access, since) => updateACL(username, path, access, since),
         eviction: (username, time, expiration) => updateEviction(username, time, expiration),
@@ -522,6 +523,7 @@ var postAgentStatus = pipeline($=>$
       Object.assign(
         $endpoint, {
           name: info.name,
+          hubs: info.hubs,
           version,
           labels,
           heartbeat: Date.now(),
@@ -654,51 +656,19 @@ var getEndpoints = pipeline($=>$
       var name = params.get('name')
       var user = params.get('user')
       var keyword = params.get('keyword')
-      var offset = Number.parseInt(params.get('offset')) || 0
       var limit = Number.parseInt(params.get('limit')) || 100
+      var offset = Number.parseInt(params.get('offset')) || 0
       if (id) id = URL.decodeComponent(id)
       if (name) name = URL.decodeComponent(name)
       if (user) user = URL.decodeComponent(user)
       if (keyword) keyword = URL.decodeComponent(keyword)
-      return response(200, endpointList.filter(
-        ep => {
-          if (id || name) {
-            if (ep.id !== id && ep.name !== name) {
-              return false
-            }
-          }
-          if (user) {
-            if (ep.username !== user) return false
-          }
-          if (keyword) {
-            if (ep.name.indexOf(keyword) >= 0) return true
-            if (ep.labels instanceof Array && ep.labels.find(l => l.indexOf(keyword) >= 0)) return true
-            return false
-          }
-          return true
-        }
-      ).filter(
-        (_, i) => offset <= i && i < offset + limit
-      ).map(
-        ep => ({
-          id: ep.id,
-          name: ep.name,
-          agent: {
-            version: {
-              ztm: {
-                edition: ep.version?.ztm?.edition,
-                tag: ep.version?.ztm?.tag,
-              }},
-            labels: ep.labels || [],
-          },
-          username: ep.username,
-          ip: ep.ip,
-          port: ep.port,
-          heartbeat: ep.heartbeat,
-          ping: ep.ping,
-          online: isEndpointOnline(ep),
-        })
-      ))
+      if (cluster) {
+        return cluster.getEndpoints(id, name, user, keyword, limit, offset).then(
+          results => response(200, results)
+        )
+      } else {
+        return response(200, listEndpoints(id, name, user, keyword, limit, offset))
+      }
     }
   )
 )
@@ -707,24 +677,30 @@ var getEndpoint = pipeline($=>$
   .replaceData()
   .replaceMessage(
     function () {
-      var ep = endpoints[$params.ep]
-      if (!ep) return response(404)
-      return response(200, {
-        id: ep.id,
-        name: ep.name,
-        agent: {
-          version: ep.version,
-          labels: ep.labels || [],
-        },
-        username: ep.username,
-        certificate: ep.certificate,
-        ip: ep.ip,
-        port: ep.port,
-        hubs: ep.hubs,
-        heartbeat: ep.heartbeat,
-        ping: ep.ping,
-        online: isEndpointOnline(ep),
-      })
+      if (cluster) {
+        return cluster.getEndpoints($params.ep).then(
+          results => results.length > 0 ? response(200, results[0]) : response(404)
+        )
+      } else {
+        var ep = endpoints[$params.ep]
+        if (!ep) return response(404)
+        return response(200, {
+          id: ep.id,
+          name: ep.name,
+          agent: {
+            version: ep.version,
+            labels: ep.labels || [],
+          },
+          username: ep.username,
+          certificate: ep.certificate,
+          ip: ep.ip,
+          port: ep.port,
+          hubs: ep.hubs,
+          heartbeat: ep.heartbeat,
+          ping: ep.ping,
+          online: isEndpointOnline(ep),
+        })
+      }
     }
   )
 )
@@ -1318,11 +1294,6 @@ function logError(msg) {
 function collectMyNames(addr) {
   if (myNames.indexOf(addr) < 0) {
     myNames.push(addr)
-    endpointList.forEach(
-      ep => {
-        if (ep.isConnected) ep.hubs.push(addr)
-      }
-    )
   }
 }
 
@@ -1353,6 +1324,51 @@ function findCurrentEndpointSession() {
   if (!id) return false
   $endpoint = makeEndpoint(id)
   return true
+}
+
+function listEndpoints(id, name, user, keyword, limit, offset) {
+  limit = limit || 100
+  offset = offset || 0
+  return endpointList.filter(
+    ep => {
+      if (id || name) {
+        if (ep.id !== id && ep.name !== name) {
+          return false
+        }
+      }
+      if (user) {
+        if (ep.username !== user) return false
+      }
+      if (keyword) {
+        if (ep.name.indexOf(keyword) >= 0) return true
+        if (ep.labels instanceof Array && ep.labels.find(l => l.indexOf(keyword) >= 0)) return true
+        return false
+      }
+      return true
+    }
+  ).filter(
+    (_, i) => offset <= i && i < offset + limit
+  ).map(
+    ep => ({
+      id: ep.id,
+      name: ep.name,
+      hubs: ep.hubs || myNames,
+      agent: {
+        version: {
+          ztm: {
+            edition: ep.version?.ztm?.edition,
+            tag: ep.version?.ztm?.tag,
+          }},
+        labels: ep.labels || [],
+      },
+      username: ep.username,
+      ip: ep.ip,
+      port: ep.port,
+      heartbeat: ep.heartbeat,
+      ping: ep.ping,
+      online: isEndpointOnline(ep),
+    })
+  )
 }
 
 function updateEviction(username, time, expiration) {

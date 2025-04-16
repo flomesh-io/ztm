@@ -340,6 +340,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           { method: 'POST', path: '/api/status' },
           JSON.encode({
             name: config.agent.name,
+            hubs: hubActive.filter(h => h.isConnected()).map(h => h.id),
             agent: {
               version: agentVersion,
               labels: agentLabels,
