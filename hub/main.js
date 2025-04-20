@@ -397,14 +397,14 @@ function start(listen, bootstrap) {
       },
       get: {
         endpoints: (id, name, user, keyword, limit, offset) => listEndpoints(id, name, user, keyword, limit, offset),
-        files: () => files,
-        acl: () => acl,
-        eviction: () => evictions,
+        files: () => dumpFileSystem(),
+        acl: () => dumpACL(),
+        evictions: () => evictions,
       },
       set: {
         file: (path, info, ep) => updateFileInfo(path, info, ep, true),
         acl: (username, path, access, since) => updateACL(username, path, access, since),
-        eviction: (username, time, expiration) => updateEviction(username, time, expiration),
+        eviction: (username, time) => updateEviction(username, time),
       },
       log,
     })
@@ -594,7 +594,11 @@ var postEviction = pipeline($=>$
       var name = URL.decodeComponent($params.username)
       if (name === 'root' || $ctx.username !== 'root') return response(403)
       if (Number.isNaN(time)) return response(400)
-      return response(updateEviction(name, time, expr) ? 201 : 200)
+      if (cluster) {
+        return response(cluster.updateEviction(myID, name, time, true) ? 201 : 200)
+      } else {
+        return response(updateEviction(name, time, expr) ? 201 : 200)
+      }
     }
   )
 )
@@ -605,7 +609,11 @@ var deleteEviction = pipeline($=>$
     function () {
       var name = URL.decodeComponent($params.username)
       if (name === 'root' || $ctx.username !== 'root') return response(403)
-      updateEviction(name, null)
+      if (cluster) {
+        cluster.updateEviction(myID, name, null, true)
+      } else {
+        updateEviction(name, null)
+      }
       return response(204)
     }
   )
@@ -873,14 +881,22 @@ var postACL = pipeline($=>$
       var username = $endpoint.username
       var matchAppSharedRoot = new http.Match(`/apps/{provider}/{appname}/shared/${username}`)
       var matchAppSharedPath = new http.Match(`/apps/{provider}/{appname}/shared/${username}/*`)
+      var updates = {}
       Object.entries(body).forEach(
         ([k, v]) => {
           if (!k.startsWith('/apps/')) return
           if (!matchAppSharedRoot(k) && !matchAppSharedPath(k)) return
           if (typeof v !== 'object') return
-          updateACL(username, k, { all: v.all, users: v.users }, v.since)
+          if (cluster) {
+            updates[k] = v
+          } else {
+            updateACL(username, k, { all: v.all, users: v.users }, v.since)
+          }
         }
       )
+      if (cluster) {
+        cluster.updateACL(myID, username, updates, true)
+      }
       return new Message({ status: 201 })
     }
   )
@@ -1416,6 +1432,23 @@ function updateEviction(username, time, expiration) {
   return true
 }
 
+function dumpACL() {
+  var all = {}
+  Object.entries(acl).forEach(
+    ([username, files]) => {
+      all[username] = Object.fromEntries(files.map(
+        file => [
+          file.pathname, {
+            all: file.all,
+            users: file.users,
+            since: file.since,
+          }
+        ]
+      ))
+    }
+  )
+  return all
+}
 function makeACL(pathname, access, since) {
   if (typeof access !== 'object') return
   if (typeof access.all !== 'string' && access.all !== null) return
@@ -1451,6 +1484,20 @@ function updateACL(username, path, access, since) {
     }
   }
   return updated
+}
+
+function dumpFileSystem() {
+  var all = {}
+  getAllFiles().forEach(
+    ([path, info]) => {
+      all[path] = {
+        '#': info['#'],
+        '$': info['$'],
+        'T': info['T'],
+      }
+    }
+  )
+  return all
 }
 
 function makeFileInfo(hash, size, time, since) {
