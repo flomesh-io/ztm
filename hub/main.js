@@ -395,9 +395,14 @@ function start(listen, bootstrap) {
         cert: myCert,
         key: myKey,
       },
-      events: {
-        list: (id, name, user, keyword, limit, offset) => listEndpoints(id, name, user, keyword, limit, offset),
-        file: (path, info) => updateFileInfo(path, info, null, true),
+      get: {
+        endpoints: (id, name, user, keyword, limit, offset) => listEndpoints(id, name, user, keyword, limit, offset),
+        files: () => files,
+        acl: () => acl,
+        eviction: () => evictions,
+      },
+      set: {
+        file: (path, info, ep) => updateFileInfo(path, info, ep, true),
         acl: (username, path, access, since) => updateACL(username, path, access, since),
         eviction: (username, time, expiration) => updateEviction(username, time, expiration),
       },
@@ -837,13 +842,25 @@ var postFilesystem = pipeline($=>$
       var username = $endpoint.username
       var isOwned = makeOwnerChecker(username)
       var isAccessible = makeAccessChecker(username)
+      var updates = {}
       Object.entries(body).forEach(
         ([path, info]) => {
           if (isAccessible(path)) {
-            updateFileInfo(path, info, $endpoint.id, isOwned(path))
+            if (isOwned(path)) {
+              if (cluster) {
+                updates[path] = info
+              } else {
+                updateFileInfo(path, info, $endpoint.id, true)
+              }
+            } else {
+              updateFileInfo(path, info, $endpoint.id, false)
+            }
           }
         }
       )
+      if (cluster) {
+        cluster.updateFiles(myID, $endpoint.id, updates, true)
+      }
       return new Message({ status: 201 })
     }
   )
@@ -893,11 +910,17 @@ var getFileInfo = pipeline($=>$
     function () {
       var pathname = '/' + URL.decodeComponent($params['*'])
       if (!makeAccessChecker($ctx.username)(pathname)) return response(404)
-      var info = files[pathname]
-      if (!info || info['$'] < 0) return response(404)
-      var sources = info['@']
-      if (sources) info['@'] = sources.filter(ep => isEndpointOnline(endpoints[ep]))
-      return response(200, info)
+      if (cluster) {
+        return cluster.getFile(pathname).then(
+          info => info ? response(200, info) : response(404)
+        )
+      } else {
+        var info = files[pathname]
+        if (!info || info['$'] < 0) return response(404)
+        var sources = info['@']
+        if (sources) info['@'] = sources.filter(ep => isEndpointOnline(endpoints[ep]))
+        return response(200, info)
+      }
     }
   )
 )

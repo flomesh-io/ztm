@@ -324,6 +324,10 @@ function doCommand(meshName, epName, argv, program) {
       {
         title: `List objects of a certain type`,
         usage: 'get <object type> [object name]',
+        options: `
+          --hash  Show the hash of files
+                  Only applicable when listing files
+        `,
         notes: `
           Available object types include:
             mesh     meshes
@@ -348,7 +352,7 @@ function doCommand(meshName, epName, argv, program) {
               return selectMesh(meshName).then(mesh => getEndpoint(name, mesh))
             case 'file':
             case 'files':
-              return selectMesh(meshName).then(mesh => getFile(name, mesh))
+              return selectMesh(meshName).then(mesh => getFile(name, mesh, args['--hash']))
             case 'app':
             case 'apps':
               return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => getApp(name, mesh, ep))
@@ -1177,7 +1181,7 @@ function getEndpoint(name, mesh) {
   })
 }
 
-function getFile(name, mesh) {
+function getFile(name, mesh, showHash) {
   return client.get(`/api/meshes/${uri(mesh.name)}/files`).then(ret => {
     var files = JSON.decode(ret)
     printTable(
@@ -1188,7 +1192,7 @@ function getFile(name, mesh) {
         'PATH': ([k]) => k,
         'SIZE': ([_, v]) => v.size,
         'TIME': ([_, v]) => new Date(v.time).toString(),
-        'HASH': ([_, v]) => v.hash,
+        'HASH': showHash ? ([_, v]) => v.hash : null,
       }
     )
   })
@@ -1798,7 +1802,7 @@ function selectApp(appName, mesh, ep) {
 
 function printTable(data, columns, indent) {
   var head = ' '.repeat(indent || 0)
-  var cols = Object.entries(columns)
+  var cols = Object.entries(columns).filter(([_, format]) => typeof format === 'function')
   var colHeaders = cols.map(i => i[0])
   var colFormats = cols.map(i => i[1])
   var colSizes = colHeaders.map(name => name.length)
