@@ -1028,11 +1028,20 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           }
         }
       )
-    )).then(() => Object.keys(all))
+    )).then(() => {
+      var zones = Object.keys(all)
+      if (zones.length === 0) {
+        return db.allZones()
+      } else {
+        db.setZones(zones)
+        return zones
+      }
+    })
   }
 
   function listZoneHubs(bootstraps, zone) {
     var all = {}
+    var found = false
     return Promise.allSettled(bootstraps.map(
       name => hubClients.get(name).request('GET', `/api/zones/${zone}/hubs`).then(
         res => {
@@ -1056,13 +1065,31 @@ export default function (rootDir, listen, config, onConfigUpdate) {
                     }
                   })
                   all[k] = hub
+                  found = true
                 }
               )
             } catch {}
           }
         }
       )
-    )).then(() => all)
+    )).then(() => {
+      if (found) {
+        db.setHubs(zone, all)
+      } else {
+        Object.entries(db.allHubs(zone)).forEach(
+          ([id, info]) => {
+            var hub = {
+              zone,
+              ports: info.ports,
+              version: info.version,
+            }
+            all[id] = hub
+            hubCache.set(id, hub)
+          }
+        )
+      }
+      return all
+    })
   }
 
   function listAllHubs(bootstraps) {

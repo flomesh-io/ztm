@@ -4,6 +4,14 @@ function open(pathname) {
   db = sqlite(pathname)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS hubs (
+      id TEXT PRIMARY KEY,
+      zone TEXT NOT NULL,
+      info TEXT NOT NULL
+    )
+  `)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS meshes (
       name TEXT PRIMARY KEY,
       ca TEXT NOT NULL,
@@ -39,6 +47,73 @@ function open(pathname) {
       data TEXT NOT NULL
     )
   `)
+}
+
+function allZones() {
+  return (
+    db.sql('SELECT DISTINCT zone FROM hubs')
+      .exec()
+      .map(r => r.zone)
+  )
+}
+
+function setZones(zones) {
+  allZones().forEach(
+    zone => {
+      if (!zones.includes(zone)) {
+        db.sql('DELETE FROM hubs WHERE zone = ?')
+          .bind(1, zone)
+          .exec()
+      }
+    }
+  )
+}
+
+function allHubs(zone) {
+  var all = {}
+  db.sql('SELECT id, info FROM hubs WHERE zone = ?')
+    .bind(1, zone)
+    .exec()
+    .forEach(r => {
+      try {
+        all[r.id] = JSON.parse(r.info)
+      } catch {}
+    })
+  return all
+}
+
+function setHubs(zone, hubs) {
+  var old = {}
+  db.sql('SELECT id FROM hubs WHERE zone = ?')
+    .bind(1, zone)
+    .exec()
+    .forEach(r => old[r.id] = true)
+  Object.entries(hubs).forEach(
+    ([id, hub]) => {
+      var info = JSON.stringify({ ports: hub.ports, version: hub.version })
+      if (id in old) {
+        db.sql('UPDATE hubs SET info = ? WHERE id = ?')
+          .bind(1, info)
+          .bind(2, id)
+          .exec()
+      } else {
+        db.sql('INSERT INTO hubs(id, zone, info) VALUES(?, ?, ?)')
+          .bind(1, id)
+          .bind(2, zone)
+          .bind(3, info)
+          .exec()
+      }
+    }
+  )
+  Object.keys(old).forEach(
+    id => {
+      if (!(id in hubs)) {
+        db.sql('DELETE FROM hubs WHERE id = ?')
+          .bind(1, id)
+          .exec()
+      }
+    }
+  )
 }
 
 function recordToMesh(rec) {
@@ -246,6 +321,10 @@ function delKey(name) {
 
 export default {
   open,
+  allZones,
+  setZones,
+  allHubs,
+  setHubs,
   allMeshes,
   getMesh,
   setMesh,
