@@ -500,6 +500,7 @@ var getHubStatus = pipeline($=>$
         since: startTime,
         zone: myZone || null,
         ports: myNames,
+        peers: cluster ? cluster.getPeers() : [],
         capacity: {
           agents: maxAgents,
           sessions: maxForwardings,
