@@ -1294,6 +1294,17 @@ function describeHub(name, mesh) {
       'STATUS': p => p.online ? 'Online' : 'Offline',
       'PING': p => typeof p.ping === 'number' ? p.ping + 'ms' : 'n/a',
     }, 2)
+    if (hub.peers?.length > 0) {
+      println(`Peers:`)
+      printTable(hub.peers, {
+        'ID': p => p.id,
+        'ZONE': p => p.zone,
+        'PORTS': p => p.ports.join(', '),
+        'STATE': p => p.connected ? 'Connected' : 'No response',
+      }, 2)
+    } else {
+      println(`Peers: (no peers)`)
+    }
     println(`Load:`)
     println(`  Agents: ${use.agents}/${cap.agents}`)
     println(`  Sessions: ${use.sessions}/${cap.sessions}`)
