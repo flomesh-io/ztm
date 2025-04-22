@@ -682,6 +682,21 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         },
       },
 
+      '/api/hubs/{id}': {
+        'POST': function ({ id }, req) {
+          var info = JSON.decode(req.body)
+          var hub = {
+            zone: info.zone,
+            ports: info.ports,
+            version: info.version,
+          }
+          hubCache.set(id, hub)
+          db.setHub(id, hub)
+          logInfo(`Discovered new hub ${id} in zone '${hub.zone}' with ports: ${info.ports.join(', ')}`)
+          return response(201)
+        },
+      },
+
       '/api/file-data/{hash}': {
         'GET': function ({ hash }) {
           var data = fs.raw(hash)
