@@ -74,6 +74,8 @@
 	<true/>
 	<key>NSLiveActivityUsageDescription</key>
 	<string>ZTM will run in the background</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>ZTM wants to access your location, it's only used to keep the backend network, and we will not record your location info.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
