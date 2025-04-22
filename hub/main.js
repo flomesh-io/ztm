@@ -330,6 +330,7 @@ var $hub = null
 var $hubSelected = null
 var $sendEOS = null
 var $sessionID
+var $broadcastID
 var $pingID
 var $pingTime
 
@@ -405,6 +406,7 @@ function start(listen, bootstrap) {
         file: (path, info, ep) => updateFileInfo(path, info, ep, true),
         acl: (username, path, access, since) => updateACL(username, path, access, since),
         eviction: (username, time) => updateEviction(username, time),
+        hub: (id, info) => broadcastHub(id, info),
       },
       log,
     })
@@ -1013,6 +1015,25 @@ var muxToAgent = pipeline($=>$
   )
 )
 
+var broadcastToAgents = pipeline($=>$
+  .onStart(msg => msg)
+  .forkJoin(() => Object.keys(sessions)).to($=>$
+    .onStart(id => { $broadcastID = id })
+    .forkJoin(() => {
+      var hubs = []
+      sessions[$broadcastID].forEach(h => hubs.push(h))
+      return hubs
+    }).to($=>$
+      .onStart(hub => { $hubSelected = hub })
+      .pipe(muxToAgent)
+      .replaceData()
+      .replaceMessage(new StreamEnd)
+    )
+    .replaceMessage(new StreamEnd)
+  )
+  .replaceMessage(new StreamEnd)
+)
+
 var connectEndpoint = pipeline($=>$
   .acceptHTTPTunnel(
     function (req) {
@@ -1431,6 +1452,19 @@ function updateEviction(username, time, expiration) {
     delete evictions[username]
   }
   return true
+}
+
+function broadcastHub(id, info) {
+  broadcastToAgents.spawn(
+    new Message({
+      method: 'POST',
+      path: `/api/hubs/${id}`,
+    }, JSON.encode({
+      zone: info.zone,
+      ports: info.ports,
+      version: info.version,
+    }))
+  )
 }
 
 function dumpACL() {

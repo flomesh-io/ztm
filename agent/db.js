@@ -116,6 +116,50 @@ function setHubs(zone, hubs) {
   )
 }
 
+function getHub(id) {
+  return (
+    db.sql('SELECT zone, info FROM hubs WHERE id = ?')
+      .bind(1, id)
+      .exec()
+      .map(r => {
+        try {
+          var hub = JSON.parse(r.info)
+        } catch {
+          var hub = {}
+        }
+        hub.zone = r.zone
+        return hub
+      })[0]
+  )
+}
+
+function setHub(id, hub) {
+  var old = getHub(id)
+  if (old) {
+    var zone = hub.zone || old.zone
+    var info = {
+      ports: hub.ports || old.ports,
+      version: hub.version || old.version,
+    }
+    db.sql('UPDATE hubs SET zone = ?, info = ? WHERE id = ?')
+      .bind(1, zone)
+      .bind(2, JSON.stringify(info))
+      .bind(3, id)
+      .exec()
+  } else {
+    var zone = hub.zone
+    var info = {
+      ports: hub.ports,
+      version: hub.version,
+    }
+    db.sql('INSERT INTO hubs(id, zone, info) VALUES(?, ?, ?)')
+      .bind(1, id)
+      .bind(2, zone)
+      .bind(3, JSON.stringify(info))
+      .exec()
+  }
+}
+
 function recordToMesh(rec) {
   return {
     name: rec.name,
@@ -325,6 +369,8 @@ export default {
   setZones,
   allHubs,
   setHubs,
+  getHub,
+  setHub,
   allMeshes,
   getMesh,
   setMesh,
