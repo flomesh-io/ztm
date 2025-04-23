@@ -127,8 +127,7 @@ function getHub(id) {
         } catch {
           var hub = {}
         }
-        hub.zone = r.zone
-        return hub
+        return { zone: r.zone, ...hub }
       })[0]
   )
 }

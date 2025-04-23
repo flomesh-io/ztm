@@ -4,6 +4,14 @@ function open(pathname) {
   db = sqlite(pathname)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS hubs (
+      id TEXT PRIMARY KEY,
+      zone TEXT NOT NULL,
+      info TEXT NOT NULL
+    )
+  `)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS certificates (
       name TEXT PRIMARY KEY,
       data TEXT NOT NULL
@@ -44,6 +52,98 @@ function open(pathname) {
   `)
 }
 
+function allHubs() {
+  var all = {}
+  db.sql('SELECT id, info FROM hubs')
+    .exec()
+    .forEach(r => {
+      try {
+        all[r.id] = {
+          zone: r.zone,
+          ...JSON.parse(r.info),
+        }
+      } catch {}
+    })
+  return all
+}
+
+function setHubs(hubs) {
+  var old = {}
+  db.sql('SELECT id FROM hubs')
+    .exec()
+    .forEach(r => old[r.id] = true)
+  Object.entries(hubs).forEach(
+    ([id, hub]) => {
+      var info = JSON.stringify({ ports: hub.ports, version: hub.version })
+      if (id in old) {
+        db.sql('UPDATE hubs SET zone = ?, info = ? WHERE id = ?')
+          .bind(1, hub.zone)
+          .bind(2, info)
+          .bind(3, id)
+          .exec()
+      } else {
+        db.sql('INSERT INTO hubs(id, zone, info) VALUES(?, ?, ?)')
+          .bind(1, id)
+          .bind(2, hub.zone)
+          .bind(3, info)
+          .exec()
+      }
+    }
+  )
+  Object.keys(old).forEach(
+    id => {
+      if (!(id in hubs)) {
+        db.sql('DELETE FROM hubs WHERE id = ?')
+          .bind(1, id)
+          .exec()
+      }
+    }
+  )
+}
+
+function getHub(id) {
+  return (
+    db.sql('SELECT zone, info FROM hubs WHERE id = ?')
+      .bind(1, id)
+      .exec()
+      .map(r => {
+        try {
+          var hub = JSON.parse(r.info)
+        } catch {
+          var hub = {}
+        }
+        return { zone: r.zone, ...hub }
+      })[0]
+  )
+}
+
+function setHub(id, hub) {
+  var old = getHub(id)
+  if (old) {
+    var zone = hub.zone || old.zone
+    var info = {
+      ports: hub.ports || old.ports,
+      version: hub.version || old.version,
+    }
+    db.sql('UPDATE hubs SET zone = ?, info = ? WHERE id = ?')
+      .bind(1, zone)
+      .bind(2, JSON.stringify(info))
+      .bind(3, id)
+      .exec()
+  } else {
+    var zone = hub.zone
+    var info = {
+      ports: hub.ports,
+      version: hub.version,
+    }
+    db.sql('INSERT INTO hubs(id, zone, info) VALUES(?, ?, ?)')
+      .bind(1, id)
+      .bind(2, zone)
+      .bind(3, JSON.stringify(info))
+      .exec()
+  }
+}
+
 function getCert(name) {
   return db.sql(`SELECT data FROM certificates WHERE name = ?`)
     .bind(1, name)
@@ -68,6 +168,10 @@ function delCert(name) {
   db.sql(`DELETE FROM certificates WHERE name = ?`)
     .bind(1, name)
     .exec()
+}
+
+function allKeys() {
+  return db.sql(`SELECT name, data FROM keys`).exec()
 }
 
 function getKey(name) {
@@ -242,9 +346,14 @@ function delEviction(username) {
 
 export default {
   open,
+  allHubs,
+  setHubs,
+  getHub,
+  setHub,
   getCert,
   setCert,
   delCert,
+  allKeys,
   getKey,
   setKey,
   delKey,
