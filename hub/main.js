@@ -207,7 +207,7 @@ var evictions = {}
 var caCert = null
 var myCert = null
 var myKey = null
-var myID = algo.uuid()
+var myID = ''
 var myNames = []
 var myZone = ''
 var startTime = Date.now()
@@ -277,14 +277,23 @@ function main() {
           return Promise.reject()
         }
 
+        var key = db.allKeys().find(k => k.name.startsWith('hub/'))
+        if (key) {
+          myID = key.name.substring(4)
+        } else {
+          myID = algo.uuid()
+        }
+
         myNames = args['--names'] || []
 
         return ca.init(args['--ca']).then(() => {
           myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
           var pkey = new crypto.PublicKey(myKey)
+          var name = 'hub/' + myID
+          db.setKey(name, pkey.toPEM().toString())
           return Promise.all([
             ca.getCertificate('ca').then(crt => caCert = crt),
-            ca.signCertificate('hub/' + myID, pkey).then(crt => myCert = crt),
+            ca.signCertificate(name, pkey).then(crt => myCert = crt),
           ])
         }).then(() => {
           start(args['--listen'] || '0.0.0.0:8888', args['--bootstrap'])
@@ -478,13 +487,13 @@ function start(listen, bootstrap) {
 
   if (cluster) {
     cluster.bootstrap(bootstrap).then(() => {
-      logInfo(`Hub instance started in zone '${myZone}' listening at ${listen}`)
+      logInfo(`Hub ${myID} started in zone '${myZone}' listening at ${listen}`)
     }).catch(() => {
       logError(`Unable to bootstrap hub instance in zone '${myZone}'`)
       pipy.exit(-1)
     })
   } else {
-    logInfo(`Hub started at ${listen}`)
+    logInfo(`Hub ${myID} started at ${listen}`)
   }
 
   startPing()
