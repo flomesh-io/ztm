@@ -1285,6 +1285,22 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     }
   }
 
+  function attachHub(id) {
+    if (id === hubActive[0]?.id) {
+      return Promise.resolve()
+    } else {
+      return findHub(id).then(
+        hub => {
+          if (hub) {
+            var port = hub.ports.reduce((a, b) => a.ping < b ? a : b)
+            hubActive.forEach(h => h.leave())
+            hubActive[0] = Hub(hub.id, hub.zone, port.name)
+          }
+        }
+      )
+    }
+  }
+
   function discoverHubs() {
     return listAllHubs(config.bootstraps).then(
       all => {
@@ -2180,6 +2196,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     findEndpoint,
     findFile,
     findApp,
+    attachHub,
     discoverHubs,
     discoverEndpoints,
     discoverUsers,

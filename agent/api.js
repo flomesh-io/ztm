@@ -104,6 +104,15 @@ function allHubs(mesh) {
   return m.discoverHubs()
 }
 
+function setHub(mesh, id, hub) {
+  var m = meshes[mesh]
+  if (m && hub.connected === true) {
+    return m.attachHub(id)
+  } else {
+    return Promise.resolve()
+  }
+}
+
 function getHub(mesh, id) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
@@ -306,6 +315,7 @@ export default {
   delMesh,
   getPermit,
   allHubs,
+  setHub,
   getHub,
   getHubLog,
   allEndpoints,

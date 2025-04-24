@@ -322,6 +322,16 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `Attach to a specified hub`,
+        usage: 'attach <hub name>',
+        notes: `
+          Only hubs in the current mesh can be attached.
+          Type 'ztm get hub' to see the list of available hubs.
+        `,
+        action: (args) => selectMesh(meshName).then(mesh => attachHub(args['<hub name>'], mesh))
+      },
+
+      {
         title: `List objects of a certain type`,
         usage: 'get <object type> [object name]',
         options: `
@@ -1109,6 +1119,19 @@ function disableApp(name, mesh, ep) {
       JSON.encode({ isDisabled: true })
     )
   })
+}
+
+//
+// Command: attach
+//
+
+function attachHub(name, mesh) {
+  return selectHub(name, mesh).then(
+    id => client.post(
+      `/api/meshes/${uri(mesh.name)}/hubs/${id}`,
+      JSON.encode({ connected: true })
+    )
+  )
 }
 
 //
