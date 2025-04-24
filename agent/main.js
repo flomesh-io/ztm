@@ -245,6 +245,13 @@ function main(listen) {
           ret => ret ? response(200, ret) : response(404)
         )
       },
+
+      'POST': function ({ mesh, id }, req) {
+        mesh = URL.decodeComponent(mesh)
+        return api.setHub(mesh, id, JSON.decode(req.body)).then(
+          () => response(201)
+        )
+      }
     },
 
     '/api/meshes/{mesh}/hubs/{id}/log': {
