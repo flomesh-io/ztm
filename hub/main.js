@@ -408,6 +408,7 @@ function start(listen, bootstrap) {
       get: {
         endpoints: (id, name, user, keyword, limit, offset) => listEndpoints(id, name, user, keyword, limit, offset),
         files: () => dumpFileSystem(),
+        fileSources: (path) => dumpFileSources(path),
         acl: () => dumpACL(),
         evictions: () => evictions,
       },
@@ -1542,6 +1543,15 @@ function dumpFileSystem() {
     }
   )
   return all
+}
+
+function dumpFileSources(path) {
+  var f = files[path]
+  if (f) {
+    return [...f['@']]
+  } else {
+    return []
+  }
 }
 
 function makeFileInfo(hash, size, time, since) {

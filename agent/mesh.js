@@ -933,6 +933,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         hubActive.forEach(h => h.leave())
         searchHub().then(hub => {
           hubActive[0] = Hub(hub.id, hub.zone, hub.port)
+          advertiseFilesystem()
           new Timeout(1).wait().then(monitorHub)
         })
       } else {
@@ -1295,6 +1296,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             var port = hub.ports.reduce((a, b) => a.ping < b ? a : b)
             hubActive.forEach(h => h.leave())
             hubActive[0] = Hub(hub.id, hub.zone, port.name)
+            advertiseFilesystem()
           }
         }
       )
