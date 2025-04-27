@@ -965,6 +965,10 @@ function runHub(args, program) {
         command.push('--names')
         args['--names'].forEach(name => command.push(name))
       }
+      if ('--bootstrap' in args) {
+        command.push('--bootstrap')
+        args['--bootstrap'].forEach(name => command.push(name))
+      }
       if ('--ca' in args) command.push('--ca', args['--ca'])
       if ('--zone' in args) command.push('--zone', args['--zone'])
       if ('--max-agents' in args) command.push('--max-agents', args['--max-agents'])
