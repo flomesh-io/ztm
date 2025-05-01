@@ -1,0 +1,491 @@
+export default function ({ app, mesh }) {
+  var CONFIG_PATHNAME = `/local/services.json`
+  var localServices = {}
+  var localRoutes = []
+
+  app.onExit(() => {
+    localServices = {}
+    localRoutes = []
+  })
+
+  function checkResponse(res, f) {
+    var status = res?.head?.status
+    if (200 <= status && status <= 299) {
+      return typeof f === 'function' ? f(res.body) : f
+    }
+    throw res?.head?.statusText || 'No response from peer'
+  }
+
+  function allServices(ep) {
+    if (ep) {
+      // Get the service list on a specific endpoint
+      if (ep === app.endpoint.id) {
+        return Promise.resolve(
+          Object.entries(localServices).flatMap(
+            ([kind, services]) => Object.entries(services).map(
+              ([name, service]) => ({
+                name,
+                kind,
+                protocol: service.protocol,
+                metainfo: service.metainfo,
+                target: service.target,
+              })
+            )
+          )
+        )
+      } else {
+        return mesh.request(ep, new Message(
+          {
+            method: 'GET',
+            path: `/api/services`,
+          }
+        )).then(res => checkResponse(res, body => JSON.decode(body)))
+      }
+    } else {
+      // Get all services in the mesh
+      var pathPattern = new http.Match(getServiceFilePathname('{username}', '{ep}', '{kind}', '{name}'))
+      return mesh.list(getServiceFilePathname()).then(
+        files => Promise.all(Object.keys(files).map(
+          filename => {
+            var params = pathPattern(filename)
+            if (params) {
+              return mesh.read(filename).then(
+                data => {
+                  if (data) {
+                    try {
+                      return {
+                        ...JSON.decode(data),
+                        ...params,
+                      }
+                    } catch {}
+                  }
+                  return null
+                }
+              )
+            }
+            return null
+          }
+        )).then(
+          infos => {
+            var endpoints = {}
+            infos = infos.filter(i=>i)
+            infos.forEach(info => {
+              var id = info.ep
+              endpoints[id] ??= { id }
+            })
+            return mesh.discover(Object.keys(endpoints)).then(
+              list => {
+                list.filter(e=>e).forEach(ep => Object.assign(endpoints[ep.id], ep))
+                return {
+                  endpoints,
+                  services: infos.map(
+                    info => {
+                      var ep = endpoints[info.ep]
+                      if (ep?.username !== info.username) {
+                        return null
+                      }
+                      return {
+                        name: info.name,
+                        kind: info.kind,
+                        protocol: info.protocol,
+                        metainfo: info.metainfo,
+                        endpoint: {
+                          id: ep.id,
+                        },
+                        localRoutes: findLocalRoutes(ep.id, info.kind, info.name),
+                      }
+                    }
+                  ).filter(s=>s)
+                }
+              }
+            )
+          }
+        )
+      )
+    }
+  }
+
+  function getService(ep, kind, name) {
+    if (ep === app.endpoint.id) {
+      var service = localServices[kind]?.[name]
+      if (service) {
+        return Promise.resolve({
+          name,
+          kind,
+          protocol: service.protocol,
+          metainfo: service.metainfo,
+          target: service.target,
+          localRoutes: findLocalRoutes(ep.id, kind, name),
+        })
+      }
+      return Promise.resolve(null)
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: `/api/services/${kind}/${URL.encodeComponent(name)}`,
+        }
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
+    }
+  }
+
+  function setService(ep, kind, name, info) {
+    if (ep === app.endpoint.id) {
+      checkName(name)
+      checkKind(kind)
+      checkService(info)
+      var service = {
+        protocol: info.protocol,
+        metainfo: info.metainfo,
+        target: info.target,
+      }
+      localServices[kind] ??= {}
+      localServices[kind][name] = service
+      saveLocalConfig()
+      publishService(kind, name, service)
+      return Promise.resolve()
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'POST',
+          path: `/api/services/${kind}/${URL.encodeComponent(name)}`,
+        },
+        JSON.encode(info)
+      )).then(checkResponse)
+    }
+  }
+
+  function deleteService(ep, kind, name) {
+    if (ep === app.endpoint.id) {
+      var k = localServices[kind]
+      if (k) delete k[name]
+      saveLocalConfig()
+      unpublishService(kind, name)
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'DELETE',
+          path: `/api/services/${kind}/${URL.encodeComponent(name)}`,
+        }
+      )).then(checkResponse)
+    }
+  }
+
+  function allRoutes(ep) {
+    if (ep === app.endpoint.id) {
+      var endpoints = {}
+      localRoutes.forEach(r => {
+        var id = r.service.endpoint.id
+        if (id) endpoints[id] = { id }
+      })
+      return mesh.discover(Object.keys(endpoints)).then(
+        list => {
+          list.forEach(ep => endpoints[ep.id] = ep)
+          return {
+            endpoints,
+            routes: localRoutes.map(
+              r => ({
+                path: r.path,
+                service: {
+                  name: r.service.name,
+                  kind: r.service.kind,
+                  endpoint: r.service.endpoint,
+                }
+              })
+            )
+          }
+        }
+      )
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: `/api/routes`,
+        }
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
+    }
+  }
+
+  function getRoute(ep, path) {
+    if (ep === app.endpoint.id) {
+      var route = localRoutes.find(r => r.path === path)
+      if (route) {
+        return mesh.discover(route.service.endpoint.id).then(
+          list => ({
+            path: route.path,
+            service: {
+              name: route.service.name,
+              kind: route.service.kind,
+              endpoint: list.length > 0 ? list[0] : route.service.endpoint,
+            }
+          })
+        )
+      } else {
+        return Promise.resolve(null)
+      }
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'GET',
+          path: os.path.join(`/api/routes`, path),
+        }
+      )).then(res => checkResponse(res, body => JSON.decode(body)))
+    }
+  }
+
+  function setRoute(ep, path, info) {
+    if (ep === app.endpoint.id) {
+      checkPath(path)
+      checkRoute(info)
+      var prefix = path
+      if (!prefix.endsWith('/')) prefix += '/'
+      var service = {
+        name: info.service.name,
+        kind: info.service.kind,
+        endpoint: { id: info.service.endpoint.id },
+      }
+      var i = localRoutes.findIndex(r => r.path >= path)
+      if (localRoutes[i]?.path === path) {
+        localRoutes[i].service = service
+      } else if (i < 0) {
+        localRoutes.push({ path, prefix, service })
+      } else {
+        localRoutes.splice(i, 0, { path, prefix, service })
+      }
+      saveLocalConfig()
+      return Promise.resolve()
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'POST',
+          path: os.path.join(`/api/routes`, path),
+        },
+        JSON.encode(info)
+      )).then(checkResponse)
+    }
+  }
+
+  function deleteRoute(ep, path) {
+    if (ep === app.endpoint.id) {
+      var i = localRoutes.findIndex(r => r.path === path)
+      if (i >= 0) {
+        localRoutes.splice(i, 1)
+      }
+      saveLocalConfig()
+      return Promise.resolve()
+    } else {
+      return mesh.request(ep, new Message(
+        {
+          method: 'DELETE',
+          path: os.path.join(`/api/routes`, path),
+        }
+      )).then(checkResponse)
+    }
+  }
+
+  var forwardService = pipeline($=>$)
+
+  var connectService = pipeline($=>$)
+
+  function getServiceFilePathname(username, ep, kind, name) {
+    if (!username) {
+      return `/shared/`
+    } else if (!ep) {
+      return `/shared/${username}/`
+    } else if (!kind) {
+      return `/shared/${username}/${ep}/`
+    } else if (!name) {
+      return `/shared/${username}/${ep}/${kind}/`
+    } else {
+      return `/shared/${username}/${ep}/${kind}/${name}/service.json`
+    }
+  }
+
+  function findLocalRoutes(ep, kind, name) {
+    return localRoutes.filter(
+      r => (
+        r.path &&
+        r.service.name === name &&
+        r.service.kind === kind &&
+        r.service.endpoint.id === ep
+      )
+    ).map(
+      r => ({
+        path: r.path,
+      })
+    )
+  }
+
+  function saveLocalConfig() {
+    mesh.write(CONFIG_PATHNAME, JSON.encode({
+      services: localServices,
+      routes: localRoutes.map(
+        r => ({
+          path: r.path,
+          service: r.service,
+        })
+      ),
+    }))
+  }
+
+  function publishService(kind, name, info) {
+    mesh.write(
+      getServiceFilePathname(app.username, app.endpoint.id, kind, name),
+      JSON.encode({
+        protocol: info.protocol,
+        metainfo: info.metainfo,
+      })
+    )
+  }
+
+  function unpublishService(kind, name) {
+    mesh.erase(
+      getServiceFilePathname(app.username, app.endpoint.id, kind, name)
+    )
+  }
+
+  mesh.read(CONFIG_PATHNAME).then(
+    data => {
+      try {
+        var info = JSON.decode(data)
+      } catch {}
+      var services = info?.services
+      var routes = info?.routes
+      if (services && typeof services === 'object') {
+        localServices = services
+        Object.entries(localServices).forEach(
+          ([kind, services]) => Object.entries(services).forEach(
+            ([name, service]) => publishService(kind, name, service)
+          )
+        )
+      }
+      if (routes instanceof Array) {
+        localRoutes = routes.filter(
+          r => (
+            typeof r === 'object' && r &&
+            typeof r.path === 'string' &&
+            typeof r.service === 'object' &&
+            typeof r.service.name === 'string' &&
+            typeof r.service.kind === 'string' &&
+            typeof r.service.endpoint?.id === 'string'
+          )
+        )
+        localRoutes.forEach(r => {
+          if (!r.path.endsWith('/')) {
+            r.path += '/'
+          }
+        })
+      }
+    }
+  )
+
+  return {
+    allServices,
+    getService,
+    setService,
+    deleteService,
+    allRoutes,
+    getRoute,
+    setRoute,
+    deleteRoute,
+    forwardService,
+    connectService,
+  }
+}
+
+function checkName(name) {
+  if (typeof name !== 'string') throw `invalid name`
+  if (name === '') throw `invalid empty name`
+}
+
+function checkKind(kind) {
+  switch (kind) {
+    case 'llm':
+    case 'tool':
+      return
+    default: throw `invalid kind '${kind}'`
+  }
+}
+
+function checkProtocol(protocol) {
+  switch (protocol) {
+    case 'openai':
+    case 'mcp':
+      return
+    default: throw `invalid protocol '${protocol}'`
+  }
+}
+
+function checkMetainfo(info) {
+  if (!info) return
+  if (typeof info !== 'object') throw `invalid metainfo`
+  checkStringObject(info, 'metainfo')
+}
+
+function checkTarget(info) {
+  if (typeof info !== 'object') throw `invalid target`
+  if (!info.address) throw `missing target.address`
+  Object.entries(info).forEach(
+    ([k, v]) => {
+      switch (k) {
+        case 'address': return checkAddress(v)
+        case 'secrets': return checkStringObject(v, 'target.secrets')
+        default: throw `redundant field 'target.${k}'`
+      }
+    }
+  )
+}
+
+function checkStringObject(obj, prefix) {
+  Object.entries(obj).forEach(
+    ([k, v]) => {
+      if (typeof v !== 'string') {
+        throw `invalid ${prefix}.${k}`
+      }
+    }
+  )
+}
+
+function checkAddress(addr) {
+  if (typeof addr !== 'string') throw `invalid address`
+  if (addr.startsWith('/')) return
+  if (addr.startsWith('http://')) {
+    var url = new URL(addr)
+    if (url.hostname === '') throw `malformed URL '${addr}'`
+    return
+  }
+  throw `invalid address '${addr}'`
+}
+
+function checkPath(path) {
+  if (
+    typeof path !== 'string' ||
+    path.length <= 1 ||
+    !path.startsWith('/')
+  ) throw `invalid path '${path}'`
+}
+
+function checkUUID(uuid) {
+  if (
+    typeof uuid !== 'string' ||
+    uuid.length !== 36 ||
+    uuid.charAt(8) != '-' ||
+    uuid.charAt(13) != '-' ||
+    uuid.charAt(18) != '-' ||
+    uuid.charAt(23) != '-'
+  ) throw `malformed UUID '${uuid}'`
+}
+
+function checkService(info) {
+  if (!info.protocol) throw `missing protocol`
+  if (!info.target?.address) throw `missing target.address`
+  checkProtocol(info.protocol)
+  checkMetainfo(info.metainfo)
+  checkTarget(info.target)
+}
+
+function checkRoute(info) {
+  checkName(info.service?.name)
+  checkKind(info.service?.kind)
+  checkUUID(info.service?.endpoint?.id)
+}
