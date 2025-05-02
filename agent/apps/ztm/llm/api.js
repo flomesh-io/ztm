@@ -339,6 +339,8 @@ export default function ({ app, mesh }) {
           $serviceURL = new URL($service.target.address)
           msg.head.path = os.path.join($serviceURL.pathname, msg.head.path)
           msg.head.headers.host = $serviceURL.hostname
+          var headers = $service.target.headers
+          if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
         })
         .muxHTTP(() => $service).to($=>$
           .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
@@ -493,7 +495,7 @@ function checkTarget(info) {
     ([k, v]) => {
       switch (k) {
         case 'address': return checkAddress(v)
-        case 'secrets': return checkStringObject(v, 'target.secrets')
+        case 'headers': return checkStringObject(v, 'target.headers')
         default: throw `redundant field 'target.${k}'`
       }
     }

@@ -86,7 +86,7 @@ export default function ({ app, mesh, api, utils }) {
               --metainfo  <name=value ...>  Multiple pairs of name=value as metainfo
                                             Name options: version, provider, description
               --target    <name=value ...>  Multiple pairs of name=value describing the target
-                                            Name options: address, secrets.apikey
+                                            Name options: address, headers.authorization
 
               For routes:
 
@@ -203,11 +203,11 @@ export default function ({ app, mesh, api, utils }) {
           if (s.target) {
             output(`Target:\n`)
             output(`  Address: ${s.target.address || '(n/a)'}\n`)
-            if (s.target.secrets) {
-              output(`  Secrets:\n`)
-              if (s.target.secrets.apikey) {
-                output(`    API Key: ${s.target.secrets.apikey}\n`)
-              }
+            if (s.target.headers) {
+              output(`  Headers:\n`)
+              Object.entries(s.target.headers).forEach(
+                ([k, v]) => output(`    ${k}: ${v}\n`)
+              )
             }
           }
         })
