@@ -611,7 +611,8 @@ function main(listen) {
             }
           ),
           'app': ($=>$
-            .onStart(() => api.connectApp(
+            .onStart(
+              () => api.connectApp(
                 URL.decodeComponent($params.mesh),
                 URL.decodeComponent($params.provider),
                 URL.decodeComponent($params.app),

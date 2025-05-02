@@ -172,7 +172,6 @@ export default function ({ app, mesh, api, utils }) {
           'SERVICE': r => r.service.name,
           'KIND': r => r.service.kind,
           'ENDPOINT': r => {
-            println(r)
             var ep = endpoints[r.service.endpoint.id]
             return ep.name || ep.id
           },

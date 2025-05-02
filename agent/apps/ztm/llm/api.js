@@ -208,6 +208,7 @@ export default function ({ app, mesh }) {
 
   function getRoute(ep, path) {
     if (ep === app.endpoint.id) {
+      if (!path.endsWith('/')) path += '/'
       var route = localRoutes.find(r => r.path === path)
       if (route) {
         return mesh.discover(route.service.endpoint.id).then(
@@ -237,8 +238,7 @@ export default function ({ app, mesh }) {
     if (ep === app.endpoint.id) {
       checkPath(path)
       checkRoute(info)
-      var prefix = path
-      if (!prefix.endsWith('/')) prefix += '/'
+      if (!path.endsWith('/')) path += '/'
       var service = {
         name: info.service.name,
         kind: info.service.kind,
@@ -248,9 +248,9 @@ export default function ({ app, mesh }) {
       if (localRoutes[i]?.path === path) {
         localRoutes[i].service = service
       } else if (i < 0) {
-        localRoutes.push({ path, prefix, service })
+        localRoutes.push({ path, service })
       } else {
-        localRoutes.splice(i, 0, { path, prefix, service })
+        localRoutes.splice(i, 0, { path, service })
       }
       saveLocalConfig()
       return Promise.resolve()
@@ -267,6 +267,7 @@ export default function ({ app, mesh }) {
 
   function deleteRoute(ep, path) {
     if (ep === app.endpoint.id) {
+      if (!path.endsWith('/')) path += '/'
       var i = localRoutes.findIndex(r => r.path === path)
       if (i >= 0) {
         localRoutes.splice(i, 1)
@@ -283,9 +284,72 @@ export default function ({ app, mesh }) {
     }
   }
 
-  var forwardService = pipeline($=>$)
+  var $route
 
-  var connectService = pipeline($=>$)
+  var forwardService = pipeline($=>$
+    .pipe(evt => {
+      if (evt instanceof MessageStart) {
+        var url = new URL(evt.head.path)
+        var path = url.pathname
+        if (path.startsWith('/svc/')) path = path.substring(4)
+        if (!path.endsWith('/')) path += '/'
+        if ($route = localRoutes.findLast(r => path.startsWith(r.path))) {
+          var service = $route.service
+          var basepath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
+          evt.head.path = os.path.join(basepath, path.substring($route.path.length)) + url.search
+          return ($route.service.endpoint.id === app.endpoint.id ? 'local' : 'remote')
+        } else {
+          return '404'
+        }
+      }
+    }, {
+      'remote': ($=>$
+        .muxHTTP(() => $route, { version: 2 }).to($=>$
+          .pipe(() => mesh.connect($route.service.endpoint.id))
+        )
+      ),
+      'local': $=>$.pipe(connectService),
+      '404': $=>$.replaceMessage(new Message({ status: 404 })),
+    })
+  )
+
+  var matchApiForwardKindName = new http.Match('/api/forward/{kind}/{name}')
+  var matchApiForwardKindNameStar = new http.Match('/api/forward/{kind}/{name}/*')
+
+  var $service
+  var $serviceURL
+
+  var connectService = pipeline($=>$
+    .pipe(evt => {
+      if (evt instanceof MessageStart) {
+        var url = new URL(evt.head.path)
+        var params = matchApiForwardKindNameStar(url.pathname) || matchApiForwardKindName(url.pathname)
+        if (params) {
+          var kind = params.kind
+          var name = URL.decodeComponent(params.name)
+          evt.head.path = '/' + (params['*'] || '') + url.search
+          $service = localServices[kind]?.[name]
+        }
+        if (!$service) return '404'
+        return $service.target.address.startsWith('/') ? 'stdio' : 'http'
+      }
+    }, {
+      'http': ($=>$
+        .handleMessageStart(msg => {
+          $serviceURL = new URL($service.target.address)
+          msg.head.path = os.path.join($serviceURL.pathname, msg.head.path)
+          msg.head.headers.host = $serviceURL.hostname
+        })
+        .muxHTTP(() => $service).to($=>$
+          .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
+        )
+      ),
+      'stdio': ($=>$
+        .replaceMessage(new Message({ status: 404 }))
+      ),
+      '404': $=>$.replaceMessage(new Message({ status: 404 })),
+    })
+  )
 
   function getServiceFilePathname(username, ep, kind, name) {
     if (!username) {
