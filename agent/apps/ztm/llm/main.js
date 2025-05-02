@@ -34,7 +34,7 @@ export default function ({ app, mesh, utils }) {
       ))
     },
 
-    '/api/services/*': {
+    '/svc/*': {
       'GET': pipeline($=>$.pipe(api.forwardService, () => $ctx)),
       'POST': pipeline($=>$.pipe(api.forwardService, () => $ctx)),
     },
@@ -156,8 +156,6 @@ export default function ({ app, mesh, utils }) {
       'DELETE': responderOwnerOnly(({ kind, name }) => {
         return api.deleteService(app.endpoint.id, kind, URL.decodeComponent(name)).then(response(204))
       }),
-
-      'CONNECT': pipeline($=>$.pipe(api.connectService, () => $ctx)),
     },
 
     '/api/routes': {
@@ -183,6 +181,16 @@ export default function ({ app, mesh, utils }) {
       'DELETE': responder((params) => {
         return api.deleteRoute(app.endpoint.id, '/' + params['*']).then(response(204))
       }),
+    },
+
+    '/api/forward/{kind}/{name}': {
+      'GET': pipeline($=>$.pipe(api.connectService, () => $ctx)),
+      'POST': pipeline($=>$.pipe(api.connectService, () => $ctx)),
+    },
+
+    '/api/forward/{kind}/{name}/*': {
+      'GET': pipeline($=>$.pipe(api.connectService, () => $ctx)),
+      'POST': pipeline($=>$.pipe(api.connectService, () => $ctx)),
     },
   })
 
