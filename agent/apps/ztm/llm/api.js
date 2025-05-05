@@ -343,6 +343,23 @@ export default function ({ app, mesh }) {
           var headers = $service.target.headers
           if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
         })
+        .pipe(() => $service.target.body ? 'alter' : 'bypass', {
+          'alter': $=>$.replaceMessageBody(
+            body => {
+              try {
+                return JSON.encode(
+                  Object.assign(
+                    JSON.decode(body),
+                    $service.target.body,
+                  )
+                )
+              } catch {
+                return body
+              }
+            }
+          ),
+          'bypass': $=>$,
+        })
         .muxHTTP(() => $service).to($=>$
           .pipe(() => $serviceURL.protocol, {
             'http:': ($=>$
@@ -506,6 +523,7 @@ function checkTarget(info) {
       switch (k) {
         case 'address': return checkAddress(v)
         case 'headers': return checkStringObject(v, 'target.headers')
+        case 'body': return checkStringObject(v, 'target.body')
         default: throw `redundant field 'target.${k}'`
       }
     }

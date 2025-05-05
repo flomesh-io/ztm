@@ -86,7 +86,7 @@ export default function ({ app, mesh, api, utils }) {
               --metainfo  <name=value ...>  Multiple pairs of name=value as metainfo
                                             Name options: version, provider, description
               --target    <name=value ...>  Multiple pairs of name=value describing the target
-                                            Name options: address, headers.authorization
+                                            Name options: address, headers.authorization, body.model
 
               For routes:
 
@@ -206,6 +206,12 @@ export default function ({ app, mesh, api, utils }) {
             if (s.target.headers) {
               output(`  Headers:\n`)
               Object.entries(s.target.headers).forEach(
+                ([k, v]) => output(`    ${k}: ${v}\n`)
+              )
+            }
+            if (s.target.body) {
+              output(`  Body:\n`)
+              Object.entries(s.target.body).forEach(
                 ([k, v]) => output(`    ${k}: ${v}\n`)
               )
             }
