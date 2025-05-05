@@ -331,7 +331,8 @@ export default function ({ app, mesh }) {
           $service = localServices[kind]?.[name]
         }
         if (!$service) return '404'
-        return $service.target.address.startsWith('/') ? 'stdio' : 'http'
+        if ($service.target.address.startsWith('/')) return 'stdio'
+        return 'http'
       }
     }, {
       'http': ($=>$
@@ -343,7 +344,16 @@ export default function ({ app, mesh }) {
           if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
         })
         .muxHTTP(() => $service).to($=>$
-          .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
+          .pipe(() => $serviceURL.protocol, {
+            'http:': ($=>$
+              .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
+            ),
+            'https:': ($=>$
+              .connectTLS({ sni: () => $serviceURL.hostname }).to($=>$
+                .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
+              )
+            ),
+          })
         )
       ),
       'stdio': ($=>$
@@ -515,7 +525,7 @@ function checkStringObject(obj, prefix) {
 function checkAddress(addr) {
   if (typeof addr !== 'string') throw `invalid address`
   if (addr.startsWith('/')) return
-  if (addr.startsWith('http://')) {
+  if (addr.startsWith('http://') || addr.startsWith('https://')) {
     var url = new URL(addr)
     if (url.hostname === '') throw `malformed URL '${addr}'`
     return
