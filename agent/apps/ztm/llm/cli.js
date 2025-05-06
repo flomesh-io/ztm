@@ -210,10 +210,7 @@ export default function ({ app, mesh, api, utils }) {
               )
             }
             if (s.target.body) {
-              output(`  Body:\n`)
-              Object.entries(s.target.body).forEach(
-                ([k, v]) => output(`    ${k}: ${v}\n`)
-              )
+              output(`  Body: ${JSON.stringify(s.target.body)}\n`)
             }
             if (s.target.argv) {
               output(`  Arguments:\n`)
@@ -250,6 +247,13 @@ export default function ({ app, mesh, api, utils }) {
         ep => {
           var targetInfo = getNameValues(target)
           if (targetInfo.argv) targetInfo.argv = breakArguments(targetInfo.argv)
+          if (targetInfo.body) {
+            try {
+              targetInfo.body = JSON.parse(targetInfo.body)
+            } catch {
+              throw `Invalid JSON of field body`
+            }
+          }
           return api.setService(ep.id, kind, name, {
             protocol,
             metainfo: getNameValues(metainfo),
