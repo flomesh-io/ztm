@@ -349,7 +349,7 @@ export default function ({ app, mesh }) {
             body => {
               try {
                 return JSON.encode(
-                  Object.assign(
+                  mergeObjects(
                     JSON.decode(body),
                     $service.target.body,
                   )
@@ -516,6 +516,21 @@ export default function ({ app, mesh }) {
   }
 }
 
+function mergeObjects(a, b) {
+  Object.entries(b).forEach(
+    ([k, v]) => {
+      if (v && typeof v === 'object') {
+        var val = a[k]
+        if (val && typeof val === 'object') {
+          return mergeObjects(val, v)
+        }
+      }
+      a[k] = v
+    }
+  )
+  return a
+}
+
 function isFilePath(str) {
   if (str.startsWith('/')) return true
   var drive = str.charCodeAt(0)
@@ -566,7 +581,7 @@ function checkTarget(info) {
       switch (k) {
         case 'address': return checkAddress(v)
         case 'headers': return checkStringObject(v, 'target.headers')
-        case 'body': return checkStringObject(v, 'target.body')
+        case 'body': return checkObject(v, 'target.body')
         case 'argv': return checkStringArray(v, 'target.argv')
         case 'env': return checkStringObject(v, 'target.env')
         default: throw `redundant field 'target.${k}'`
@@ -575,18 +590,30 @@ function checkTarget(info) {
   )
 }
 
+function checkObject(obj, prefix) {
+  if (obj && typeof obj !== 'object') throw `object required in '${prefix}'`
+}
+
+function checkArray(obj, prefix) {
+  if (obj && !(obj instanceof Array)) throw `array required in '${prefix}'`
+}
+
 function checkStringObject(obj, prefix) {
-  Object.entries(obj).forEach(
-    ([k, v]) => {
-      if (typeof v !== 'string') {
-        throw `invalid ${prefix}.${k}`
+  checkObject(obj, prefix)
+  if (obj) {
+    Object.entries(obj).forEach(
+      ([k, v]) => {
+        if (typeof v !== 'string') {
+          throw `invalid ${prefix}.${k}`
+        }
       }
-    }
-  )
+    )
+  }
 }
 
 function checkStringArray(obj, prefix) {
-  if (obj instanceof Array) {
+  checkArray(obj, prefix)
+  if (obj) {
     obj.forEach(
       (e, i) => {
         if (typeof e !== 'string') {
@@ -594,8 +621,6 @@ function checkStringArray(obj, prefix) {
         }
       }
     )
-  } else {
-    throw `array required in field '${prefix}'`
   }
 }
 
