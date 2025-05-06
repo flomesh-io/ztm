@@ -86,7 +86,7 @@ export default function ({ app, mesh, api, utils }) {
               --metainfo  <name=value ...>  Multiple pairs of name=value as metainfo
                                             Name options: version, provider, description
               --target    <name=value ...>  Multiple pairs of name=value describing the target
-                                            Name options: address, headers.authorization, body.model
+                                            Name options: address, headers.xxx, body, argv, env.XXX
 
               For routes:
 
@@ -215,6 +215,16 @@ export default function ({ app, mesh, api, utils }) {
                 ([k, v]) => output(`    ${k}: ${v}\n`)
               )
             }
+            if (s.target.argv) {
+              output(`  Arguments:\n`)
+              s.target.argv.forEach(arg => output(`    ${arg}\n`))
+            }
+            if (s.target.env) {
+              output(`  Environment:\n`)
+              Object.entries(s.target.env).forEach(
+                ([k, v]) => output(`    ${k}=${v}\n`)
+              )
+            }
           }
         })
       })
@@ -238,10 +248,12 @@ export default function ({ app, mesh, api, utils }) {
     function createService(name, kind, protocol, metainfo, ep, target) {
       return findEndpoint(ep || endpoint.id).then(
         ep => {
+          var targetInfo = getNameValues(target)
+          if (targetInfo.argv) targetInfo.argv = breakArguments(targetInfo.argv)
           return api.setService(ep.id, kind, name, {
             protocol,
             metainfo: getNameValues(metainfo),
-            target: getNameValues(target),
+            target: targetInfo,
           })
         }
       )
@@ -311,7 +323,9 @@ export default function ({ app, mesh, api, utils }) {
           ;[obj, ...path].reduce(
             (obj, key) => {
               var val = obj[key]
-              if (typeof val !== 'object') {
+              if (typeof val !== 'undefined' && typeof val !== 'object') {
+                throw `key '${key}' has conflict value types`
+              } else {
                 obj[key] = val = {}
               }
               return val
@@ -322,6 +336,28 @@ export default function ({ app, mesh, api, utils }) {
         }
       })
       return obj
+    }
+
+    function breakArguments(str) {
+      var terms = str.split(' ').reduce(
+        (a, b) => {
+          var last = a.pop()
+          if (last && last.startsWith('"')) {
+            a.push(`${last} ${b}`)
+          } else {
+            a.push(last, b)
+          }
+          if (b.endsWith('"')) a.push('')
+          return a
+        }, []
+      )
+      return terms.filter(t => t).map(
+        term => {
+          if (term.startsWith('"')) term = term.substring(1)
+          if (term.endsWith('"')) term = term.substring(0, term.length - 1)
+          return term
+        }
+      )
     }
 
     function printTable(data, columns, indent) {
