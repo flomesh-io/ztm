@@ -318,6 +318,7 @@ export default function ({ app, mesh }) {
 
   var $service
   var $serviceURL
+  var $serviceTime
 
   var connectService = pipeline($=>$
     .pipe(evt => {
@@ -331,7 +332,7 @@ export default function ({ app, mesh }) {
           $service = localServices[kind]?.[name]
         }
         if (!$service) return '404'
-        if ($service.target.address.startsWith('/')) return 'stdio'
+        if (isFilePath($service.target.address)) return 'stdio'
         return 'http'
       }
     }, {
@@ -374,11 +375,40 @@ export default function ({ app, mesh }) {
         )
       ),
       'stdio': ($=>$
-        .replaceMessage(new Message({ status: 404 }))
+        .mux(() => $service).to($=>$
+          .onStart(() => { $serviceTime = Date.now() })
+          .handleData(() => $serviceTime = Date.now() )
+          // TODO: Make this work without quitting pipy silently
+          // .insert(() => killSpareService())
+          .replaceMessage(
+            msg => {
+              try {
+                var body = JSON.decode(msg.body)
+              } catch {
+                var body = null
+              }
+              return JSON.encode(body).push('\n')
+            }
+          )
+          .exec(() => [$service.target.address, ...($service.target.argv || [])], {
+            env: () => $service.target.env,
+            onStart: (pid) => app.log(`Child process started (pid = ${pid}): ${$service.target.address}`),
+            onExit: (code) => app.log(`Child process exited with result ${code}: ${$service.target.address}`),
+          })
+          .split('\n')
+        )
       ),
       '404': $=>$.replaceMessage(new Message({ status: 404 })),
     })
   )
+
+  function killSpareService() {
+    if (Date.now() - $serviceTime > 10000) {
+      return new StreamEnd
+    } else {
+      return new Timeout(1).wait().then(killSpareService)
+    }
+  }
 
   function getServiceFilePathname(username, ep, kind, name) {
     if (!username) {
@@ -486,6 +516,19 @@ export default function ({ app, mesh }) {
   }
 }
 
+function isFilePath(str) {
+  if (str.startsWith('/')) return true
+  var drive = str.charCodeAt(0)
+  if (
+    (67 <= drive && drive <= 90) || // C..Z
+    (99 <= drive && drive <= 122)   // c..z
+  ) {
+    str = str.substring(1)
+    if (str.startsWith(':\\') || str.startsWith(':/')) return true
+  }
+  return false
+}
+
 function checkName(name) {
   if (typeof name !== 'string') throw `invalid name`
   if (name === '') throw `invalid empty name`
@@ -524,6 +567,8 @@ function checkTarget(info) {
         case 'address': return checkAddress(v)
         case 'headers': return checkStringObject(v, 'target.headers')
         case 'body': return checkStringObject(v, 'target.body')
+        case 'argv': return checkStringArray(v, 'target.argv')
+        case 'env': return checkStringObject(v, 'target.env')
         default: throw `redundant field 'target.${k}'`
       }
     }
@@ -540,9 +585,23 @@ function checkStringObject(obj, prefix) {
   )
 }
 
+function checkStringArray(obj, prefix) {
+  if (obj instanceof Array) {
+    obj.forEach(
+      (e, i) => {
+        if (typeof e !== 'string') {
+          throw `invalid ${prefix}[${i}]`
+        }
+      }
+    )
+  } else {
+    throw `array required in field '${prefix}'`
+  }
+}
+
 function checkAddress(addr) {
   if (typeof addr !== 'string') throw `invalid address`
-  if (addr.startsWith('/')) return
+  if (isFilePath(addr)) return
   if (addr.startsWith('http://') || addr.startsWith('https://')) {
     var url = new URL(addr)
     if (url.hostname === '') throw `malformed URL '${addr}'`
