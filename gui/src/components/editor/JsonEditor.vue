@@ -19,7 +19,7 @@ import "monaco-editor/esm/vs/language/json/monaco.contribution";
 export default {
   name: "JsonEditor",
   components: { Monacoeditor },
-  props: ["value", "id", "height", "isReadonly", "noreset", "theme"],
+  props: ["value", "id", "height", "isReadonly", "noreset", "theme", 'type'],
   data() {
     return {
       code: "",
@@ -33,15 +33,22 @@ export default {
         smartInder: false,
         lint: false,
       },
+			emiting:0
     };
   },
 
   watch: {
-    value(newVal) {
-      if (newVal !== this.code) {
-        this.setValue();
-      }
-    },
+    value: {
+			handler(newVal) {
+				if (this.type == 'object' && JSON.stringify(newVal) !== this.code){
+					this.setObjValue();
+				} else if (newVal !== this.code) {
+					this.setValue();
+				}
+			},
+			deep: true,
+			immediate: true
+		},
   },
 
   mounted() {
@@ -51,11 +58,37 @@ export default {
   methods: {
     change(event) {
       if (typeof event == "string") {
-        this.$emit("update:value", event);
-        this.$emit("fetch", event);
+				this.emiting++;
+				const _emiting = this.emiting;
+				setTimeout(()=>{
+					if(this.emiting == _emiting){
+						this.emiting = 0;
+						if(this.type == 'object'){
+							try {
+								this.$emit("update:value", JSON.parse(event));
+								this.$emit("fetch", JSON.parse(event));
+							} catch (e) {}
+						} else {
+							this.$emit("update:value", event);
+							this.$emit("fetch", event);
+						}
+					}
+				},1500)
       }
     },
 
+    setObjValue() {
+      this.code = JSON.stringify(this.value);
+      if (this.value == "") {
+        this.code = this.value;
+      } else {
+        try {
+          this.code = this.noreset
+            ? JSON.stringify(this.value)
+            : JSON.stringify(this.value, null, 2);
+        } catch (e) {}
+      }
+    },
     setValue() {
       this.code = this.value;
       if (this.value == "") {

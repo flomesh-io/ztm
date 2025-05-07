@@ -2,7 +2,9 @@
 import { ref, onMounted,onActivated,watch, computed } from "vue";
 import { useStore } from 'vuex';
 import Chat from "./Chat.vue"
+import BotChat from "./BotChat.vue"
 import Setting from './Setting.vue'
+import BotSetting from './BotSetting.vue'
 import History from './History.vue'
 import { dayjs, extend } from '@/utils/dayjs';
 import { useRouter } from 'vue-router'
@@ -54,6 +56,15 @@ const uniRooms = computed(() => {
 			}
 		})
 	}
+	rtn.unshift({
+		bot: true,
+		latest:{
+			message:{
+				text:t('My MCP Assistant.'),
+			},
+			time: Date.now()
+		}
+	})
 	return rtn;
 });
 const unread = computed(() => {
@@ -69,7 +80,9 @@ const read = (updated) => {
 const loadrooms = () => {
 	store.dispatch('notice/rooms');
 }
-
+const load = () => {
+	loadrooms();
+}
 const handleFileUpload = (file) => {
 }
 const windowHeight = ref(window.innerHeight);
@@ -155,7 +168,7 @@ const back = () => {
 		emits('close');
 	}
 }
-const manager = ref(false)
+const manager = ref(false);
 const history = ref(false)
 const backList = () => {
 	selectRoom.value = false;
@@ -166,22 +179,25 @@ const backList = () => {
 const backmanage = () => {
 	history.value = false;
 	manager.value = false;
-	// resize(330,860,false);
 }
 const backhistory = () => {
 	history.value = false;
-	manager.value = true;
+	manager.value = 'peer';
+}
+const botchat = ref();
+const changeLlm = (val)=> {
+	botchat.value?.setLLM(val)
 }
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
-		loadrooms();
+		load();
 	}
 },{
 	deep:true,
 	immediate:true
 })
 onActivated(()=>{
-	loadrooms();
+	load();
 })
 
 </script>
@@ -230,12 +246,18 @@ onActivated(()=>{
 										<div class="md:w-40 relative">
 											<Badge v-if="item.updated" :value="item.updated" severity="danger" class="absolute" style="right: -10px;top:-10px"/>
 											<img v-if="item.isAi" :src="gptSvg" width="42" height="42" />
+											<Avatar shape="circle"  v-if="item.bot" icon="pi pi-prime" size="large"  />
 											<Avatar shape="circle"  v-else-if="!!item.group" icon="pi pi-users" size="large"  />
 											<Avatar shape="circle"  v-else-if="selectedMesh?.agent?.username == item.peer" icon="pi pi-tablet" size="large"  />
 											<UserAvatar v-else :username="item?.peer" />
 										</div>
 										<div class="flex-item">
-												<div class="flex" v-if="!!item?.peer">
+												<div class="flex" v-if="!!item?.bot">
+													<div class="flex-item" >
+														<b>{{t('AI Bot')}}</b>
+													</div>
+												</div>
+												<div class="flex" v-else-if="!!item?.peer">
 													<div class="flex-item" >
 														<b>{{item?.peer}}</b>
 													</div>
@@ -267,17 +289,23 @@ onActivated(()=>{
 		</div>
 		<div v-if="selectRoom" class="flex-item min-h-screen" style="flex: 3;">
 			<div class="shadow mobile-fixed min-h-screen relative" style="z-index:2">
-				<Chat v-model:room="selectRoom" @back="backList" @manager="() => manager = true"/>
+				<BotChat ref="botchat" v-if="selectRoom?.bot" v-model:room="selectRoom" @back="backList" @manager="() => manager = 'bot'"/>
+				<Chat v-else v-model:room="selectRoom" @back="backList" @manager="() => manager = 'peer'"/>
 			</div>
 		</div>
-		<div v-if="manager && history" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-if="manager == 'peer' && history" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<History v-model:room="selectRoom" @back="backhistory" />
 			</div>
 		</div>
-		<div v-else-if="manager && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-else-if="manager == 'peer' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<Setting v-model:room="selectRoom" @back="backmanage" @history="() => history = true"/>
+			</div>
+		</div>
+		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+			<div class="shadow mobile-fixed min-h-screen surface-html" >
+				<BotSetting @changeLlm="changeLlm" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
 		

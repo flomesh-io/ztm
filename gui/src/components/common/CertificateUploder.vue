@@ -158,14 +158,14 @@ const typeOk = () => {
                 <Button size="small" v-tooltip="t('Browse')" @click="chooseCallback" icon="pi pi-plus" rounded ></Button>
                 <Button size="small" v-tooltip="t('Input')" @click="toggle" icon="pi pi-pencil" rounded  severity="secondary"></Button>
 								<OverlayPanel ref="op">
-									<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel w-30rem"  >
+									<Chip class="pl-0 pr-3 mb-2 align-items-top teatarea-panel w-26rem"  >
 											<span class="font-medium">
 												<Textarea :placeholder="props.placeholder" v-model="val" :autoResize="false" rows="8" />
 											</span>
 									</Chip>	
 									<div class="flex justify-content-end">
-										<Button size="small" class="mr-2" :label="t('Cancel')" @click="typeCancel" severity="secondary"></Button>
-										<Button size="small" :label="t('Ok')" @click="typeOk"  severity="success"></Button>
+										<Button class="mr-2" :label="t('Cancel')" @click="typeCancel" severity="secondary"></Button>
+										<Button :label="t('Ok')" @click="typeOk"  severity="success"></Button>
 									</div>
 								</OverlayPanel>
 						</div>

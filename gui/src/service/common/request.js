@@ -203,6 +203,9 @@ async function request(url, method, params, config) {
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
 				} else if(typeof(res) == 'object' && !!res.body && isJson){
+					if (res.headers.get('content-length') === '0') {
+						return Promise.resolve(null);
+					}
 					return res.json();
 				} else {
 					return res.text();
