@@ -308,7 +308,7 @@ export default function ({ app, mesh }) {
           .pipe(() => mesh.connect($route.service.endpoint.id))
         )
       ),
-      'local': $=>$.pipe(connectService),
+      'local': $=>$.pipe(() => connectService),
       '404': $=>$.replaceMessage(new Message({ status: 404 })),
     })
   )
