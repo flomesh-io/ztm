@@ -82,7 +82,7 @@ onMounted(()=>{
 	</AppHeader>
 	<ul class="nav-ul" >
 		<li class="nav-li flex" >
-			<b class="opacity-70">{{t('Bot')}}</b>
+			<b class="opacity-70">{{t('LLM')}}</b>
 			<div class="flex-item text-right pr-3">
 				<Select v-model="llm" :options="llms" optionLabel="name" placeholder="Select a LLM" class="selector" >
 					<template #value="slotProps">
