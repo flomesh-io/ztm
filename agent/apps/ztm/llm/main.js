@@ -127,6 +127,31 @@ export default function ({ app, mesh, utils }) {
       }),
     },
 
+    '/api/routes': {
+      'GET': responder(() => {
+        return api.allRoutes(app.endpoint.id).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+    },
+
+    '/api/routes/*': {
+      'GET': responder((params) => {
+        return api.getRoute(app.endpoint.id, '/' + params['*']).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }),
+
+      'POST': responder((params, req) => {
+        var info = JSON.decode(req.body)
+        return api.setRoute(app.endpoint.id, '/' + params['*'], info).then(response(201))
+      }),
+
+      'DELETE': responder((params) => {
+        return api.deleteRoute(app.endpoint.id, '/' + params['*']).then(response(204))
+      }),
+    },
+
     '*': {
       'GET': responder((_, req) => {
         return Promise.resolve(gui.serve(req) || response(404))
@@ -159,7 +184,7 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/routes': {
-      'GET': responder(() => {
+      'GET': responderOwnerOnly(() => {
         return api.allRoutes(app.endpoint.id).then(
           ret => ret ? response(200, ret) : response(404)
         )
@@ -167,18 +192,18 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/routes/*': {
-      'GET': responder((params) => {
+      'GET': responderOwnerOnly((params) => {
         return api.getRoute(app.endpoint.id, '/' + params['*']).then(
           ret => ret ? response(200, ret) : response(404)
         )
       }),
 
-      'POST': responder((params, req) => {
+      'POST': responderOwnerOnly((params, req) => {
         var info = JSON.decode(req.body)
         return api.setRoute(app.endpoint.id, '/' + params['*'], info).then(response(201))
       }),
 
-      'DELETE': responder((params) => {
+      'DELETE': responderOwnerOnly((params) => {
         return api.deleteRoute(app.endpoint.id, '/' + params['*']).then(response(204))
       }),
     },
