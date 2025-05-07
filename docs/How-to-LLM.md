@@ -1,12 +1,12 @@
 # How to do LLM on ZTM
 
-LLM applications are distributed in nature. Not only are the LLM services often provided remotely, but also the various tools and services invoked by the LLM to interact with the outside world. ZTM can be handy for connecting your application to all these services via a secure private mesh, allowing you to route requests, secure access tokens, protect private data transfer and tunnel into LANs behind gateways and firewalls.
+LLM applications are distributed in nature. Not only are the LLM services often provided remotely, but also the various tools and services invoked by the LLM to interact with the outside world are often accessed over the wire. ZTM can come in handy to connect your LLM application to all these services via a secure private mesh, allowing you to route requests, secure access tokens, protect private data transfer and tunnel into LANs behind gateways and firewalls.
 
 ## Terminology
 
 ### Service
 
-A software that accepts a request, does a certain job, and then responds with a result. Such as an LLM chat service exposed as REST API, or a weather query tool that speaks MCP. A service can run locally or on a remote device, as long as it provides a means for communication with your application. It can be a TCP listening port, or the standard I/O to the process in the case of MCP.
+A software that accepts a request, performs a certain job, and then responds with a result. Such as an LLM chat service exposed as REST API, or a weather query tool that speaks MCP. A service can run locally or on a remote device, as long as it provides a means for communication with your application. It can be a TCP listening port, or the standard I/O to a process in the case of MCP.
 
 ### Route
 
@@ -14,7 +14,7 @@ A route maps an HTTP request to a certain *service* according to its path. By us
 
 ### Endpoint (EP)
 
-A device running the ZTM agent software. It can be your laplop, your cell phone, Rasberry Pi or a cloud-deployed VM.
+A device running the ZTM agent software. It can be your laplop, your cell phone, a Rasberry Pi or a cloud-deployed VM.
 
 > A *service* doesn't have to run on an EP (although in many cases they do). As long as the service can be reached via some EP, your application will have access to it. In other word, EPs, or specifically the ZTM agents, act as a proxy that forwards your requests to the actual service.
 
@@ -128,7 +128,7 @@ GET http://localhost:7777/api/meshes/<mesh name>/apps/ztm/llm/api/services
 
 Response:
 
-```json
+```js
 {
     "endpoints": {
         // Details about each EP referenced from the service info
@@ -175,7 +175,7 @@ GET http://localhost:7777/api/meshes/<mesh name>/apps/ztm/llm/api/routes
 
 Response:
 
-```json
+```js
 {
     "endpoints": {
         // Details about each EP referenced from the route info
@@ -214,7 +214,7 @@ http://localhost:7777/api/meshes/<mesh name>/apps/ztm/llm/api/routes/<your desir
 
 with the following JSON content:
 
-```json
+```js
 {
     "service": {
         "name": "xxx", // Name of the service you wish to route to
@@ -248,7 +248,7 @@ DELETE http://localhost:7777/api/meshes/<mesh name>/apps/ztm/llm/api/endpoints/<
 
 When posting, the request body should contain the following information:
 
-```json
+```js
 {
     "protocol": "mcp", // Can be "openai" or "mcp"
     "metainfo": { // Metainfo is entirely optional and flexible
