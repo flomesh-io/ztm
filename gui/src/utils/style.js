@@ -50,10 +50,69 @@ const chatTheme = (viewHeight) => {
 	}
 }
 const auxiliaryStyle = () => {
+	const common = `
+		.inner-message-container{
+			position:relative;
+		}
+    .lds-ripple {
+      color: #1c4c5b
+    }
+    .lds-ripple,
+    .lds-ripple div {
+      box-sizing: border-box;
+    }
+    .lds-ripple {
+      display: inline-block;
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+    .lds-ripple div {
+      position: absolute;
+      border: 4px solid currentColor;
+      opacity: 1;
+      border-radius: 50%;
+      animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+    .lds-ripple div:nth-child(2) {
+      animation-delay: -0.5s;
+    }
+    @keyframes lds-ripple {
+      0% {
+        top: 36px;
+        left: 36px;
+        width: 8px;
+        height: 8px;
+        opacity: 0;
+      }
+      4.9% {
+        top: 36px;
+        left: 36px;
+        width: 8px;
+        height: 8px;
+        opacity: 0;
+      }
+      5% {
+        top: 36px;
+        left: 36px;
+        width: 8px;
+        height: 8px;
+        opacity: 1;
+      }
+      100% {
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 80px;
+        opacity: 0;
+      }
+    }`
 	if(isDrak()){
-		return "::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background-color: #1c1c1c;}";
+		return `${common}
+		::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background-color: #1c1c1c;}`;
 	} else {
-		return "::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background-color: #ffffff;}";
+		return `${common}
+		::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { background-color: #ffffff;}`;
 	}
 }
 
@@ -111,8 +170,21 @@ const messageStyles = () => {
 		"wordBreak": "break-all",
 		// "marginTop":"15px","marginBottom":"15px"
 	}
+	const loading = {
+		"bubble": {"backgroundColor": "#9855f7", "fontSize": "20px", "color": "white"},
+		"history": {
+			"full": {
+				"styles": {"outerContainer": {"marginTop": "28px"}},
+				"html": "<div class=\"lds-ripple\"><div></div><div></div></div>"
+			},
+			"small": {
+				"styles": {"outerContainer": {"marginTop": "-10px", "marginBottom": "50px"}},
+			},
+		}
+	}
 	if(isDrak()){
 		return {
+			loading,
 			"default": {
 				ai: {
 					innerContainer,
@@ -130,6 +202,7 @@ const messageStyles = () => {
 		};
 	} else {
 		return {
+			loading,
 			"default": {
 				ai: {
 					innerContainer,

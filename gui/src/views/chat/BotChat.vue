@@ -195,7 +195,7 @@ const postMessage = (message, callback) => {
 	botService.chatLLM(llm.value, message).then((res)=>{
 		console.log('resp:',res)
 		const msg = res.choices[0]?.message?.reasoning_content||res.choices[0]?.message?.content||'';
-		callback(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent">${msg}</pre>`);
+		callback(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--text-color);margin:0;">${msg}</pre>`);
 	});
 }
 const forwardTarget = ref();
@@ -436,14 +436,14 @@ defineExpose({
 			:dragAndDrop='style.dragAndDrop()'
 			:style='style.chatTheme(viewHeight)'
 			v-model:history="history"
-			:displayLoadingBubble="false"
+			:displayLoadingBubble="true"
 			:htmlClassUtilities="htmlClassUtilities()"
 			:messageStyles='style.messageStyles()'
 			:inputAreaStyle='style.inputAreaStyle()'
 			:textInput="inputStyle"
 			:auxiliaryStyle="style.auxiliaryStyle()"
 			:dropupStyles='style.dropupStyles()'
-			:demo='{"displayLoadingBubble": false}'
+			:demo='{"displayLoadingBubble": true,"displayLoading": {"history": {"full": true},"message": true}}'
 			:stream="false"
 			:connect="request"
 			:requestInterceptor="requestInterceptor"
