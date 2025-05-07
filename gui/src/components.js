@@ -100,6 +100,7 @@ import TreeTable from 'primevue/treetable';
 import VirtualScroller from 'primevue/virtualscroller';
 import BlockViewer from '@/components/BlockViewer.vue';
 import ChipList from '@/components/ChipList.vue';
+import ChipMap from '@/components/ChipMap.vue';
 import Loading from '@/components/Loading.vue';
 import Status from '@/components/Status.vue';
 import Card from '@/components/common/Card.vue';
@@ -232,6 +233,7 @@ export function useComponent(app){
 	app.component('InputGroup', InputGroup);
 	app.component('InputGroupAddon', InputGroupAddon);
 	app.component('ChipList', ChipList);
+	app.component('ChipMap', ChipMap);
 	app.component('Status', Status);
 	app.component('AppHeader', AppHeader);
 	app.component('FormItem', FormItem);
