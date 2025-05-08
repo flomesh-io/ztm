@@ -104,7 +104,7 @@ onMounted(()=>{
 	overflow-wrap: break-word;
 	white-space: break-spaces;
   word-wrap:break-all;
-  background-color: var(--surface-ground);
+  background-color: var(--p-surface-ground);
   padding: 10px;
   border: 0px solid #ccc;
   border-radius: 4px;

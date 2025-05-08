@@ -52,10 +52,10 @@ class AcceptFile extends HTMLElement {
 					--background-color: #82529D;
 					--progress: 0; 
 					
-					width: var(--size);
-					height: var(--size);
+					width: var(--p-size);
+					height: var(--p-size);
 					border-radius: 50%;
-					background-color: var(--background-color);
+					background-color: var(--p-background-color);
 					position: relative;
 					overflow: hidden;
 				}
@@ -67,7 +67,7 @@ class AcceptFile extends HTMLElement {
 				    left: 0;
 				    width: 100%;
 				    height: 100%;
-				    background-color: var(--progress-color);
+				    background-color: var(--p-progress-color);
 				    clip-path: inset(0 50% 0 0); 
 						transform: rotate(calc(180deg));
 				    // transform-origin: center right; 
@@ -81,21 +81,21 @@ class AcceptFile extends HTMLElement {
 				    right: 0;
 				    width: 100%;
 				    height: 100%;
-				    background-color: var(--progress-color);
+				    background-color: var(--p-progress-color);
 				    clip-path: inset(0 50% 0 0); 
 				    // transform-origin: center left;
 				    transition: all 0.1s ease;
 						opacity:1;
-						transform: rotate(calc((var(--progress)) * 3.6deg));
+						transform: rotate(calc((var(--p-progress)) * 3.6deg));
 				}
 				
 				.spinner[data-progress='less-than-50'] .spinner-left {
 						z-index:1;
-						transform: rotate(calc((var(--progress)) * 3.6deg));
+						transform: rotate(calc((var(--p-progress)) * 3.6deg));
 				}
 				.spinner[data-progress='less-than-50'] .spinner-right {
 						z-index:2;
-				    background-color: var(--background-color);
+				    background-color: var(--p-background-color);
 				    transform: rotate(calc(0deg));
 				}
 				.uploader{

@@ -84,10 +84,10 @@ async function copyCode(event) {
 
 .block-header {
     padding: 1rem 2rem;
-    background-color: var(--surface-section);
+    background-color: var(--p-surface-section);
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
-    border: 1px solid var(--surface-d);
+    border: 1px solid var(--p-surface-d);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -100,7 +100,7 @@ async function copyCode(event) {
         .badge-free {
             border-radius: 4px;
             padding: 0.25rem 0.5rem;
-            background-color: var(--orange-500);
+            background-color: var(--p-orange-500);
             color: white;
             font-weight: 700;
             font-size: 0.875rem;
@@ -130,17 +130,17 @@ async function copyCode(event) {
             }
 
             &:not(.block-action-disabled):hover {
-                background-color: var(--surface-c);
+                background-color: var(--p-surface-c);
             }
 
             &.block-action-active {
-                border-color: var(--primary-color);
-                color: var(--primary-color);
+                border-color: var(--p-primary-color);
+                color: var(--p-primary-color);
             }
 
             &.block-action-copy {
                 i {
-                    color: var(--primary-color);
+                    color: var(--p-primary-color);
                     font-size: 1.25rem;
                 }
             }
@@ -159,7 +159,7 @@ async function copyCode(event) {
 
 .block-content {
     padding: 0;
-    border: 1px solid var(--surface-d);
+    border: 1px solid var(--p-surface-d);
     border-top: 0 none;
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
@@ -177,9 +177,9 @@ pre[class*='language-'] {
     code {
         border-left: 0 none !important;
         box-shadow: none !important;
-        background: var(--surface-e) !important;
+        background: var(--p-surface-e) !important;
         margin: 0;
-        color: var(--text-color);
+        color: var(--p-text-color);
         font-size: 14px;
         padding: 0 2rem !important;
 
@@ -199,7 +199,7 @@ pre[class*='language-'] {
             }
 
             &.punctuation {
-                color: var(--text-color);
+                color: var(--p-text-color);
             }
 
             &.operator,

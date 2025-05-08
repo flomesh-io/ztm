@@ -551,10 +551,10 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 	padding-top: 8px;
 	padding-bottom: 8px;
 	font-size: 12px;
-	background-color: var(--surface-subground) !important;
+	background-color: var(--p-surface-subground) !important;
 }
 :deep(.small.p-accordionpanel){
-	border-bottom: 1px solid var(--surface-border) !important;
+	border-bottom: 1px solid var(--p-surface-border) !important;
 }
 :deep(.p-accordioncontent-content){
 	padding: 0;

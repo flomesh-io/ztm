@@ -195,7 +195,7 @@ const postMessage = (message, callback) => {
 	botService.chatLLM(llm.value, message).then((res)=>{
 		console.log('resp:',res)
 		const msg = res.choices[0]?.message?.reasoning_content||res.choices[0]?.message?.content||'';
-		callback(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--text-color);margin:0;">${msg}</pre>`);
+		callback(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`);
 	});
 }
 const forwardTarget = ref();
