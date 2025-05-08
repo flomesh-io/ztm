@@ -22,7 +22,7 @@ app.use(PrimeVue, {
 	theme: {
 		preset: MyPreset,
 		options: {
-				prefix: '',
+				prefix: 'p',
 				darkModeSelector: 'system',
 				cssLayer: false
 		}

@@ -16,7 +16,7 @@ svg {
 .svg{
 	width:20px;
 	height: 20px;
-	color: var(--text-color);
+	color: var(--p-text-color);
 }
 .svg.linear{
 	animation: linearAnimation 3s linear 1;

@@ -16,17 +16,17 @@
 		width: 2.5rem;
 		height: 2.5rem;
 		line-height: 2.5rem;
-		background: var(--primary-color);
-		color: var(--primary-color-text);
+		background: var(--p-primary-color);
+		color: var(--p-primary-color-text);
 		text-align: center;
 		top: 50%;
 		right: 0;
 		margin-top: -1.5rem;
-		border-top-left-radius: var(--border-radius);
-		border-bottom-left-radius: var(--border-radius);
+		border-top-left-radius: var(--p-border-radius);
+		border-bottom-left-radius: var(--p-border-radius);
 		border-top-right-radius: 0;
 		border-bottom-right-radius: 0;
-		transition: background-color var(--transition-duration);
+		transition: background-color var(--p-transition-duration);
 		overflow: hidden;
 		cursor: pointer;
 		z-index: 999;
@@ -51,6 +51,6 @@
 		}
 
 		&:hover {
-				background: var(--primary-400);
+				background: var(--p-primary-400);
 		}
 }

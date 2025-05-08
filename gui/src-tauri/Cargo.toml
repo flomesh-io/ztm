@@ -21,7 +21,7 @@ tauri-utils = "=2.3.1"
 tauri-runtime = "=2.5.1"
 tauri-plugin-shell = "=2.2.1"
 tauri-plugin-process = "=2.2.1"
-tauri-plugin-http = "=2.4.3"
+tauri-plugin-http = { version = "=2.2", features = ["rustls-tls", "unsafe-headers"] }
 tauri-plugin-os = "=2.2.1"
 tauri-plugin-upload = "=2.2.1"
 tauri-plugin-notification = "=2.2.2"

@@ -60,7 +60,7 @@ const MyPreset = definePreset(Aura, {
 				},
 				dark: {
 					"primary-color": "{primary.600}",
-					"bg-primary-100": "var(--primary-300) !important",
+					"bg-primary-100": "{primary.300} !important",
 					"card-shadow":"0px 4px 30px rgba(0, 0, 0, .84)",
 					"primary-inverse-color": "#ffffff",
 					"primary-color-text": "#ffffff",
