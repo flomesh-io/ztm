@@ -59,6 +59,89 @@ Traditional security models are often insufficient for the unique, dynamic, and 
 * 🎯 Least Privilege + Just-In-Time Access: Reduce breach impact with fine-grained, ephemeral permissions for each tool or user session.
 * 🧠 Smart Threat Detection: Detects abnormal tool behaviors, impersonation attempts, and enforces protocol-level validation.
 
+##  zt4mcp Stack Overview
+
+The `zt4mcp` stack is a modular, cross-platform architecture designed for building AI-powered applications on top of a secure, extensible, and portable zero-trust mesh communication platform. Each layer in the stack builds upon the foundation of diverse hardware support, operating systems, and transport technologies.
+
+![alt text](docs/images/stack.png)
+
+### 📦 Stack Layers Breakdown
+
+#### **0. Hardware & Deployment Platforms**
+- **Supported Platforms:** Mobile Phone, IoT, PC, BareMetal, Cloud/VPC  
+This layer ensures the stack can run in virtually any deployment environment, from embedded devices to large-scale cloud infrastructures.
+
+#### **1. CPU Architectures**
+- **Architectures:** ARM32, ARM64, x86, MIPS, RISC-V  
+Support for a wide range of CPU architectures allows the stack to be hardware-agnostic.
+
+#### **2. Operating Systems**
+- **Supported OSes:** Linux, FreeBSD, Windows, iOS, macOS, Android  
+Cross-OS compatibility enables development and deployment across all major desktop, server, and mobile environments.
+
+#### **3. Runtime Engines**
+- **3.1 Pipy (C++)**: A lightweight, high-performance edge engine optimized for service mesh and programmable networking.
+- **3.2 Tauri2 (Rust + JavaScript)**: Used to build lightweight and secure native apps with web-based UIs.
+
+#### **4. ZTM (PipyJS)**
+- **Zero Trust Mesh (ZTM)**: Built using PipyJS, providing secure, programmable, and lightweight mesh networking.
+
+#### **5. Local RESTful API**
+- **zt4mcp Local RESTful API**: Exposes local control and configuration endpoints for interoperability with external systems.
+
+#### **6. Interfaces**
+- **6.1 zt4mcp Chat GUI**: A user-facing graphical interface for interacting with the stack.
+- **6.2 MCP Client**: A management control protocol client for interfacing with MCP servers.
+- **6.3 AI Agent**: Interfaces AI functionalities with the rest of the stack.
+
+#### **7. AI-Powered Applications**
+- **Top-Layer Apps**: Custom AI applications leveraging the stack’s secure communication and interface layers for advanced use cases.
+
+
+## How zt4mcp Works
+
+**zt4mcp** enables secure, decentralized communication between local developer tools or AI-powered applications and remote LLMs or MCP servers using the ZTM (Zero Trust Mesh) network.
+
+![How zt4mcp works](docs/images/internals.png)
+
+### Overview
+
+This architecture provides a secure mesh network using mTLS, allowing local tools and applications to interact with remote services like LLMs and MCP servers. The key elements in this system include `ztm agents`, `ztm hub`, and `ztm filter chains`, which work together to ensure authentication, encryption, access control, and threat protection.
+
+### Step-by-Step Workflow
+
+1. **Agent Installation**  
+   Developers install a `ztm agent` (local gateway) on their machine, or AI-powered apps bundle it directly.
+
+2. **Local Communication**  
+   Applications or IDEs communicate with the local `ztm` gateway using HTTP (typically on `localhost:7777`).
+
+3. **Mesh Network Communication**  
+   The ZTM mesh uses mTLS for:
+   - Authentication & Authorization  
+   - Access Control  
+   - Threat Detection  
+   - Auditing  
+   - Routing  
+   - Network Encryption/Decryption  
+
+4. **Server-Side Integration**  
+   On the server side, the `ztm agent` relays traffic securely to LLMs or MCP servers via HTTPS or STDIO/SSE/WebSocket protocols.
+
+### Security Filters (ztm filter chains)
+
+![Filter Chain](docs/images/filter-chain.png)
+
+Each agent can enforce a series of customizable filters, such as:
+
+- **MCP Tool Posing Check**
+- **OWASP WAF (Top 10, CORS, etc.)**
+- **OAuth2/OIDC Authentication**
+- **Time-Bound Permissions**
+- **Observability**
+
+These chains ensure security, compliance, and observability at both endpoints of communication.
+
 ## Features
 
 ## Documentation
