@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=FFC131">
   <img src="https://img.shields.io/badge/Rust-c57c54?logo=rust&logoColor=E34F26">
   <img src="https://img.shields.io/badge/Vite5-35495E?logo=vite&logoColor=41D1FF">
-  <a href="https://gitee.com/link?target=https://github.com/flomesh-io/ztm/stargazers"><img src="https://img.shields.io/github/stars/flomesh-io/ztm" alt="star"></a>
+  <a href="https://github.com/flomesh-io/zt4mcp/stargazers"><img src="https://img.shields.io/github/stars/flomesh-io/zt4mcp" alt="star"></a>
 </div>
 
 <p align="center">
@@ -20,217 +20,53 @@
   <img src="https://img.shields.io/badge/iOS-Android-blue">
 </p>
 
-# ZTM (Zero Trust Mesh)
+# zt4mcp (Zero Trust for MCP)
 
-ZTM is an open source network infrastructure software for running a ***decentralized*** network. It is built upon ***HTTP/2 tunnels*** and can run on ***any sort of IP networks*** such as LANs, containerized networks and the Internet, etc.
+**zt4mcp** is a framework for AI application developers and runtime, it provides a robust framework and a set of tools to ensure that every interaction within an MCP ecosystem is explicitly verified, access is granted on a least-privilege basis, and a breach is always assumed. It enable developers and organizations to confidently leverage the full power of MCP by:
+* Enhancing Security Posture: Implementing granular access controls, strong authentication, and continuous authorization for all MCP clients, servers, and tools.
+* Mitigating Risks: Protecting against known MCP vulnerabilities such as tool manipulation, unauthorized data access, and malicious command execution.
+* Fostering Trustworthy AI: Building a safer environment for AI agents to operate, interact with data, and execute tasks.
+* Promoting Secure Adoption: Providing a practical and accessible Zero Trust solution to encourage the secure development and deployment of MCP-enabled applications.
 
-## Why ZTM?
+While zt4mcp provides powerful Zero Trust capabilities, it’s also very simple to setup and  easy to use with GUI, CLI and RESTful API.
 
-ZTM lays the foundation for building ***decentralized applications*** by providing a set of core capabilities including:
+## Why zt4mcp?
 
-* Network connectivity across Internet gateways and firewalls
-* TLS-encrypted communication channels
-* Certificate-based authentication and access control
-* Decentralized application publishing and deployment
-* Decentralized file discovery and data sharing
+Traditional security models are often insufficient for the unique, dynamic, and trust-sensitive nature of MCP environments. Recognizing this critical gap, we are proud to introduce zt4mcp (Zero Trust for MCP) – an innovative open-source project dedicated to implementing a comprehensive Zero Trust security architecture specifically tailored for the Model Context Protocol.
 
-ZTM can be used in various settings ranging from a ***2-node personal network connecting one's home and workplace*** to a ***10,000-node enterprise network connecting offices and branches across the globe***. Examples of applications that can leverage ZTM are:
+### For developers
 
-* Remote access your home computer from anywhere in the world
-* Share documents, pictures and videos within a group of people without the need of a big-tech social networking platform
-* Private and secure P2P data transfer without the fear of eavesdropping
+* 🔒 No Trust Assumed: Developers can build and test tools in isolated environments using mTLS and cert-based identity—reducing risk from untrusted networks or nodes.
+* 🚀 Faster Iteration: Connect securely to remote MCP servers without VPNs, even behind NATs and firewalls. Ideal for local testing with real production models.
+* 🧩 Tool Safety Built-In: Tool descriptions are semantically validated and vetted for integrity, preventing tool poisoning during development.
+* 🔍 Deep Observability: Full audit logging, runtime traceability, and real-time debugging across distributed components.
+* ⚙️ One Protocol to Rule All: Securely stream outputs from MCP tools over STDIO/SSE/WebSockets, fully integrated into IDEs.
+* 🌐 Local Integration Made Easy: A built-in local RESTful API simplifies the development of AI apps and MCP Runners, enabling faster and more flexible prototyping.
+
+### For AI powered application production usage 
+
+* 🔐 End-to-End Zero Trust: Every agent-tool interaction is verified, scoped, and logged—ensuring safe execution even in adversarial settings.
+* 🌍 Internet-Wide Reach: Painless NAT/firewall traversal allows agents to access MCP servers and tools anywhere in the world.
+* 🧠 Guardrails for Agent Autonomy: Fine-grained, time-bound permissions prevent agents from overstepping their scope.
+* 📦 Tool Tampering Prevention: Schema validation, behavior monitoring, and trusted repositories mitigate the risk of manipulated tools.
+* 🔄 Dynamic & Compliant: Apps can adapt in real time, while maintaining auditability and policy enforcement across interactions.
+
+### For Enterprise
+
+* 🛡️ Defense-in-Depth Architecture: Leverages OWASP-guided controls and research-backed Zero Trust layers across all MCP components—client, server, and tool chain.
+* 🧾 Audit and Compliance Ready: Every action is logged, traceable, and backed by TLS/mTLS—meeting enterprise regulatory demands.
+* 🔐 Federated Identity & Access: Integrates with enterprise IAM (OAuth2/OIDC/LDAP) for seamless access control and SSO.
+* 🎯 Least Privilege + Just-In-Time Access: Reduce breach impact with fine-grained, ephemeral permissions for each tool or user session.
+* 🧠 Smart Threat Detection: Detects abnormal tool behaviors, impersonation attempts, and enforces protocol-level validation.
 
 ## Features
 
-ZTM is written in **PipyJS**, a JavaScript dialect designed for [**Pipy**](https://github.com/flomesh-io/pipy) (https://github.com/flomesh-io/pipy). **Pipy** is an open source programmable proxy software. Thanks to **Pipy**, ZTM has many unique features on top of the capabilities it offers:
-
-* **Fast**. HTTP/2 multiplexing is fast. And **Pipy** is fast. Like, C++ fast.
-
-* **Secure**. All traffic is encrypted by TLS and has identities via certificates. By using **PipyJS**, security policy can be easily customized to meet the requirements in your organization.
-
-* **Highly customizable and programmable**, since **Pipy** in itself is a general-purpose network scripting engine.
-
-* **Portable**. Choose your CPU architecture: x86, ARM, MIPS, RISC-V, LoongArch... Choose your operating system: Linux, Windows, macOS, FreeBSD, Android... ZTM runs anywhere.
-
 ## Documentation
-
-* [Architecture & Concepts](docs/Architecture-Concepts.md)
-* [CLI](docs/CLI.md)
-* [ZT-App](docs/ZT-App.md)
-* [Agent API](docs/Agent-API.md)
-* [Build](docs/Build.md)  
 
 ## Quick Start
 
 ### Download
 
-The easiest way to get started is download the latest binary release of ZTM from our [release page](https://github.com/flomesh-io/ztm/releases). If you prefer to have your own build from the source, you can follow the instructions in [Build](docs/Build.md).
-
-> The official build releases of ZTM come in two forms of packaging: the CLI tool as a SEA (Single Executable Application), and the desktop application that wraps up the CLI tool and provides a GUI for desktop environments.
->
-> In this guide, we'll be only utilizing the CLI for setting up a simple mesh. For more guides, including the usage of the desktop app, please check out our [Wiki](https://github.com/flomesh-io/ztm/wiki).
-
 ### Setup
 
-A common setup consists of 3 nodes: 1 node running the *Hub*, the other 2 nodes running two *Agents* who wish to communicate with each other.
-
-```
-                            Data Center
-          +-------------------------------------------+
-          |                     Hub                   |
-          |        (state in ~/.ztm/ztm-hub.db)       |
-          +-------------------------------------------+
-        HTTPS | Port 8888                 HTTPS | Port 8888
-              |                                 |
-  ------------|---------------------------------|--------------
-              |             Firewall            |
-  ------------|---------------------------------|--------------
-              |                                 |
-              |             Internet            |
-              |                                 |
-  ----------------------------  |  ----------------------------
-          Firewall              |            Firewall
-  ----------------------------  |  ----------------------------
-              |                 |               |
-              |                 |               |
-  +--------------------------+  |  +--------------------------+
-  |      Agent @ Home        |  |  |    Agent @ Workplace     |
-  | (state in ~/.ztm/ztm.db) |  |  | (state in ~/.ztm/ztm.db) |
-  +--------------------------+  |  +--------------------------+
-                                |
-
-```
-
-> We'll only cover the setup of a Hub on Linux, since that's where they are usually run - a cloud-hosted Linux virtual machine.
-
-#### Setup a Hub
-
-Suppose you have a Linux box in the cloud, with a public IP address `1.2.3.4` and a public TCP port `8888`. Start a Hub service by typing:
-
-```sh
-ztm start hub --listen 0.0.0.0:8888 --names 1.2.3.4:8888 --permit root.json
-```
-
-> You might need `sudo` when executing the above command because it needs to install a service to `systemd`.
-
-Now the Hub should be up an running. Plus, a file named `root.json` should have been generated for us to allow *endpoints* to join our mesh.
-
-#### Setup Endpoints
-
-Once the Hub gets up and running in the cloud, we can go on and add as many *endpoints* as we like to the mesh by using the generated permit file `root.json`.
-
-> An *endpoint* is just a computer running in various network environments with access to the Internet.
-
-First, start an Agent on an endpoint computer that is going to join our mesh:
-
-```sh
-ztm start agent
-```
-
-> On Windows, starting as a system service isn't supported yet. You'll have to do `ztm run agent` instead.
-
-And then, join the mesh by saying:
-
-```sh
-ztm join MESH_NAME --as EP_NAME --permit root.json
-```
-
-Where `MESH_NAME` can be any name of your choice for identifying a mesh locally if you have many. `EP_NAME` is the name of your current endpoint seen by other endpoints in the same mesh. `root.json` is the permit file generated in our first step where a Hub is set up.
-
-If everything works out, you can now check out the status of the mesh by typing:
-
-```sh
-ztm get mesh
-```
-
-Or look up for endpoints that already joined the mesh:
-
-```sh
-ztm get ep
-```
-
-For detailed usage of the command-line tool, type:
-
-```sh
-ztm help
-```
-
-If you prefer GUI, you can open your browser and point it to `http://localhost:7777` right after command `ztm start agent`. You can join a mesh, find other endpoints, using apps and everything. Almost all functionalities ZTM provides are available from both the CLI and the GUI.
-
-Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any endpoint in the mesh.
-
-#### Using Your Mesh
-
-Only connecting a bunch of endpoints as a mesh isn't very useful. What makes your mesh useful is the *apps* running in it. The official ZTM releases come with a number of builtin apps including:
-
-- Tunnel - Establish secure TCP/UDP tunnels between endpoints
-- Proxy - A SOCKS/HTTP forward proxy that takes in traffic from one endpoint and forward out via another endpoint 
-- Script - Execute *PipyJS* scripts remotely on an endpoint
-- Terminal - Remote access to the shell on an endpoint
-
-Third-party apps can also be installed. Also, new apps can be developed rather easily thanks to the *PipyJS* scripting capability of [**Pipy**](https://github.com/flomesh-io/pipy).
-
-To get a list of all installed apps, type:
-
-```sh
-ztm get app
-```
-
-You can use an app from either the browser GUI or the command-line tool. On a terminal, one can access an app's CLI in a way like:
-
-```sh
-ztm APP_NAME ...
-```
-
-To find out detailed information about using an app via CLI, type:
-
-```sh
-ztm APP_NAME help
-```
-
-#### CLI Commands Summary
-
-Here's a recap of what CLI commands you need to do on each computer node.
-
-```
-                       Cloud-hosted VM
-  +---------------------------------------------------------+
-  | ztm start hub --names x.x.x.x:8888 --permit root.json   | ---+
-  +---------------------------------------------------------+    |
-              |          x.x.x.x:8888          |                 |
-  ------------|--------------------------------|-------------    |
-              |            Firewall            |                 |
-  ------------|--------------------------------|-------------    |
-              |                                |                 |
-              |            Internet            |                 | root.json
-              |                                |                 |
-  --------------------------   |   --------------------------    |
-           Firewall            |            Firewall             |
-  --------------------------   |   --------------------------    |
-              |                |               |                 |
-              |                |               |                 |
-  +------------------------+   |   +------------------------+    |
-  | ztm start agent        |   |   | ztm start agent        |    |
-  | ztm join my-mesh \     |   |   | ztm join my-mesh \     | <--+
-  |   --as home \          |   |   |   --as workplace \     |
-  |   --permit root.json   |   |   |   --permit root.json   |
-  +------------------------+   |   +------------------------+
-           PC @ Home           |         PC @ Workplace
-
-```
-
-For more information on the CLI, please refer to:
-
-```sh
-ztm help
-```
-
 ## Quick Links:
-
-* [How-to: Using ZTM for Secure Remote Desktop Protocol (RDP) Access](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
-* [QuickStart : ZTM Tunnel](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-tunnel) | [Tunnel Demo](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access#4-configuring-ztm-tunnel-for-rdp-connection)
-* [QuickStart : ZTM Proxy](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-proxy)
-* [QuickStart : ZTM Terminal](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-terminal)
-* [QuickStart : ZTM Script](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-script)
-* [QuickStart : ZTM Cloud](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-cloud) | [Cloud Demo](https://github.com/flomesh-io/ztm/wiki/4.-HOWTO-:-File-Sharing-between-ZTM-End-Points#sharing-files-on-macos)
-
