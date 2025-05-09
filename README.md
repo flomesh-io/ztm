@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=FFC131">
   <img src="https://img.shields.io/badge/Rust-c57c54?logo=rust&logoColor=E34F26">
   <img src="https://img.shields.io/badge/Vite5-35495E?logo=vite&logoColor=41D1FF">
-  <a href="https://gitee.com/link?target=https://github.com/flomesh-io/ztm/stargazers"><img src="https://img.shields.io/github/stars/flomesh-io/ztm" alt="star"></a>
+  <a href="https://github.com/flomesh-io/ztm/stargazers"><img src="https://img.shields.io/github/stars/flomesh-io/ztm" alt="star"></a>
 </div>
 
 <p align="center">
