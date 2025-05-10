@@ -6,6 +6,7 @@ import BotService from '@/service/BotService';
 import userSvg from "@/assets/img/user.png";
 import botSvg from "@/assets/img/bot.png";
 import { platform } from '@/utils/platform';
+import { getItem } from "@/utils/localStore";
 import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
@@ -14,6 +15,8 @@ import { generateList } from "@/utils/svgAvatar";
 const { t } = useI18n();
 
 const llm = ref(null);
+const mcps = ref([]);
+const loading = ref(false);
 const store = useStore();
 const botService = new BotService();
 const emits = defineEmits(['back','peer','manager']);
@@ -192,9 +195,11 @@ const inputStyle = computed(() => {
 })
 const hasMediaDevices = computed(() => true);
 const postMessage = (message, callback) => {
-	botService.chatLLM(llm.value, message).then((res)=>{
+	loading.value = true;
+	botService.callRunner(message, llm.value, mcps.value).then((res)=>{
 		console.log('resp:',res)
 		const msg = res.choices[0]?.message?.reasoning_content||res.choices[0]?.message?.content||'';
+		loading.value = false;
 		callback(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`);
 	});
 }
@@ -377,9 +382,17 @@ const openPeer = () => {
 	emits('peer',llm.value?.name);
 }
 
-const loadllm = () => {
+const loadllm = (callback) => {
 	botService.checkLLM((res) => {
-		llm.value = res
+		llm.value = res;
+		if(callback){
+			callback();
+		}
+	});
+}
+const loadLocalMcp = () => {
+	getItem(`mcp-${selectedMesh.value?.name}`,(res)=>{
+		mcps.value = res || [];
 	});
 }
 watch(()=>llm.value, async (newQuery) => {
@@ -388,7 +401,7 @@ watch(()=>llm.value, async (newQuery) => {
 		await renderAvatars(_users);
 		let res = {
 			system: {"src": botSvg,"styles":style.avatarStyle},
-			default: {"src": userSvg,"styles":style.avatarStyle},
+			default: {"src": botSvg,"styles":style.avatarStyle},
 			ai: {"src": botSvg,"styles":style.avatarStyle}
 		}
 		_users.forEach((u)=>{
@@ -398,19 +411,21 @@ watch(()=>llm.value, async (newQuery) => {
 	}
 }, { immediate: true,deep:true });
 onMounted(()=>{
-	// loaddata()
-	loadllm();
-	folderInit(['ztmChat',selectedMesh.value?.name], llm.value?.name);
+	loadllm(()=>{
+		folderInit(['ztmChat',selectedMesh.value?.name], llm.value?.name);
+	});
+	loadLocalMcp();
 })
 
 onBeforeUnmount(()=>{
 	timer.value = false;
 })
-const setLLM = (val) => {
-	llm.value = val;
+const setBot = (val) => {
+	llm.value = val?.llm;
+	mcps.value = val?.mcps;
 }
 defineExpose({
-  setLLM
+  setBot
 })
 </script>
 
@@ -443,7 +458,7 @@ defineExpose({
 			:textInput="inputStyle"
 			:auxiliaryStyle="style.auxiliaryStyle()"
 			:dropupStyles='style.dropupStyles()'
-			:demo='{"displayLoadingBubble": true,"displayLoading": {"history": {"full": true},"message": true}}'
+			:demo='{"displayLoadingBubble": loading,"displayLoading": {"history": {"full": false},"message": loading}}'
 			:stream="false"
 			:connect="request"
 			:requestInterceptor="requestInterceptor"

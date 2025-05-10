@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { merge } from '@/service/common/request';
 import JsonEditor from '@/components/editor/JsonEditor.vue';
 import LLMService from '../service/LLMService';
+import { selectDir } from '@/utils/file';
 import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
@@ -28,12 +29,12 @@ const newMcp = {
 	},
 	target: {
 		address: '',
-		headers: {},
+		argv: ['stdio'],
+		env: {},
 		body: {
-      "timeout": 60,
-      "url": "http://localhost:8000/sse",
-      "transportType": "sse",
-      "disabled": true
+      "jsonrpc": "2.0",
+			"id": 1,
+			"method": "tool/list"
     },
 	}
 }
@@ -109,7 +110,7 @@ const savingMcp = ref(false);
 const createMcp = () => {
 	savingMcp.value = true
 	llmService.createService({
-		kind: 'mcp',
+		kind: 'tool',
 		name: mcp.value.name,
 		ep: info?.value.endpoint?.id,
 		body: {
@@ -128,7 +129,7 @@ const createMcp = () => {
 const loaddata = () => {
 	llmService.getServices(info?.value.endpoint?.id).then((res)=>{
 		llms.value = (res||[]).filter((n) => n.kind == 'llm');
-		mcps.value = (res||[]).filter((n) => n.kind == 'mcp');
+		mcps.value = (res||[]).filter((n) => n.kind == 'tool');
 	})
 }
 
@@ -150,7 +151,7 @@ const openLlmEdit = (t,index) => {
 	})
 	// llm.value = _.cloneDeep(t);
 }
-const outboundEdit = (t,index) => {
+const openMcpEdit = (t,index) => {
 	mcpEditor.value = true;
 	mcp.value = _.cloneDeep(t);
 }
@@ -163,9 +164,14 @@ const llmRemove = (t,index) => {
 }
 const mcpRemove = (t,index) => {
 	llmService.deleteService({
-		ep:t.endpoint?.id, kind:'mcp', name:t.name
+		ep:t.endpoint?.id, kind:'tool', name:t.name
 	},()=>{
 		emits("save");
+	})
+}
+const browser = () => {
+	selectDir((dir)=>{
+		mcp.target.address = dir;
 	})
 }
 
@@ -207,7 +213,7 @@ onMounted(() => {
 											icon="pi pi-plus" ></Button>
 										<div v-else-if="!loading" >
 											<Button class="mr-2" @click="() => llmEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!llmEnabled" @click="createLlm()()" :loading="savingLlm" v-tooltip="t('Save Inbound')"  size="small" icon="pi pi-check" ></Button>
+											<Button :disabled="!llmEnabled" @click="createLlm()()" :loading="savingLlm"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
 								</h6>
@@ -285,7 +291,7 @@ onMounted(() => {
 											icon="pi pi-plus" ></Button>
 										<div v-else-if="!loading" >
 											<Button class="mr-2" @click="() => mcpEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!mcpEnabled"  @click="createMcp()" :loading="savingMcp" v-tooltip="t('Save Outbound')"  size="small" icon="pi pi-check" ></Button>
+											<Button :disabled="!mcpEnabled"  @click="createMcp()" :loading="savingMcp"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
 								</h6>
@@ -308,13 +314,17 @@ onMounted(() => {
 												<span class="ml-2 font-medium">
 													<InputText :placeholder="t('MCP Server Address')" class="add-tag-input xxl" style="width: 300px;" :unstyled="true" v-model="mcp.target.address" type="text" />
 												</span>
+												<Button style="left:10px;border-radius:16px;" class="relative" size="small" @click="browser">{{t('Select')}}</Button>
 										</Chip>
 									</FormItem>
-									<FormItem :label="t('Headers')" :border="false">
-										<ChipMap direction="v" icon="pi-desktop" :placeholder="t('key:value')" v-model:map="mcp.target.headers" />
+									<FormItem :label="t('Arguments')" :border="false">
+										<ChipList direction="v" icon="pi-desktop" :placeholder="t('Add')" v-model:list="mcp.target.argv" />
+									</FormItem>
+									<FormItem :label="t('Environment')" :border="false">
+										<ChipMap direction="v" icon="pi-desktop" :placeholder="t('Add')" v-model:map="mcp.target.env" />
 									</FormItem>
 									<FormItem :label="t('Body')" :border="false">
-										<JsonEditor id="llmBody" height="240px" type="object" v-model:value="mcp.target.body"/>
+										<JsonEditor id="mcpBody" height="140px" type="object" v-model:value="mcp.target.body"/>
 									</FormItem>
 									<FormItem :label="t('Description')" :border="false">
 										<Textarea class="w-full"  v-model="mcp.metainfo.description" rows="2" cols="20" />
@@ -325,36 +335,21 @@ onMounted(() => {
 										{{t('No MCP Server.')}}
 									</template>
 									<template #list="slotProps">
-									
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
-												<div class="flex py-2 gap-4 md:gap-1" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-														<div class="flex flex-col justify-between items-start pr-2 ">
-																<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																		<Ep :endpoint="item.ep?.id" />
-																		<Tag v-if="info.endpoint?.id == item.ep?.id" severity="contrast" >{{t('Local')}}</Tag>
-																</div>
-														</div>
-														<div class="flex flex-item gap-2 justify-content-center">
-															<div  class="flex flex-column" >
-																<div class="font-semibold w-5rem">{{t('Targets')}}:</div>
-																<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(target,idx) in item.targets.filter((target)=> !!target)" :value="target" severity="secondary" /></div>
-															</div>	
-															<div  class="flex flex-column" v-if="item.entrances && item.entrances.length>0">
-																<div class="font-semibold w-5rem " >{{t('Entrances')}}:</div>
-																<div >
-																	<Tag class="block" :class="{'mt-1':idx==1}" v-for="(entrance,idx) in item.entrances" severity="secondary" >
-																		<Ep :endpoint="entrance"/>
-																	</Tag>
-																</div>
-															</div>
-															<div class="flex flex-column " v-if="item.users && item.users.length>0">
-																<div class="font-semibold w-5rem ">{{t('Users')}}:</div>
-																<div ><Tag class="block" :class="{'mt-1':idx==1}" v-for="(user,idx) in item.users" :value="user" severity="secondary" /></div>
+												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+														<div class="flex flex-col pr-2 flex-item">
+															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+																<span>
+																	<b>{{item.name}}</b> 
+																	<Tag class="ml-2" v-if="item.protocol">{{item.protocol}}</Tag>
+																	<Tag class="ml-2" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
+																</span>
+																<span class="mt-1">{{item?.metainfo?.description||'(No description)'}}</span>
 															</div>
 														</div>
-														<div class="flex flex-column xl:flex-row-reverse xl:flex-row gap-2">
-															<Button @click="outboundEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
-															<Button @click="mcpRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
+														<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
+																<Button @click="openMcpEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
+																<Button @click="mcpRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
 														</div>
 												</div>
 										</div>
