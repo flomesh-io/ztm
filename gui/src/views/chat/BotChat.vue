@@ -16,7 +16,7 @@ const { t } = useI18n();
 
 const llm = ref(null);
 const mcps = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 const store = useStore();
 const botService = new BotService();
 const emits = defineEmits(['back','peer','manager']);
@@ -194,14 +194,19 @@ const inputStyle = computed(() => {
 	return _style;
 })
 const hasMediaDevices = computed(() => true);
-const postMessage = (message, callback) => {
-	loading.value = true;
-	botService.callRunner(message, llm.value, mcps.value).then((res)=>{
-		console.log('resp:',res)
-		const msg = res.choices[0]?.message?.reasoning_content||res.choices[0]?.message?.content||'';
-		loading.value = false;
-		callback(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`);
-	});
+const postMessage = (message, cb) => {
+	if(message != ''){
+		loading.value = true;
+		botService.callRunner({
+			message, llm: llm.value, mcps: mcps.value,
+			callback(res){
+				console.log('resp:',res)
+				const msg = res.choices[0]?.message?.reasoning_content||res.choices[0]?.message?.content||'';
+				// loading.value = false;
+				cb(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`);
+			}
+		});
+	}
 }
 const forwardTarget = ref();
 const menuOpen = ref(false);

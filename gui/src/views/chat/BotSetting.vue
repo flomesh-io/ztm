@@ -57,7 +57,7 @@ const remMcp = (idx) => {
 }
 const addMcp = () => {
 	adding.value = true;
-	const path = `${llm.value?.kind}/${llm.value?.name}`;
+	const path = `${mcp.value?.kind}/${mcp.value?.name}`;
 	botService.createRoute({
 		ep: selectedMesh.value?.agent?.id,
 		path,

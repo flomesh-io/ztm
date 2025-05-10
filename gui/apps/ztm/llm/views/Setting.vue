@@ -31,11 +31,6 @@ const newMcp = {
 		address: '',
 		argv: ['stdio'],
 		env: {},
-		body: {
-      "jsonrpc": "2.0",
-			"id": 1,
-			"method": "tool/list"
-    },
 	}
 }
 const mcp = ref(_.cloneDeep(newMcp))
@@ -323,9 +318,9 @@ onMounted(() => {
 									<FormItem :label="t('Environment')" :border="false">
 										<ChipMap direction="v" icon="pi-desktop" :placeholder="t('Add')" v-model:map="mcp.target.env" />
 									</FormItem>
-									<FormItem :label="t('Body')" :border="false">
+									<!-- <FormItem :label="t('Body')" :border="false">
 										<JsonEditor id="mcpBody" height="140px" type="object" v-model:value="mcp.target.body"/>
-									</FormItem>
+									</FormItem> -->
 									<FormItem :label="t('Description')" :border="false">
 										<Textarea class="w-full"  v-model="mcp.metainfo.description" rows="2" cols="20" />
 									</FormItem>
