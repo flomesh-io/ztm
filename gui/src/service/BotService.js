@@ -2,7 +2,7 @@ import { mock, request, getUrl,merge } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { getItem, setItem } from "@/utils/localStore";
-import _ from 'lodash';
+import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
@@ -62,18 +62,74 @@ export default class ChatService {
 		});
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
-	callRunner(message, llm, mcps) {
-		return this.chatLLM(message, llm, mcps);
-	}
-	chatLLM(message, llm, mcps) {
-		const body = {
-			"messages":[
-				{
-					"role":"user",
-					"content":message?.text
-				},
-			],
+	callRunner({message, llm, mcps, callback}) {
+		const usermessages = [
+			{
+				"role":"user",
+				"content":message?.text
+			}
+		]
+		if(!!mcps && mcps.length>0){
+			// get tools param
+			const mcpReqs = [];
+			mcps.forEach((mcp) => {
+				mcpReqs.push(this.getMCPParams(mcp))
+			});
+			merge(mcpReqs).then((allParams)=>{
+				let allmessages = [];
+				const sysmessages = [];
+				allParams.forEach((params)=>{
+					sysmessages.push({"role": "system", "content": JSON.stringify(params)})
+				});
+				allmessages = sysmessages.concat(usermessages);
+				// get tool_calls with llm
+				this.chatLLM(allmessages, llm).then((res)=> {
+					if(res.choices[0]?.finish_reason == "tool_calls"){
+						// push assistant msg
+						const tool_calls = res.choices[0]?.message?.tool_calls;
+						allmessages.push({
+							'content': '', 
+							'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
+							'role': 'assistant', 
+							tool_calls
+						});
+						const toolReqs = [];
+						tool_calls.forEach((tool_call,idx)=>{
+							const argv = JSON.parse(tool_call.function.arguments);
+							toolReqs.push(this.getMCPParams(mcps[idx],{"params":{"name":tool_call.function.name, "arguments":(argv||{})},"method":"tools/call"}));
+						})
+						merge(toolReqs).then((allToolsResult)=>{
+							// push result msg
+							allToolsResult.forEach((toolResult,idx)=>{
+								toolResult?.result?.content.forEach((toolResultContent)=>{
+									if(toolResultContent.type=='text'){
+										allmessages.push({"role": "tool", "content": toolResultContent.text,"tool_call_id": tool_calls[idx].id})
+									} else {
+										allmessages.push({"role": "tool", "content": JSON.stringify(toolResultContent),"tool_call_id": tool_calls[idx].id})
+									}
+								})
+							});
+							this.chatLLM(allmessages, llm).then((result)=> callback(result));
+						});
+					} else {
+						callback(res);
+					} 
+					console.log(res);
+				});
+			})
+		} else {
+			this.chatLLM(usermessages, llm).then((res)=> callback(res));
 		}
+	}
+	getMCPParams(mcp, body) {
+		return this.llmRequest(`/svc/${mcp.kind}/${mcp.name}`, "POST", {
+      "jsonrpc": "2.0",
+			"id": 1,
+			...(body || {"method": "tools/list"})
+    })
+	}
+	chatLLM(messages, llm) {
+		const body = { messages };
 		return this.llmRequest(`/svc/${llm.kind}/${llm.name}/chat/completions`, "POST", body)
 	}
 	/*
