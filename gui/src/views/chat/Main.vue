@@ -185,8 +185,8 @@ const backhistory = () => {
 	manager.value = 'peer';
 }
 const botchat = ref();
-const changeLlm = (val)=> {
-	botchat.value?.setLLM(val)
+const changeBot = (val)=> {
+	botchat.value?.setBot(val)
 }
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
@@ -305,7 +305,7 @@ onActivated(()=>{
 		</div>
 		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotSetting @changeLlm="changeLlm" @back="backmanage" @history="() => history = true"/>
+				<BotSetting @changeBot="changeBot" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
 		

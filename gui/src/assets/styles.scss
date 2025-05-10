@@ -345,6 +345,15 @@ pre.app-code code{
 .p-chip .add-tag-input{
 	min-height: 2rem;
 }
+.p-inputgroup{
+	border-collapse: collapse;
+}
+.p-inputgroup>input{
+	border-width: 1px;
+	border-color: var(--p-inputgroup-addon-border-color);
+	border-style: solid solid solid none;
+	border-collapse: collapse;
+}
 .fr{
 	float: right;
 }

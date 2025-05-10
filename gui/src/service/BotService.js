@@ -62,10 +62,10 @@ export default class ChatService {
 		});
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
-	chatLLM(llm, message) {
-		// return file.arrayBuffer().then((body)=>{
-		// 	return this.request(`/api/files`, "POST", body, this.getHeader(contentType))
-		// })
+	callRunner(message, llm, mcps) {
+		return this.chatLLM(message, llm, mcps);
+	}
+	chatLLM(message, llm, mcps) {
 		const body = {
 			"messages":[
 				{

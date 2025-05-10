@@ -452,6 +452,30 @@ const downloadFile = ({
 		})
 	}
 }
+
+const selectDir = (callback) => {
+	const options = {
+		multiple: false,
+	}
+	documentDir().then((dir)=>{
+		options.defaultPath = dir;
+		openDialog(options).then((selected)=>{
+			if (selected === null) {
+				if(callback){
+					callback(null)
+				}
+			} else {
+				const selecteds = Array.isArray(selected)?selected:[selected];
+				// user selected multiple files
+				const _targets = [];
+				selecteds.forEach((file)=>{
+					callback(file)
+				})
+			}
+		})
+	})
+}
+
 const importFiles = ({
 	path, multiple, before, after
 }) => {
@@ -580,6 +604,7 @@ export {
 	downloadFile, 
 	importFiles,
 	downloadSpeed,
+	selectDir,
 	getShared,
 	chatFileType,
 	extIcon,
