@@ -38,6 +38,9 @@ export default class ChatService {
 	createRoute({ep, path, service}) {
 		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"POST", { service });
 	}
+	deleteRoute({ep, path}) {
+		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"DELETE",);
+	}
 	checkLLM(callback) {
 		const mesh = this.getMesh();
 		getItem(`llm-${mesh?.name}`, (res)=>{

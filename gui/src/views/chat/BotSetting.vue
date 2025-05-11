@@ -52,7 +52,9 @@ const loadLocalMcp = () => {
 	});
 }
 const adding = ref(false);
+const removeAry = ref([]);
 const remMcp = (idx) => {
+	removeAry.value.push({...localMcps.value[idx]});
 	localMcps.value.splice(idx,1);
 }
 const addMcp = () => {
@@ -82,14 +84,24 @@ const save = () => {
 		service: llm.value
 	}).then(()=>{
 		setItem(`llm-${selectedMesh.value?.name}`, [llm.value], ()=>{})
-		setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
+		setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{});
+		
 		setTimeout(()=>{
 			saving.value = false;
 			emits('changeBot',{
 				llm: llm.value,
 				mcps: localMcps.value.filter((n)=> n.enabled)
 			});
-		},600)
+		},600);
+		if(removeAry.value.length>0){
+			for(let i = (removeAry.value.length-1);i>=0;i--){
+				botService.deleteRoute({
+					ep: selectedMesh.value?.agent?.id,
+					path: `${removeAry.value[i]?.kind}/${removeAry.value[i]?.name}`,
+				})
+				removeAry.value.splice(i,1);
+			}
+		}
 	}).catch((e)=>{
 		saving.value = false;
 	})
