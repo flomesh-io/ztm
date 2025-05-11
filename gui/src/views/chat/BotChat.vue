@@ -6,7 +6,7 @@ import BotService from '@/service/BotService';
 import userSvg from "@/assets/img/user.png";
 import botSvg from "@/assets/img/bot.png";
 import { platform } from '@/utils/platform';
-import { getItem } from "@/utils/localStore";
+import { getItem, setItem } from "@/utils/localStore";
 import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
@@ -45,7 +45,18 @@ const sendMessage = (e) => {
 
 const since = ref();
 const getHistory = () => {
-	return botService.getHistory();
+	getItem(`bot-history-${selectedMesh.value?.name}`,(res)=>{
+		history.value = res || [];
+	});
+}
+const appendHistory = ref([]);
+const setHistory = (msg) => {
+	appendHistory.value.push(msg);
+	const newHis = history.value.concat(appendHistory.value);
+	if(newHis.length>50){
+		newHis.splice(0,newHis.length-50);
+	}
+	setItem(`bot-history-${selectedMesh.value?.name}`,newHis,(res)=>{});
 }
 
 const init = ref(false);
@@ -123,63 +134,11 @@ const buildMessage = (item) => {
 	// }
 	return _msg;
 }
-const loaddataCore = (callback) => {
-	// getHistory().then(res=>{
-	// 	let _messages = [];
-	// 	if(!init.value){
-	// 		(res || []).sort((a, b) => a.time - b.time).forEach(item=>{
-	// 			const _msg = buildMessage(item);
-	// 			messages.value[`${_msg?.role}-${_msg?.id}`] = true;
-	// 			_messages.push(_msg)
-	// 		})
-	// 		history.value = _messages || [];
-	// 		init.value = true;
-			
-	// 	}else if(res && chat.value){
-	// 		const _messages = [];
-	// 		(res || []).sort((a, b) => a.time - b.time).forEach(item=>{
-				
-	// 			const _msg = buildMessage(item);
-	// 			if(!!_msg?.key && messages.value[`${_msg?.role}-${_msg?.key}`]){
-	// 				messages.value[`${_msg?.role}-${_msg?.key}`] = false;
-	// 				messages.value[`${_msg?.role}-${_msg?.id}`] = true;
-	// 			} else if(!!item.message?.files && !!item.message?.files[0] && messages.value[`${_msg?.role}-${item.message?.files[0]?.name}`]){
-	// 				messages.value[`${_msg?.role}-${item.message?.files[0]?.name}`] = false;
-	// 				messages.value[`${_msg?.role}-${_msg?.id}`] = true;
-	// 			} else if(!messages.value[`${_msg?.role}-${_msg?.id}`]){
-	// 				messages.value[`${_msg?.role}-${_msg?.id}`] = true;
-	// 				_messages.push(_msg)
-	// 			}
-	// 		})
-	// 		_messages.forEach((msg)=>{
-	// 			chat.value.addMessage(msg);
-	// 		})
-	// 	}
-	// 	if(!!chatReady.value){
-	// 		since.value = Date.now()-(30*1000);
-	// 		// chat.value.refreshMessages();
-	// 	}
-	// 	if(callback){
-	// 		callback()
-	// 	}
-	// });
-}
-
-const timer = ref(true)
-const loaddataTimer = () => {
-	loaddataCore(()=>{
-		if(timer.value){
-			setTimeout(()=>{
-				loaddataTimer();
-			},1000)
-		}
-	})
-}
 const loaddata = () => {
 	if(!!chatReady.value){
 		chat.value.clearMessages();
 	}
-	loaddataTimer();
+	getHistory();
 }
 const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
@@ -197,6 +156,7 @@ const hasMediaDevices = computed(() => true);
 const postMessage = (message, cb) => {
 	if(message != ''){
 		loading.value = true;
+		setHistory(message);
 		botService.callRunner({
 			message, llm: llm.value, mcps: mcps.value,
 			callback(res){
@@ -338,6 +298,8 @@ const request = ref({
 					// signals.onResponse({files:[],overwrite: true});
 					if(!!html2){
 						// signals.onResponse({role: 'user',html:html2,overwrite: true});
+						
+						setHistory({html:html2,role: 'ai'});
 						chat.value.addMessage({html:html2,role: 'ai',overwrite: false},true);
 					}
 				});
@@ -345,6 +307,7 @@ const request = ref({
 				
 				if(body?.messages[0]){
 					postMessage(body?.messages[0],(html)=>{
+						setHistory({html,role: 'ai'});
 						signals.onResponse({html,role: 'ai',overwrite: false});
 					});
 				}else{
@@ -397,7 +360,7 @@ const loadllm = (callback) => {
 }
 const loadLocalMcp = () => {
 	getItem(`mcp-${selectedMesh.value?.name}`,(res)=>{
-		mcps.value = res || [];
+		mcps.value = (res || []).filter((n)=> n.enabled == true);
 	});
 }
 watch(()=>llm.value, async (newQuery) => {
@@ -422,9 +385,6 @@ onMounted(()=>{
 	loadLocalMcp();
 })
 
-onBeforeUnmount(()=>{
-	timer.value = false;
-})
 const setBot = (val) => {
 	llm.value = val?.llm;
 	mcps.value = val?.mcps;

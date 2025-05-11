@@ -173,7 +173,4 @@ export default class ChatService {
 	    "system_fingerprint": ""
 	}
 	*/
-	getHistory() {
-		return new Promise()
-	}
 }
