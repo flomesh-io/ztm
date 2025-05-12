@@ -4,7 +4,7 @@ import style from '@/utils/style';
 import { chatFileType, writeMobileFile,folderInit,openFile,openFolder } from '@/utils/file';
 import BotService from '@/service/BotService';
 import userSvg from "@/assets/img/user.png";
-import botSvg from "@/assets/img/bot.png";
+import botSvg from "@/assets/img/bot.svg";
 import { platform } from '@/utils/platform';
 import { getItem, setItem } from "@/utils/localStore";
 import _ from 'lodash';
@@ -367,13 +367,19 @@ watch(()=>llm.value, async (newQuery) => {
 	const _users = [user.value];
 	if(_users && _users.length>0){
 		await renderAvatars(_users);
+		const customCss = {
+			...style.avatarStyle?.avatar,
+			"top":'0',
+			"marginLeft": "0",
+			"marginRight": "0",
+		}
 		let res = {
-			system: {"src": botSvg,"styles":style.avatarStyle},
-			default: {"src": botSvg,"styles":style.avatarStyle},
-			ai: {"src": botSvg,"styles":style.avatarStyle}
+			system: {"src": botSvg,"styles":{avatar:{...customCss}}},
+			default: {"src": botSvg,"styles":{avatar:{...customCss}}},
+			ai: {"src": botSvg,"styles":{avatar:{...customCss,borderRadius:'0px'}}}
 		}
 		_users.forEach((u)=>{
-			res[u == user.value ? 'user': u] = {"src": store.getters['account/avatars'][u],"styles":style.avatarStyle};
+			res[u == user.value ? 'user': u] = {"src": store.getters['account/avatars'][u],"styles":{avatar:{...customCss}}};
 		})
 		avatars.value = res;
 	}
@@ -398,7 +404,7 @@ defineExpose({
 	<AppHeader :back="back">
 	    <template #center >
 				<Status :run="true" />
-	      <b>{{t('AI Bot')}}</b>
+	      <b>{{t('AI Bot')}} ({{llm?.name}})</b>
 	    </template>
 	    <template #end> 
 				<Button icon="pi pi-cog" @click="showManage" severity="secondary" text />
@@ -408,7 +414,7 @@ defineExpose({
 		<deep-chat
 			:textToSpeech='{"volume": 0.9}'
 			ref="chat"
-			:names="names"
+			:names="false"
 			@render="chatRender"
 			@new-message="sendMessage"
 			:attachmentContainerStyle='style.attachmentContainerStyle()'
