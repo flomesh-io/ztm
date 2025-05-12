@@ -3,6 +3,7 @@ import { ref, onMounted,computed,watch } from "vue";
 import { useRouter } from 'vue-router'
 import ZtmService from '@/service/ZtmService';
 import MeshJoin from './MeshJoin.vue';
+import Trial from './Trial.vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { useToast } from "primevue/usetoast";
@@ -82,48 +83,7 @@ const loaddata = () => {
 	store.dispatch('account/meshes');
 }
 const visibleTry = ref(false);
-const username = ref("");
 const tryLoading = ref(false);
-const tryMesh = () => {
-	ztmService.identity().then((PublicKey)=>{
-		if(!!PublicKey){
-			tryLoading.value = true;
-			ztmService.getPermit(PublicKey,username.value).then((permitJSON)=>{
-				if(!!permitJSON){
-					let saveData = {
-						name: "",
-						ca: "",
-						agent: {
-							name: "",
-							certificate: "",
-							privateKey: null,
-						},
-						bootstraps: []
-					}
-					
-					saveData = {...saveData, ...permitJSON};
-					saveData.name = "Sample";
-					saveData.agent.name = username.value
-					ztmService.joinMesh(saveData.name, saveData)
-					.then(res => {
-						tryLoading.value = false;
-						if(!!res){
-							visibleTry.value = false;
-							toast.add({ severity: 'success', summary:'Tips', detail: 'Joined.', life: 3000 });
-							loaddata();
-						}
-					})
-					.catch(err => {
-						tryLoading.value = false;
-						console.log('Request Failed', err)
-					});
-				}
-			}).catch((e)=>{
-				tryLoading.value = false;
-			});
-		}
-	})
-}
 const openTryMesh = () => {
 	visibleTry.value = true;
 }
@@ -161,7 +121,7 @@ onMounted(() => {
 					</template>
 					<template #end> 
 						<Button icon="pi pi-refresh" text @click="loaddata"  :loading="loader"/>
-						<Button v-if="hasPubHub && !!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="t('Live Sample')" icon="pi pi-sparkles" text @click="openTryMesh" />
+						<Button v-if="hasPubHub && !!meshes && meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')"  :loading="tryLoading" v-tooltip="t('Trial')" icon="pi pi-sparkles" text @click="openTryMesh" />
 						<Button v-if="!!meshes && meshes.length>0" icon="pi pi-plus"  v-tooltip="t('Join')" @click="addMesh"/>
 					</template>
 			</AppHeader>
@@ -207,7 +167,7 @@ onMounted(() => {
 				</div>
 			</div>
 			</ScrollPanel>
-			<Empty v-else-if="hasPubHub" :title="emptyMsg" :cancelButton="t('Live Sample')" @cancel="openTryMesh" :button="t('Join Mesh')" @primary="() => visibleEditor = true"/>
+			<Empty v-else-if="hasPubHub" :title="emptyMsg" :cancelButton="t('Trial')" @cancel="openTryMesh" :button="t('Join Mesh')" @primary="() => visibleEditor = true"/>
 			<Empty v-else :title="emptyMsg" :button="t('Join Mesh')" @primary="() => visibleEditor = true"/>
 		
 		</div>
@@ -220,18 +180,7 @@ onMounted(() => {
 					@back="() => {selectedMenu=null;visibleEditor=false;}"/>
 			</div>
 		</div>
-		
-		<Dialog :header="t('Live Sample')" v-model:visible="visibleTry" modal :dismissableMask="true">
-			<div>
-				<div class="flex mt-2 w-full">
-					<InputText size="small" placeholder="Username" v-model="username"  class="flex-item"></InputText>
-					<Button :loading="tryLoading" size="small" :disabled="!username || username == 'root'" label="Join" class="ml-2"  @click="tryMesh"></Button>
-				</div>
-				<div class="pt-2 opacity-70 text-sm">
-					<i class="pi pi-info-circle relative" style="top: 1px;"/> {{t('Join our sample mesh for a first experience of ZTM')}}
-				</div>
-			</div>
-		</Dialog>
+		<Trial v-model:visible="visibleTry" v-model:loading="tryLoading"/>
 	</div>
 </template>
 

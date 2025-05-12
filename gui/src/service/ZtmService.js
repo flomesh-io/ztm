@@ -11,9 +11,7 @@ import {
 import { getItem as getKeychainItem, saveItem as saveKeychainItem } from 'tauri-plugin-keychain';
 
 
-const VITE_APP_PUB_HUB_JP = import.meta.env.VITE_APP_PUB_HUB_JP;
-const VITE_APP_PUB_HUB_CN = import.meta.env.VITE_APP_PUB_HUB_CN;
-const VITE_APP_PUB_HUB_US = import.meta.env.VITE_APP_PUB_HUB_US;
+const VITE_APP_PUB_HUB = import.meta.env.VITE_APP_PUB_HUB;
 
 export default class ZtmService {
 	getPubHub() {
@@ -21,16 +19,16 @@ export default class ZtmService {
 		if (timeZone === "Asia/Shanghai" || timeZone === "Asia/Chongqing") {
 			const pm = platform();
 			if(pm == 'ios'){
-				return '';
+				return VITE_APP_PUB_HUB;
 			} else {
-				return VITE_APP_PUB_HUB_CN;
+				return VITE_APP_PUB_HUB;
 			}
 		} else if (timeZone === "Asia/Hong_Kong") {
-			return VITE_APP_PUB_HUB_CN;
+			return VITE_APP_PUB_HUB;
 		} else if (timeZone === "Asia/Tokyo") {
-			return VITE_APP_PUB_HUB_JP;
+			return VITE_APP_PUB_HUB;
 		} else {
-			return VITE_APP_PUB_HUB_US;
+			return VITE_APP_PUB_HUB;
 		}
 	}
 	login(user, password) {
