@@ -215,13 +215,12 @@ onMounted(()=>{
 			</div>
 			<i class="pi pi-external-link"/>
 		</li> -->
-		
-		<li class="nav-li flex p-0 mt-4"  >
-			<Button class="w-full" severity="secondary" @click="clear">
+	</ul>
+	<div class="p-3" >
+			<Button class="w-full"  severity="secondary" @click="clear">
 				{{t('Clear History')}}
 			</Button>
-		</li>
-	</ul>
+	</div>
 </template>
 <style scoped>
 	.selector{
