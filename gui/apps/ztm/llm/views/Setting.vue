@@ -166,7 +166,7 @@ const mcpRemove = (t,index) => {
 }
 const browser = () => {
 	selectDir((dir)=>{
-		mcp.target.address = dir;
+		mcp.value.target.address = dir;
 	})
 }
 

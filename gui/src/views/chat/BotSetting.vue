@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import { useStore } from 'vuex';
+import confirm from "@/utils/confirm";
 import ChatService from '@/service/ChatService';
 import BotService from '@/service/BotService';
 import _ from 'lodash';
@@ -108,6 +109,21 @@ const save = () => {
 }
 const llms = ref([]);
 const mcps = ref([]);
+const clear = () => {
+	confirm.custom({
+			message: `Are you sure to clear this history message?`,
+			header: 'Tip',
+			icon: 'pi pi-info-circle',
+			accept: () => {
+				setItem(`bot-history-${selectedMesh.value?.name}`,[],(res)=>{
+					emits('clear')
+				});
+			},
+			reject: () => {
+			}
+	});
+	
+}
 onMounted(()=>{
 	loadllm();
 	loadLocalMcp();
@@ -199,6 +215,12 @@ onMounted(()=>{
 			</div>
 			<i class="pi pi-external-link"/>
 		</li> -->
+		
+		<li class="nav-li flex p-0 mt-4"  >
+			<Button class="w-full" severity="secondary" @click="clear">
+				{{t('Clear History')}}
+			</Button>
+		</li>
 	</ul>
 </template>
 <style scoped>

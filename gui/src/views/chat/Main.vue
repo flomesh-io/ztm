@@ -188,6 +188,13 @@ const botchat = ref();
 const changeBot = (val)=> {
 	botchat.value?.setBot(val)
 }
+const botClear = ()=>{
+	const _selectRoom = selectRoom.value;
+	selectRoom.value = null;
+	setTimeout(()=>{
+		selectRoom.value = _selectRoom;
+	},100);
+}
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
 		load();
@@ -305,7 +312,7 @@ onActivated(()=>{
 		</div>
 		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotSetting @changeBot="changeBot" @back="backmanage" @history="() => history = true"/>
+				<BotSetting @clear="botClear" @changeBot="changeBot" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
 		
