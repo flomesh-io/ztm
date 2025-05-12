@@ -22,6 +22,7 @@ import { openWebview } from '@/utils/webview';
 import { fsInit, downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
 import toast from "@/utils/toast";
+import Trial from '@/views/mesh/Trial.vue';
 import { useI18n } from 'vue-i18n';
 
 const DEFAULT_MESH_NAME = 'Default';
@@ -348,6 +349,12 @@ const usermenuitems = computed(()=>[{
 	]
 }]);
 
+const visibleTry = ref(false);
+const tryLoading = ref(false);
+const openTryMesh = () => {
+	visibleTry.value = true;
+}
+
 const toggleUsermenu = (event) => {
     usermenu.value.toggle(event);
 };
@@ -389,6 +396,7 @@ onMounted(() => {
 			</div>
 			<div class="mt-4">
 				<Button v-if="needLogin" class="w-20rem" @click="goLogin">{{!!auth.permit?t('Connecting'):t('Sign In')}}</Button>
+				<Button icon="pi pi-sparkles" :label="t('Trial')" v-else-if="(!meshes || meshes.length==0)" class="w-20rem" :loading="tryLoading" @click="openTryMesh" />
 				<Select 
 				v-else
 				:options="meshes" 
@@ -437,7 +445,11 @@ onMounted(() => {
 					<i class="pi pi-power-off " />
 				</Button>
 			</div> -->
-
+			<div class="flex-item" v-if="platform!='android' && platform!='ios' && (!meshes || (meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')))">
+				<Button :loading="tryLoading" @click="openTryMesh" v-tooltip="t('Trial')" class="pointer" severity="help" rounded text aria-label="Filter" >
+					<i class="pi pi-sparkles text-3xl"  />
+				</Button>
+			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button @click="goJoinMesh" v-tooltip="t('Join Mesh')" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-plus text-3xl"  />
@@ -465,6 +477,7 @@ onMounted(() => {
 				</Button>
 			</div>
 		</div>
+		<Trial v-model:visible="visibleTry" v-model:loading="tryLoading"/>
 	</div>
 </template>
 
