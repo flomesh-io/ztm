@@ -52,8 +52,8 @@ export default class LLMService {
 		})
 	}
 	
-	getRoutes() {
-		return request(`/api/routes`);
+	getRoutes(ep) {
+		return request(`/api/endpoints/${ep}/routes`);
 	}
 	/*
 	service: {
@@ -77,6 +77,6 @@ export default class LLMService {
 				if(!!callback)
 				callback(err);
 			});
-		})
+		},()=>{},'After removing the route, the ref service settings of your AI bot will become invalid and need to be reconfigured')
 	}
 }
