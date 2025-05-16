@@ -49,7 +49,8 @@ const openWebview = (app, broswer)=>{
 			// getCurrentDL().then((urls)=>{
 			// 	console.log(urls)
 			// })
-		}	else if(platform=='windows' || true){
+		// test todo platform=='windows' || 
+		}	else if(!!options?.proxyUrl || !!broswer){
 			const pluginOption = {
 				name: app.name,
 				label: `${app.name}_webview`,

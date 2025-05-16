@@ -8,6 +8,8 @@ import { useRoute } from 'vue-router'
 import { useToast } from "primevue/usetoast";
 import { useStore } from 'vuex';
 import _ from "lodash"
+import llmSvg from "@/assets/img/llm/deepseek.png";
+import mcpSvg from "@/assets/img/mcp/github.png";
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const emits = defineEmits(['save']);
@@ -29,7 +31,7 @@ const newMcp = {
 	},
 	target: {
 		address: '',
-		argv: ['stdio'],
+		argv: [],
 		env: {},
 	}
 }
@@ -70,7 +72,7 @@ const newLlm = {
 }
 const llm = ref(_.cloneDeep(newLlm))
 const llms = ref([])
-
+const routes = ref([]);
 const llmEnabled = computed(() => {
 	return !!llm.value.name;
 });
@@ -126,7 +128,12 @@ const loaddata = () => {
 		llms.value = (res||[]).filter((n) => n.kind == 'llm');
 		mcps.value = (res||[]).filter((n) => n.kind == 'tool');
 	})
+	
+	llmService.getRoutes(info?.value.endpoint?.id).then((res)=>{
+		routes.value = res.routes||[];
+	})
 }
+
 
 const openLlmCreate = () => {
 	llmEditor.value = true;
@@ -154,6 +161,7 @@ const llmRemove = (t,index) => {
 	llmService.deleteService({
 		ep:t.endpoint?.id, kind:'llm', name:t.name
 	},()=>{
+		loaddata();
 		emits("save");
 	})
 }
@@ -161,9 +169,20 @@ const mcpRemove = (t,index) => {
 	llmService.deleteService({
 		ep:t.endpoint?.id, kind:'tool', name:t.name
 	},()=>{
+		loaddata();
 		emits("save");
 	})
 }
+const routeRemove = (t,index) => {
+	llmService.deleteRoute({
+		ep:info?.value.endpoint?.id, path:t.path
+	},()=>{
+		loaddata();
+		emits("save");
+	})
+}
+
+
 const browser = () => {
 	selectDir((dir)=>{
 		mcp.value.target.address = dir;
@@ -186,31 +205,47 @@ onMounted(() => {
 				<template #end> 
 				</template>
 		</AppHeader>
-		<ScrollPanel class="absolute-scroll-panel md:p-3" style="bottom: 0;">
+		<ScrollPanel class="absolute-scroll-panel " style="bottom: 0;">
 			<Empty v-if="error" :error="error"/>
-			<BlockViewer v-else containerClass="surface-section px-1 md:px-1 md:pb-7 lg:px-1" >
-				<Loading v-if="loading" />
-				<div v-else class="surface-ground surface-section h-full p-4" >
-						<div class="grid " >
-							<div class="col-12 md:col-6">
+			<Tabs v-else value="0">
+				<TabList>
+					<Tab value="0">
+						<Tag >{{t('LLM')}}
+							<Badge :value="llms.length" />
+						</Tag> 
+					</Tab>
+					<Tab value="1">
+						<Tag >{{t('MCP Server')}}
+							<Badge :value="mcps.length" />
+						</Tag> 
+					</Tab>
+					<Tab value="2">
+						<Tag >{{t('Routes')}}
+							<Badge :value="routes.length" />
+						</Tag> 
+					</Tab>
+				</TabList>
+				<TabPanels>
+					<TabPanel value="0">		
+							<Loading v-if="loading" />
+							<div v-else class="surface-ground surface-section h-full" >
 								<h6 class="flex">
-									<div>
-										<Tag >{{t('LLM')}}
-											<Badge :value="llms.length" />
-										</Tag> 
-									</div>
-									<div class="flex-item text-right">
+									<div class="flex-item">
 										<Button 
 											v-if="!loading && !llmEditor" 
 											@click="openLlmCreate" 
-											v-tooltip.left="t('Add LLM')" 
+										  :label="t('Add LLM')"
 											size="small" 
 											icon="pi pi-plus" ></Button>
 										<div v-else-if="!loading" >
 											<Button class="mr-2" @click="() => llmEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
-											<Button :disabled="!llmEnabled" @click="createLlm()()" :loading="savingLlm"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
+									<div class="flex-item text-right">
+										<div v-if="llmEditor && !loading" >
+											<Button :disabled="!llmEnabled" @click="createLlm()()" :loading="savingLlm"  size="small" icon="pi pi-check" ></Button>
+										</div>
+								</div>
 								</h6>
 								<ul v-if="llmEditor" class="list-none p-0 m-0">
 									<FormItem :label="t('Name')" :border="true">
@@ -251,6 +286,9 @@ onMounted(() => {
 									<template #list="slotProps">
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+														<div>
+															<img :src="llmSvg" width="30px" />
+														</div>
 														<div class="flex flex-col pr-2 flex-item">
 															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																<span>
@@ -270,22 +308,24 @@ onMounted(() => {
 									</template>
 								</DataView>
 							</div>
-							<div class="col-12 md:col-6">
+					</TabPanel>
+					<TabPanel value="1">
+							<Loading v-if="loading" />
+							<div v-else class="surface-ground surface-section h-full" >
 								<h6 class="flex">
-									<div>
-										<Tag >{{t('MCP Server')}}
-											<Badge :value="mcps.length" />
-										</Tag> 
-									</div>
-									<div class="flex-item text-right">
+									<div class="flex-item">
 										<Button 
 											v-if="!loading && !mcpEditor" 
 											@click="openMcpCreate" 
-											v-tooltip.left="t('Add MCP Server')" 
+											:label="t('Add MCP Server')" 
 											size="small" 
 											icon="pi pi-plus" ></Button>
 										<div v-else-if="!loading" >
 											<Button class="mr-2" @click="() => mcpEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
+										</div>
+									</div>
+									<div class="flex-item text-right">
+										<div v-if="mcpEditor && !loading" >
 											<Button :disabled="!mcpEnabled"  @click="createMcp()" :loading="savingMcp"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
@@ -309,7 +349,7 @@ onMounted(() => {
 												<span class="ml-2 font-medium">
 													<InputText :placeholder="t('MCP Server Address')" class="add-tag-input xxl" style="width: 300px;" :unstyled="true" v-model="mcp.target.address" type="text" />
 												</span>
-												<Button style="left:10px;border-radius:16px;" class="relative" size="small" @click="browser">{{t('Select')}}</Button>
+												<Button style="left:10px;border-radius:16px;" class="relative" size="small" @click="browser" icon="pi pi-folder"></Button>
 										</Chip>
 									</FormItem>
 									<FormItem :label="t('Arguments')" :border="false">
@@ -332,6 +372,9 @@ onMounted(() => {
 									<template #list="slotProps">
 										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+														<div>
+															<img :src="mcpSvg" width="30px" />
+														</div>
 														<div class="flex flex-col pr-2 flex-item">
 															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																<span>
@@ -351,10 +394,43 @@ onMounted(() => {
 									</template>
 								</DataView>
 							</div>
+					</TabPanel>
+					<TabPanel value="2">
+						<Loading v-if="loading" />
+						<div v-else class="surface-ground surface-section h-full" >
+							<DataView class="transparent" :value="routes">
+								<template #empty>
+									{{t('No Routes.')}}
+								</template>
+								<template #list="slotProps">
+									<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
+											<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+													<div>
+														<i class="pi pi-link text-primary-500"/>
+													</div>
+													<div class="flex flex-col pr-2 flex-item">
+														<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+															<span>
+																<b>{{item.path}}</b> 
+															</span>
+															<span class="mt-1">
+																<Tag class="mr-2" v-if="item.service?.kind">{{item.service?.kind}}</Tag>
+																{{item?.service?.name}}
+															</span>
+														</div>
+													</div>
+													<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
+															<Button @click="routeRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
+													</div>
+											</div>
+									</div>
+								</template>
+							</DataView>
 						</div>
-					</div>
-				</BlockViewer>
-			</ScrollPanel>
+					</TabPanel>
+				</TabPanels>	
+			</Tabs>
+		</ScrollPanel>
 	</div>
 </template>
 

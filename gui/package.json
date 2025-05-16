@@ -43,6 +43,7 @@
     "download-ztm-android": "mkdir -p download && cd download && curl -o pipy.tar.gz https://pipy-oss-1255617643.cos.ap-beijing.myqcloud.com/repo/ztm/arm64-v8a/library/libztm.tar.gz && tar -xzf pipy.tar.gz && cp -f ./usr/local/lib/libztm.so ../src-android/app/src/main/assets/libztm.so && cp -f ./usr/local/lib/libc++_shared.so ../src-android/app/src/main/assets/libc++_shared.so"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.2",
     "@primevue/core": "4.3.4",
     "@primevue/themes": "4.3.4",
     "@tauri-apps/api": "2.4.1",
@@ -62,7 +63,7 @@
     "chart.js": "3.3.2",
     "clipboardy": "^4.0.0",
     "dayjs": "^1.11.10",
-    "deep-chat": "^2.0.1",
+    "deep-chat": "^2.2.1",
     "echarts": "5.4.3",
     "export-from-json": "^1.7.4",
     "js-cookie": "^2.2.1",

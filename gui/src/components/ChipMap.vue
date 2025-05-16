@@ -99,7 +99,7 @@ watch(() => props.map, () =>{
 				
 			</div>
 		</div>
-		<Button v-else @click="newTag()" icon="pi pi-plus" severity="secondary" />
+		<Button v-else size="small" @click="newTag()" icon="pi pi-plus" severity="secondary" />
 	</span>
 </template>
 

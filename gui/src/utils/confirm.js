@@ -1,9 +1,9 @@
 import store from '@/store';
 
-const remove = (accept, cancel) => {
+const remove = (accept, cancel, msg) => {
 	const confirm = store.getters["notice/confirm"];
 	confirm.require({
-		message: `Are you sure you want to delete it?`,
+		message: msg || `Are you sure you want to delete it?`,
 		header: 'Tips',
 		icon: 'pi pi-exclamation-triangle',
 		rejectProps: {

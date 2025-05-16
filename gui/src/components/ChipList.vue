@@ -40,13 +40,13 @@ watch(() => props.list, () =>{
 	}
 	if(props.list.length == 0 && props.listType != 'tag'){
 		
-		if(!props.listKey){
-			props.list.push('')
-		}else{
-			const _temp = {};
-			_temp[props.listKey] = ""
-			props.list.push(_temp);
-		}
+		// if(!props.listKey){
+		// 	props.list.push('')
+		// }else{
+		// 	const _temp = {};
+		// 	_temp[props.listKey] = ""
+		// 	props.list.push(_temp);
+		// }
 	}
 },{
 	deep:true,
@@ -84,10 +84,21 @@ const typing = (e,idx) => {
 		props.list[idx][props.listKey] = e.target.value;
 	}
 }
+const initEmptyList = () => {
+	if(!props.listKey){
+		props.list.push('');
+	} else {
+		const epy = {}
+		epy[props.listKey]='';
+		props.list.push(epy);
+	}
+}
 </script>
 
 <template>
-	<span v-if="props.listType == 'tag'">
+	
+	<Button v-if="!props.list?.length" size="small" @click="initEmptyList" icon="pi pi-plus" severity="secondary" />
+	<span v-else-if="props.listType == 'tag'">
 		<span v-for="(tag,tagidx) in props.list">
 			<Tag severity="secondary" v-if="tagidx<props.list.length" class="mr-2" >
 				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
@@ -108,7 +119,7 @@ const typing = (e,idx) => {
 				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
 				<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 			</Chip>
-			<Chip v-else-if="!slots.input" class="pl-0 pr-3">
+			<Chip v-else-if="!slots.input" class="pl-0 custom-chip">
 					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 						<i class="pi" :class="icon"/>
 					</span>
@@ -116,6 +127,9 @@ const typing = (e,idx) => {
 						<InputText v-if="!props.listKey" @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
 						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
 						<i class="pi pi-arrow-down-left" />
+					</span>
+					<span class="font-medium">
+						<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 					</span>
 			</Chip>
 			<slot v-else name="input"/>
@@ -130,7 +144,7 @@ const typing = (e,idx) => {
 					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 				</span>
 			</Chip>
-			<Chip v-else-if="!slots.input" class="pl-0 pr-3">
+			<Chip v-else-if="!slots.input" class="pl-0 custom-chip">
 					<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
 						<i class="pi" :class="icon"/>
 					</span>
@@ -138,6 +152,9 @@ const typing = (e,idx) => {
 						<InputText v-if="!props.listKey" @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag" @input="typing($event,tagidx)" type="text" />
 						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
 						<i class="pi pi-arrow-down-left" />
+					</span>
+					<span class="font-medium">
+						<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
 					</span>
 			</Chip>
 			<slot v-else name="input"/>
