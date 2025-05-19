@@ -292,8 +292,8 @@ export default function ({ app, mesh }) {
         var url = new URL(evt.head.path)
         var path = url.pathname
         if (path.startsWith('/svc/')) path = path.substring(4)
-        var prefix = path.endsWith('/') ? path : path + '/'
-        if ($route = localRoutes.findLast(r => path.startsWith(prefix))) {
+        var path2 = path.endsWith('/') ? path : path + '/'
+        if ($route = localRoutes.findLast(r => path2.startsWith(r.path))) {
           var service = $route.service
           var basepath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
           evt.head.path = os.path.join(basepath, path.substring($route.path.length)) + url.search
