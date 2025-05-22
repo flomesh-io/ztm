@@ -1,11 +1,10 @@
 @ECHO off
 
-CD "%~dp0\gui"
-CMD /c "npm install --no-audit"
+CD %~dp0
+CMD /c "git clean -X -f agent"
 
 CD %~dp0
 CALL build\deps.cmd
-CALL build\gui.cmd
 CALL build\pipy.cmd
 
 IF NOT EXIST bin (MD bin)
