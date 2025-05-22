@@ -24,12 +24,6 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-cd "$ZTM_DIR/pipy"
-npm install --no-audit
-
-cd "$ZTM_DIR/gui"
-npm install --no-audit
-
 cd "$ZTM_DIR"
 
 if test -e "hub/cluster.js"; then

@@ -2,8 +2,8 @@
 
 ZTM_DIR=$(cd "$(dirname "$0")" && pwd)
 
-cd "$ZTM_DIR/gui"
-npm install --no-audit
+cd "$ZTM_DIR"
+git clean -X -f agent
 
 cd "$ZTM_DIR"
 build/deps.sh
@@ -14,5 +14,4 @@ if [ $? -ne 0 ]; then
 fi
 
 cd "$ZTM_DIR"
-build/gui.sh
 build/pipy.sh

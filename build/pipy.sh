@@ -15,7 +15,7 @@ then
     -DCMAKE_C_COMPILER=clang \
     -DCMAKE_CXX_COMPILER=clang++ \
     -DPIPY_GUI=OFF \
-    -DPIPY_CODEBASES=ON \
+    -DPIPY_SAMPLE_CODEBASES=OFF \
     -DPIPY_CUSTOM_CODEBASES=ztm/ca:../ca,ztm/hub:../hub,ztm/agent:../agent,ztm/cli:../cli \
     -DPIPY_DEFAULT_OPTIONS="repo://ztm/cli --args"
 
@@ -69,7 +69,7 @@ else
     -DPIPY_SHARED=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DPIPY_GUI=OFF \
-    -DPIPY_CODEBASES=ON \
+    -DPIPY_SAMPLE_CODEBASES=OFF \
     -DPIPY_CUSTOM_CODEBASES=ztm/ca:../ca,ztm/hub:../hub,ztm/agent:../agent,ztm/cli:../cli \
     -DPIPY_DEFAULT_OPTIONS="repo://ztm/cli --args" \
     -GNinja 
@@ -107,6 +107,17 @@ then
 
   if [ -z "$BUILD_ZTM_SHARED" ]
   then
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      OS_NAME=generic_linux
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      OS_NAME=macos
+    fi
+
+    OS_ARCH=$(uname -m)
+    if [[ $OS_ARCH == "aarch64" ]]
+    then
+      OS_ARCH=arm64
+    fi
     tar zcvf ztm-aio-${VERSION}-${OS_NAME}-${OS_ARCH}.tar.gz bin/ztm
   else
     tar zcvf libztm-${VERSION}-android.tar.gz usr/local/lib/*.so
