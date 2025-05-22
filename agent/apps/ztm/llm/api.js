@@ -285,6 +285,7 @@ export default function ({ app, mesh }) {
   }
 
   var $route
+  var $head
 
   var forwardService = pipeline($=>$
     .pipe(evt => {
@@ -310,6 +311,30 @@ export default function ({ app, mesh }) {
       ),
       'local': $=>$.pipe(() => connectService),
       '404': $=>$.replaceMessage(new Message({ status: 404 })),
+    })
+    .pipe(msg => {
+      var ct = msg.head.headers['content-type'] || ''
+      if (ct.startsWith('text/event-stream')) {
+        $head = msg.head
+        return 'sse'
+      }
+      return 'bypass'
+    }, {
+      'bypass': $=>$,
+      'sse': ($=>$
+        .split('\r\n\r\n')
+        .replaceMessage(msg => {
+          var lines = msg.body.toString().split('\r\n')
+          if (lines.some(l => l.startsWith('event:') && l.substring(6).trim() === 'endpoint')) {
+            var i = lines.findIndex(l => l.startsWith('data:'))
+            if (i >= 0) {
+              lines[i] = 'data: ' + os.path.join(app.path, 'svc', $route.path, lines[i].substring(5).trim())
+            }
+          }
+          return new Data(lines.join('\r\n') + '\r\n\r\n')
+        })
+        .insert(() => new MessageStart($head))
+      )
     })
   )
 
@@ -340,7 +365,7 @@ export default function ({ app, mesh }) {
         .handleMessageStart(msg => {
           $serviceURL = new URL($service.target.address)
           msg.head.path = os.path.join($serviceURL.pathname, msg.head.path)
-          msg.head.headers.host = $serviceURL.hostname
+          msg.head.headers.host = $serviceURL.host
           var headers = $service.target.headers
           if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
         })

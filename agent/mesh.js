@@ -37,6 +37,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   var meshEnv = {
     name: meshName,
     url: `http://${listen}/api/meshes/${meshName}`,
+    path: `/api/meshes/${meshName}`,
     discoverUsers: discoverUsersFromApp,
     discover: discoverFromApp,
     connect: connectFromApp,
