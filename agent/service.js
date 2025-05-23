@@ -14,9 +14,9 @@ export default function service(routes) {
         function (evt) {
           if (evt instanceof MessageStart) {
             var path = evt.head.path
-            var route = routes.find(r => $params = r.match(path))
+            var route = routes.find(r => $params = r.match(path))?.pipelines
             if (!route) return response404
-            return route.pipelines[evt.head.method] || response405
+            return route[evt.head.method] || route['*'] || response405
           }
         },
         () => $params

@@ -35,8 +35,7 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/svc/*': {
-      'GET': pipeline($=>$.pipe(api.forwardService, () => $ctx)),
-      'POST': pipeline($=>$.pipe(api.forwardService, () => $ctx)),
+      '*': pipeline($=>$.pipe(api.forwardService, () => $ctx)),
     },
 
     //
@@ -209,13 +208,11 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/forward/{kind}/{name}': {
-      'GET': pipeline($=>$.pipe(api.connectService, () => $ctx)),
-      'POST': pipeline($=>$.pipe(api.connectService, () => $ctx)),
+      '*': pipeline($=>$.pipe(api.connectService, () => $ctx)),
     },
 
     '/api/forward/{kind}/{name}/*': {
-      'GET': pipeline($=>$.pipe(api.connectService, () => $ctx)),
-      'POST': pipeline($=>$.pipe(api.connectService, () => $ctx)),
+      '*': pipeline($=>$.pipe(api.connectService, () => $ctx)),
     },
   })
 
