@@ -134,7 +134,7 @@ const outboundsInfo = computed(() => (outbounds) => {
 							</template>
 						</Column>
 				</DataTable>
-				<div v-else class="grid text-left mt-1 px-3" v-if="tunnelsFilter && tunnelsFilter.length >0">
+				<div v-else class="grid text-left mt-1 px-3">
 						<div  :class="(!props.small)?'col-12 md:col-6 lg:col-4':'col-12'" v-for="(tunnel,hid) in tunnelsFilter" :key="hid">
 							 <div class="surface-card shadow-2 p-3 border-round">
 									 <div class="flex justify-content-between">

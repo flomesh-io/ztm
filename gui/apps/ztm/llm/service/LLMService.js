@@ -1,4 +1,4 @@
-import { request,requestWithTimeout, merge, spread } from '@/service/common/request';
+import { request,requestWithTimeout,getUrl, merge, spread } from '@/service/common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import ZtmService from '@/service/ZtmService';
@@ -9,6 +9,9 @@ export default class LLMService {
 	}
 	getEndpoints() {
 		return ztmService.getEndpoints();
+	}
+	getSvcUrl(path){
+		return getUrl(path,true);
 	}
 	getServices(ep) {
 		return ep?request(`/api/endpoints/${ep}/services`):request(`/api/services`);

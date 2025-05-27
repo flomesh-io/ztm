@@ -12,25 +12,25 @@ name = "ztm_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
-tauri-build = { version = "=2.1.1", features = [] }
+tauri-build = { version = "=2.2.0", features = [] }
 
 [dependencies]
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-tauri = { version = "=2.4.1", features = [ "protocol-asset", "macos-proxy", "macos-private-api", "image-ico", "image-png", "tray-icon", "unstable"] }
-tauri-utils = "=2.3.1"
-tauri-runtime = "=2.5.1"
+tauri = { version = "=2.5.1", features = [ "protocol-asset", "macos-proxy", "macos-private-api", "image-ico", "image-png", "tray-icon", "unstable"] }
+tauri-utils = "=2.4.0"
+tauri-runtime = "=2.6.0"
 tauri-plugin-shell = "=2.2.1"
 tauri-plugin-process = "=2.2.1"
-tauri-plugin-http = { version = "=2.2", features = ["rustls-tls", "unsafe-headers"] }
+tauri-plugin-http = { version = "=2.4.4", features = ["rustls-tls", "unsafe-headers"] }
 tauri-plugin-os = "=2.2.1"
 tauri-plugin-upload = "=2.2.1"
 tauri-plugin-notification = "=2.2.2"
-tauri-plugin-fs = "=2.2.1"
-tauri-plugin-dialog = "=2.2.1"
-tauri-plugin-persisted-scope = "=2.2.1"
-tauri-plugin-deep-link = "=2.2.1"
+tauri-plugin-fs = "=2.3.0"
+tauri-plugin-dialog = "=2.2.2"
+tauri-plugin-persisted-scope = "=2.2.2"
+tauri-plugin-deep-link = "=2.3.0"
 tauri-plugin-clipboard-manager = "=2.2.2"
-tauri-plugin-log = "=2.3.1"
+tauri-plugin-log = "=2.4.0"
 tauri-plugin-share = "=2.0.5"
 tauri-plugin-store = "=2.2.0"
 tauri-plugin-keychain = "=2.0.2"

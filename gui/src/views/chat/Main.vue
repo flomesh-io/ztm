@@ -26,6 +26,10 @@ const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+
+const mcpLatest = computed(() => {
+	return store.getters["mcp/latest"]
+});
 const aiRooms = [
 	{
 		id: 'gpt',
@@ -60,7 +64,7 @@ const uniRooms = computed(() => {
 		bot: true,
 		latest:{
 			message:{
-				text:t('My MCP Assistant.'),
+				text: mcpLatest.value || t('My MCP Assistant.'),
 			},
 			time: Date.now()
 		}
@@ -186,7 +190,8 @@ const backhistory = () => {
 }
 const botchat = ref();
 const changeBot = (val)=> {
-	botchat.value?.setBot(val)
+	botchat.value?.setBot(val);
+	backmanage()
 }
 const botClear = ()=>{
 	const _selectRoom = selectRoom.value;
@@ -312,7 +317,7 @@ onActivated(()=>{
 		</div>
 		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotSetting @clear="botClear" @changeBot="changeBot" @back="backmanage" @history="() => history = true"/>
+				<BotSetting @clear="botClear" @saved="changeBot" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
 		

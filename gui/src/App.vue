@@ -56,7 +56,7 @@ const timmer = () => {
 }
 onMounted(()=>{
 	reg();
-	timmer()
+	timmer();
 	customElements.define('accept-file', AcceptFile);
 })
 

@@ -18,6 +18,7 @@ dist
 dist-ssr
 coverage
 *.local
+/src/sdk
 /release
 /download/*
 /public/demo

@@ -3,6 +3,7 @@ import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vu
 import style from '@/utils/style';
 import { chatFileType, writeMobileFile,folderInit,openFile,openFolder } from '@/utils/file';
 import BotService from '@/service/BotService';
+import MCPService from '@/service/MCPService';
 import userSvg from "@/assets/img/user.png";
 import botSvg from "@/assets/img/bot.svg";
 import { platform } from '@/utils/platform';
@@ -12,6 +13,7 @@ import 'deep-chat';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { generateList } from "@/utils/svgAvatar";
+
 const { t } = useI18n();
 
 const llm = ref(null);
@@ -19,6 +21,7 @@ const mcps = ref([]);
 const loading = ref(true);
 const store = useStore();
 const botService = new BotService();
+const mcpService = new MCPService();
 const emits = defineEmits(['back','peer','manager']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
@@ -44,9 +47,13 @@ const sendMessage = (e) => {
 }
 
 const since = ref();
+
+const msgHtml = (msg) => {
+	return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`;
+}
 const getHistory = () => {
 	getItem(`bot-history-${selectedMesh.value?.name}`,(res)=>{
-		history.value = res || [];
+		history.value = !!res && res.length>0 ? res : [{html:msgHtml('有什么可以帮助您？'), role:'ai'}];
 	});
 }
 const appendHistory = ref([]);
@@ -153,18 +160,42 @@ const inputStyle = computed(() => {
 	return _style;
 })
 const hasMediaDevices = computed(() => true);
-const postMessage = (message, cb) => {
+const delta = ref('');
+let callbackProxy = null;
+const workerOnMessage = (msg) => {
+	if(msg?.message){
+		callbackProxy(
+			msgHtml(msg?.message),
+			true
+		);
+	} else {
+		setTimeout(()=>{
+			callbackProxy(
+				msgHtml(msg?.delta),
+				msg?.ending,
+				!msg?.first
+			);
+		},100);
+	}
+}
+const pusher = computed(()=>store.getters["mcp/messages"])
+watch(()=> pusher.value, () => {
+	if(pusher.value.length>0){
+		pusher.value.forEach((message)=>{
+			console.log(message)
+			workerOnMessage(message)
+		});
+		store.commit('mcp/setMessages', []);
+	}
+}, { immediate: true,deep:true });
+const postMessage = (message) => {
 	if(message != ''){
 		loading.value = true;
 		setHistory(message);
-		botService.callRunner({
-			message, llm: llm.value, mcps: mcps.value,
-			callback(res){
-				console.log('resp:',res)
-				const msg = res.choices[0]?.message?.reasoning_content||res.choices[0]?.message?.content||'';
-				// loading.value = false;
-				cb(`<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`);
-			}
+		store.dispatch('mcp/worker', {
+			message,
+			llm: llm.value, 
+			mcps: mcps.value,
 		});
 	}
 }
@@ -225,7 +256,6 @@ const menus = computed(()=>{
 const requestInterceptor = (requestDetails) => {
   return requestDetails;
 };
-
 const request = ref({
 	handler: (body, signals) => {
 			if (body instanceof FormData) {
@@ -275,7 +305,7 @@ const request = ref({
 					// writeMobileFile('postMessageHTML.txt',html);
 					chat.value.addMessage({role: 'user',html:html},false);
 				}
-				postMessage(message,(html2)=>{
+				callbackProxy = (html2,ending)=>{
 					//body
 					// let html2 = "";
 					// body?.files.forEach((file)=>{
@@ -301,15 +331,24 @@ const request = ref({
 						
 						setHistory({html:html2,role: 'ai'});
 						chat.value.addMessage({html:html2,role: 'ai',overwrite: false},true);
+						chat.value.scrollToBottom();
 					}
-				});
+				}
+				postMessage(message);
 			}else if(body?.messages){
 				
 				if(body?.messages[0]){
-					postMessage(body?.messages[0],(html)=>{
-						setHistory({html,role: 'ai'});
-						signals.onResponse({html,role: 'ai',overwrite: false});
-					});
+					callbackProxy = (html,ending,overwrite) => {
+						// loading.value = false;
+						signals.onResponse({files:[],overwrite: true});
+						chat.value.addMessage({html,role: 'ai',overwrite: overwrite},overwrite);
+						chat.value.scrollToBottom();
+						if(ending){
+							setHistory({html,role: 'ai'});
+							signals.onResponse({files:[],overwrite: false});
+						}
+					}
+					postMessage(body?.messages[0]);
 				}else{
 					signals.onResponse({error: 'No message'});
 				}
@@ -344,6 +383,7 @@ const showManage = () => {
 	emits('manager',true);
 }
 const back = () => {
+	store.commit('mcp/setNotice', true);
 	emits('back')
 }
 const openPeer = () => {
@@ -356,11 +396,6 @@ const loadllm = (callback) => {
 		if(callback){
 			callback();
 		}
-	});
-}
-const loadLocalMcp = () => {
-	getItem(`mcp-${selectedMesh.value?.name}`,(res)=>{
-		mcps.value = (res || []).filter((n)=> n.enabled == true);
 	});
 }
 watch(()=>llm.value, async (newQuery) => {
@@ -384,17 +419,70 @@ watch(()=>llm.value, async (newQuery) => {
 		avatars.value = res;
 	}
 }, { immediate: true,deep:true });
-onMounted(()=>{
-	loadllm(()=>{
-		folderInit(['ztmChat',selectedMesh.value?.name], llm.value?.name);
+
+const connectMcps = () => {
+	//'http://localhost:1420/sse',//
+	store.dispatch('mcp/stopAll');
+	for(let i=0;i<mcps.value.length;i++){
+		const mcp=mcps.value[i];
+		// let eventSource = new EventSource(botService.getFullSvcUrl(`/svc/${mcp.kind}/${mcp.name}/sse`));
+		
+		// // 连接打开时
+		// eventSource.onopen = function(e) {
+		//     console.log('SSE连接已建立');
+		// };
+		
+		// // 收到消息时
+		// eventSource.onmessage = function(e) {
+		//     const data = JSON.parse(e.data);
+		//     console.log('收到消息: ' + JSON.stringify(data, null, 2));
+		// };
+		
+		// // 监听自定义事件
+		// eventSource.addEventListener('endpoint', function(e) {
+		//     const data = JSON.parse(e.data);
+		//     console.log('收到自定义事件: ' + data.message);
+		// });
+		
+		// // 发生错误时
+		// eventSource.onerror = function(e) {
+		//     if (e.eventPhase === EventSource.CLOSED) {
+		//         console.log('SSE连接已关闭');
+		//     } else {
+		//         console.log('SSE连接错误: ' + JSON.stringify(e));
+		//     }
+		//     // 可以在这里实现自动重连逻辑
+		//     // setTimeout(connectToSSE, 5000);
+		// };
+		mcpService.connectToServer({
+			name: mcp.name,
+			url: botService.getFullSvcUrl(`/svc/${mcp.kind}/${mcp.name}/sse`),
+			type: 'sse',
+		});
+	}
+}
+
+const loadLocalMcp = () => {
+	getItem(`mcp-${selectedMesh.value?.name}`,(res)=>{
+		mcps.value = (res || []).filter((n)=> n.enabled == true);
+		connectMcps();
 	});
-	loadLocalMcp();
-})
+}
 
 const setBot = (val) => {
 	llm.value = val?.llm;
 	mcps.value = val?.mcps;
+	connectMcps();
 }
+
+onMounted(()=>{
+	store.commit('mcp/setNotice', false);
+	loadllm(()=>{
+		folderInit(['ztmChat',selectedMesh.value?.name], llm.value?.name);
+		// loading.value = true;
+	});
+	loadLocalMcp();
+})
 defineExpose({
   setBot
 })
@@ -412,7 +500,7 @@ defineExpose({
 	</AppHeader>
 	<div class="w-full flex" style="height: calc(100vh - 37px);flex: 1;margin: 0;flex-direction: column;">
 		<deep-chat
-			:textToSpeech='{"volume": 0.9}'
+			:textToSpeech='{"volume": 2}'
 			ref="chat"
 			:names="false"
 			@render="chatRender"
@@ -429,8 +517,8 @@ defineExpose({
 			:textInput="inputStyle"
 			:auxiliaryStyle="style.auxiliaryStyle()"
 			:dropupStyles='style.dropupStyles()'
-			:demo='{"displayLoadingBubble": loading,"displayLoading": {"history": {"full": false},"message": loading}}'
-			:stream="false"
+			:demo='{"displayLoading": {"history": {"full": false},"message": loading}}'
+			:stream="true"
 			:connect="request"
 			:requestInterceptor="requestInterceptor"
 			:submitButtonStyles="submitStyle('inside-right','10px')"
