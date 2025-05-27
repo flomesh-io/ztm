@@ -218,7 +218,8 @@ export default function ({ app, mesh }) {
               name: route.service.name,
               kind: route.service.kind,
               endpoint: list.length > 0 ? list[0] : route.service.endpoint,
-            }
+            },
+            cors: route.cors || null,
           })
         )
       } else {
@@ -244,13 +245,15 @@ export default function ({ app, mesh }) {
         kind: info.service.kind,
         endpoint: { id: info.service.endpoint.id },
       }
+      var cors = info.cors || null
       var i = localRoutes.findIndex(r => r.path >= path)
       if (localRoutes[i]?.path === path) {
         localRoutes[i].service = service
+        localRoutes[i].cors = cors
       } else if (i < 0) {
-        localRoutes.push({ path, service })
+        localRoutes.push({ path, service, cors })
       } else {
-        localRoutes.splice(i, 0, { path, service })
+        localRoutes.splice(i, 0, { path, service, cors })
       }
       saveLocalConfig()
       return Promise.resolve()
@@ -285,6 +288,7 @@ export default function ({ app, mesh }) {
   }
 
   var $route
+  var $origin
   var $head
 
   var forwardService = pipeline($=>$
@@ -295,6 +299,8 @@ export default function ({ app, mesh }) {
         if (path.startsWith('/svc/')) path = path.substring(4)
         var path2 = path.endsWith('/') ? path : path + '/'
         if ($route = localRoutes.findLast(r => path2.startsWith(r.path))) {
+          $origin = evt.head.headers.origin
+          if (evt.head.method === 'OPTIONS') return 'options'
           var service = $route.service
           var basepath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
           evt.head.path = os.path.join(basepath, path.substring($route.path.length)) + url.search
@@ -304,14 +310,34 @@ export default function ({ app, mesh }) {
         }
       }
     }, {
+      'options': ($=>$
+        .replaceData()
+        .replaceMessage(() => {
+          var headers = {}
+          var cors = $route?.cors
+          if (cors) {
+            if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
+            if (cors.allowHeaders) headers['access-control-allow-headers'] = cors.allowHeaders.join(', ')
+          }
+          return new Message({ headers })
+        })
+      ),
       'remote': ($=>$
         .muxHTTP(() => $route, { version: 2 }).to($=>$
           .pipe(() => mesh.connect($route.service.endpoint.id))
         )
       ),
       'local': $=>$.pipe(() => connectService),
-      '404': $=>$.replaceMessage(new Message({ status: 404 })),
+      '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
     })
+    .handleMessageStart(
+      msg => {
+        var cors = $route?.cors
+        if (cors && cors.allowOrigins?.includes?.($origin)) {
+          msg.head.headers['access-control-allow-origin'] = $origin
+        }
+      }
+    )
     .pipe(msg => {
       var ct = msg.head.headers['content-type'] || ''
       if (ct.startsWith('text/event-stream')) {
@@ -471,6 +497,7 @@ export default function ({ app, mesh }) {
         r => ({
           path: r.path,
           service: r.service,
+          cors: r.cors,
         })
       ),
     }))
@@ -585,7 +612,7 @@ function checkKind(kind) {
 
 function checkProtocol(protocol) {
   switch (protocol) {
-    case 'openai':
+    case 'http':
     case 'mcp':
       return
     default: throw `invalid protocol '${protocol}'`
@@ -687,7 +714,23 @@ function checkService(info) {
   checkTarget(info.target)
 }
 
+function checkCORS(info) {
+  if (info) {
+    Object.entries(info).forEach(
+      ([k, v]) => {
+        switch (k) {
+          case 'allowOrigins': return checkStringArray(v, 'cors.allowOrigins')
+          case 'allowMethods': return checkStringArray(v, 'cors.allowMethods')
+          case 'allowHeaders': return checkStringArray(v, 'cors.allowHeaders')
+          default: throw `redundant field 'cors.${k}'`
+        }
+      }
+    )
+  }
+}
+
 function checkRoute(info) {
+  checkCORS(info.cors)
   checkName(info.service?.name)
   checkKind(info.service?.kind)
   checkUUID(info.service?.endpoint?.id)

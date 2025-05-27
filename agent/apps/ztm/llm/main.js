@@ -29,13 +29,13 @@ export default function ({ app, mesh, utils }) {
     },
 
     '/api/services': {
-      'GET': responder(() =>api.allServices().then(
+      'GET': responder(() => api.allServices().then(
         ret => ret ? response(200, ret) : response(404)
       ))
     },
 
     '/svc/*': {
-      '*': pipeline($=>$.pipe(api.forwardService, () => $ctx)),
+      '*': pipeline($=>$.pipe(api.forwardService, () => $ctx))
     },
 
     //
@@ -61,9 +61,10 @@ export default function ({ app, mesh, utils }) {
     //     - path: /d/e/f
     //   target:
     //     address: <URL> | <pathname>
-    //     secrets:
-    //       apikey: string
-    //     ...(other configurations)
+    //     headers: object
+    //     body: object
+    //     argv: [string]
+    //     env: object
     //
 
     '/api/endpoints/{ep}/services': {
@@ -97,8 +98,12 @@ export default function ({ app, mesh, utils }) {
     //   service:
     //     name: string
     //     kind: 'llm' | 'tool' | ...
-    //     endpoint: 
+    //     endpoint:
     //       id: string (UUID)
+    //   cors:
+    //     allowOrigins: [string]
+    //     allowMethods: [string]
+    //     allowHeaders: [string]
     //
 
     '/api/endpoints/{ep}/routes': {
