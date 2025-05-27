@@ -1,4 +1,4 @@
-import { fetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import axios from "axios";
 import Cookie from './cookie'
 import toast from "@/utils/toast";
@@ -19,8 +19,7 @@ const METHOD = {
   DELETE: "DELETE",
   PUT: "PUT",
 };
-
-function getUrl(url){
+function getUrl(url,isfull){
 	let path = "";
 	if(location.pathname){
 		let params = location.pathname.split('/');
@@ -33,15 +32,104 @@ function getUrl(url){
 		path = '';
 	}
 	const devPath = localStorage.getItem("DEV_BASE")
-	if(!!devPath && url.indexOf('/api/meshes/')==-1){
-		return `${devPath}${url}`
-	}else if(!window.__TAURI_INTERNALS__ || url.indexOf('://')>=0){
-		return `${path}${url}`
+	let rtn = "";
+	if(url.indexOf('://')>=0){
+		rtn = url
+	}else if(!!devPath && url.indexOf('/api/meshes/')==-1){
+		rtn = `${devPath}${url}`
+	}else if(!window.__TAURI_INTERNALS__ || path.indexOf('://')>=0){
+		rtn = `${path}${url}`
 	} else {
-		return `http://127.0.0.1:${getPort()}${path}${url}`
+		rtn = `http://127.0.0.1:${getPort()}${path}${url}`
+	}
+	if(!!isfull && rtn.indexOf('://')==-1){
+		return `http://127.0.0.1:${getPort()}${rtn}`
+	} else {
+		return rtn
 	}
 }
+const fetchBoth = !window.__TAURI_INTERNALS__?fetch:tauriFetch;
 
+// 添加取消功能的版本
+function fetchAsStream() {
+  const controller = new AbortController();
+  
+  async function postWithStream(url, data, processMessage) {
+    try {
+      const response = await fetchBoth(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+				redirect: 'follow',
+        body: JSON.stringify(data),
+        signal: controller.signal
+      });
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+	
+			if (!response.body) {
+				throw new Error('ReadableStream not supported in this browser');
+			}
+	
+	    const reader = response.body.getReader();
+	    const decoder = new TextDecoder();
+	    let buffer = '';
+	    let lastData = null;
+	    while (true) {
+				const { done,value } = await reader.read();
+				if (done) {
+					// 处理缓冲区中剩余的数据
+					if (buffer.trim()) {
+						processBuffer(true)
+					}
+					console.log('Stream complete');
+					break;
+				}
+				
+				buffer += decoder.decode(value, { stream: true });
+				processBuffer(false);
+	    }
+
+			function processBuffer(ending) {
+				// 按行分割缓冲区
+				const lines = buffer.split('\n');
+				
+				// 保留最后不完整的行（如果有）
+				buffer = lines.pop() || '';
+				
+				for (const line of lines) {
+					if (line.startsWith('data: ')) {
+						const jsonStr = line.slice(6).trim();
+						if (jsonStr === '[DONE]') {
+							processMessage(lastData, true);
+						} else {
+							try {
+								const data = JSON.parse(jsonStr);
+								lastData = data;
+								processMessage(data, false);
+							} catch (e) {
+								console.error('JSON parse error:', e, 'on data:', jsonStr);
+							}
+						}
+					}
+				}
+			}
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('请求已被取消');
+      } else {
+        console.error('Fetch error:', error);
+      }
+    }
+  }
+
+  return {
+    post: postWithStream,
+    cancel: () => controller.abort()
+  };
+}
 function getMetaUrl(url){
 	let path = "";
 	if(location.pathname){
@@ -83,6 +171,9 @@ const getPort = () => {
 }
 const setPort = (port) => {
 	localStorage.setItem("VITE_APP_API_PORT",port);
+}
+function getBaseUrl() {
+	return `http://localhost:${getPort()}`
 }
 const toastMessage = async (e) => {
 	let result = '';
@@ -127,14 +218,13 @@ const getConfig  = (config, params, method) => {
 			...config
 		}
 	} else {
+		
 		const rtn = {
 			method,
 			headers:{
 				"Content-Type": "application/json"
-			}
-		}
-		if(config?.headers){
-			rtn.headers = config?.headers
+			},
+			...config
 		}
 		const _headers = rtn?.headers || {};
 		if(!_headers["Content-Type"] || _headers["Content-Type"] == "application/json"){
@@ -170,7 +260,9 @@ async function request(url, method, params, config) {
 					}
 				});
 		  case METHOD.POST:
-		    return axios.post(getUrl(url), params, config).then((res) => res?.data).catch((e)=>{
+		    return axios.post(getUrl(url), params, config).then((res) => {
+					return res?.data
+				}).catch((e)=>{
 					toastMessage(e);
 					throw e;
 				});
@@ -199,7 +291,7 @@ async function request(url, method, params, config) {
 		const _header = config?.headers || {};
 		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
 		if(!!method && method != METHOD.GET){
-			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
+			return tauriFetch(getUrl(url), getConfig(config,params, method)).then((res) => {
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
 				} else if(typeof(res) == 'object' && !!res.body && isJson){
@@ -217,9 +309,9 @@ async function request(url, method, params, config) {
 			});
 		} else {
 			// console.log(getUrl(url))
-			// const req = fetch(getUrl(url), getConfig(config,params, method));
+			// const req = tauriFetch(getUrl(url), getConfig(config,params, method));
 			// return await req.body.json();
-			return fetch(getUrl(url), getConfig(config,params, method)).then((res) => {
+			return tauriFetch(getUrl(url), getConfig(config,params, method)).then((res) => {
 				// console.log(res)
 				if(typeof(res) == 'object' && res.status >= 400){
 					return Promise.reject(res);
@@ -255,7 +347,7 @@ function requestWithTimeout(timeout = 5000, url, method, params, config) {
     });
 }
 async function requestMeta(url) {
-	return fetch(url, {
+	return tauriFetch(url, {
 		method: METHOD.GET,
 		header:{
 			"Content-Type": "application/json"
@@ -305,7 +397,7 @@ async function requestNM(url, method, params, config) {
 	} else {
 		const _header = config?.header || config?.headers || {};
 		const isJson = !_header["Content-Type"] || _header["Content-Type"] == "application/json";
-		return fetch(getUrl(url), getConfig(config,params, method)).then((res) => res.json()).then((res) => {
+		return tauriFetch(getUrl(url), getConfig(config,params, method)).then((res) => res.json()).then((res) => {
 			// console.log('response:')
 			// console.log(res)
 			if(typeof(res) == 'object' && res.status >= 400){
@@ -431,10 +523,12 @@ export {
 	mock,
   setAuthorization,
   removeAuthorization,
+	fetchAsStream,
   checkAuthorization,
   loadInterceptors,
   parseUrlParams,
   getHeaders,
 	getPort,
 	setPort,
+	getBaseUrl
 };

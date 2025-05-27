@@ -1,4 +1,5 @@
 import excel from "@/assets/img/files/excel.png";
+import excel2 from "@/assets/img/mcp/excel.png";
 import word from "@/assets/img/files/word.png";
 import file from "@/assets/img/files/file.png";
 import folder from "@/assets/img/files/folder.png";
@@ -12,6 +13,9 @@ import sharePng from "@/assets/img/files/share.png";
 import txt from "@/assets/img/files/txt.png";
 import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
+import github from "@/assets/img/mcp/github.png";
+import mcp from "@/assets/img/mcp/mcp2.png";
+
 import { open } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import { platform } from '@/utils/platform';
@@ -112,6 +116,18 @@ const writeFile = (file, target, after) => {
 		})
 	};
 	reader.readAsArrayBuffer(file);
+}
+const keywordIcon = {
+	excel:excel2, file, zip, mcp, github
+}
+const getKeywordIcon = (keyword, dft) => {
+	const keys = Object.keys(keywordIcon);
+	const findKey = keys.find((k) => keyword.indexOf(k) >= 0);
+	if(findKey){
+		return keywordIcon[findKey];
+	} else {
+		return keywordIcon[dft];
+	}
 }
 const ext = {
 	default: file,
@@ -612,5 +628,6 @@ export {
 	isVideo,
 	isAudio,
 	isPdf,
-	isText
+	isText,
+	getKeywordIcon
 };

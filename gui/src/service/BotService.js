@@ -1,29 +1,35 @@
-import { mock, request, getUrl,merge } from './common/request';
+import { mock, request, getBaseUrl, getUrl,merge,fetchAsStream } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
 import { getItem, setItem } from "@/utils/localStore";
 import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import MCPService from '@/service/MCPService';
 
-export default class ChatService {
+export default class BotService {
+	
+	mcpService = null
+	
+	constructor(){
+		this.mcpService = new MCPService();
+	}
 	
 	getMesh(){
 		return store.getters['account/selectedMesh'];
 	}
-	llmRequest(url, method, body, config){
+	getSvcUrl(url, full){
 		const mesh = this.getMesh();
 		if(!mesh?.name){
-			return 
+			return '';
 		}
-		const options = {
-			mesh:mesh?.name,
-			ep:mesh?.agent?.id,
-			provider:'ztm',
-			app:'llm',
-		}
-		const base = getUrl(`/api/meshes/${options?.mesh}/apps/${options?.provider}/${options?.app}`);
-		return request(`${base}${url}`, method, body, config);
+		return getUrl(`/api/meshes/${mesh?.name}/apps/ztm/llm${url}`, full);
+	}
+	getFullSvcUrl(url){
+		return this.getSvcUrl(url, true);
+	}
+	llmRequest(url, method, body, config){
+		return request(this.getSvcUrl(url), method, body, config);
 	}
 	/*
 	
@@ -65,6 +71,120 @@ export default class ChatService {
 		});
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
+	async callRunnerBySDK({message, llm, mcps, callback}) {
+		const usermessages = [
+			{
+				"role":"user",
+				"content":message?.text
+			}
+		]
+		if(!!mcps && mcps.length>0){
+			// get tools param
+			const allClients = store.getters['mcp/clients'];
+			
+			let allmessages = [];
+			const sysmessages = [];
+			allClients.forEach((client,idx)=>{
+				let tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
+				tools.forEach((tool)=>{
+					tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
+				})
+				sysmessages.push({"role": "system", "content": JSON.stringify(tools)})
+			});
+			allmessages = sysmessages.concat(usermessages);
+			let tool_calls = [];
+			let toolReqs = [];
+			// get tool_calls with llm
+			const resp = await this.chatLLM(allmessages, llm, (res,ending)=> {
+				const finish_reason = res.choices[0]?.finish_reason;
+				const msg = res.choices[0]?.delta || res.choices[0]?.message;
+				
+				if(ending) {
+					if(toolReqs.length>0){
+						merge(toolReqs).then((allToolsResult)=>{
+							// push result msg
+							allToolsResult.forEach((res)=>{
+								const toolResult = res?.data;
+								if(toolResult){
+									if(toolResult?.result?.content){
+										toolResult?.result?.content.forEach((toolResultContent)=>{
+											if(toolResultContent.type=='text'){
+												allmessages.push({"role": "tool", "content": toolResultContent.text,"tool_call_id": res.tool_call?.id})
+											} else {
+												allmessages.push({"role": "tool", "content": JSON.stringify(toolResultContent),"tool_call_id": res.tool_call?.id})
+											}
+										})
+									}
+									if(toolResult?.content){
+										toolResult?.content.forEach((toolResultContent)=>{
+											if(toolResultContent.type=='text'){
+												allmessages.push({"role": "tool", "content": toolResultContent.text,"tool_call_id": res.tool_call?.id})
+											} else {
+												allmessages.push({"role": "tool", "content": JSON.stringify(toolResultContent),"tool_call_id": res.tool_call?.id})
+											}
+										})
+									}
+								}
+							});
+							toolReqs = [];
+							this.chatLLM(allmessages, llm, callback);
+						});
+					} else {
+						callback(res, ending);
+					}
+				} else if(!!msg?.tool_calls && msg?.tool_calls?.length>0){
+					// push assistant msg
+					tool_calls = tool_calls.concat(msg?.tool_calls)
+				} else if(finish_reason == "tool_calls" || (finish_reason == "stop" && tool_calls.length>0)){
+					
+					let _arguments = "";
+					const merge_tool_calls = []
+					//concat tool_calls arguments
+					tool_calls.forEach((tool_call)=>{
+						if(!!tool_call?.function?.name){
+							if(merge_tool_calls.length>0){
+								if(merge_tool_calls[merge_tool_calls.length-1].function){
+									merge_tool_calls[merge_tool_calls.length-1].function.arguments = _arguments;
+								}
+								_arguments = "";
+							}
+							merge_tool_calls.push({...tool_call});
+						}
+						if(!!tool_call?.function?.arguments){
+							_arguments += tool_call.function.arguments;
+						}
+					})
+					if(merge_tool_calls.length>0){
+						if(merge_tool_calls[merge_tool_calls.length-1].function){
+							merge_tool_calls[merge_tool_calls.length-1].function.arguments = _arguments;
+						}
+						_arguments = "";
+					}
+					tool_calls = [];
+					// push tool msg
+					if(merge_tool_calls.length>0){
+						allmessages.push({
+							'content': '', 
+							'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
+							'role': 'assistant', 
+							tool_calls: merge_tool_calls
+						});
+					}
+					// push tool call req
+					merge_tool_calls.forEach((tool_call)=>{
+						const argv = !!tool_call?.function?.arguments?JSON.parse(tool_call.function.arguments):{};
+						toolReqs.push(this.callMcpToolBySDK(tool_call?.function?.name, argv).then((res)=> {
+							return { data:res, tool_call }
+						}).catch((e)=>{}));
+					})
+				} else if(!!msg?.content || !!msg?.reasoning_content) {
+					callback(res, ending);
+				} 
+			});
+		} else {
+			this.chatLLM(usermessages, llm, callback);
+		}
+	}
 	callRunner({message, llm, mcps, callback}) {
 		const usermessages = [
 			{
@@ -76,18 +196,21 @@ export default class ChatService {
 			// get tools param
 			const mcpReqs = [];
 			mcps.forEach((mcp) => {
-				mcpReqs.push(this.getMCPParams(mcp))
+				mcpReqs.push(this.callMcp(mcp))
 			});
-			merge(mcpReqs).then((allParams)=>{
+			merge(mcpReqs).then((allTools)=>{
 				let allmessages = [];
 				const sysmessages = [];
-				allParams.forEach((params)=>{
-					sysmessages.push({"role": "system", "content": JSON.stringify(params)})
+				allTools.forEach((tools)=>{
+					sysmessages.push({"role": "system", "content": JSON.stringify(tools)})
 				});
 				allmessages = sysmessages.concat(usermessages);
 				// get tool_calls with llm
-				this.chatLLM(allmessages, llm).then((res)=> {
+				this.chatLLM(allmessages, llm, (res,ending)=> {
 					if(res.choices[0]?.finish_reason == "tool_calls"){
+						if(!ending){
+							return
+						}
 						// push assistant msg
 						const tool_calls = res.choices[0]?.message?.tool_calls;
 						allmessages.push({
@@ -99,7 +222,7 @@ export default class ChatService {
 						const toolReqs = [];
 						tool_calls.forEach((tool_call,idx)=>{
 							const argv = JSON.parse(tool_call.function.arguments);
-							toolReqs.push(this.getMCPParams(mcps[idx],{"params":{"name":tool_call.function.name, "arguments":(argv||{})},"method":"tools/call"}));
+							toolReqs.push(this.callMcp(mcps[idx],{"params":{"name":tool_call.function.name, "arguments":(argv||{})},"method":"tools/call"}));
 						})
 						merge(toolReqs).then((allToolsResult)=>{
 							// push result msg
@@ -112,28 +235,36 @@ export default class ChatService {
 									}
 								})
 							});
-							this.chatLLM(allmessages, llm).then((result)=> callback(result));
+							this.chatLLM(allmessages, llm, callback);
 						});
 					} else {
-						callback(res);
+						callback(res, ending);
 					} 
 					console.log(res);
 				});
 			})
 		} else {
-			this.chatLLM(usermessages, llm).then((res)=> callback(res));
+			this.chatLLM(usermessages, llm, callback);
 		}
 	}
-	getMCPParams(mcp, body) {
+	callMcpToolBySDK(uniqueToolName, args) {
+		return this.mcpService.callTool(uniqueToolName, args);
+	}
+	callMcp(mcp, body) {
 		return this.llmRequest(`/svc/${mcp.kind}/${mcp.name}`, "POST", {
       "jsonrpc": "2.0",
 			"id": 1,
 			...(body || {"method": "tools/list"})
     })
 	}
-	chatLLM(messages, llm) {
+	chatLLM(messages, llm, callback) {
 		const body = { messages };
-		return this.llmRequest(`/svc/${llm.kind}/${llm.name}/chat/completions`, "POST", body)
+		const stream = fetchAsStream();
+		stream.post(
+			this.getFullSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`), 
+			body,
+			callback
+		)
 	}
 	/*
 	{

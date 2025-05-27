@@ -5,17 +5,16 @@ import JsonEditor from '@/components/editor/JsonEditor.vue';
 import LLMService from '../service/LLMService';
 import { selectDir } from '@/utils/file';
 import { useRoute } from 'vue-router'
-import { useToast } from "primevue/usetoast";
+import ClipboardJS from "clipboard";
 import { useStore } from 'vuex';
 import _ from "lodash"
+import toast from "@/utils/toast";
 import llmSvg from "@/assets/img/llm/deepseek.png";
-import mcpSvg from "@/assets/img/mcp/github.png";
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const emits = defineEmits(['save']);
 const store = useStore();
 const route = useRoute();
-const toast = useToast();
 const llmService = new LLMService();
 const info = computed(() => {
 	return store.getters['app/info']
@@ -33,11 +32,14 @@ const newMcp = {
 		address: '',
 		argv: [],
 		env: {},
+		headers: {
+			"Sec-Fetch-Site": "same-site"
+		}
 	}
 }
 const mcp = ref(_.cloneDeep(newMcp))
 const mcps = ref([])
-
+const allMcps = ref([])
 const newLlm = {
 	name: '',
 	protocol: 'openai',
@@ -71,7 +73,8 @@ const newLlm = {
 	}
 }
 const llm = ref(_.cloneDeep(newLlm))
-const llms = ref([])
+const llms = ref([]);
+const allLlms = ref([]);
 const routes = ref([]);
 const llmEnabled = computed(() => {
 	return !!llm.value.name;
@@ -123,7 +126,28 @@ const createMcp = () => {
 		mcpEditor.value = false;
 	})
 }
+let clipboard = null;
 const loaddata = () => {
+	loading.value = true;
+	llmService.getServices().then((res)=>{
+		allLlms.value = (res.services||[]).filter((n) => n.kind == 'llm').sort((a,b)=>{
+			return b.localRoutes?.length - a.localRoutes?.length
+		});
+		allMcps.value = (res.services||[]).filter((n) => n.kind == 'tool').sort((a,b)=>{
+			return b.localRoutes?.length - a.localRoutes?.length
+		});
+		loading.value = false;
+		setTimeout(()=>{
+			clipboard = new ClipboardJS(".copy-btn");
+			clipboard.on("success", (e) => {
+				toast.add({ severity: 'success', summary: 'Tips', detail: "Copied", life: 3000 });
+			});
+			clipboard.on("error", (e) => {
+				toast.add({ severity: 'error', summary: 'Tips', detail: "Copy failed", life: 3000 });
+			});
+		},300)
+		
+	})
 	llmService.getServices(info?.value.endpoint?.id).then((res)=>{
 		llms.value = (res||[]).filter((n) => n.kind == 'llm');
 		mcps.value = (res||[]).filter((n) => n.kind == 'tool');
@@ -159,7 +183,7 @@ const openMcpEdit = (t,index) => {
 }
 const llmRemove = (t,index) => {
 	llmService.deleteService({
-		ep:t.endpoint?.id, kind:'llm', name:t.name
+		ep:info?.value.endpoint?.id, kind:'llm', name:t.name
 	},()=>{
 		loaddata();
 		emits("save");
@@ -167,7 +191,7 @@ const llmRemove = (t,index) => {
 }
 const mcpRemove = (t,index) => {
 	llmService.deleteService({
-		ep:t.endpoint?.id, kind:'tool', name:t.name
+		ep:info?.value.endpoint?.id, kind:'tool', name:t.name
 	},()=>{
 		loaddata();
 		emits("save");
@@ -181,7 +205,15 @@ const routeRemove = (t,index) => {
 		emits("save");
 	})
 }
-
+const routeCreate = (service) => {
+	llmService.createRoute({
+		ep:info?.value.endpoint?.id, path:`${service?.kind}/${service?.name}`,
+		service
+	}).then(()=>{
+		loaddata();
+		emits("save");
+	})
+}
 
 const browser = () => {
 	selectDir((dir)=>{
@@ -207,21 +239,21 @@ onMounted(() => {
 		</AppHeader>
 		<ScrollPanel class="absolute-scroll-panel " style="bottom: 0;">
 			<Empty v-if="error" :error="error"/>
-			<Tabs v-else value="0">
+			<Tabs v-else value="2">
 				<TabList>
+					<Tab value="2">
+						<Tag >{{t('Routes')}}
+							<Badge :value="routes.length" />
+						</Tag> 
+					</Tab>
 					<Tab value="0">
-						<Tag >{{t('LLM')}}
+						<Tag >{{t('My LLM')}}
 							<Badge :value="llms.length" />
 						</Tag> 
 					</Tab>
 					<Tab value="1">
-						<Tag >{{t('MCP Server')}}
+						<Tag >{{t('My MCP Server')}}
 							<Badge :value="mcps.length" />
-						</Tag> 
-					</Tab>
-					<Tab value="2">
-						<Tag >{{t('Routes')}}
-							<Badge :value="routes.length" />
 						</Tag> 
 					</Tab>
 				</TabList>
@@ -279,34 +311,35 @@ onMounted(() => {
 									</FormItem>
 									
 								</ul>
-								<DataView class="transparent" v-else :value="llms">
-									<template #empty>
-										{{t('No LLM.')}}
-									</template>
-									<template #list="slotProps">
-										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
-												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-														<div>
-															<img :src="llmSvg" width="30px" />
-														</div>
-														<div class="flex flex-col pr-2 flex-item">
-															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																<span>
-																	<b>{{item.name}}</b> 
-																	<Tag class="ml-2" v-if="item.protocol">{{item.protocol}}</Tag>
-																	<Tag class="ml-2" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
-																</span>
-																<span class="mt-1">{{item?.metainfo?.description||'(No description)'}}</span>
+								
+								<div v-else class="grid text-left px-1" >
+										<div v-if="llms.length>0" :class="'col-12 md:col-6 lg:col-4'" v-for="(item,hid) in llms" :key="hid">
+											 <div class="surface-card shadow-2 p-3 border-round">
+													 <div class="flex justify-content-between">
+															<div class="pr-4">
+																<img :src="llmSvg" height="30px" />
 															</div>
-														</div>
-														<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
-																<Button @click="openLlmEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
-																<Button @click="llmRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
-														</div>
-												</div>
-										</div>
-									</template>
-								</DataView>
+															<div class="flex-item">
+																	<span class="block text-tip font-medium mb-3">
+																		<Tag severity="contrast" class="mr-1" v-if="item.protocol">{{item.protocol.toUpperCase()}}</Tag>
+																		<Tag class="mr-1" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
+																		<b>{{item.name}}</b>
+																	</span>
+																	<div class="text-left w-full" >
+																		{{item?.metainfo?.description||'No description'}}
+																	</div>
+															</div>
+															<div class="flex flex-column">
+																	<Button @click="openLlmEdit(item,index)" size="small" icon="pi pi-pencil" class="mb-1"></Button>
+																	<Button @click="llmRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
+															</div>
+													 </div>
+											 </div>
+									 </div>
+									 <div v-else>
+										 {{t('No LLM.')}}
+									 </div>
+								</div>
 							</div>
 					</TabPanel>
 					<TabPanel value="1">
@@ -358,6 +391,9 @@ onMounted(() => {
 									<FormItem :label="t('Environment')" :border="false">
 										<ChipMap direction="v" icon="pi-desktop" :placeholder="t('Add')" v-model:map="mcp.target.env" />
 									</FormItem>
+									<FormItem :label="t('Headers')" :border="false">
+										<ChipMap direction="v" icon="pi-desktop" :placeholder="t('key:value')" v-model:map="mcp.target.headers" />
+									</FormItem>
 									<!-- <FormItem :label="t('Body')" :border="false">
 										<JsonEditor id="mcpBody" height="140px" type="object" v-model:value="mcp.target.body"/>
 									</FormItem> -->
@@ -365,67 +401,127 @@ onMounted(() => {
 										<Textarea class="w-full"  v-model="mcp.metainfo.description" rows="2" cols="20" />
 									</FormItem>
 								</ul>
-								<DataView  class="transparent" v-else :value="mcps">
-									<template #empty>
-										{{t('No MCP Server.')}}
-									</template>
-									<template #list="slotProps">
-										<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
-												<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-														<div>
-															<img :src="mcpSvg" width="30px" />
-														</div>
-														<div class="flex flex-col pr-2 flex-item">
-															<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																<span>
-																	<b>{{item.name}}</b> 
-																	<Tag class="ml-2" v-if="item.protocol">{{item.protocol}}</Tag>
-																	<Tag class="ml-2" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
-																</span>
-																<span class="mt-1">{{item?.metainfo?.description||'(No description)'}}</span>
+								<div v-else class="grid text-left px-1" >
+										<div v-if="mcps.length>0" :class="'col-12 md:col-6 lg:col-4'" v-for="(item,hid) in mcps" :key="hid">
+											 <div class="surface-card shadow-2 p-3 border-round">
+													 <div class="flex justify-content-between">
+															<div class="pr-4">
+																<img :src="getKeywordIcon(item.name, 'mcp')" height="30px" />
 															</div>
-														</div>
-														<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
-																<Button @click="openMcpEdit(item,index)" size="small" icon="pi pi-pencil" class="flex-auto md:flex-initial whitespace-nowrap"></Button>
-																<Button @click="mcpRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
-														</div>
-												</div>
-										</div>
-									</template>
-								</DataView>
+															<div class="flex-item">
+																	<span class="block text-tip font-medium mb-3">
+																		<Tag severity="contrast" class="mr-1" v-if="item.protocol">{{item.protocol.toUpperCase()}}</Tag>
+																		<Tag class="mr-1" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
+																		<b>{{item.name}}</b>
+																	</span>
+																	<div class="text-left w-full" >
+																		{{item?.metainfo?.description||'No description'}}
+																	</div>
+															</div>
+															<div class="flex flex-column">
+																	<Button @click="openMcpEdit(item,index)" size="small" icon="pi pi-pencil" class="mb-1"></Button>
+																	<Button @click="mcpRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
+															</div>
+													 </div>
+											 </div>
+									 </div>
+									 <div v-else>
+										 {{t('No MCP Server.')}}
+									 </div>
+								</div>
 							</div>
 					</TabPanel>
 					<TabPanel value="2">
 						<Loading v-if="loading" />
 						<div v-else class="surface-ground surface-section h-full" >
-							<DataView class="transparent" :value="routes">
-								<template #empty>
-									{{t('No Routes.')}}
-								</template>
-								<template #list="slotProps">
-									<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
-											<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-													<div>
-														<i class="pi pi-link text-primary-500"/>
-													</div>
-													<div class="flex flex-col pr-2 flex-item">
-														<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-															<span>
-																<b>{{item.path}}</b> 
-															</span>
-															<span class="mt-1">
-																<Tag class="mr-2" v-if="item.service?.kind">{{item.service?.kind}}</Tag>
-																{{item?.service?.name}}
-															</span>
+							
+							<div class="grid w-full m-0" >
+								<div class="col-12 md:col-6 " >
+									<BlockViewer containerClass="surface-section p-3" >
+										<div>
+											<Tag >{{t('LLM')}}
+												<Badge :value="allMcps.length" />
+											</Tag> 
+										</div>
+										<DataView class="transparent" :value="allLlms">
+											<template #empty>
+												{{t('No LLM.')}}
+											</template>
+											<template #list="slotProps">
+												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
+														<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+																<div>
+																	<img :src="llmSvg" width="30px" />
+																</div>
+																<div class="flex flex-col pr-2 flex-item">
+																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+																		<span>
+																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">{{item?.kind}}</Tag>
+																			<b>{{item?.name}}</b>
+																		</span>
+																		<span class="flex text-sm mt-2" style="word-break: break-all;align-items:center" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
+																			<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)" icon=" pi pi-clipboard" class="copy-btn"/> 
+																			<div>{{llmService.getSvcUrl(route?.path)}}</div>
+																			<Button @click="routeRemove(route,index)" size="small" icon="pi pi-trash" link></Button>
+																		</span>
+																		<span class="opacity-50 text-sm mt-2" v-else>
+																			<i class="pi pi-link text-primary-500 mr-2 "/> {{t('No Routes.')}}
+																		</span>
+																	</div>
+																</div>
+																<div v-if="item.localRoutes.length == 0" class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
+																		<Button @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
+																</div>
 														</div>
-													</div>
-													<div class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
-															<Button @click="routeRemove(item,index)" size="small" icon="pi pi-trash" outlined></Button>
-													</div>
-											</div>
-									</div>
-								</template>
-							</DataView>
+												</div>
+											</template>
+										</DataView>
+									</BlockViewer>
+								</div>
+								<div class="col-12 md:col-6" >
+								
+									<BlockViewer containerClass="surface-section p-3" >
+										<div>
+											<Tag >{{t('MCP Server')}}
+												<Badge :value="allMcps.length" />
+											</Tag> 
+										</div>
+										<DataView class="transparent" :value="allMcps">
+											<template #empty>
+												{{t('No MCP Server.')}}
+											</template>
+											<template #list="slotProps">
+												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
+														<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
+																<div>
+																	<img :src="getKeywordIcon(item?.name, 'mcp')" width="30px" />
+																</div>
+																<div class="flex flex-col pr-2 flex-item">
+																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+																		<span>
+																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">{{item?.kind}}</Tag>
+																			<b>{{item?.name}}</b>
+																		</span>
+																		<span class="flex text-sm mt-2" style="word-break: break-all;align-items:center" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
+																			<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)+'sse'" icon=" pi pi-clipboard" class="copy-btn"/> 
+																			{{llmService.getSvcUrl(route?.path)}}sse
+																			<Button @click="routeRemove(route,index)" size="small" icon="pi pi-trash" link></Button>
+																		</span>
+																		<span class="opacity-50 text-sm mt-2" v-else>
+																			<i class="pi pi-link text-primary-500 mr-2 "/> {{t('No Routes.')}}
+																		</span>
+																	</div>
+																</div>
+																<div v-if="item.localRoutes.length == 0" class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
+																		<Button @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
+																</div>
+														</div>
+												</div>
+											</template>
+										</DataView>
+									</BlockViewer>
+								</div>
+							</div>
 						</div>
 					</TabPanel>
 				</TabPanels>	

@@ -2,20 +2,21 @@
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import { useStore } from 'vuex';
 import confirm from "@/utils/confirm";
-import ChatService from '@/service/ChatService';
 import BotService from '@/service/BotService';
+import MCPService from '@/service/MCPService';
 import _ from 'lodash';
 import { openFolder } from '@/utils/file';
 import { isPC } from '@/utils/platform';
 import llmSvg from "@/assets/img/llm/deepseek.png";
-import mcpSvg from "@/assets/img/mcp/github.png";
+import { getKeywordIcon } from "@/utils/file";
 import { useI18n } from 'vue-i18n';
 import { getItem, setItem } from "@/utils/localStore";
 const { t, locale } = useI18n();
 const store = useStore();
-const chatService = new ChatService();
 const botService = new BotService();
-const emits = defineEmits(['back','history','changeBot']);
+const mcpService = new MCPService();
+
+const emits = defineEmits(['back','history','saved']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -61,51 +62,72 @@ const remMcp = (idx) => {
 const addMcp = () => {
 	adding.value = true;
 	const path = `${mcp.value?.kind}/${mcp.value?.name}`;
-	botService.createRoute({
-		ep: selectedMesh.value?.agent?.id,
-		path,
-		service: mcp.value
-	}).then(()=>{
-		localMcps.value.push({...mcp.value, enabled: false});
-		setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
-		setTimeout(()=>{
-			mcp.value = null;
+	if(!mcp.value.localRoutes?.length){
+		botService.createRoute({
+			ep: selectedMesh.value?.agent?.id,
+			path,
+			service: mcp.value
+		}).then(()=>{
+			localMcps.value.push({...mcp.value, enabled: false});
+			setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
+			setTimeout(()=>{
+				mcp.value = null;
+				adding.value = false;
+			},600)
+		}).catch((e)=>{
 			adding.value = false;
-		},600)
-	}).catch((e)=>{
-		adding.value = false;
-	})
+		})
+	}
+}
+const makeRemoveMcpRoute = () => {
+	//make remove route
+	if(removeAry.value.length>0){
+		for(let i = (removeAry.value.length-1);i>=0;i--){
+			botService.deleteRoute({
+				ep: selectedMesh.value?.agent?.id,
+				path: `${removeAry.value[i]?.kind}/${removeAry.value[i]?.name}`,
+			})
+			removeAry.value.splice(i,1);
+		}
+	}
 }
 const save = () => {
 	saving.value = true;
 	const path = `${llm.value?.kind}/${llm.value?.name}`;
-	botService.createRoute({
-		ep: selectedMesh.value?.agent?.id,
-		path,
-		service: llm.value
-	}).then(()=>{
-		setItem(`llm-${selectedMesh.value?.name}`, [llm.value], ()=>{})
-		setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{});
-		
-		setTimeout(()=>{
+	
+	setItem(`llm-${selectedMesh.value?.name}`, [llm.value], ()=>{})
+	setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{});
+	const mcps = localMcps.value.filter((n)=> n.enabled);
+	
+	if(!llm.value.localRoutes?.length){
+		botService.createRoute({
+			ep: selectedMesh.value?.agent?.id,
+			path,
+			service: llm.value
+		}).then(()=>{
+			//emit to chat
+			setTimeout(()=>{
+				saving.value = false;
+				emits('saved',{
+					llm: llm.value,
+					mcps
+				});
+			},600);
+			makeRemoveMcpRoute()
+		}).catch((e)=>{
 			saving.value = false;
-			emits('changeBot',{
+		})
+	} else {
+		makeRemoveMcpRoute();
+		//emit to chat
+		setTimeout(()=>{
+			emits('saved',{
 				llm: llm.value,
-				mcps: localMcps.value.filter((n)=> n.enabled)
+				mcps
 			});
+			saving.value = false;
 		},600);
-		if(removeAry.value.length>0){
-			for(let i = (removeAry.value.length-1);i>=0;i--){
-				botService.deleteRoute({
-					ep: selectedMesh.value?.agent?.id,
-					path: `${removeAry.value[i]?.kind}/${removeAry.value[i]?.name}`,
-				})
-				removeAry.value.splice(i,1);
-			}
-		}
-	}).catch((e)=>{
-		saving.value = false;
-	})
+	}
 }
 const llms = ref([]);
 const mcps = ref([]);
@@ -171,7 +193,7 @@ onMounted(()=>{
 		<li class="nav-li flex" v-for="(localMcp,idx) in localMcps">
 			<b class="opacity-70">{{t('MCP Server')}}</b>
 			<div class="flex-item text-right pr-3">
-				<img :src="mcpSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
+				<img :src="getKeywordIcon(localMcp.name, 'mcp')" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
 				<span>{{ localMcp.name }}</span>
 			</div>
 			<div class="px-2">
@@ -185,7 +207,7 @@ onMounted(()=>{
 				<Select v-model="mcp" :options="mcps" optionLabel="name" :placeholder="t('Select a tool')" class="selector" >
 					<template #value="slotProps">
 						<div v-if="slotProps.value" class="flex items-center">
-							<img :src="mcpSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
+							<img :src="getKeywordIcon(slotProps.value.name, 'mcp')" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
 							<div>{{ slotProps.value.name }}</div>
 						</div>
 						<span v-else>
@@ -194,13 +216,13 @@ onMounted(()=>{
 					</template>
 					<template #option="slotProps">
 						<div class="flex items-center">
-							<img :src="mcpSvg" width="18px" height="18px" class="relative mr-1" style=""/>
+							<img :src="getKeywordIcon(slotProps.option.name, 'mcp')" width="18px" height="18px" class="relative mr-1" style=""/>
 							<div>{{ slotProps.option.name }}</div>
 						</div>
 					</template>
 				</Select>
 			</div>
-			<Button :loading="adding" icon="pi pi-plus" severity="secondary" @click="addMcp"/>
+			<Button :disabled="!mcp" :loading="adding" icon="pi pi-plus" severity="secondary" @click="addMcp"/>
 		</li>
 		<!-- <li class="nav-li flex" @click="history">
 			<b class="opacity-70">{{t('History')}}</b>
