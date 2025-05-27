@@ -82,7 +82,7 @@ export default function ({ app, mesh, api, utils }) {
               For services:
 
               --protocol  <protocol>        What protocol the service speaks
-                                            Options: openai, mcp
+                                            Options: http, mcp
               --metainfo  <name=value ...>  Multiple pairs of name=value as metainfo
                                             Name options: version, provider, description
               --target    <name=value ...>  Multiple pairs of name=value describing the target
@@ -91,13 +91,15 @@ export default function ({ app, mesh, api, utils }) {
               For routes:
 
               --service   <name>            Name of the service
+              --cors      <name=value ...>  Multiple pairs of name=value regarding CORS.
+                                            Name options: allowOrigins, allowMethods, allowHeaders
             `,
             notes: objectTypeNotes + objectNameNotes,
             action: (args) => {
               var name = args['<object name>']
               switch (validateObjectType(args, 'open')) {
                 case 'service': return createService(name, args['--kind'], args['--protocol'], args['--metainfo'], args['--ep'], args['--target'])
-                case 'route': return createRoute(name, args['--service'], args['--ep'], args['--kind'])
+                case 'route': return createRoute(name, args['--service'], args['--ep'], args['--kind'], args['--cors'])
               }
             }
           },
@@ -239,6 +241,14 @@ export default function ({ app, mesh, api, utils }) {
         output(`    Name: ${route.service.endpoint.name || '(n/a)'}\n`)
         output(`    Username: ${route.service.endpoint.username || '(n/a)'}\n`)
         output(`    Labels: ${route.service.endpoint.labels?.join?.(' ') || '(none)'}\n`)
+        if (route.cors) {
+          output(`CORS:\n`)
+          if (route.cors.allowOrigins) output(`  Allow Origins: ${route.cors.allowOrigins.join(', ')}\n`)
+          if (route.cors.allowMethods) output(`  Allow Methods: ${route.cors.allowMethods.join(', ')}\n`)
+          if (route.cors.allowHeaders) output(`  Allow Headers: ${route.cors.allowHeaders.join(', ')}\n`)
+        } else {
+          output(`CORS: (n/a)\n`)
+        }
       })
     }
 
@@ -263,10 +273,14 @@ export default function ({ app, mesh, api, utils }) {
       )
     }
 
-    function createRoute(path, service, ep, kind) {
+    function createRoute(path, service, ep, kind, cors) {
       if (!service) throw `Missing service name`
+      var corsInfo = getNameValues(cors)
+      if (corsInfo.allowOrigins) corsInfo.allowOrigins = corsInfo.allowOrigins.split(',').map(s => s.trim())
+      if (corsInfo.allowMethods) corsInfo.allowMethods = corsInfo.allowMethods.split(',').map(s => s.trim())
+      if (corsInfo.allowHeaders) corsInfo.allowHeaders = corsInfo.allowHeaders.split(',').map(s => s.trim())
       return findService(ep, kind, service).then(
-        service => api.setRoute(endpoint.id, path, { service })
+        service => api.setRoute(endpoint.id, path, { service, cors: corsInfo })
       )
     }
 
