@@ -190,7 +190,8 @@ export default function ({ app, mesh }) {
                   name: r.service.name,
                   kind: r.service.kind,
                   endpoint: r.service.endpoint,
-                }
+                },
+                cors: r.cors,
               })
             )
           }
