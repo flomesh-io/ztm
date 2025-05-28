@@ -97,22 +97,22 @@ const initEmptyList = () => {
 
 <template>
 	
-	<Button v-if="!props.list?.length" size="small" @click="initEmptyList" icon="pi pi-plus" severity="secondary" />
-	<span v-else-if="props.listType == 'tag'">
+	<span v-if="props.listType == 'tag'">
 		<span v-for="(tag,tagidx) in props.list">
-			<Tag severity="secondary" v-if="tagidx<props.list.length" class="mr-2" >
+			<Tag severity="secondary" v-if="tagidx<props.list.length" class="mr-2 my-1" >
 				<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
 				<i v-if="!props.readonly" class="pi pi-times-circle ml-2 opacity-50" @click.stop="removeTag(tagidx)"/>
 			</Tag>
 		</span>
 		
-		<Tag v-if="!props.readonly" severity="secondary" class="pl-0 pr-3">
-				<span class="ml-2 font-medium">
-					<InputText @click.stop="()=>{}" @keyup.enter="addTag(newTag)" :placeholder="placeholder" class="add-tag-input" :unstyled="true" v-model="newTag"  type="text" />
+		<Tag v-if="!props.readonly" severity="secondary" class="pl-0 pr-3 my-1">
+				<span class="ml-2  font-medium">
+					<InputText @click.stop="()=>{}" @keyup.enter="addTag(newTag)" :placeholder="placeholder" class="add-tag-input" style="width:100px" :unstyled="true" v-model="newTag"  type="text" />
 					<i class="pi pi-arrow-down-left" />
 				</span>
 		</Tag>
 	</span>
+	<Button v-else-if="!props.list?.length" size="small" @click="initEmptyList" icon="pi pi-plus" severity="secondary" />
 	<span v-else>
 		<span v-if="props.direction == 'h'" v-for="(tag,tagidx) in props.list">
 			<Chip v-if="tagidx<props.list.length - 1" class="mr-2 custom-chip" >

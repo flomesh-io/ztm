@@ -849,6 +849,9 @@ iframe{
 .transparent>.p-dataview-content{
 	background-color: transparent;
 }
+.nowrap{
+	white-space: nowrap;
+}
 .text-ellipsis{
 	text-overflow: ellipsis;
 	overflow: hidden;

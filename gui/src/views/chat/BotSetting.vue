@@ -66,7 +66,11 @@ const addMcp = () => {
 		botService.createRoute({
 			ep: selectedMesh.value?.agent?.id,
 			path,
-			service: mcp.value
+			service: mcp.value,
+			cors:{
+				allowOrigins: ['tauri://localhost','http://localhost:1420'],
+				allowHeaders: ['content-type']
+			}
 		}).then(()=>{
 			localMcps.value.push({...mcp.value, enabled: false});
 			setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
@@ -77,6 +81,13 @@ const addMcp = () => {
 		}).catch((e)=>{
 			adding.value = false;
 		})
+	} else {
+		localMcps.value.push({...mcp.value, enabled: false});
+		setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
+		setTimeout(()=>{
+			mcp.value = null;
+			adding.value = false;
+		},600)
 	}
 }
 const makeRemoveMcpRoute = () => {

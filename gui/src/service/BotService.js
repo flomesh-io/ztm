@@ -41,8 +41,8 @@ export default class BotService {
 	getServices() {
 		return this.llmRequest(`/api/services`, 'GET');
 	}
-	createRoute({ep, path, service}) {
-		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"POST", { service });
+	createRoute({ep, path, service, cors}) {
+		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"POST", { service, cors });
 	}
 	deleteRoute({ep, path}) {
 		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"DELETE",);
@@ -261,7 +261,7 @@ export default class BotService {
 		const body = { messages };
 		const stream = fetchAsStream();
 		stream.post(
-			this.getFullSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`), 
+			this.getSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`), 
 			body,
 			callback
 		)
