@@ -75,7 +75,8 @@ export default class BotService {
 		const usermessages = [
 			{
 				"role":"user",
-				"content":message?.text
+				"content":`请完成以下任务（**必须返回工具调用，不可过多描述步骤，如存在工具执行结果一定要“完整”的返回, 如执行结果存在“路径”一定要返回**）
+任务：${message?.text}`
 			}
 		]
 		if(!!mcps && mcps.length>0){
@@ -89,7 +90,13 @@ export default class BotService {
 				tools.forEach((tool)=>{
 					tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
 				})
-				sysmessages.push({"role": "system", "content": JSON.stringify(tools)})
+				sysmessages.push({"role": "system", "content": `你是一个任务执行助手，必须通过直接调用工具（MCP Tools）完成任务。
+规则：
+1. 当用户请求涉及工具能力时，**必须**返回 \`tool_calls\`, 不可过多描述调用过程。
+2. 工具调用需符合以下格式：
+\`\`\`json
+${JSON.stringify(tools)}
+\`\`\``})
 			});
 			allmessages = sysmessages.concat(usermessages);
 			let tool_calls = [];
@@ -185,77 +192,8 @@ export default class BotService {
 			this.chatLLM(usermessages, llm, callback);
 		}
 	}
-	callRunner({message, llm, mcps, callback}) {
-		const usermessages = [
-			{
-				"role":"user",
-				"content":message?.text
-			}
-		]
-		if(!!mcps && mcps.length>0){
-			// get tools param
-			const mcpReqs = [];
-			mcps.forEach((mcp) => {
-				mcpReqs.push(this.callMcp(mcp))
-			});
-			merge(mcpReqs).then((allTools)=>{
-				let allmessages = [];
-				const sysmessages = [];
-				allTools.forEach((tools)=>{
-					sysmessages.push({"role": "system", "content": JSON.stringify(tools)})
-				});
-				allmessages = sysmessages.concat(usermessages);
-				// get tool_calls with llm
-				this.chatLLM(allmessages, llm, (res,ending)=> {
-					if(res.choices[0]?.finish_reason == "tool_calls"){
-						if(!ending){
-							return
-						}
-						// push assistant msg
-						const tool_calls = res.choices[0]?.message?.tool_calls;
-						allmessages.push({
-							'content': '', 
-							'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
-							'role': 'assistant', 
-							tool_calls
-						});
-						const toolReqs = [];
-						tool_calls.forEach((tool_call,idx)=>{
-							const argv = JSON.parse(tool_call.function.arguments);
-							toolReqs.push(this.callMcp(mcps[idx],{"params":{"name":tool_call.function.name, "arguments":(argv||{})},"method":"tools/call"}));
-						})
-						merge(toolReqs).then((allToolsResult)=>{
-							// push result msg
-							allToolsResult.forEach((toolResult,idx)=>{
-								toolResult?.result?.content.forEach((toolResultContent)=>{
-									if(toolResultContent.type=='text'){
-										allmessages.push({"role": "tool", "content": toolResultContent.text,"tool_call_id": tool_calls[idx].id})
-									} else {
-										allmessages.push({"role": "tool", "content": JSON.stringify(toolResultContent),"tool_call_id": tool_calls[idx].id})
-									}
-								})
-							});
-							this.chatLLM(allmessages, llm, callback);
-						});
-					} else {
-						callback(res, ending);
-					} 
-					console.log(res);
-				});
-			})
-		} else {
-			this.chatLLM(usermessages, llm, callback);
-		}
-	}
 	callMcpToolBySDK(uniqueToolName, args) {
 		return this.mcpService.callTool(uniqueToolName, args);
-	}
-	callMcp(mcp, body) {
-		return this.llmRequest(`/svc/${mcp.kind}/${mcp.name}`, "POST", {
-      "jsonrpc": "2.0",
-			"id": 1,
-			...(body || {"method": "tools/list"})
-    })
 	}
 	chatLLM(messages, llm, callback) {
 		const body = { messages };
