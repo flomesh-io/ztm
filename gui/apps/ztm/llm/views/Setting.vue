@@ -10,6 +10,7 @@ import { useStore } from 'vuex';
 import _ from "lodash"
 import toast from "@/utils/toast";
 import llmSvg from "@/assets/img/llm/deepseek.png";
+import { getKeywordIcon } from "@/utils/file";
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 const emits = defineEmits(['save']);
@@ -42,7 +43,7 @@ const mcps = ref([])
 const allMcps = ref([])
 const newLlm = {
 	name: '',
-	protocol: 'openai',
+	protocol: 'http',
 	metainfo: {
 		version: '',
 		provider: '',
@@ -56,7 +57,7 @@ const newLlm = {
 		},
 		body: {
 			"model":"Pro/deepseek-ai/DeepSeek-V3",
-			"stream":false,
+			"stream":true,
 			"max_tokens":512,
 			"enable_thinking":false,
 			"thinking_budget":512,
@@ -129,32 +130,58 @@ const createMcp = () => {
 let clipboard = null;
 const loaddata = () => {
 	loading.value = true;
-	llmService.getServices().then((res)=>{
-		allLlms.value = (res.services||[]).filter((n) => n.kind == 'llm').sort((a,b)=>{
-			return b.localRoutes?.length - a.localRoutes?.length
-		});
-		allMcps.value = (res.services||[]).filter((n) => n.kind == 'tool').sort((a,b)=>{
-			return b.localRoutes?.length - a.localRoutes?.length
-		});
-		loading.value = false;
-		setTimeout(()=>{
-			clipboard = new ClipboardJS(".copy-btn");
-			clipboard.on("success", (e) => {
-				toast.add({ severity: 'success', summary: 'Tips', detail: "Copied", life: 3000 });
-			});
-			clipboard.on("error", (e) => {
-				toast.add({ severity: 'error', summary: 'Tips', detail: "Copy failed", life: 3000 });
-			});
-		},300)
-		
-	})
-	llmService.getServices(info?.value.endpoint?.id).then((res)=>{
-		llms.value = (res||[]).filter((n) => n.kind == 'llm');
-		mcps.value = (res||[]).filter((n) => n.kind == 'tool');
+	llmService.getServices(info?.value.endpoint?.id).then((resp)=>{
+		const res = resp||[];
+		llms.value = res.filter((n) => n.kind == 'llm');
+		mcps.value = res.filter((n) => n.kind == 'tool');
 	})
 	
 	llmService.getRoutes(info?.value.endpoint?.id).then((res)=>{
 		routes.value = res.routes||[];
+		
+		llmService.getServices().then((res)=>{
+			const services = res?.services||[];
+			services.forEach((svc)=>{
+				if(!svc.localRoutes){
+					svc.localRoutes=[]
+				}
+				svc.localRoutes.forEach((route,i)=>{
+					svc.localRoutes[i] = routes.value.find((r) => r.path == route.path);
+					svc.localRoutes[i].find = true;
+					if(svc.localRoutes[i]){
+						if(!svc.localRoutes[i].cors){
+							svc.localRoutes[i].cors = {}
+						}
+						if(!svc.localRoutes[i].cors.allowOrigins){
+							svc.localRoutes[i].cors.allowOrigins = []
+						}
+						if(!svc.localRoutes[i].cors.allowHeaders){
+							svc.localRoutes[i].cors.allowHeaders = []
+						}
+						if(!svc.localRoutes[i].cors.allowMethods){
+							svc.localRoutes[i].cors.allowMethods = []
+						}
+					}
+				})
+			})
+			allLlms.value = services.filter((n) => n.kind == 'llm').sort((a,b)=>{
+				return b.localRoutes?.length - a.localRoutes?.length
+			});
+			allMcps.value = services.filter((n) => n.kind == 'tool').sort((a,b)=>{
+				return b.localRoutes?.length - a.localRoutes?.length
+			});
+			loading.value = false;
+			setTimeout(()=>{
+				clipboard = new ClipboardJS(".copy-btn");
+				clipboard.on("success", (e) => {
+					toast.add({ severity: 'success', summary: 'Tips', detail: "Copied", life: 3000 });
+				});
+				clipboard.on("error", (e) => {
+					toast.add({ severity: 'error', summary: 'Tips', detail: "Copy failed", life: 3000 });
+				});
+			},300)
+			
+		})
 	})
 }
 
@@ -197,7 +224,8 @@ const mcpRemove = (t,index) => {
 		emits("save");
 	})
 }
-const routeRemove = (t,index) => {
+
+const routeRemove = (t) => {
 	llmService.deleteRoute({
 		ep:info?.value.endpoint?.id, path:t.path
 	},()=>{
@@ -205,10 +233,34 @@ const routeRemove = (t,index) => {
 		emits("save");
 	})
 }
+const detatingAny = ref(false);
+const removeAnyRoutes = () => {
+	detatingAny.value = true;
+	llmService.deleteRouteNoConfirm(
+		info?.value.endpoint?.id, routes.value.filter((r)=> !r?.find)||[]
+	).then(()=>{
+		detatingAny.value = false;
+		loaddata();
+	})
+}
+const routeSave = (service, route) => {
+	llmService.createRoute({
+		ep:info?.value.endpoint?.id, path:`${service?.kind}/${service?.name}`,
+		service,
+		cors:route.cors
+	}).then(()=>{
+		loaddata();
+		emits("save");
+	})
+}
 const routeCreate = (service) => {
 	llmService.createRoute({
 		ep:info?.value.endpoint?.id, path:`${service?.kind}/${service?.name}`,
-		service
+		service,
+		cors:{
+			allowOrigins: service?.protocol=='http'?[]:['tauri://localhost','http://localhost:1420'],
+			allowHeaders: service?.protocol=='http'?[]:['content-type']
+		}
 	}).then(()=>{
 		loaddata();
 		emits("save");
@@ -245,6 +297,10 @@ onMounted(() => {
 						<Tag >{{t('Routes')}}
 							<Badge :value="routes.length" />
 						</Tag> 
+						<Button severity="secondary" class="ml-2" :loading="detatingAny" @click="removeAnyRoutes" v-if="routes.filter((r)=>!r?.find).length>0" size="small" >
+							{{t('Clean invalid')}}
+							<Badge :value="routes.filter((r)=>!r?.find).length" />
+						</Button> 
 					</Tab>
 					<Tab value="0">
 						<Tag >{{t('My LLM')}}
@@ -336,7 +392,7 @@ onMounted(() => {
 													 </div>
 											 </div>
 									 </div>
-									 <div v-else>
+									 <div class="p-3" v-else>
 										 {{t('No LLM.')}}
 									 </div>
 								</div>
@@ -425,7 +481,7 @@ onMounted(() => {
 													 </div>
 											 </div>
 									 </div>
-									 <div v-else>
+									 <div class="p-3" v-else>
 										 {{t('No MCP Server.')}}
 									 </div>
 								</div>
@@ -445,7 +501,7 @@ onMounted(() => {
 										</div>
 										<DataView class="transparent" :value="allLlms">
 											<template #empty>
-												{{t('No LLM.')}}
+												<div class="py-2">{{t('No LLM.')}}</div>
 											</template>
 											<template #list="slotProps">
 												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
@@ -453,24 +509,43 @@ onMounted(() => {
 																<div>
 																	<img :src="llmSvg" width="30px" />
 																</div>
-																<div class="flex flex-col pr-2 flex-item">
-																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																		<span>
+																<div class="flex flex-col pr-2 flex-item w-full">
+																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+																		<div class="flex w-full" style="align-items:center">
 																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">{{item?.kind}}</Tag>
-																			<b>{{item?.name}}</b>
-																		</span>
-																		<span class="flex text-sm mt-2" style="word-break: break-all;align-items:center" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
-																			<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)" icon=" pi pi-clipboard" class="copy-btn"/> 
-																			<div>{{llmService.getSvcUrl(route?.path)}}</div>
-																			<Button @click="routeRemove(route,index)" size="small" icon="pi pi-trash" link></Button>
+																			<b class="flex-item">{{item?.name}}</b>
+																			
+																			<Button v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
+																			<Button v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
+																			<Button v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
+																		</div>
+																		<span class=" text-sm mt-2"  v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
+																			<div class="flex" style="word-break: break-all;align-items:center">
+																				<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)" icon=" pi pi-clipboard" class="copy-btn"/> 
+																				<div>{{llmService.getSvcUrl(route?.path)}}</div>
+																			</div>
+																			<div v-if="route.cors">
+																				<div class="flex" style="align-items:center">
+																					<Button link icon=" pi pi-desktop" /> 
+																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
+																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
+																				</div>
+																				<div class="flex" style="align-items:center">
+																					<Button link icon=" pi pi-code" /> 
+																					<span class="pr-2">{{t('Allow Headers')}}</span>
+																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowHeaders" />
+																				</div>
+																				<div class="flex" style="align-items:center">
+																					<Button link icon=" pi pi-code" /> 
+																					<span class="pr-2">{{t('Allow Methods')}}</span>
+																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowMethods" />
+																				</div>
+																			</div>
 																		</span>
 																		<span class="opacity-50 text-sm mt-2" v-else>
 																			<i class="pi pi-link text-primary-500 mr-2 "/> {{t('No Routes.')}}
 																		</span>
 																	</div>
-																</div>
-																<div v-if="item.localRoutes.length == 0" class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
-																		<Button @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
 																</div>
 														</div>
 												</div>
@@ -488,7 +563,7 @@ onMounted(() => {
 										</div>
 										<DataView class="transparent" :value="allMcps">
 											<template #empty>
-												{{t('No MCP Server.')}}
+												<div class="py-2">{{t('No MCP Server.')}}</div>
 											</template>
 											<template #list="slotProps">
 												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
@@ -496,24 +571,43 @@ onMounted(() => {
 																<div>
 																	<img :src="getKeywordIcon(item?.name, 'mcp')" width="30px" />
 																</div>
-																<div class="flex flex-col pr-2 flex-item">
-																	<div class="text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
-																		<span>
+																<div class="flex flex-col pr-2 flex-item w-full">
+																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
+																		<div class="flex w-full" style="align-items:center">
 																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">{{item?.kind}}</Tag>
-																			<b>{{item?.name}}</b>
-																		</span>
-																		<span class="flex text-sm mt-2" style="word-break: break-all;align-items:center" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
-																			<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)+'sse'" icon=" pi pi-clipboard" class="copy-btn"/> 
-																			{{llmService.getSvcUrl(route?.path)}}sse
-																			<Button @click="routeRemove(route,index)" size="small" icon="pi pi-trash" link></Button>
+																			<b class="flex-item">{{item?.name}}</b>
+																			
+																			<Button v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
+																			<Button v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
+																			<Button v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
+																		</div>
+																		<span class="text-sm mt-2" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
+																			<div class="flex" style="word-break: break-all;align-items:center">
+																				<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)+'sse'" icon=" pi pi-clipboard" class="copy-btn"/> 
+																				<div>{{llmService.getSvcUrl(route?.path)}}sse</div>
+																			</div>
+																			<div  v-if="route.cors">
+																				<div class="flex" style="align-items:center">
+																					<Button link icon=" pi pi-desktop" /> 
+																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
+																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
+																				</div>
+																				<div class="flex" style="align-items:center">
+																					<Button link icon=" pi pi-code" /> 
+																					<span class="pr-2">{{t('Allow Headers')}}</span>
+																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowHeaders" />
+																				</div>
+																				<div class="flex" style="align-items:center">
+																					<Button link icon=" pi pi-code" /> 
+																					<span class="pr-2">{{t('Allow Methods')}}</span>
+																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowMethods" />
+																				</div>
+																			</div>
 																		</span>
 																		<span class="opacity-50 text-sm mt-2" v-else>
 																			<i class="pi pi-link text-primary-500 mr-2 "/> {{t('No Routes.')}}
 																		</span>
 																	</div>
-																</div>
-																<div v-if="item.localRoutes.length == 0" class="flex flex-column xl:flex-row-reverse  xl:flex-row gap-2">
-																		<Button @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
 																</div>
 														</div>
 												</div>

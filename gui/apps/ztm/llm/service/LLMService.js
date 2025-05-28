@@ -17,7 +17,7 @@ export default class LLMService {
 		return ep?request(`/api/endpoints/${ep}/services`):request(`/api/services`);
 	}
 	/*
-		protocol: 'openai' | 'mcp',
+		protocol: 'http' | 'mcp',
 		metainfo: 
 			version: string
 			provider: string
@@ -66,8 +66,8 @@ export default class LLMService {
 		...
 	}
 	*/
-	createRoute({ep, path, service}) {
-		return request(`/api/endpoints/${ep}/routes/${path}`,"POST", { service });
+	createRoute({ep, path, service, cors}) {
+		return request(`/api/endpoints/${ep}/routes/${path}`,"POST", { service, cors });
 	}
 	
 	deleteRoute({ep, path}, callback) {
@@ -81,5 +81,12 @@ export default class LLMService {
 				callback(err);
 			});
 		},()=>{},'After removing the route, the ref service settings of your AI bot will become invalid and need to be reconfigured')
+	}
+	deleteRouteNoConfirm(ep, routes) {
+		const reqs = [];
+		routes.forEach((r)=>{
+			reqs.push(request(`/api/endpoints/${ep}/routes/${r.path}`,"DELETE"))
+		})
+		return merge(reqs)
 	}
 }
