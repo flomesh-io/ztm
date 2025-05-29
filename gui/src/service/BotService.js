@@ -70,13 +70,36 @@ export default class BotService {
 			}
 		});
 	}
+	makePrompt(role, content){
+		switch (role){
+			case 'user':
+				return `请完成以下请求（**如判定为工具调用请求，必须返回工具调用并遵守system_prompt。如果判断为非工具调用，请用自然语言回答。**）
+请求：${content}`;
+			case 'system':
+				return `你是一个工具调用助手，必须严格遵循以下规则：
+1. 当用户请求需要tool时，**只能**返回合法的 \`tool_calls\`，自然语言只能回复**正在请求任务...\n\n**。
+2. 当tool消息执行返回结果，只能回复**描述性列表**
+
+这是listTools：
+\`\`\`json
+${JSON.stringify(content)}
+\`\`\``;
+			case 'tool':
+				let _content = content?.text;
+				if(content?.type!='text') {
+					_content = JSON.stringify(content)
+				}
+				return `以下是工具调用结果，请整理为**描述性列表**再回复，禁止回复**tool▁calls▁begin**：${_content}`;
+			default:
+				return text;
+		}
+	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
 	async callRunnerBySDK({message, llm, mcps, callback}) {
 		const usermessages = [
 			{
 				"role":"user",
-				"content":`请完成以下任务（**如判定为工具调用请求，必须返回工具调用，不要过多描述调用过程，禁止tool▁calls▁begin...描述调用过程和结果，当存在工具执行结果一定要“完整”的返回, 当执行结果存在“路径”一定要返回。如果判断为非工具调用，请用自然语言回答。**）
-任务：${message?.text}`
+				"content":this.makePrompt("user",message?.text)
 			}
 		]
 		if(!!mcps && mcps.length>0){
@@ -90,13 +113,7 @@ export default class BotService {
 				tools.forEach((tool)=>{
 					tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
 				})
-				sysmessages.push({"role": "system", "content": `你是一个任务执行助手，必须通过直接调用工具（MCP Tools）完成任务。
-规则：
-1. 当用户请求涉及工具能力时，**必须**返回 \`tool_calls\`, 不要过多描述调用过程，禁止tool▁calls▁begin...描述调用过程和结果
-2. 工具调用需符合以下格式：
-\`\`\`json
-${JSON.stringify(tools)}
-\`\`\``})
+				sysmessages.push({"role": "system", "content": this.makePrompt("system",tools)})
 			});
 			allmessages = sysmessages.concat(usermessages);
 			let tool_calls = [];
@@ -115,20 +132,12 @@ ${JSON.stringify(tools)}
 								if(toolResult){
 									if(toolResult?.result?.content){
 										toolResult?.result?.content.forEach((toolResultContent)=>{
-											if(toolResultContent.type=='text'){
-												allmessages.push({"role": "tool", "content": toolResultContent.text,"tool_call_id": res.tool_call?.id})
-											} else {
-												allmessages.push({"role": "tool", "content": JSON.stringify(toolResultContent),"tool_call_id": res.tool_call?.id})
-											}
+											allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
 										})
 									}
 									if(toolResult?.content){
 										toolResult?.content.forEach((toolResultContent)=>{
-											if(toolResultContent.type=='text'){
-												allmessages.push({"role": "tool", "content": toolResultContent.text,"tool_call_id": res.tool_call?.id})
-											} else {
-												allmessages.push({"role": "tool", "content": JSON.stringify(toolResultContent),"tool_call_id": res.tool_call?.id})
-											}
+											allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
 										})
 									}
 								}
@@ -204,45 +213,4 @@ ${JSON.stringify(tools)}
 			callback
 		)
 	}
-	/*
-	{
-	    "id": "01968bc66c4a2c9f9bbf3a5e2cac7e7c",
-	    "object": "chat.completion",
-	    "created": 1746101759,
-	    "model": "deepseek-ai/DeepSeek-R1",
-	    "choices": [
-	        {
-	            "index": 0,
-	            "message": {
-	                "role": "assistant",
-	                "content": "\n\n",
-	                "reasoning_content": "Okay, let's see. The user wrote \"qwe\". That doesn't seem to make much sense. Maybe it's a typo or a random input. I need to figure out what they want. The available tool is called \"\u003cstring\u003e\", but the description and parameters are also \"\u003cstring\u003e\", which is confusing. Maybe the tool is meant to handle string inputs? Since the parameters are empty, perhaps it's a simple tool that just takes any string.\n\nWait, the parameters object is empty in the tool definition, so how should I use it? The strict mode is false, so maybe it can accept any parameters even if they aren't defined. But that's not standard. Maybe there's a mistake in the tool definition. Alternatively, maybe the tool expects a string parameter but it wasn't properly documented.\n\nSince the user input is \"qwe\", I'll assume they want to pass this string to the tool named \"\u003cstring\u003e\". Even though the parameters schema is empty, perhaps the tool can process it by taking the input as a parameter named \"input\" or something similar. But since I don't have clear documentation, I'll have to make an educated guess.\n\nI'll proceed by calling the \"\u003cstring\u003e\" tool with the user's input as a parameter. Let's structure the JSON accordingly, using \"input\" as the parameter name and \"qwe\" as its value.\n",
-	                "tool_calls": [
-	                    {
-	                        "index": 0,
-	                        "id": "01968bc6e1053e4b4576327e351d3787",
-	                        "type": "function",
-	                        "function": {
-	                            "name": "\u003cstring\u003e",
-	                            "arguments": {
-	                                "input": "qwe"
-	                            }
-	                        }
-	                    }
-	                ]
-	            },
-	            "finish_reason": "tool_calls"
-	        }
-	    ],
-	    "usage": {
-	        "prompt_tokens": 143,
-	        "completion_tokens": 287,
-	        "total_tokens": 430,
-	        "completion_tokens_details": {
-	            "reasoning_tokens": 282
-	        }
-	    },
-	    "system_fingerprint": ""
-	}
-	*/
 }
