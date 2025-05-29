@@ -63,7 +63,7 @@ const newLlm = {
 			"thinking_budget":512,
 			"min_p":0.05,
 			"stop":null,
-			"temperature":0.7,
+			"temperature":0.1,
 			"top_p":0.7,
 			"top_k":50,
 			"frequency_penalty":0.5,
