@@ -75,7 +75,7 @@ export default class BotService {
 		const usermessages = [
 			{
 				"role":"user",
-				"content":`请完成以下任务（**如判定为工具调用请求，必须返回工具调用，不可过多描述步骤，当存在工具执行结果一定要“完整”的返回, 当执行结果存在“路径”一定要返回。如果判断为非工具调用，请用自然语言回答。**）
+				"content":`请完成以下任务（**如判定为工具调用请求，必须返回工具调用，不要过多描述调用过程，禁止tool▁calls▁begin...描述调用过程和结果，当存在工具执行结果一定要“完整”的返回, 当执行结果存在“路径”一定要返回。如果判断为非工具调用，请用自然语言回答。**）
 任务：${message?.text}`
 			}
 		]
@@ -92,7 +92,7 @@ export default class BotService {
 				})
 				sysmessages.push({"role": "system", "content": `你是一个任务执行助手，必须通过直接调用工具（MCP Tools）完成任务。
 规则：
-1. 当用户请求涉及工具能力时，**必须**返回 \`tool_calls\`, 不可过多描述调用过程。
+1. 当用户请求涉及工具能力时，**必须**返回 \`tool_calls\`, 不要过多描述调用过程，禁止tool▁calls▁begin...描述调用过程和结果
 2. 工具调用需符合以下格式：
 \`\`\`json
 ${JSON.stringify(tools)}
