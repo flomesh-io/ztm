@@ -5,6 +5,7 @@ import toast from "@/utils/toast";
 
 const xsrfHeaderName = "Authorization";
 const DEFAULT_VITE_APP_API_PORT = import.meta.env.VITE_APP_API_PORT;
+const DEFAULT_VITE_APP_HUB_LISTEN = import.meta.env.VITE_APP_HUB_LISTEN;
 
 const AUTH_TYPE = {
   BEARER: "Bearer",
@@ -171,6 +172,20 @@ const getPort = () => {
 }
 const setPort = (port) => {
 	localStorage.setItem("VITE_APP_API_PORT",port);
+}
+const getHubListen = () => {
+	const VITE_APP_HUB_LISTEN = localStorage.getItem("VITE_APP_HUB_LISTEN");
+	return VITE_APP_HUB_LISTEN || DEFAULT_VITE_APP_HUB_LISTEN || '127.0.0.1:8888';
+}
+const setHubListen = (listen) => {
+	localStorage.setItem("VITE_APP_HUB_LISTEN",listen);
+}
+const getHubNames = () => {
+	const VITE_APP_HUB_NAMES = localStorage.getItem("VITE_APP_HUB_NAMES");
+	return VITE_APP_HUB_NAMES || DEFAULT_VITE_APP_HUB_LISTEN || '127.0.0.1:8888';
+}
+const setHubNames = (listen) => {
+	localStorage.setItem("VITE_APP_HUB_NAMES",listen);
 }
 function getBaseUrl() {
 	return `http://localhost:${getPort()}`
@@ -530,5 +545,9 @@ export {
   getHeaders,
 	getPort,
 	setPort,
+	getHubListen,
+	setHubListen,
+	getHubNames,
+	setHubNames,
 	getBaseUrl
 };

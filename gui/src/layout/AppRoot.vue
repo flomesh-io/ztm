@@ -17,7 +17,6 @@ import { checkAuthorization } from "@/service/common/request";
 import { isAdmin } from "@/service/common/authority-utils";
 import { hostname } from '@tauri-apps/plugin-os';
 import { invoke } from '@tauri-apps/api/core';
-import { getPort } from '@/service/common/request';
 import { openWebview } from '@/utils/webview';
 import { fsInit, downloadFile } from '@/utils/file';
 import { copy } from '@/utils/clipboard';
@@ -162,19 +161,27 @@ const errorMsg = computed(() => {
 })
 
 const startPipy = async () => {
-	await shellService.startPipy(getPort(), false, error => {
+	await shellService.startPipy((error) => {
 		errors.value.push(error);
-		// console.error(`command error: "${error}"`)
 	});
-	// shellService.startProxy('127.0.0.1:6667');
-	// shellService.pauseProxy();
 }
 const pause = async () => {
-	await shellService.pausePipy(getPort());
+	await shellService.pausePipy();
 	playing.value = false;
 }
 const clickPause = () => {
 	pause();
+}
+const hubPlaying = ref(false);
+const startHub = async () => {
+	await shellService.startHub(error => {
+		console.log(error)
+	});
+	hubPlaying.value = true;
+}
+const pauseHub = async () => {
+	await shellService.pauseHub();
+	hubPlaying.value = false;
 }
 
 const clickCollapse = (path) => {
@@ -469,10 +476,18 @@ onMounted(() => {
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button v-tooltip.left="t('Start')" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
+				<Button v-tooltip.left="t('Run Hub')" v-if="!hubPlaying" class="pointer" severity="help" text rounded aria-label="Filter" @click="startHub" >
 					<i class="pi pi-play " />
 				</Button>
-				<Button v-tooltip="t('Pause')"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="clickPause" >
+				<Button v-tooltip="t('Pause Hub')"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pauseHub" >
+					<i class="pi pi-stop-circle" />
+				</Button>
+			</div>
+			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
+				<Button v-tooltip.left="t('Run Agent')" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
+					<i class="pi pi-play " />
+				</Button>
+				<Button v-tooltip="t('Pause Agent')"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pause" >
 					<i class="pi pi-stop-circle" />
 				</Button>
 			</div>

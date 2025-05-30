@@ -12,7 +12,9 @@ export default {
 		version: '',
 		shortcuts: null,
 		client: null,
+		hubpid: null,
 		pid: null,
+		hubchild: null,
 		child: null,
 		collapsed: true,
 		meshes:[],
@@ -47,6 +49,15 @@ export default {
     pid: (state) => {
       return localStorage.getItem('PID') || state.pid;
     },
+    hubpid: (state) => {
+      return localStorage.getItem('HUB_PID') || state.hubpid;
+    },
+    child: (state) => {
+      return state.child;
+    },
+    hubchild: (state) => {
+      return state.hubchild;
+    },
     shortcuts: (state) => {
 			let _shortcuts = []
 			try{
@@ -67,9 +78,6 @@ export default {
     },
     selectedMesh: (state) => {
       return state.selectedMesh;
-    },
-    child: (state) => {
-      return state.child;
     },
     client: (state) => {
       return state.client;
@@ -138,9 +146,19 @@ export default {
 			}
 			state.logs.push(log)
     },
+    setHubpid(state, hubpid) {
+      state.hubpid = hubpid;
+			localStorage.setItem('HUB_PID',hubpid);
+    },
     setPid(state, pid) {
       state.pid = pid;
 			localStorage.setItem('PID',pid);
+    },
+    setHubchild(state, hubchild) {
+      state.hubchild = hubchild;
+    },
+    setChild(state, child) {
+      state.child = child;
     },
     setShortcuts(state, shortcuts) {
       state.shortcuts = shortcuts;
@@ -148,9 +166,6 @@ export default {
     },
     setClient(state, client) {
       state.client = client;
-    },
-    setChild(state, child) {
-      state.child = child;
     },
     setMeshes(state, meshes) {
       state.meshes = meshes;

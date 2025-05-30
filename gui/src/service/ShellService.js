@@ -6,7 +6,9 @@ import { readTextFileLines, BaseDirectory } from '@tauri-apps/plugin-fs';
 import ZtmService from '@/service/ZtmService';
 import { relaunch } from "@tauri-apps/plugin-process";
 import store from "@/store";
+import { getPort,getHubListen,getHubNames } from '@/service/common/request';
 
+const VITE_APP_HUB_LISTEN = import.meta.env.VITE_APP_HUB_LISTEN;
 const ztmService = new ZtmService();
 export default class ShellService {
 	async getDB () {
@@ -67,11 +69,69 @@ export default class ShellService {
 				}); 
 		}
 	}
-	async startPipy (port, reset, callError){
+	async startHub (callError){
+			let resourceDirPath = await documentDir();
+			const args = [
+				"--pipy",
+				"repo://ztm/hub",
+				"--args",
+				`--listen`,
+				getHubListen(),
+				`--names`,
+				getHubNames(),
+				"",
+				"",
+			];
+			await this.pauseHub();
+			console.log(`[starting hub:${args}]`);
+			const command = Command.sidecar("bin/ztmctl", args);
+			command.on('close', data => {
+				console.log("[hub close]",data);
+			});
+			command.stdout.on('data', line => {
+				console.log("[hub stdout]",line);
+			});
+			command.stderr.on('data', line => {
+				console.log("[hub stderr]",line);
+				store.commit('account/pushLog', {level:'Error',msg:line});
+				callError(line);
+			});
+			command.on('error', error => {
+				console.log("[hub error]",error);
+				store.commit('account/pushLog', {level:'Error',msg:error});
+				callError(error);
+			});
+			let child = await command.spawn();
+			console.log(child)
+			store.commit('account/setHubpid', child.pid);
+			console.log(`account/setHubpid=${child.pid}`)
+			store.commit('account/setHubchild', child);
+	}
+	async pauseHub (){
+		let child = store.getters['account/hubchild'];
+		let pid = localStorage.getItem("HUB_PID");
+		console.log(`HUB_PID=${pid}`)
+		if(!!child){
+			child.kill();
+		}
+		if(!!pid){
+			const findChild = new Child(pid*1);
+			findChild.kill();
+			const findChild2 = new Child(pid*1+1);
+			findChild2.kill();
+			const command = Command.create("kill", [`${pid*1}`]);
+			command.execute();
+			const command2 = Command.create("kill", [`${pid*1+1}`]);
+			command2.execute();
+		}
+		store.commit('account/setHubpid', null);
+		console.log('[paused hub]');
+	}
+	
+	async startPipy (callError){
 		const pm = platform();
 		console.log(pm)
-		
-		localStorage.setItem("VITE_APP_API_PORT", port);
+		const port = getPort();
 		let resourceDirPath = '';
 		// const appLogDirPath = await appLogDir();
 		// `${resourceDirPath}/_up_/_up_/agent/main.js`,
@@ -166,7 +226,7 @@ export default class ShellService {
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
-			await this.pausePipy(port);
+			await this.pausePipy();
 			console.log(`[starting pipy:${args}]`);
 			const command = Command.sidecar("bin/ztmctl", args);
 			command.on('close', data => {
@@ -197,7 +257,7 @@ export default class ShellService {
 			store.commit('account/setChild', child);
 		}
 	}
-	async pausePipy (port){
+	async pausePipy (){
 		const pm = platform();
 		if(pm != "android" && pm != "ios"){
 			let child = store.getters['account/child'];

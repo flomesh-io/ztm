@@ -8,8 +8,10 @@ import ShellService from '@/service/ShellService';
 import ZtmService from '@/service/ZtmService';
 import confirm from "@/utils/confirm";
 import PipyVersion from '@/components/mesh/PipyVersion.vue';
-import { getPort, setPort } from '@/service/common/request';
+import { getPort, setPort, getHubListen,setHubListen,getHubNames,setHubNames } from '@/service/common/request';
 import { useI18n } from 'vue-i18n';
+
+const VITE_APP_HUB_LISTEN = import.meta.env.VITE_APP_HUB_LISTEN;
 const { t, locale } = useI18n();
 const emits = defineEmits(['close']);
 const saving = ref(false);
@@ -31,9 +33,12 @@ const loaddata = async () => {
 	db.value = await shellService.getDB();
 }
 const port = ref(getPort());
+const hubListen = ref(getHubListen());
+const hubNames = ref(getHubNames());
 const save = () => {
 	setPort(port.value);
-	
+	setHubNames(hubNames.value);
+	setHubListen(hubListen.value);
 	toast.add({ severity: 'success', summary: 'Tips', detail: "Saved, Restart to activate.", life: 3000 });
 }
 const close = () => {
@@ -67,15 +72,29 @@ onMounted(()=>{
 					<PipyVersion />
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
-						<div class="font-medium font-bold w-3 text-white">{{t('Port')}}</div>
+						<div class="font-medium font-bold w-3 text-white">Agent {{t('Port')}}</div>
 						<InputGroup class="search-bar" style="border-radius: 8px;" >
 							<InputNumber :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" :min="0" :max="65535" placeholder="0-65535" v-model="port" />
 							<Button size="small" icon="pi pi-sort" />
 						</InputGroup>
 				</li>
+				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap text-white">
+						<div class="font-medium font-bold w-3">Hub {{t('Names')}}</div>
+						<InputGroup class="search-bar" style="border-radius: 8px;" >
+							<InputText :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" placeholder="host:port" v-model="hubNames" />
+							<Button size="small" icon="pi pi-hashtag" />
+						</InputGroup>
+				</li>
+				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap ">
+						<div class="font-medium font-bold w-3 text-white">Hub {{t('Listen')}}</div>
+						<InputGroup class="search-bar" style="border-radius: 8px;" >
+							<InputText :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" placeholder="host:port" v-model="hubListen" />
+							<Button size="small" icon="pi pi-send" />
+						</InputGroup>
+				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="font-medium font-bold w-3 text-white">{{t('DB')}}</div>
-						<div v-if="platform() != 'ios' && platform() != 'android'" class="text-white flex-item" v-tooltip="db">
+						<div v-if="platform() != 'ios' && platform() != 'android'" class="text-white flex-item" >
 							{{db}}
 						</div>
 						<div v-else class="text-white flex-item" v-tooltip="db">
