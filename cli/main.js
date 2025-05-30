@@ -129,6 +129,22 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `Generate a permit for the root user`,
+        usage: 'root',
+        options: `
+          -d, --data  <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+          -n, --names <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+              --ca    <url>             Specify the location of an external CA service if any
+        `,
+        action: (args) => {
+          var dataDir = args['--data']
+          var names = args['--names']
+          var caURL = args['--ca']
+          return root(dataDir, caURL, names)
+        }
+      },
+
+      {
         title: `Print the identity of the current running agent`,
         usage: 'identity',
         action: identity,
@@ -599,6 +615,20 @@ function exportCA(dataDir, crtPath, keyPath) {
 }
 
 //
+// Command: root
+//
+
+function root(dataDir, caURL, names) {
+  if (!names || names.length === 0) {
+    throw 'at least one hub address (host:port) is required (with option --names)'
+  }
+
+  return generateRootPermit(dataDir, caURL, names).then(
+    permit => println(permit)
+  )
+}
+
+//
 // Command: identity
 //
 
@@ -730,14 +760,61 @@ function initHubDB(path) {
 
 function initHub(args) {
   var names = args['--names'] || []
-  if (names.length === 0) throw 'at least one hub address (host:port) is required (with option --names)'
+  if (names.length === 0) {
+    throw 'at least one hub address (host:port) is required (with option --names)'
+  }
 
-  initHubDB(args['--data'])
+  return generateRootPermit(args['--data'], args['--ca'], names).then(
+    permit => {
+      if (args['--permit']) {
+        var filename = os.path.resolve(args['--permit'])
+        try {
+          os.write(filename, permit)
+        } catch {
+          return error(`cannot write to file: ${filename}`)
+        }
+        var dir = os.path.dirname(filename)
+        var name = filename.substring(dir.length + 1)
+        println()
+        println(`A permit file is saved to ${filename}`)
+        println()
+        println(`To join the mesh on an endpoint:`)
+        println()
+        println(`  1. Send the file '${name}' to the endpoint`)
+        println(`  2. Execute the following command on the endpoint:`)
+        println()
+        println(`       ztm join my-mesh --as my-first-ep --permit ${name}`)
+        println()
+      } else {
+        println()
+        println(`*****************************************************************`)
+        println(`*                                                               *`)
+        println(`* How to Join the Mesh                                          *`)
+        println(`*                                                               *`)
+        println(`* 1. Send the following to an endpoint in a file                *`)
+        println(`* 2. Execute command 'ztm join' on the endpoint, e.g.:          *`)
+        println(`*                                                               *`)
+        println(`*      ztm join my-mesh --as my-first-ep --permit root.json     *`)
+        println(`*                                                               *`)
+        println(`*    Where 'root.json' is a file containing                     *`)
+        println(`*    the following content                                      *`)
+        println(`*                                                               *`)
+        println(`*****************************************************************`)
+        println()
+        println(permit)
+        println()
+      }
+    }
+  )
+}
+
+function generateRootPermit(dataDir, caURL, bootstraps) {
+  initHubDB(dataDir)
 
   var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
   var pkey = new crypto.PublicKey(key)
 
-  return ca.init(args['--ca']).then(
+  return ca.init(caURL).then(
     () => Promise.all([
       ca.getCertificate('ca'),
       ca.signCertificate('root', pkey),
@@ -749,47 +826,10 @@ function initHub(args) {
         certificate: root.toPEM().toString(),
         privateKey: key.toPEM().toString(),
       },
-      bootstraps: names,
+      bootstraps,
     })
     db.close()
-    if (args['--permit']) {
-      var filename = os.path.resolve(args['--permit'])
-      try {
-        os.write(filename, permit)
-      } catch {
-        return error(`cannot write to file: ${filename}`)
-      }
-      var dir = os.path.dirname(filename)
-      var name = filename.substring(dir.length + 1)
-      println()
-      println(`A permit file is saved to ${filename}`)
-      println()
-      println(`To join the mesh on an endpoint:`)
-      println()
-      println(`  1. Send the file '${name}' to the endpoint`)
-      println(`  2. Execute the following command on the endpoint:`)
-      println()
-      println(`       ztm join my-mesh --as my-first-ep --permit ${name}`)
-      println()
-    } else {
-      println()
-      println(`*****************************************************************`)
-      println(`*                                                               *`)
-      println(`* How to Join the Mesh                                          *`)
-      println(`*                                                               *`)
-      println(`* 1. Send the following to an endpoint in a file                *`)
-      println(`* 2. Execute command 'ztm join' on the endpoint, e.g.:          *`)
-      println(`*                                                               *`)
-      println(`*      ztm join my-mesh --as my-first-ep --permit root.json     *`)
-      println(`*                                                               *`)
-      println(`*    Where 'root.json' is a file containing                     *`)
-      println(`*    the following content                                      *`)
-      println(`*                                                               *`)
-      println(`*****************************************************************`)
-      println()
-      println(permit)
-      println()
-    }
+    return permit
   })
 }
 
