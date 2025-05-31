@@ -77,6 +77,9 @@ const changeMesh = (d) => {
 const storeMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
+const rootPermit = computed(() => {
+	return store.getters["account/rootPermit"]
+});
 watch(()=>storeMesh,()=>{
 	selectedMesh.value = storeMesh.value
 },{
@@ -93,6 +96,9 @@ const loaddata = (reload) => {
 		loading.value = true;
 	}
 	autoReg(true);
+	if(!rootPermit.value){
+		startHub();
+	}
 	ztmService.getMeshes()
 		.then(res => {
 			loading.value = false;
@@ -103,7 +109,8 @@ const loaddata = (reload) => {
 				store.commit('account/setMeshes', res);
 			}
 			if(!!res && res.length>0 && (!storeMesh.value || !meshes.value.find((mesh)=> mesh?.name == storeMesh.value?.name))){
-				const find_default = meshes.value.find((mesh)=> mesh?.name == DEFAULT_MESH_NAME);
+				let find_default = meshes.value.find((mesh)=> mesh?.name == DEFAULT_MESH_NAME);
+				if(!find_default) find_default = meshes.value.find((mesh)=> mesh?.name == 'Local');
 				if(!find_default){
 					store.commit('account/setSelectedMesh', res[0]);
 					selectedMesh.value = res[0];
@@ -140,6 +147,7 @@ const pipyInit = async (pause) => {
 	setTimeout(() => {
 		loaddata();
 	},platform.value=='android'?2000:1500)
+	
 }
 const pipyPlay = async () => {
 	await startPipy();
@@ -174,10 +182,38 @@ const clickPause = () => {
 }
 const hubPlaying = ref(false);
 const startHub = async () => {
-	await shellService.startHub(error => {
-		console.log(error)
-	});
-	hubPlaying.value = true;
+	if(platform.value!='android' && platform.value!='ios'){
+		await shellService.startHub((permitJSON) => {
+			if(meshes.value.find((mesh)=> mesh?.name == 'Local')){
+				return
+			}
+			let saveData = {
+				name: "",
+				ca: "",
+				agent: {
+					name: "",
+					certificate: "",
+					privateKey: null,
+				},
+				bootstraps: []
+			}
+			
+			saveData = {...saveData, ...permitJSON};
+			saveData.name = "Local";
+			saveData.agent.name = 'root';
+			console.log('joinMesh',saveData)
+			ztmService.joinMesh(saveData.name, saveData)
+			.then(res => {
+				if(!!res){
+					//
+				}
+			})
+			.catch(err => {
+				console.log('Request Failed', err)
+			});
+		});
+		hubPlaying.value = true;
+	}
 }
 const pauseHub = async () => {
 	await shellService.pauseHub();
@@ -314,11 +350,10 @@ const takePipyVersion = () => {
 	shellService.takePipyVersion();
 }
 const usermenu = ref();
-const usermenuitems = computed(()=>[{
-	label: user.value?.id,
-	items: [
+const usermenuitems = computed(()=> {
+	const items = [
 		{
-				label: 'Copy Identity',
+				label: t('Copy')+' Identity',
 				icon: 'pi pi-copy',
 				command(){
 					ztmService.identity()
@@ -334,7 +369,7 @@ const usermenuitems = computed(()=>[{
 				},
 		},
 		{
-				label: 'Download Identity',
+				label: t('Download')+' Identity',
 				icon: 'pi pi-download',
 				command(){
 					ztmService.identity()
@@ -354,7 +389,29 @@ const usermenuitems = computed(()=>[{
 				},
 		},
 	]
-}]);
+	if(rootPermit.value){
+		items.push({
+			label: t('Copy')+' Root Permit',
+			icon: 'pi pi-copy',
+			command(){
+				copy(JSON.stringify(rootPermit.value))
+			},
+		})
+		items.push({
+			label: t('Download')+' Root Permit',
+			icon: 'pi pi-download',
+			command(){
+				downloadFile({
+					data: rootPermit.value,
+					fileName:`root-permit`,
+					ext: "txt"
+				});
+			},
+		})
+		
+	}
+	return [{ label: user.value?.id, items }]
+});
 
 const visibleTry = ref(false);
 const tryLoading = ref(false);
@@ -388,8 +445,8 @@ onMounted(() => {
 	  <div class="wave"></div>
 		<PipyVersion class="left-fixed" :playing="playing"/>
 		<div class="userinfo" >
-			<Avatar @click="toggleUsermenu" icon="pi pi-user" style="background-color: rgba(255, 255, 2555, 0.5);color: #fff" shape="circle" />
-			<span @click="toggleUsermenu">{{auth?.username || user?.id}}</span>
+			<Avatar @click="toggleUsermenu" icon="pi pi-user" class="relative text-white" style="background-color: rgba(255, 255, 2555, 0.5);top:-1px" shape="circle" />
+			<span class="ml-1" @click="toggleUsermenu">{{auth?.username || user?.id}}</span>
 			<span v-if="isLogined">, </span>
 			<a v-if="isLogined" @click="logout" href="javascript:void(0)" class="ml-2" style=" font-size:8pt;color:#fff;opacity:0.7;text-decoration: underline;">{{t('Sign Out')}}</a>
 		</div>
@@ -476,18 +533,18 @@ onMounted(() => {
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button v-tooltip.left="t('Run Hub')" v-if="!hubPlaying" class="pointer" severity="help" text rounded aria-label="Filter" @click="startHub" >
+				<Button v-tooltip.left="t('Run')+' Hub'" v-if="!hubPlaying" class="pointer" severity="help" text rounded aria-label="Filter" @click="startHub" >
 					<i class="pi pi-play " />
 				</Button>
-				<Button v-tooltip="t('Pause Hub')"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pauseHub" >
+				<Button v-tooltip="t('Pause')+' Hub'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pauseHub" >
 					<i class="pi pi-stop-circle" />
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button v-tooltip.left="t('Run Agent')" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
+				<Button v-tooltip.left="t('Run')+' Agent'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
 					<i class="pi pi-play " />
 				</Button>
-				<Button v-tooltip="t('Pause Agent')"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pause" >
+				<Button v-tooltip="t('Pause')+' Agent'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pause" >
 					<i class="pi pi-stop-circle" />
 				</Button>
 			</div>

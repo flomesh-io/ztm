@@ -12,6 +12,7 @@ export default {
 		version: '',
 		shortcuts: null,
 		client: null,
+		rootPermit: null,
 		hubpid: null,
 		pid: null,
 		hubchild: null,
@@ -51,6 +52,9 @@ export default {
     },
     hubpid: (state) => {
       return localStorage.getItem('HUB_PID') || state.hubpid;
+    },
+    rootPermit: (state) => {
+      return state.rootPermit;
     },
     child: (state) => {
       return state.child;
@@ -149,6 +153,9 @@ export default {
     setHubpid(state, hubpid) {
       state.hubpid = hubpid;
 			localStorage.setItem('HUB_PID',hubpid);
+    },
+    setRootPermit(state, rootPermit) {
+      state.rootPermit = rootPermit;
     },
     setPid(state, pid) {
       state.pid = pid;

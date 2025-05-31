@@ -50,7 +50,7 @@ const enabled = computed(() => {
 		&& config.value.ca.length>0 
 		&& config.value.bootstraps.length>0 
 		&& !!config.value.bootstraps[0]
-		&& (config.value?.name||'').toLocaleLowerCase() != 'sample'
+		&& !['sample','local','default'].includes((config.value?.name||'').toLocaleLowerCase())
 	))
 });
 const permitType = ref('Json');
