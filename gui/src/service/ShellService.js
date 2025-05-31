@@ -69,7 +69,45 @@ export default class ShellService {
 				}); 
 		}
 	}
-	async startHub (callError){
+	
+	async getRootPermit (reg){
+			let resourceDirPath = await documentDir();
+			const args = [
+				"--pipy",
+				"repo://ztm/cli",
+				"--args",
+				"root",
+				`--names`,
+				getHubNames(),
+				"",
+				"",
+				"",
+			];
+			console.log(`[starting cli:${args}]`);
+			const command = Command.sidecar("bin/ztmctl", args);
+			command.on('close', data => {
+				console.log("[cli close]",data);
+			});
+			command.stdout.on('data', line => {
+				console.log("[cli stdout]",line);
+				try{
+					const permitJSON = JSON.parse(line);
+					store.commit('account/setRootPermit', permitJSON);
+					reg(permitJSON);
+				}catch(e){
+					console.log('permitJSON-error',e)
+				}
+			});
+			command.stderr.on('data', line => {
+				console.log("[cli stderr]",line);
+			});
+			command.on('error', error => {
+				console.log("[cli error]",error);
+			});
+			let child = await command.spawn();
+	}
+	
+	async startHub (reg){
 			let resourceDirPath = await documentDir();
 			const args = [
 				"--pipy",
@@ -94,18 +132,18 @@ export default class ShellService {
 			command.stderr.on('data', line => {
 				console.log("[hub stderr]",line);
 				store.commit('account/pushLog', {level:'Error',msg:line});
-				callError(line);
 			});
 			command.on('error', error => {
 				console.log("[hub error]",error);
 				store.commit('account/pushLog', {level:'Error',msg:error});
-				callError(error);
 			});
 			let child = await command.spawn();
 			console.log(child)
 			store.commit('account/setHubpid', child.pid);
 			console.log(`account/setHubpid=${child.pid}`)
 			store.commit('account/setHubchild', child);
+			
+			this.getRootPermit(reg);
 	}
 	async pauseHub (){
 		let child = store.getters['account/hubchild'];
@@ -125,6 +163,7 @@ export default class ShellService {
 			command2.execute();
 		}
 		store.commit('account/setHubpid', null);
+		store.commit('account/setRootPermit', null);
 		console.log('[paused hub]');
 	}
 	
