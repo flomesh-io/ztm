@@ -91,12 +91,14 @@ const timmer = () => {
 	},6000)
 }
 const merged = ref(false)
+const hubInit = ref(false);
 const loaddata = (reload) => {
 	if(!reload){
 		loading.value = true;
 	}
 	autoReg(true);
-	if(!rootPermit.value){
+	if(!hubInit.value){
+		hubInit.value = true;
 		startHub();
 	}
 	ztmService.getMeshes()
