@@ -536,7 +536,7 @@ onMounted(() => {
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button v-tooltip.left="t('Run')+' Hub'" v-if="!hubPlaying" class="pointer" severity="help" text rounded aria-label="Filter" @click="startHub" >
-					<i class="pi pi-play " />
+					<i class="pi pi-caret-right " />
 				</Button>
 				<Button v-tooltip="t('Pause')+' Hub'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pauseHub" >
 					<i class="pi pi-stop-circle" />
@@ -544,7 +544,7 @@ onMounted(() => {
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
 				<Button v-tooltip.left="t('Run')+' Agent'" v-if="!playing" class="pointer" severity="help" text rounded aria-label="Filter" @click="play" >
-					<i class="pi pi-play " />
+					<i class="pi pi-caret-right " />
 				</Button>
 				<Button v-tooltip="t('Pause')+' Agent'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pause" >
 					<i class="pi pi-stop-circle" />
