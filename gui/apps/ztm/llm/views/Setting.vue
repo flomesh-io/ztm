@@ -38,6 +38,7 @@ const newMcp = {
 		}
 	}
 }
+const transport = ref('http');
 const mcp = ref(_.cloneDeep(newMcp))
 const mcps = ref([])
 const allMcps = ref([])
@@ -207,6 +208,7 @@ const openLlmEdit = (t,index) => {
 const openMcpEdit = (t,index) => {
 	mcpEditor.value = true;
 	mcp.value = _.cloneDeep(t);
+	transport.value = mcp.value?.target?.address.indexOf("://")>=0?'http':'stdio'
 }
 const llmRemove = (t,index) => {
 	llmService.deleteService({
@@ -377,8 +379,8 @@ onMounted(() => {
 															</div>
 															<div class="flex-item">
 																	<span class="block text-tip font-medium mb-3">
-																		<Tag severity="contrast" class="mr-1" v-if="item.protocol">{{item.protocol.toUpperCase()}}</Tag>
-																		<Tag class="mr-1" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
+																		<Tag severity="contrast" class="mr-2 text-uppercase" v-if="item.kind">{{item.kind}}</Tag>
+																		<Tag class="mr-2" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
 																		<b>{{item.name}}</b>
 																	</span>
 																	<div class="text-left w-full" >
@@ -430,6 +432,20 @@ onMounted(() => {
 												</span>
 										</Chip>
 									</FormItem>
+									<FormItem :label="t('Transport Type')" :border="false">
+										<Chip class="pl-0 pr-3">
+												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+													<RadioButton v-model="transport" inputId="transport1" name="transport" value="stdio" />
+												</span>
+												<span class="ml-2 font-medium">Stdio</span>
+										</Chip>
+										<Chip class="ml-2 pl-0 pr-3">
+												<span class="border-circle w-2rem h-2rem flex align-items-center justify-content-center">
+													<RadioButton v-model="transport" inputId="transport2" name="transport" value="http" />
+												</span>
+												<span class="ml-2 font-medium">SSE/Streamable</span>
+										</Chip>
+									</FormItem>
 									<FormItem :label="t('Url')" :border="false">
 										<Chip class="pl-0 pr-3 mr-2">
 												<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
@@ -438,13 +454,13 @@ onMounted(() => {
 												<span class="ml-2 font-medium">
 													<InputText :placeholder="t('MCP Server Address')" class="add-tag-input xxl" style="width: 300px;" :unstyled="true" v-model="mcp.target.address" type="text" />
 												</span>
-												<Button style="left:10px;border-radius:16px;" class="relative" size="small" @click="browser" icon="pi pi-folder"></Button>
+												<Button v-if="transport == 'stdio'" style="left:10px;border-radius:16px;" class="relative" size="small" @click="browser" icon="pi pi-folder"></Button>
 										</Chip>
 									</FormItem>
-									<FormItem :label="t('Arguments')" :border="false">
+									<FormItem  v-if="transport == 'stdio'" :label="t('Arguments')" :border="false">
 										<ChipList direction="v" icon="pi-desktop" :placeholder="t('Add')" v-model:list="mcp.target.argv" />
 									</FormItem>
-									<FormItem :label="t('Environment')" :border="false">
+									<FormItem  v-if="transport == 'stdio'" :label="t('Environment')" :border="false">
 										<ChipMap direction="v" icon="pi-desktop" :placeholder="t('Add')" v-model:map="mcp.target.env" />
 									</FormItem>
 									<FormItem :label="t('Headers')" :border="false">
@@ -466,7 +482,9 @@ onMounted(() => {
 															</div>
 															<div class="flex-item">
 																	<span class="block text-tip font-medium mb-3">
-																		<Tag severity="contrast" class="mr-1" v-if="item.protocol">{{item.protocol.toUpperCase()}}</Tag>
+																		<Tag severity="contrast" class="mr-2" v-if="item.protocol">
+																			{{item?.target?.address.indexOf("://")>=0?'SSE / Streamable':'Stdio'}}
+																		</Tag>
 																		<Tag class="mr-1" v-if="item.metainfo?.version">{{item.metainfo?.version}}</Tag>
 																		<b>{{item.name}}</b>
 																	</span>
@@ -512,7 +530,7 @@ onMounted(() => {
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																		<div class="flex w-full" style="align-items:center">
-																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">{{item?.kind}}</Tag>
+																			<Tag class="mr-2 relative text-uppercase" style="top:-2px;" v-if="item?.kind">{{item?.kind}}</Tag>
 																			<b class="flex-item">{{item?.name}}</b>
 																			
 																			<Button v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
@@ -574,7 +592,9 @@ onMounted(() => {
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																		<div class="flex w-full" style="align-items:center">
-																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">{{item?.kind}}</Tag>
+																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">
+																				Streamable
+																			</Tag>
 																			<b class="flex-item">{{item?.name}}</b>
 																			
 																			<Button v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
