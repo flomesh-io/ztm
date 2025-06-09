@@ -416,5 +416,5 @@ var objectNameNotes = `
     Service names can be ambiguous, in which case one can add options
     --ep and/or --kind to clarify further.
 
-    Route names are just their paths.
+    Route names are also their paths.
 `

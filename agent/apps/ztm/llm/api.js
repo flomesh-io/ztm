@@ -185,7 +185,7 @@ export default function ({ app, mesh }) {
             endpoints,
             routes: localRoutes.map(
               r => ({
-                path: r.path,
+                path: removeSlash(r.path),
                 service: {
                   name: r.service.name,
                   kind: r.service.kind,
@@ -214,7 +214,7 @@ export default function ({ app, mesh }) {
       if (route) {
         return mesh.discover(route.service.endpoint.id).then(
           list => ({
-            path: route.path,
+            path: removeSlash(route.path),
             service: {
               name: route.service.name,
               kind: route.service.kind,
@@ -290,7 +290,6 @@ export default function ({ app, mesh }) {
 
   var $route
   var $origin
-  var $head
 
   var forwardService = pipeline($=>$
     .pipe(evt => {
@@ -339,38 +338,14 @@ export default function ({ app, mesh }) {
         }
       }
     )
-    .pipe(msg => {
-      var ct = msg.head.headers['content-type'] || ''
-      if (ct.startsWith('text/event-stream')) {
-        $head = msg.head
-        return 'sse'
-      }
-      return 'bypass'
-    }, {
-      'bypass': $=>$,
-      'sse': ($=>$
-        .split('\r\n\r\n')
-        .replaceMessage(msg => {
-          var lines = msg.body.toString().split('\r\n')
-          if (lines.some(l => l.startsWith('event:') && l.substring(6).trim() === 'endpoint')) {
-            var i = lines.findIndex(l => l.startsWith('data:'))
-            if (i >= 0) {
-              lines[i] = 'data: ' + os.path.join(app.path, 'svc', $route.path, lines[i].substring(5).trim())
-            }
-          }
-          return new Data(lines.join('\r\n') + '\r\n\r\n')
-        })
-        .insert(() => new MessageStart($head))
-      )
-    })
   )
 
   var matchApiForwardKindName = new http.Match('/api/forward/{kind}/{name}')
   var matchApiForwardKindNameStar = new http.Match('/api/forward/{kind}/{name}/*')
 
   var $service
-  var $serviceURL
-  var $serviceTime
+  var $servicePath
+  var $serviceQuery
 
   var connectService = pipeline($=>$
     .pipe(evt => {
@@ -380,85 +355,442 @@ export default function ({ app, mesh }) {
         if (params) {
           var kind = params.kind
           var name = URL.decodeComponent(params.name)
-          evt.head.path = '/' + (params['*'] || '') + url.search
+          var base = os.path.join('/api/forward', kind, name)
           $service = localServices[kind]?.[name]
+          $servicePath = url.path.substring(base.length)
+          $serviceQuery = url.search
         }
         if (!$service) return '404'
-        if (isFilePath($service.target.address)) return 'stdio'
-        return 'http'
+        switch ($service.protocol) {
+          case 'http': return connectHTTP
+          case 'mcp': return connectMCP
+          default: return '400'
+        }
       }
     }, {
-      'http': ($=>$
-        .handleMessageStart(msg => {
-          $serviceURL = new URL($service.target.address)
-          msg.head.path = os.path.join($serviceURL.pathname, msg.head.path)
-          msg.head.headers.host = $serviceURL.host
-          var headers = $service.target.headers
-          if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
-        })
-        .pipe(() => $service.target.body ? 'alter' : 'bypass', {
-          'alter': $=>$.replaceMessageBody(
-            body => {
-              try {
-                return JSON.encode(
-                  mergeObjects(
-                    JSON.decode(body),
-                    $service.target.body,
-                  )
-                )
-              } catch {
-                return body
-              }
-            }
-          ),
-          'bypass': $=>$,
-        })
-        .muxHTTP(() => $service).to($=>$
-          .pipe(() => $serviceURL.protocol, {
-            'http:': ($=>$
-              .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
-            ),
-            'https:': ($=>$
-              .connectTLS({ sni: () => $serviceURL.hostname }).to($=>$
-                .connect(() => `${$serviceURL.hostname}:${$serviceURL.port}`)
-              )
-            ),
-          })
-        )
-      ),
-      'stdio': ($=>$
-        .mux(() => $service).to($=>$
-          .onStart(() => { $serviceTime = Date.now() })
-          .handleData(() => $serviceTime = Date.now() )
-          // TODO: Make this work without quitting pipy silently
-          // .insert(() => killSpareService())
-          .replaceMessage(
-            msg => {
-              try {
-                var body = JSON.decode(msg.body)
-              } catch {
-                var body = null
-              }
-              return JSON.encode(body).push('\n')
-            }
-          )
-          .exec(() => [$service.target.address, ...($service.target.argv || [])], {
-            env: () => $service.target.env,
-            onStart: (pid) => app.log(`Child process started (pid = ${pid}): ${$service.target.address}`),
-            onExit: (code) => app.log(`Child process exited with result ${code}: ${$service.target.address}`),
-          })
-          .split('\n')
-        )
-      ),
+      '400': $=>$.replaceMessage(new Message({ status: 400 })),
       '404': $=>$.replaceMessage(new Message({ status: 404 })),
     })
   )
 
-  function killSpareService() {
-    if (Date.now() - $serviceTime > 10000) {
-      return new StreamEnd
-    } else {
-      return new Timeout(1).wait().then(killSpareService)
+  var $httpURL
+
+  var connectHTTP = pipeline($=>$
+    .handleMessageStart(msg => {
+      $httpURL = new URL($service.target.address)
+      var path = $servicePath === '' ? $httpURL.pathname : os.path.join($httpURL.pathname, $servicePath)
+      if ($serviceQuery) {
+        path += $serviceQuery
+        if ($httpURL.query) {
+          path += '&' + $httpURL.query
+        }
+      } else {
+        path += $httpURL.search
+      }
+      msg.head.path = path
+      msg.head.headers.host = $httpURL.host
+      var headers = $service.target.headers
+      if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
+    })
+    .pipe(() => $service.target.body ? 'merge' : 'bypass', {
+      'merge': $=>$.replaceMessageBody(
+        body => {
+          try {
+            return JSON.encode(
+              mergeObjects(
+                JSON.decode(body),
+                $service.target.body,
+              )
+            )
+          } catch {
+            return body
+          }
+        }
+      ),
+      'bypass': $=>$,
+    })
+    .muxHTTP(() => $service).to($=>$
+      .pipe(() => $httpURL.protocol, {
+        'http:': ($=>$
+          .connect(() => $httpURL.hostname + ':' +  $httpURL.port)
+        ),
+        'https:': ($=>$
+          .connectTLS({ sni: () => $httpURL.hostname }).to($=>$
+            .connect(() => $httpURL.hostname + ':' + $httpURL.port)
+          )
+        ),
+      })
+    )
+  )
+
+  var mcpSessions = {}
+  var mcpStreams = {}
+
+  var $mcpSessionID
+  var $mcpSession
+  var $mcpStream
+
+  var connectMCP = pipeline($=>$
+    .pipe(
+      evt => {
+        if (evt instanceof MessageStart && $servicePath === '') {
+          var head = evt.head
+          $mcpSessionID = head.headers['mcp-session-id']
+          $mcpSession = $mcpSessionID && mcpSessions[$mcpSessionID]
+          switch (head.method) {
+            case 'GET':
+              if (!$mcpSessionID) return '400'
+              if (!$mcpSession) return '404'
+              if ($mcpSession.upstream.transport === 'streamable') return forwardMCP
+              var lastEventID = head.headers['last-event-id']
+              if (lastEventID) {
+                $mcpStream = mcpStreams[lastEventID]
+                if ($mcpStream) {
+                  new Timeout(0.1).wait().then(() => $mcpStream.replay(lastEventID))
+                  return 'receive'
+                } else {
+                  return '404'
+                }
+              } else {
+                $mcpStream = $mcpSession.listenStream
+                return 'receive'
+              }
+            case 'POST':
+              if (!$mcpSession) return initMCP
+              if ($mcpSession.upstream.transport === 'streamable') return forwardMCP
+              return sendMCP
+            default: return '405'
+          }
+        }
+        return '404'
+      }, {
+        '400': $=>$.replaceData().replaceMessage(new Message({ status: 400 })),
+        '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
+        '405': $=>$.replaceData().replaceMessage(new Message({ status: 405 })),
+        'receive': $=>$.swap(() => $mcpStream.output),
+      }
+    )
+  )
+
+  var forwardMCP = pipeline($=>$
+    .handleMessageStart(msg => {
+      msg.head.path = $mcpSession.upstream.url.path
+      delete msg.head.headers['mcp-session-id']
+      var sessionID = $mcpSession.upstream.session
+      if (sessionID) msg.head.headers['Mcp-Session-Id'] = sessionID
+    })
+    .muxHTTP().to($=>$
+      .connect(() => $mcpSession.upstream.url.hostname + ':' + $mcpSession.upstream.url.port)
+    )
+    .handleMessageStart(msg => {
+      msg.head.headers['Mcp-Session-Id'] = $mcpSession.id
+    })
+  )
+
+  var initMCP = pipeline($=>$
+    .replaceMessage(
+      msg => {
+        try {
+          msg = JSON.decode(msg.body)
+          if (msg?.method === 'initialize') {
+            $mcpSession = MCPSession()
+            return $mcpSession.init($service, msg).then(
+              result => {
+                if (result) {
+                  mcpSessions[$mcpSession.id] = $mcpSession
+                  return new Message(
+                    {
+                      status: 200,
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Mcp-Session-Id': $mcpSession.id
+                      },
+                    },
+                    JSON.encode(result)
+                  )
+                } else {
+                  return new Message({ status: 503 })
+                }
+              }
+            )
+          }
+        } catch {}
+        return new Message({ status: $mcpSessionID ? 404 : 400 })
+      }
+    )
+  )
+
+  var sendMCP = pipeline($=>$
+    .replaceMessage(msg => {
+      try {
+        $mcpStream = $mcpSession.send(JSON.decode(msg.body))
+      } catch {}
+      return new Message
+    })
+    .pipe(() =>  $mcpStream ? 'receive' : 'done', {
+      'receive': $=>$.swap(() => $mcpStream.output),
+      'done': $=>$.replaceMessage(new Message({ status: 202 })),
+    })
+  )
+
+  function MCPSession() {
+    var id = algo.uuid()
+    var listenStream = MCPStream()
+    var upstream = {}
+    var agent = null
+    var pendingRequests = new algo.Cache
+    var lastActiveTime = Date.now()
+    var stdioExecutablePath
+    var stdioExecutableArgv
+    var stdioExecutableEnv
+    var stdioInput = null
+    var ssePathPOST = ''
+    var sseStartCallback = null
+    var initCallback = null
+    var initRequestID
+
+    function init(svc, msg) {
+      var address = svc.target.address
+      if (isFilePath(address)) {
+        upstream.transport = 'stdio'
+        stdioExecutablePath = address
+        stdioExecutableArgv = svc.target.argv || []
+        stdioExecutableEnv = svc.target.env
+        stdioInput = new pipeline.Hub
+        writeStdio.spawn()
+        stdioInput.broadcast(new Message(JSON.encode(msg)))
+        initRequestID = msg.id
+        return new Promise(resolve => { initCallback = resolve })
+      } else {
+        upstream.url = new URL(address)
+        agent = new http.Agent(upstream.url.host)
+        var headers = {
+          'Host': upstream.url.host,
+          'Accept': 'application/json, text/event-stream',
+        }
+        return agent.request('POST', upstream.url.path, headers, JSON.encode(msg)).then(
+          res => {
+            var status = res?.head?.status
+            if (200 <= status && status < 300) {
+              try {
+                var result = JSON.decode(res.body)
+                if (result?.jsonrpc === '2.0' && result?.id === msg.id) {
+                  upstream.transport = 'streamable'
+                  upstream.session = res.head.headers['mcp-session-id']
+                  return result
+                }
+              } catch {}
+              return null
+            } else {
+              return new Promise(resolve => {
+                sseStartCallback = resolve
+                readSSE.spawn()
+              }).then(() => {
+                if (ssePathPOST) {
+                  upstream.transport = 'sse'
+                  initRequestID = msg.id
+                  agent.request('POST', ssePathPOST, { 'Host': upstream.url.host }, JSON.encode(msg))
+                  return new Promise(resolve => { initCallback = resolve })
+                } else {
+                  return null
+                }
+              })
+            }
+          }
+        )
+      }
+    }
+
+    function send(msg) {
+      var stream = null
+      var batch = msg instanceof Array ? msg : [msg]
+      var requests = batch.filter(msg => msg && typeof msg === 'object' && 'id' in msg)
+      if (requests.length > 0) {
+        stream = MCPStream(requests)
+        requests.forEach(msg => pendingRequests.set(msg.id, stream))
+      }
+      switch (upstream.transport) {
+        case 'stdio':
+          stdioInput.broadcast(
+            new Message(JSON.encode(msg))
+          )
+          break
+        case 'sse':
+          if (ssePathPOST) {
+            var headers = { 'Host': upstream.url.host }
+            agent.request('POST', ssePathPOST, headers, JSON.encode(msg)).then(
+              res => {
+                var status = res?.head?.status
+                if (status < 200 || status >= 300) {
+                  stream?.error()
+                }
+              }
+            )
+          }
+          break
+      }
+      return stream
+    }
+
+    function receive(msg) {
+      var batch = msg instanceof Array ? msg : [msg]
+      batch.forEach(msg => {
+        if (msg && typeof msg === 'object') {
+          if ('id' in msg) {
+            if (msg.id === initRequestID) {
+              initCallback?.(msg)
+              initCallback = null
+            } else {
+              var stream = pendingRequests.get(msg.id)
+              if (stream) stream.queue(msg)
+              pendingRequests.remove(msg.id)
+            }
+          } else {
+            listenStream.queue(msg)
+          }
+        }
+      })
+    }
+
+    function killService() {
+      if (Date.now() - lastActiveTime > 10000) {
+        return new StreamEnd
+      } else {
+        return new Timeout(1).wait().then(killService)
+      }
+    }
+
+    var writeStdio = pipeline($=>$
+      .onStart(new Data)
+      // TODO: Make this work without quitting pipy silently
+      // .insert(() => killService())
+      .swap(() => stdioInput)
+      .replaceMessage(
+        msg => {
+          var data = msg.body
+          data.push('\n')
+          return data
+        }
+      )
+      .exec(() => [stdioExecutablePath, ...stdioExecutableArgv], {
+        env: () => stdioExecutableEnv,
+        onStart: (pid) => app.log(`Child process started (pid = ${pid}): ${stdioExecutablePath}`),
+        onExit: (code) => app.log(`Child process exited with result ${code}: ${stdioExecutablePath}`),
+      })
+      .split('\n')
+      .handleMessage(
+        msg => {
+          try {
+            receive(JSON.decode(msg.body))
+          } catch {}
+        }
+      )
+    )
+
+    var readSSE = pipeline($=>$
+      .onStart(() => new Message({
+        method: 'GET',
+        path: upstream.url.path,
+        headers: {
+          'Host': upstream.url.host,
+          'Accept': 'text/event-stream',
+        },
+      }))
+      .repeat(() => {
+        if (ssePathPOST) {
+          return new Timeout(1).wait().then(true)
+        } else {
+          return false
+        }
+      }).to($=>$
+        .muxHTTP().to($=>$
+          .connect(() => upstream.url.hostname + ':' + upstream.url.port)
+        )
+        .split('\r\n\r\n')
+        .handleMessage(msg => {
+          var event, data
+          msg.body.toString().split('\r\n').forEach(line => {
+            if (line.startsWith('event:')) {
+              event = line.substring(6).trim()
+            } else if (line.startsWith('data:')) {
+              data = line.substring(5).trim()
+            }
+          })
+          switch (event) {
+            case 'endpoint':
+              ssePathPOST = data
+              sseStartCallback?.()
+              sseStartCallback = null
+              break
+            case 'message':
+              try {
+                receive(JSON.parse(data))
+              } catch {}
+              break
+          }
+        })
+        .replaceMessage(msg => msg.body)
+        .handleStreamEnd(() => {
+          sseStartCallback?.()
+          sseStartCallback = null
+        })
+      )
+    )
+
+    return {
+      id,
+      listenStream,
+      upstream,
+      init,
+      send,
+    }
+  }
+
+  function MCPStream(requests) {
+    var output = new pipeline.Hub
+    var hasSent = false
+    var pending = new Set((requests || []).map(msg => msg.id))
+
+    function queue(msg) {
+      var buf = []
+      if (!hasSent) {
+        buf.push(new MessageStart({
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+          isChunked: true,
+        }))
+        hasSent = true
+      }
+      var data = new Data
+      data.push('event: message\r\ndata: ')
+      data.push(JSON.encode(msg))
+      data.push('\r\n\r\n')
+      buf.push(data)
+      if (msg instanceof Array) {
+        msg.forEach(m => pending.delete(m.id))
+      } else {
+        pending.delete(msg.id)
+      }
+      if (pending.size === 0) {
+        buf.push(new MessageEnd)
+        buf.push(new StreamEnd)
+      }
+      output.broadcast(buf)
+    }
+
+    function replay(last) {
+
+    }
+
+    function error() {
+
+    }
+
+    return {
+      output,
+      queue,
+      replay,
+      error,
     }
   }
 
@@ -486,7 +818,7 @@ export default function ({ app, mesh }) {
       )
     ).map(
       r => ({
-        path: r.path,
+        path: removeSlash(r.path),
       })
     )
   }
@@ -566,6 +898,14 @@ export default function ({ app, mesh }) {
     deleteRoute,
     forwardService,
     connectService,
+  }
+}
+
+function removeSlash(path) {
+  if (path.endsWith('/')) {
+    return path.substring(0, path.length - 1)
+  } else {
+    return path
   }
 }
 

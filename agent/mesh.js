@@ -137,6 +137,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var hubSession = pipeline($=>$
       .muxHTTP(() => '', {
         version: 2,
+        maxSessions: 1,
         ping: () => new Timeout(10).wait().then(new Data),
       }).to($=>$
         .connectTLS({

@@ -565,7 +565,6 @@ function main(listen) {
 
   var appApiMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}')
   var appPreMatch = new http.Match('/api/meshes/{mesh}/apps/{provider}/{app}/*')
-  var appNotFound = pipeline($=>$.serveHTTP(new Message({ status: 404 })))
 
   var $params
   var $appPipeline
@@ -620,14 +619,19 @@ function main(listen) {
                 var pool = appSessionPools.get(p)
                 $appPipeline = p
                 $appSession = pool.allocate()
-              })
+              }).catch(() => {})
             )
-            .muxHTTP(() => $appSession).to($=>$
-              .pipe(
-                () => $appPipeline || appNotFound,
-                () => ({ source: 'user' })
-              )
-            )
+            .pipe(() => $appPipeline ? 'pass' : 'deny', {
+              'pass': $=>$.muxHTTP(() => $appSession).to($=>$
+                .pipe(
+                  () => $appPipeline,
+                  () => ({ source: 'user' })
+                )
+              ),
+              'deny': $=>$.replaceData().replaceMessage(
+                new Message({ status: 503 }, 'Cannot start the app')
+              ),
+            })
             .onEnd(() => $appSession?.free?.())
           ),
           'gui': $=>$.replaceMessage(
