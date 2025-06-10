@@ -7,7 +7,7 @@ import MCPService from '@/service/MCPService';
 import userSvg from "@/assets/img/user.png";
 import botSvg from "@/assets/img/bot.svg";
 import { platform } from '@/utils/platform';
-import { getItem, setItem } from "@/utils/localStore";
+import { getItem, setItem, pushItem } from "@/utils/localStore";
 import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
@@ -22,7 +22,7 @@ const loading = ref(true);
 const store = useStore();
 const botService = new BotService();
 const mcpService = new MCPService();
-const emits = defineEmits(['back','peer','manager']);
+const emits = defineEmits(['back','peer','manager','history']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -182,7 +182,6 @@ const pusher = computed(()=>store.getters["mcp/messages"])
 watch(()=> pusher.value, () => {
 	if(pusher.value.length>0){
 		pusher.value.forEach((message)=>{
-			console.log(message)
 			workerOnMessage(message)
 		});
 		store.commit('mcp/setMessages', []);
@@ -455,6 +454,9 @@ onMounted(()=>{
 	});
 	loadLocalMcp();
 })
+const gohistory = () => {
+	emits('history',true);
+}
 defineExpose({
   setBot
 })
@@ -467,6 +469,7 @@ defineExpose({
 	      <b>{{t('AI Bot')}} ({{llm?.name}})</b>
 	    </template>
 	    <template #end> 
+				<Button icon="pi pi-history" @click="gohistory" severity="secondary" text />
 				<Button icon="pi pi-cog" @click="showManage" severity="secondary" text />
 			</template>
 	</AppHeader>
