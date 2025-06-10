@@ -223,7 +223,6 @@ export default class MCPService {
   }
 
   async connectToStreamableHttpServer(server, transportOptions) {
-
     try {
 
       // get transport

@@ -52,5 +52,5 @@ sudo xattr -rd com.apple.quarantine /Applications/ZTM.app
 
 ### cli start agent
 ```sh
-/Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/target/debug/ztmctl ./main --pipy repo://ztm/agent --args --listen 7777 --data /Users/lindongchen/Documents/ztmdb --pipy-options --log-file=/Users/lindongchen/Documents/ztm.log
+/Users/lindongchen/Documents/HBuilderProjects/ztm/ztm/gui/src-tauri/target/debug/ztmctl --pipy agent/main.js --args --listen 7777 --data /Users/lindongchen/Documents/ztmdb
 ```
