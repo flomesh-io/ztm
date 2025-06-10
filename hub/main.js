@@ -1014,6 +1014,7 @@ var muxToAgent = pipeline($=>$
   .handleStreamEnd(() => { $sendEOS?.resolve?.() })
   .muxHTTP(() => $hubSelected, {
     version: 2,
+    maxSessions: 1,
     ping: () => new Timeout(10).wait().then(new Data),
   }).to($=>$
     .insert(() => {
