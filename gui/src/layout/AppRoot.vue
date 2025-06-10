@@ -535,11 +535,11 @@ onMounted(() => {
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">
-				<Button v-tooltip.left="t('Run')+' Hub'" v-if="!hubPlaying" class="pointer" severity="help" text rounded aria-label="Filter" @click="startHub" >
-					<i class="pi pi-caret-right " />
+				<Button v-tooltip.left="t('Run Local')+' Hub'" v-if="!hubPlaying" class="pointer" severity="help" text rounded aria-label="Filter" @click="startHub" >
+					<i class="pi pi-angle-double-right " />
 				</Button>
-				<Button v-tooltip="t('Pause')+' Hub'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pauseHub" >
-					<i class="pi pi-stop-circle" />
+				<Button v-tooltip="t('Pause Local')+' Hub'"  v-else class="pointer" severity="help" text rounded aria-label="Filter" @click="pauseHub" >
+					<i class="pi pi-pause-circle" />
 				</Button>
 			</div>
 			<div class="flex-item" v-if="platform!='android' && platform!='ios'">

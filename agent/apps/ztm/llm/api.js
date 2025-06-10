@@ -180,7 +180,7 @@ export default function ({ app, mesh }) {
       })
       return mesh.discover(Object.keys(endpoints)).then(
         list => {
-          list.forEach(ep => endpoints[ep.id] = ep)
+          list.filter(e=>e).forEach(ep => endpoints[ep.id] = ep)
           return {
             endpoints,
             routes: localRoutes.map(
@@ -318,7 +318,7 @@ export default function ({ app, mesh }) {
           if (cors) {
             if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
             if (cors.allowHeaders) headers['access-control-allow-headers'] = cors.allowHeaders.join(', ')
-          }
+					}
           return new Message({ headers })
         })
       ),
@@ -334,7 +334,9 @@ export default function ({ app, mesh }) {
       msg => {
         var cors = $route?.cors
         if (cors && cors.allowOrigins?.includes?.($origin)) {
+					msg.head.headers ??= {}
           msg.head.headers['access-control-allow-origin'] = $origin
+					msg.head.headers['access-control-expose-headers'] = 'mcp-session-id';
         }
       }
     )
