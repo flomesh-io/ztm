@@ -21,6 +21,7 @@ const info = computed(() => {
 	return store.getters['app/info']
 });
 const loading = ref(false);
+const svcloading = ref(false);
 const newMcp = {
 	name: '',
 	protocol: 'mcp',
@@ -129,12 +130,17 @@ const createMcp = () => {
 	})
 }
 let clipboard = null;
+const loadsvc = () => {
+	
+}
 const loaddata = () => {
 	loading.value = true;
+	svcloading.value = true;
 	llmService.getServices(info?.value.endpoint?.id).then((resp)=>{
 		const res = resp||[];
 		llms.value = res.filter((n) => n.kind == 'llm');
 		mcps.value = res.filter((n) => n.kind == 'tool');
+		svcloading.value = false;
 	})
 	
 	llmService.getRoutes(info?.value.endpoint?.id).then((res)=>{
@@ -181,7 +187,6 @@ const loaddata = () => {
 					toast.add({ severity: 'error', summary: 'Tips', detail: "Copy failed", life: 3000 });
 				});
 			},300)
-			
 		})
 	})
 }
@@ -317,22 +322,22 @@ onMounted(() => {
 				</TabList>
 				<TabPanels>
 					<TabPanel value="0">		
-							<Loading v-if="loading" />
+							<Loading v-if="svcloading" />
 							<div v-else class="surface-ground surface-section h-full" >
 								<h6 class="flex">
 									<div class="flex-item">
 										<Button 
-											v-if="!loading && !llmEditor" 
+											v-if="!llmEditor" 
 											@click="openLlmCreate" 
 										  :label="t('Add LLM')"
 											size="small" 
 											icon="pi pi-plus" ></Button>
-										<div v-else-if="!loading" >
+										<div v-else>
 											<Button class="mr-2" @click="() => llmEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
 										</div>
 									</div>
 									<div class="flex-item text-right">
-										<div v-if="llmEditor && !loading" >
+										<div v-if="llmEditor" >
 											<Button :disabled="!llmEnabled" @click="createLlm()()" :loading="savingLlm"  size="small" icon="pi pi-check" ></Button>
 										</div>
 								</div>
@@ -401,22 +406,22 @@ onMounted(() => {
 							</div>
 					</TabPanel>
 					<TabPanel value="1">
-							<Loading v-if="loading" />
+							<Loading v-if="svcloading" />
 							<div v-else class="surface-ground surface-section h-full" >
 								<h6 class="flex">
 									<div class="flex-item">
 										<Button 
-											v-if="!loading && !mcpEditor" 
+											v-if="!mcpEditor" 
 											@click="openMcpCreate" 
 											:label="t('Add MCP Server')" 
 											size="small" 
 											icon="pi pi-plus" ></Button>
-										<div v-else-if="!loading" >
+										<div v-else >
 											<Button class="mr-2" @click="() => mcpEditor = false" size="small" icon="pi pi-angle-left" outlined ></Button>
 										</div>
 									</div>
 									<div class="flex-item text-right">
-										<div v-if="mcpEditor && !loading" >
+										<div v-if="mcpEditor" >
 											<Button :disabled="!mcpEnabled"  @click="createMcp()" :loading="savingMcp"  size="small" icon="pi pi-check" ></Button>
 										</div>
 									</div>
@@ -603,8 +608,8 @@ onMounted(() => {
 																		</div>
 																		<span class="text-sm mt-2" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
 																			<div class="flex" style="word-break: break-all;align-items:center">
-																				<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)+'sse'" icon=" pi pi-clipboard" class="copy-btn"/> 
-																				<div>{{llmService.getSvcUrl(route?.path)}}sse</div>
+																				<Button link :data-clipboard-text="llmService.getSvcUrl(route?.path)" icon=" pi pi-clipboard" class="copy-btn"/> 
+																				<div>{{llmService.getSvcUrl(route?.path)}}</div>
 																			</div>
 																			<div  v-if="route.cors">
 																				<div class="flex" style="align-items:center">
