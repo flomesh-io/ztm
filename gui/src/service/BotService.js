@@ -45,7 +45,7 @@ export default class BotService {
 		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"POST", { service, cors });
 	}
 	deleteRoute({ep, path}) {
-		return this.llmRequest(`/api/endpoints/${ep}/routes/${path}`,"DELETE",);
+		return this.llmRequest(`/api/endpoints/${ep}/routes/${path.charAt(0)=='/'?path.substr(1):path}`,"DELETE",);
 	}
 	checkLLM(callback) {
 		const mesh = this.getMesh();

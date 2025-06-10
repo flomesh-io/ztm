@@ -68,8 +68,8 @@ const addMcp = () => {
 			path,
 			service: mcp.value,
 			cors:{
-				allowOrigins: ['tauri://localhost','http://localhost:1420'],
-				allowHeaders: ['content-type','mcp-session-id']
+				allowOrigins: ['tauri://localhost','http://localhost:1420','http://localhost:7777'],
+				// allowHeaders: ['content-type','mcp-session-id']
 			}
 		}).then(()=>{
 			localMcps.value.push({...mcp.value, enabled: false});
