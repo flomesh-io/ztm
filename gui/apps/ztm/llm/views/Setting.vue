@@ -265,8 +265,8 @@ const routeCreate = (service) => {
 		ep:info?.value.endpoint?.id, path:`${service?.kind}/${service?.name}`,
 		service,
 		cors:{
-			allowOrigins: service?.protocol=='http'?[]:['tauri://localhost','http://localhost:1420'],
-			allowHeaders: service?.protocol=='http'?[]:['content-type']
+			allowOrigins: service?.protocol=='http'?['http://localhost:7777']:['tauri://localhost','http://localhost:1420','http://localhost:7777'],
+			// allowHeaders: service?.protocol=='http'?[]:['content-type']
 		}
 	}).then(()=>{
 		loaddata();
@@ -538,7 +538,7 @@ onMounted(() => {
 																			<Tag class="mr-2 relative text-uppercase" style="top:-2px;" v-if="item?.kind">{{item?.kind}}</Tag>
 																			<b class="flex-item">{{item?.name}}</b>
 																			
-																			<Button v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
+																			<Button class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
 																			<Button v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
 																			<Button v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
 																		</div>
@@ -553,7 +553,7 @@ onMounted(() => {
 																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
 																				</div>
-																				<div class="flex" style="align-items:center">
+																				<!-- <div class="flex" style="align-items:center">
 																					<Button link icon=" pi pi-code" /> 
 																					<span class="pr-2">{{t('Allow Headers')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowHeaders" />
@@ -562,7 +562,7 @@ onMounted(() => {
 																					<Button link icon=" pi pi-code" /> 
 																					<span class="pr-2">{{t('Allow Methods')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowMethods" />
-																				</div>
+																				</div> -->
 																			</div>
 																		</span>
 																		<span class="opacity-50 text-sm mt-2" v-else>
@@ -602,7 +602,7 @@ onMounted(() => {
 																			</Tag>
 																			<b class="flex-item">{{item?.name}}</b>
 																			
-																			<Button v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
+																			<Button class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
 																			<Button v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
 																			<Button v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
 																		</div>
@@ -617,7 +617,7 @@ onMounted(() => {
 																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
 																				</div>
-																				<div class="flex" style="align-items:center">
+																			<!-- 	<div class="flex" style="align-items:center">
 																					<Button link icon=" pi pi-code" /> 
 																					<span class="pr-2">{{t('Allow Headers')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowHeaders" />
@@ -626,7 +626,7 @@ onMounted(() => {
 																					<Button link icon=" pi pi-code" /> 
 																					<span class="pr-2">{{t('Allow Methods')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowMethods" />
-																				</div>
+																				</div> -->
 																			</div>
 																		</span>
 																		<span class="opacity-50 text-sm mt-2" v-else>
