@@ -425,39 +425,11 @@ const connectMcps = () => {
 	store.dispatch('mcp/stopAll');
 	for(let i=0;i<mcps.value.length;i++){
 		const mcp=mcps.value[i];
-		// let eventSource = new EventSource(botService.getFullSvcUrl(`/svc/${mcp.kind}/${mcp.name}/sse`));
 		
-		// // 连接打开时
-		// eventSource.onopen = function(e) {
-		//     console.log('SSE连接已建立');
-		// };
-		
-		// // 收到消息时
-		// eventSource.onmessage = function(e) {
-		//     const data = JSON.parse(e.data);
-		//     console.log('收到消息: ' + JSON.stringify(data, null, 2));
-		// };
-		
-		// // 监听自定义事件
-		// eventSource.addEventListener('endpoint', function(e) {
-		//     const data = JSON.parse(e.data);
-		//     console.log('收到自定义事件: ' + data.message);
-		// });
-		
-		// // 发生错误时
-		// eventSource.onerror = function(e) {
-		//     if (e.eventPhase === EventSource.CLOSED) {
-		//         console.log('SSE连接已关闭');
-		//     } else {
-		//         console.log('SSE连接错误: ' + JSON.stringify(e));
-		//     }
-		//     // 可以在这里实现自动重连逻辑
-		//     // setTimeout(connectToSSE, 5000);
-		// };
 		mcpService.connectToServer({
 			name: mcp.name,
-			url: botService.getFullSvcUrl(`/svc/${mcp.kind}/${mcp.name}/sse`),
-			type: 'sse',
+			url: botService.getFullSvcUrl(`/svc/${mcp.kind}/${mcp.name}`),
+			type: 'stream',
 		});
 	}
 }

@@ -75,7 +75,7 @@ export default class MCPService {
       client = await this.connectToStdioServer(server, transportOptions)
     } else if (server.type === 'sse') {
       client = await this.connectToSseServer(server, transportOptions)
-    } else if (server.type === 'http') {
+    } else if (server.type === 'stream') {
       client = await this.connectToStreamableHttpServer(server, transportOptions)
     }
 
