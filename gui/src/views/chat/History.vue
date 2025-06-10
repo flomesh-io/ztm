@@ -76,7 +76,7 @@ watch(() => today.value, () => {
 	
 	<AppHeader :back="back" >
 	    <template #center>
-	      <b>History</b>
+	      <b>{{t('History')}}</b>
 	    </template>
 	    <template #end> 
 				<Button :loading="loading" icon="pi pi-history"  severity="secondary" text />
@@ -121,7 +121,7 @@ watch(() => today.value, () => {
 	    </template>
 	</VirtualScroller>
 	<div class="p-4 text-center opacity-60" v-else>
-		<i class="pi pi-box mr-2"/>No Message.
+		<i class="pi pi-box mr-2"/>{{t('No Message.')}}
 	</div>
 </template>
 

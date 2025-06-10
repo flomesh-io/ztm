@@ -1,7 +1,7 @@
 import { mock, request, getBaseUrl, getUrl,merge,fetchAsStream } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
-import { getItem, setItem } from "@/utils/localStore";
+import { getItem, setItem, pushItem } from "@/utils/localStore";
 import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
@@ -96,6 +96,7 @@ ${JSON.stringify(content)}
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
 	async callRunnerBySDK({message, llm, mcps, callback}) {
+		const mesh = this.getMesh();
 		const usermessages = [
 			{
 				"role":"user",
@@ -142,7 +143,14 @@ ${JSON.stringify(content)}
 									}
 								}
 							});
+							
+							pushItem(`bot-replay-${mesh?.name}`,{
+								message: message?.text,
+								toolcalls: allToolsResult
+							}, 10 ,(res)=>{});
+							
 							toolReqs = [];
+							
 							this.chatLLM(allmessages, llm, callback);
 						});
 					} else {
@@ -188,8 +196,7 @@ ${JSON.stringify(content)}
 					}
 					// push tool call req
 					merge_tool_calls.forEach((tool_call)=>{
-						const argv = !!tool_call?.function?.arguments?JSON.parse(tool_call.function.arguments):{};
-						toolReqs.push(this.callMcpToolBySDK(tool_call?.function?.name, argv).then((res)=> {
+						toolReqs.push(this.callMcpToolBySDK(tool_call).then((res)=> {
 							return { data:res, tool_call }
 						}).catch((e)=>{}));
 					})
@@ -201,7 +208,18 @@ ${JSON.stringify(content)}
 			this.chatLLM(usermessages, llm, callback);
 		}
 	}
-	callMcpToolBySDK(uniqueToolName, args) {
+	replayToolcalls(replay_tool_calls) {
+		const toolReqs = [];
+		replay_tool_calls.forEach((t)=>{
+			toolReqs.push(this.callMcpToolBySDK(t.tool_call).then((res)=> {
+				return { data:res, tool_call:t.tool_call }
+			}).catch((e)=>{}));
+		})
+		return merge(toolReqs);
+	}
+	callMcpToolBySDK(tool_call) {
+		const uniqueToolName = tool_call[tool_call?.type]?.name;
+		const args = !!tool_call[tool_call?.type]?.arguments?JSON.parse(tool_call[tool_call?.type].arguments):{};
 		return this.mcpService.callTool(uniqueToolName, args);
 	}
 	chatLLM(messages, llm, callback) {

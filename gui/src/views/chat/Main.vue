@@ -4,6 +4,7 @@ import { useStore } from 'vuex';
 import Chat from "./Chat.vue"
 import BotChat from "./BotChat.vue"
 import Setting from './Setting.vue'
+import BotHistory from './BotHistory.vue'
 import BotSetting from './BotSetting.vue'
 import History from './History.vue'
 import { dayjs, extend } from '@/utils/dayjs';
@@ -173,14 +174,17 @@ const back = () => {
 	}
 }
 const manager = ref(false);
-const history = ref(false)
+const history = ref(false);
+const botHistory = ref(false);
 const backList = () => {
 	selectRoom.value = false;
 	history.value = false;
+	botHistory.value = false;
 	manager.value = false;
 	resize(330,860,false);
 }
 const backmanage = () => {
+	botHistory.value = false;
 	history.value = false;
 	manager.value = false;
 }
@@ -301,7 +305,7 @@ onActivated(()=>{
 		</div>
 		<div v-if="selectRoom" class="flex-item min-h-screen" style="flex: 3;">
 			<div class="shadow mobile-fixed min-h-screen relative" style="z-index:2">
-				<BotChat ref="botchat" v-if="selectRoom?.bot" v-model:room="selectRoom" @back="backList" @manager="() => manager = 'bot'"/>
+				<BotChat ref="botchat" v-if="selectRoom?.bot" v-model:room="selectRoom" @back="backList" @manager="() => manager = 'bot'" @history="() => botHistory = true"/>
 				<Chat v-else v-model:room="selectRoom" @back="backList" @manager="() => manager = 'peer'"/>
 			</div>
 		</div>
@@ -315,12 +319,16 @@ onActivated(()=>{
 				<Setting v-model:room="selectRoom" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
-		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-else-if="botHistory" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotSetting @clear="botClear" @saved="changeBot" @back="backmanage" @history="() => history = true"/>
+				<BotHistory @clear="botClear" @back="backmanage" />
 			</div>
 		</div>
-		
+		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+			<div class="shadow mobile-fixed min-h-screen surface-html" >
+				<BotSetting @clear="botClear" @saved="changeBot" @back="backmanage" />
+			</div>
+		</div>
 	</div>
 </template>
 

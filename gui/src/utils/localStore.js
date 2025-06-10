@@ -16,3 +16,14 @@ export const getItem = (key, callback) => {
 		callback(JSON.parse(localStorage.getItem(key)))
 	}
 }
+
+export const pushItem = (key, value, max, callback) => {
+	getItem(key,(res)=>{
+		let ary = res || [];
+		if(!!max && ary.length>max){
+			ary.splice(0,ary.length-max);
+		}
+		ary.push(value);
+		setItem(key,ary,callback);
+	});
+}
