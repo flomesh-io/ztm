@@ -105,37 +105,41 @@ onMounted(()=>{
 	<VirtualScroller :delay="50" v-if="replays&&replays.length>0" :items="replays" :itemSize="50" class="border border-surface-200 dark:border-surface-700 w-full" :style="`height:${viewHeight}px`">
 		<template v-slot:item="{ item, options }">
 			<Card class="m-3">
-				<template #title>
-					<div class="text-sm">
-						<i class="pi pi-code relative" style="top:2px;"/> {{item.message}}
-					</div>
-				</template>
 				<template #content>
-					<ul class="px-4" style="list-style: none;">
-						<li class="mb-2" v-for="(tc,idx) in item.toolcalls" :key="idx">
-							<div v-if="tc?.tool_call">
-								<Fieldset :collapsed="true" legend="Header" :toggleable="true">
-								    <template #legend="{ toggleCallback }">
-											<div class="flex items-center p-2 pointer" @click="toggleCallback">
-												<Badge style="width: 18px;" class="mr-2" :value="tc.tool_call?.index"/>
-												<b class="pr-2 relative flex-item" style="top:2px">{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
-												<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
-											</div>
-								    </template>
-								    <p class="m-0">
-											<div class="pl-2 m-1" :key="pi" v-for="(pk,pi) in args_key(tc)">
-												<span>{{pk}}</span>: <Tag size="small" severity="secondary">{{args(tc)[pk]}}</Tag>
-											</div>
-								    </p>
-								</Fieldset>
+					<Fieldset :collapsed="true" :toggleable="true">
+						<template #legend="{ toggleCallback }">
+							<div class="text-sm p-3 flex pointer"  @click="toggleCallback">
+								<div><i class="pi pi-code relative mr-2 text-primary" style="top:2px;"/> {{item.message}}</div>
+								<i class="pi pi-angle-double-down relative" style="top:2px;"/>
 							</div>
-							<div class="mt-2 mb-4" v-if="tc?.data">
-								<Tag v-for="(msg) in tc?.data?.content||[]">{{msg?.text}}</Tag>
-							</div>
-							<ProgressBar v-else mode="indeterminate" style="height: 6px"></ProgressBar>
-						
-						</li>
-					</ul>
+						</template>
+						<ul class="px-4" style="list-style: none;">
+							<li class="mb-2" v-for="(tc,idx) in item.toolcalls" :key="idx">
+								<div v-if="tc?.tool_call">
+									<Fieldset class="innerset" :collapsed="true" :toggleable="true">
+											<template #legend="{ toggleCallback }">
+												<div class="flex items-center p-2 pointer" @click="toggleCallback">
+													<Badge style="width: 18px;" class="mr-2" :value="tc.tool_call?.index"/>
+													<b class="pr-2 relative flex-item" style="top:2px">{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
+													<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
+												</div>
+											</template>
+											<p class="mt-2 mx-0 mb-0">
+												<div class="pl-2 m-1" :key="pi" v-for="(pk,pi) in args_key(tc)">
+													<span> - {{pk}}</span>: <Tag size="small" severity="secondary">{{args(tc)[pk]}}</Tag>
+												</div>
+											</p>
+									</Fieldset>
+								</div>
+								<div class="mt-2 mb-4" v-if="tc?.data">
+									<Tag v-for="(msg) in tc?.data?.content||[]">{{msg?.text}}</Tag>
+								</div>
+								<ProgressBar v-else mode="indeterminate" style="height: 6px"></ProgressBar>
+							
+							</li>
+						</ul>
+					
+					</Fieldset>
 				</template>
 				<template #footer>
 					<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="replay(options?.index)" >
@@ -161,8 +165,14 @@ onMounted(()=>{
 		border-width: 0;
 	}
 	:deep(.p-fieldset-legend){
+		border-radius: 0;
 		width: 100%;
-		margin-left: 0;
+		margin: 0 !important;
+	}
+	.innerset :deep(.p-fieldset-legend){
 		background-color: var(--surface-subground);
+	}
+	:deep(.p-card-body){
+		gap:0 !important;
 	}
 </style>
