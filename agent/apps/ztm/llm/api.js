@@ -300,7 +300,6 @@ export default function ({ app, mesh }) {
         var path2 = path.endsWith('/') ? path : path + '/'
         if ($route = localRoutes.findLast(r => path2.startsWith(r.path))) {
           $origin = evt.head.headers.origin
-          if (evt.head.method === 'OPTIONS') return 'options'
           var service = $route.service
           var basepath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
           evt.head.path = os.path.join(basepath, path.substring($route.path.length)) + url.search
@@ -310,18 +309,6 @@ export default function ({ app, mesh }) {
         }
       }
     }, {
-      'options': ($=>$
-        .replaceData()
-        .replaceMessage(() => {
-          var headers = {}
-          var cors = $route?.cors
-          if (cors) {
-            if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
-            if (cors.allowHeaders) headers['access-control-allow-headers'] = cors.allowHeaders.join(', ')
-					}
-          return new Message({ headers })
-        })
-      ),
       'remote': ($=>$
         .muxHTTP(() => $route, { version: 2 }).to($=>$
           .pipe(() => mesh.connect($route.service.endpoint.id))
@@ -330,16 +317,6 @@ export default function ({ app, mesh }) {
       'local': $=>$.pipe(() => connectService),
       '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
     })
-    .handleMessageStart(
-      msg => {
-        var cors = $route?.cors
-        if (cors && cors.allowOrigins?.includes?.($origin)) {
-					msg.head.headers ??= {}
-          msg.head.headers['access-control-allow-origin'] = $origin
-					msg.head.headers['access-control-expose-headers'] = 'mcp-session-id';
-        }
-      }
-    )
   )
 
   var matchApiForwardKindName = new http.Match('/api/forward/{kind}/{name}')
@@ -378,50 +355,80 @@ export default function ({ app, mesh }) {
   var $httpURL
 
   var connectHTTP = pipeline($=>$
-    .handleMessageStart(msg => {
-      $httpURL = new URL($service.target.address)
-      var path = $servicePath === '' ? $httpURL.pathname : os.path.join($httpURL.pathname, $servicePath)
-      if ($serviceQuery) {
-        path += $serviceQuery
-        if ($httpURL.query) {
-          path += '&' + $httpURL.query
-        }
-      } else {
-        path += $httpURL.search
-      }
-      msg.head.path = path
-      msg.head.headers.host = $httpURL.host
-      var headers = $service.target.headers
-      if (headers && typeof headers === 'object') Object.assign(msg.head.headers, headers)
-    })
-    .pipe(() => $service.target.body ? 'merge' : 'bypass', {
-      'merge': $=>$.replaceMessageBody(
-        body => {
-          try {
-            return JSON.encode(
-              mergeObjects(
-                JSON.decode(body),
-                $service.target.body,
-              )
-            )
-          } catch {
-            return body
+    .pipe(
+      evt => {
+        if (evt instanceof MessageStart) {
+          if (evt.head.method === 'OPTIONS') return 'options'
+          $httpURL = new URL($service.target.address)
+          var path = $servicePath === '' ? $httpURL.pathname : os.path.join($httpURL.pathname, $servicePath)
+          if ($serviceQuery) {
+            path += $serviceQuery
+            if ($httpURL.query) {
+              path += '&' + $httpURL.query
+            }
+          } else {
+            path += $httpURL.search
           }
+          evt.head.path = path
+          evt.head.headers.host = $httpURL.host
+          var headers = $service.target.headers
+          if (headers && typeof headers === 'object') Object.assign(evt.head.headers, headers)
+          return 'proxy'
         }
-      ),
-      'bypass': $=>$,
-    })
-    .muxHTTP(() => $service).to($=>$
-      .pipe(() => $httpURL.protocol, {
-        'http:': ($=>$
-          .connect(() => $httpURL.hostname + ':' +  $httpURL.port)
+      }, {
+        'options': ($=>$
+          .replaceData()
+          .replaceMessage(() => {
+            var headers = {}
+            var cors = $route?.cors
+            if (cors) {
+              if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
+              if (cors.allowHeaders) headers['access-control-allow-headers'] = cors.allowHeaders.join(', ')
+            }
+            return new Message({ headers })
+          })
         ),
-        'https:': ($=>$
-          .connectTLS({ sni: () => $httpURL.hostname }).to($=>$
-            .connect(() => $httpURL.hostname + ':' + $httpURL.port)
+        'proxy': ($=>$
+          .pipe(() => $service.target.body ? 'merge' : 'bypass', {
+            'merge': $=>$.replaceMessageBody(
+              body => {
+                try {
+                  return JSON.encode(
+                    mergeObjects(
+                      JSON.decode(body),
+                      $service.target.body,
+                    )
+                  )
+                } catch {
+                  return body
+                }
+              }
+            ),
+            'bypass': $=>$,
+          })
+          .muxHTTP(() => $service).to($=>$
+            .pipe(() => $httpURL.protocol, {
+              'http:': ($=>$
+                .connect(() => $httpURL.hostname + ':' +  $httpURL.port)
+              ),
+              'https:': ($=>$
+                .connectTLS({ sni: () => $httpURL.hostname }).to($=>$
+                  .connect(() => $httpURL.hostname + ':' + $httpURL.port)
+                )
+              ),
+            })
+          )
+          .handleMessageStart(
+            msg => {
+              var cors = $route?.cors
+              if (cors && cors.allowOrigins?.includes?.($origin)) {
+                msg.head.headers ??= {}
+                msg.head.headers['access-control-allow-origin'] = $origin
+              }
+            }
           )
         ),
-      })
+      }
     )
   )
 
@@ -436,6 +443,7 @@ export default function ({ app, mesh }) {
     .pipe(
       evt => {
         if (evt instanceof MessageStart && $servicePath === '') {
+          if (evt.head.method === 'OPTIONS') return 'options'
           var head = evt.head
           $mcpSessionID = head.headers['mcp-session-id']
           $mcpSession = $mcpSessionID && mcpSessions[$mcpSessionID]
@@ -466,10 +474,30 @@ export default function ({ app, mesh }) {
         }
         return '404'
       }, {
+        'options': ($=>$
+          .replaceData()
+          .replaceMessage(() => {
+            var headers = {
+              'access-control-allow-methods': '*',
+              'access-control-allow-headers': 'Content-Type, Mcp-Session-Id',
+            }
+            return new Message({ headers })
+          })
+        ),
         '400': $=>$.replaceData().replaceMessage(new Message({ status: 400 })),
         '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
         '405': $=>$.replaceData().replaceMessage(new Message({ status: 405 })),
         'receive': $=>$.swap(() => $mcpStream.output),
+      }
+    )
+    .handleMessageStart(
+      msg => {
+        var cors = $route?.cors
+        if (cors && cors.allowOrigins?.includes?.($origin)) {
+          msg.head.headers ??= {}
+          msg.head.headers['access-control-allow-origin'] = $origin
+          msg.head.headers['access-control-expose-headers'] = 'Mcp-Session-Id'
+        }
       }
     )
   )
