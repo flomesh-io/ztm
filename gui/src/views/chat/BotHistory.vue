@@ -139,7 +139,7 @@ defineExpose({
 											</template>
 											<p class="mt-2 mx-0 mb-0 argList">
 												<div class="pl-2 m-1" :key="pi" v-for="(pk,pi) in args_key(tc)">
-													<span>{{pk}}</span> : <Tag size="small" severity="secondary">{{args(tc)[pk]}}</Tag>
+													<span>{{pk}}</span> : <TagInput v-if="tc.tool_call[tc.tool_call?.type]?.arguments" v-model:obj="tc.tool_call[tc.tool_call.type]" :k="pk"/>
 												</div>
 											</p>
 									</Fieldset>
@@ -156,8 +156,9 @@ defineExpose({
 				</template>
 				<template #footer>
 						<InputGroup>
+							<Button @click="loaddata" icon="pi pi-replay" severity="secondary"/>
 							<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="replay(options?.index)" >
-								<i :class="item.loading?'pi pi-stop-circle':'pi pi-replay'"/>
+								<i :class="item.loading?'pi pi-stop-circle':'pi pi-caret-right'"/>
 								<span v-if="item.loading">{{t('Stop')}}</span>
 								<span v-else-if="!!item?.date">{{timeago(item.date)}} {{t('Replay')}}</span>
 								<span v-else>{{t('Replay')}}</span>
