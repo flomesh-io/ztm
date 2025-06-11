@@ -3,6 +3,7 @@ import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vu
 import { useStore } from 'vuex';
 import { getItem, setItem, pushItem, deleteItem } from "@/utils/localStore";
 import confirm from "@/utils/confirm";
+import { getKeywordIcon } from '@/utils/file';
 import { dayjs, extend } from '@/utils/dayjs';
 import BotService from '@/service/BotService';
 import { useI18n } from 'vue-i18n';
@@ -126,8 +127,13 @@ defineExpose({
 									<Fieldset class="innerset" :collapsed="true" :toggleable="true">
 											<template #legend="{ toggleCallback }">
 												<div class="flex items-center p-2 pointer" @click="toggleCallback">
-													<Badge style="width: 18px;" class="mr-2" :value="tc.tool_call?.index+1"/>
-													<b class="pr-2 relative flex-item" style="top:2px">{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
+													<div>
+														<Badge style="padding:0 !important" size="small"  :value="tc.tool_call?.index+1"/>
+													</div>
+													<div class="flex-item relative pl-2" style="top:-2px">
+														<img :src="getKeywordIcon(tc.tool_call[tc.tool_call?.type]?.name.split('___')[1], 'mcp')" width="20px" height="20px" class="relative mr-1" style="top:4px"/>
+														<b class="pr-2 " >{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
+													</div>
 													<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
 												</div>
 											</template>
