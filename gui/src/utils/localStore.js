@@ -27,3 +27,21 @@ export const pushItem = (key, value, max, callback) => {
 		setItem(key,ary,callback);
 	});
 }
+export const unshiftItem = (key, value, max, callback) => {
+	getItem(key,(res)=>{
+		let ary = res || [];
+		if(!!max && ary.length>max){
+			ary.splice(max-1,ary.length-max);
+		}
+		ary.unshift(value);
+		setItem(key,ary,callback);
+	});
+}
+
+export const deleteItem = (key, index, callback) => {
+	getItem(key,(res)=>{
+		let ary = res || [];
+		ary.splice(index,1);
+		setItem(key,ary,callback);
+	});
+}
