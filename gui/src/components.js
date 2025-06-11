@@ -128,6 +128,7 @@ import Ep from '@/components/common/Ep.vue';
 import EpSelector from '@/components/common/EpSelector.vue';
 import UserSelector from '@/components/common/UserSelector.vue';
 import FloatLabel from 'primevue/floatlabel';
+import TagInput from '@/components/common/TagInput.vue';
 
 import { Field, Form, ErrorMessage } from 'vee-validate';
 
@@ -264,5 +265,5 @@ export function useComponent(app){
 	app.component('Ep', Ep);
 	app.component('EpSelector', EpSelector);
 	app.component('UserSelector', UserSelector);
-	
+	app.component('TagInput', TagInput);
 }
