@@ -158,14 +158,14 @@ defineExpose({
 				</template>
 				<template #footer>
 						<InputGroup>
-							<Button @click="loaddata" icon="pi pi-replay" severity="secondary"/>
+							<Button class="w-2" @click="loaddata" icon="pi pi-replay" severity="secondary"/>
 							<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="makeReplay(options?.index)" >
 								<i :class="item.loading?'pi pi-stop-circle':'pi pi-caret-right'"/>
 								<span v-if="item.loading">{{t('Stop')}}</span>
 								<span v-else-if="!!item?.date">{{timeago(item.date)}} {{t('Replay')}}</span>
 								<span v-else>{{t('Replay')}}</span>
 							</Button>
-							<Button @click="delReplay(options?.index)" icon="pi pi-times" severity="secondary"/>
+							<Button class="w-2" @click="delReplay(options?.index)" icon="pi pi-times" severity="secondary"/>
 						</InputGroup>
 				</template>
 			</Card>
