@@ -22,7 +22,7 @@ const loading = ref(true);
 const store = useStore();
 const botService = new BotService();
 const mcpService = new MCPService();
-const emits = defineEmits(['back','peer','manager','history']);
+const emits = defineEmits(['back','peer','manager','history','notify']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -331,6 +331,7 @@ const request = ref({
 						setHistory({html:html2,role: 'ai'});
 						chat.value.addMessage({html:html2,role: 'ai',overwrite: false},true);
 						chat.value.scrollToBottom();
+						emits('notify')
 					}
 				}
 				postMessage(message);
@@ -345,6 +346,7 @@ const request = ref({
 						if(ending){
 							setHistory({html,role: 'ai'});
 							signals.onResponse({files:[],overwrite: false});
+							emits('notify')
 						}
 					}
 					postMessage(body?.messages[0]);

@@ -204,6 +204,12 @@ const botClear = ()=>{
 		selectRoom.value = _selectRoom;
 	},100);
 }
+const botHistoryRef = ref();
+const loadBotHistory = () => {
+	if(botHistoryRef.value){
+		botHistoryRef.value.loaddata();
+	}
+}
 watch(()=>selectedMesh,()=>{
 	if(selectedMesh.value){
 		load();
@@ -305,7 +311,15 @@ onActivated(()=>{
 		</div>
 		<div v-if="selectRoom" class="flex-item min-h-screen" style="flex: 3;">
 			<div class="shadow mobile-fixed min-h-screen relative" style="z-index:2">
-				<BotChat ref="botchat" v-if="selectRoom?.bot" v-model:room="selectRoom" @back="backList" @manager="() => manager = 'bot'" @history="() => botHistory = true"/>
+				<BotChat 
+					ref="botchat" 
+					v-if="selectRoom?.bot" 
+					v-model:room="selectRoom" 
+					@back="backList" 
+					@manager="() => manager = 'bot'" 
+					@history="() => botHistory = true"
+					@notify="loadBotHistory"
+					/>
 				<Chat v-else v-model:room="selectRoom" @back="backList" @manager="() => manager = 'peer'"/>
 			</div>
 		</div>
@@ -321,7 +335,7 @@ onActivated(()=>{
 		</div>
 		<div v-else-if="botHistory" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotHistory @clear="botClear" @back="backmanage" />
+				<BotHistory ref="botHistoryRef" @clear="botClear" @back="backmanage" />
 			</div>
 		</div>
 		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">

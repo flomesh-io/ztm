@@ -1,7 +1,7 @@
 import { mock, request, getBaseUrl, getUrl,merge,fetchAsStream } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
-import { getItem, setItem, pushItem } from "@/utils/localStore";
+import { getItem, setItem, unshiftItem } from "@/utils/localStore";
 import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
@@ -144,9 +144,10 @@ ${JSON.stringify(content)}
 								}
 							});
 							
-							pushItem(`bot-replay-${mesh?.name}`,{
+							unshiftItem(`bot-replay-${mesh?.name}`,{
 								message: message?.text,
-								toolcalls: allToolsResult
+								toolcalls: allToolsResult,
+								date: new Date().getTime(),
 							}, 10 ,(res)=>{});
 							
 							toolReqs = [];

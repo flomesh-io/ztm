@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import { useStore } from 'vuex';
-import { getItem, setItem, pushItem } from "@/utils/localStore";
+import { getItem, setItem, pushItem, deleteItem } from "@/utils/localStore";
 import confirm from "@/utils/confirm";
 import { dayjs, extend } from '@/utils/dayjs';
 import BotService from '@/service/BotService';
@@ -58,17 +58,21 @@ const clear = () => {
 		}
 	});
 }
-
+const delReplay = (index) => {
+	deleteItem(`bot-replay-${selectedMesh.value?.name}`,index,()=>{
+		loaddata();
+	})
+}
 const replay = (index) => {
 	if(!replays.value[index].loading){
 		replays.value[index].loading = true;
 		replays.value[index].toolcalls.forEach((t)=>{
 			t.data=null;
 		})
-		// botService.replayToolcalls(replays.value[index]).then((resp)=>{
-		// 	replays.value[index].loading = false;
-		// 	replays.value[index].toolcalls = resp;
-		// })
+		botService.replayToolcalls(replays.value[index]).then((resp)=>{
+			replays.value[index].loading = false;
+			replays.value[index].toolcalls = resp;
+		})
 	} else {
 		loaddata();
 		replays.value[index].loading = false;
@@ -90,6 +94,9 @@ const args_key = computed(() => (tc) => {
 })
 onMounted(()=>{
 	loaddata();
+})
+defineExpose({
+	loaddata
 })
 </script>
 <template>
@@ -119,14 +126,14 @@ onMounted(()=>{
 									<Fieldset class="innerset" :collapsed="true" :toggleable="true">
 											<template #legend="{ toggleCallback }">
 												<div class="flex items-center p-2 pointer" @click="toggleCallback">
-													<Badge style="width: 18px;" class="mr-2" :value="tc.tool_call?.index"/>
+													<Badge style="width: 18px;" class="mr-2" :value="tc.tool_call?.index+1"/>
 													<b class="pr-2 relative flex-item" style="top:2px">{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
 													<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
 												</div>
 											</template>
-											<p class="mt-2 mx-0 mb-0">
+											<p class="mt-2 mx-0 mb-0 argList">
 												<div class="pl-2 m-1" :key="pi" v-for="(pk,pi) in args_key(tc)">
-													<span> - {{pk}}</span>: <Tag size="small" severity="secondary">{{args(tc)[pk]}}</Tag>
+													<span>{{pk}}</span> : <Tag size="small" severity="secondary">{{args(tc)[pk]}}</Tag>
 												</div>
 											</p>
 									</Fieldset>
@@ -142,10 +149,15 @@ onMounted(()=>{
 					</Fieldset>
 				</template>
 				<template #footer>
-					<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="replay(options?.index)" >
-						<i :class="item.loading?'pi pi-stop-circle':'pi pi-replay'"/>
-						{{item.loading?t('Stop'):t('Replay')}}
-					</Button>
+						<InputGroup>
+							<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="replay(options?.index)" >
+								<i :class="item.loading?'pi pi-stop-circle':'pi pi-replay'"/>
+								<span v-if="item.loading">{{t('Stop')}}</span>
+								<span v-else-if="!!item?.date">{{timeago(item.date)}} {{t('Replay')}}</span>
+								<span v-else>{{t('Replay')}}</span>
+							</Button>
+							<Button @click="delReplay(options?.index)" icon="pi pi-times" severity="secondary"/>
+						</InputGroup>
 				</template>
 			</Card>
 		</template>
@@ -174,5 +186,16 @@ onMounted(()=>{
 	}
 	:deep(.p-card-body){
 		gap:0 !important;
+	}
+	.argList{
+		border-style: none dashed none dashed;
+		border-color: var(--surface-border);
+	}
+	:deep(.p-inputgroup){
+		border-radius: 0 0 10px 10px;
+		overflow: hidden;
+	}
+	:deep(.p-inputgroup .p-button){
+		height:42px;
 	}
 </style>
