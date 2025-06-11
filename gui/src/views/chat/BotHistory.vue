@@ -64,15 +64,17 @@ const delReplay = (index) => {
 		loaddata();
 	})
 }
-const replay = (index) => {
+const makeReplay = (index) => {
 	if(!replays.value[index].loading){
 		replays.value[index].loading = true;
 		replays.value[index].toolcalls.forEach((t)=>{
 			t.data=null;
 		})
-		botService.replayToolcalls(replays.value[index]).then((resp)=>{
-			replays.value[index].loading = false;
-			replays.value[index].toolcalls = resp;
+		botService.replayToolcalls(replays.value[index].toolcalls||[]).then((resp)=>{
+			setTimeout(()=>{
+				replays.value[index].loading = false;
+				replays.value[index].toolcalls = resp;
+			},1000);
 		})
 	} else {
 		loaddata();
@@ -145,7 +147,7 @@ defineExpose({
 									</Fieldset>
 								</div>
 								<div class="mt-2 mb-4" v-if="tc?.data">
-									<Tag v-for="(msg) in tc?.data?.content||[]">{{msg?.text}}</Tag>
+									<Message v-for="(msg) in tc?.data?.content||[]" severity="success" icon="pi pi-check">{{msg?.text}}</Message>
 								</div>
 								<ProgressBar v-else mode="indeterminate" style="height: 6px"></ProgressBar>
 							
@@ -157,7 +159,7 @@ defineExpose({
 				<template #footer>
 						<InputGroup>
 							<Button @click="loaddata" icon="pi pi-replay" severity="secondary"/>
-							<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="replay(options?.index)" >
+							<Button :severity="item.loading?'danger':'secondary'" class="w-full" @click="makeReplay(options?.index)" >
 								<i :class="item.loading?'pi pi-stop-circle':'pi pi-caret-right'"/>
 								<span v-if="item.loading">{{t('Stop')}}</span>
 								<span v-else-if="!!item?.date">{{timeago(item.date)}} {{t('Replay')}}</span>
