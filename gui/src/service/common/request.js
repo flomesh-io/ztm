@@ -2,6 +2,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import axios from "axios";
 import Cookie from './cookie'
 import toast from "@/utils/toast";
+import { writeLogFile } from '@/utils/file';
 
 const xsrfHeaderName = "Authorization";
 const DEFAULT_VITE_APP_API_PORT = import.meta.env.VITE_APP_API_PORT;
@@ -77,6 +78,7 @@ function fetchAsStream() {
 	    const reader = response.body.getReader();
 	    const decoder = new TextDecoder();
 	    let buffer = '';
+			let allbuffer = '';
 	    let lastData = null;
 	    while (true) {
 				const { done,value } = await reader.read();
@@ -94,6 +96,7 @@ function fetchAsStream() {
 	    }
 
 			function processBuffer(ending) {
+				
 				// 按行分割缓冲区
 				const lines = buffer.split('\n');
 				
@@ -101,9 +104,12 @@ function fetchAsStream() {
 				buffer = lines.pop() || '';
 				
 				for (const line of lines) {
+					allbuffer += `${line}\n`;
 					if (line.startsWith('data: ')) {
 						const jsonStr = line.slice(6).trim();
 						if (jsonStr === '[DONE]') {
+							writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] llm stream: ${allbuffer}\n`);
+							allbuffer = "";
 							processMessage(lastData, true);
 						} else {
 							try {

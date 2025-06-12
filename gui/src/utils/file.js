@@ -20,7 +20,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import { platform } from '@/utils/platform';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
-import { create, remove, copyFile, writeFile as fsWriteFile, exists,mkdir, BaseDirectory } from "@tauri-apps/plugin-fs";
+import { create, open as fsOpen, remove, copyFile, writeFile as fsWriteFile, exists,mkdir, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
 import toast from "@/utils/toast";
 import exportFromJSON from 'export-from-json';
@@ -46,6 +46,9 @@ function convertToUint8Array(input) {
 const isMobile = () => {
 	return platform() == 'ios' || platform() == 'android';
 }
+const isPC = () => {
+	return !!platform() && platform() !='web' && platform() != 'ios' && platform() != 'android';
+}
 
 const getSavePath = (target, dft) => {
 	if(!target){
@@ -66,20 +69,11 @@ const getSavePath = (target, dft) => {
 }
 // const androidRoot = "/storage/emulated/0/com.flomesh.ztm"
 const createFile = (name) => {
-	if(platform() == 'android'){
-		//fix Android forbidden path
-		return create(name, {
-			write:true, 
-			create:true, 
-			baseDir: BaseDirectory.Document,
-		})
-	} else {
-		return create(name, {
-			write:true, 
-			create:true, 
-			baseDir: BaseDirectory.Document,
-		})
-	}
+	return create(name, {
+		write:true, 
+		create:true, 
+		baseDir: BaseDirectory.Document,
+	})
 }
 const writeMobileFile = (name, append) => {
 	if(isMobile()){
@@ -90,12 +84,22 @@ const writeMobileFile = (name, append) => {
 		})
 	}
 }
-const writeTxtFile = (name, append) => {
-	createFile(name).then((file)=>{
-		file.write(new TextEncoder().encode(append)).then(()=>{
-			file.close();
-		});
-	})
+const writeLogFile = async (name, append) => {
+	if(isPC()){
+		try{
+			const encoder = new TextEncoder();
+			const data = encoder.encode(append);
+			const file = await fsOpen(name, { append:true,write: true, baseDir: BaseDirectory.Document });
+			const bytesWritten = await file.write(data); // 11
+			await file.close();
+		}catch(e){
+			createFile(name).then((file)=>{
+				file.write(new TextEncoder().encode(append)).then(()=>{
+					file.close();
+				});
+			})
+		}
+	}
 }
 
 const writeFile = (file, target, after) => {
@@ -612,6 +616,7 @@ export {
 	labels,
 	colors,
 	writeMobileFile, 
+	writeLogFile,
 	convertToUint8Array,
 	writeFile, 
 	saveFile, 
