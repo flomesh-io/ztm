@@ -5,6 +5,7 @@ import { getItem, setItem, unshiftItem } from "@/utils/localStore";
 import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { writeLogFile } from '@/utils/file';
 import MCPService from '@/service/MCPService';
 
 export default class BotService {
@@ -128,6 +129,8 @@ export default class BotService {
 				if(ending) {
 					if(toolReqs.length>0){
 						merge(toolReqs).then((allToolsResult)=>{
+							
+							writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] tool called: ${JSON.stringify(allToolsResult)}\n`);
 							// push result msg
 							allToolsResult.forEach((res)=>{
 								const toolResult = res?.data;
@@ -156,6 +159,7 @@ export default class BotService {
 							this.chatLLM(allmessages, tools, llm, callback);
 						});
 					} else {
+						
 						callback(res, ending);
 					}
 				} else if(!!msg?.tool_calls && msg?.tool_calls?.length>0){
@@ -257,9 +261,11 @@ export default class BotService {
 		if(tools && tools.length>0){
 			body.tools = this.makeLLMToolsFormat(tools);
 		}
+		let url = this.getSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`);
+		writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] request llm ${url} by ${JSON.stringify(body)}\n`);
 		const stream = fetchAsStream();
 		stream.post(
-			this.getSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`), 
+			url, 
 			body,
 			callback
 		)
