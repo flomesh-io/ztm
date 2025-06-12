@@ -58,20 +58,21 @@ const newLlm = {
 			"Content-Type": "application/json"
 		},
 		body: {
-			"model":"Pro/deepseek-ai/DeepSeek-V3",
-			"stream":true,
-			"max_tokens":512,
-			"enable_thinking":false,
-			"thinking_budget":512,
-			"min_p":0.05,
-			"stop":null,
-			"temperature":0.1,
-			"top_p":0.7,
-			"top_k":50,
-			"frequency_penalty":0.5,
-			"n":1,
-			"response_format":{"type":"text"},
-			"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}],
+			"model": "Pro/deepseek-ai/DeepSeek-V3",
+			"stream": true,
+			"max_tokens": 512,
+			"enable_thinking": false,
+			"thinking_budget": 512,
+			"min_p": 0.05,
+			"stop": null,
+			"temperature": 0.1,
+			"top_p": 0.7,
+			"top_k": 50,
+			"frequency_penalty": 0.5,
+			"n": 1,
+			"response_format": {
+				"type": "text"
+			},
 		}
 	}
 }

@@ -40,9 +40,13 @@ const openBox = () => {
 
 const mcp = ref(null);
 const llm = ref(null);
+const llms = ref([]);
+const matchLLM = computed(()=>{
+	return llms.value.find((l) => l.name == llm.value)
+})
 const loadllm = () => {
 	botService.checkLLM((res) => {
-		llm.value = res
+		llm.value = res?.name
 	});
 }
 const localMcps = ref([]);
@@ -102,23 +106,23 @@ const makeRemoveMcpRoute = () => {
 }
 const save = () => {
 	saving.value = true;
-	const path = `${llm.value?.kind}/${llm.value?.name}`;
+	const path = `${matchLLM.value?.kind}/${llm.value}`;
 	
-	setItem(`llm-${selectedMesh.value?.name}`, [llm.value], ()=>{})
+	setItem(`llm-${selectedMesh.value?.name}`, [matchLLM.value], ()=>{})
 	setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{});
 	const mcps = localMcps.value.filter((n)=> n.enabled);
 	
-	if(!llm.value.localRoutes?.length){
+	if(!matchLLM.value.localRoutes?.length){
 		botService.createRoute({
 			ep: selectedMesh.value?.agent?.id,
 			path,
-			service: llm.value
+			service: matchLLM.value
 		}).then(()=>{
 			//emit to chat
 			setTimeout(()=>{
 				saving.value = false;
 				emits('saved',{
-					llm: llm.value,
+					llm: matchLLM.value,
 					mcps
 				});
 			},600);
@@ -131,14 +135,13 @@ const save = () => {
 		//emit to chat
 		setTimeout(()=>{
 			emits('saved',{
-				llm: llm.value,
+				llm: matchLLM.value,
 				mcps
 			});
 			saving.value = false;
 		},600);
 	}
 }
-const llms = ref([]);
 const mcps = ref([]);
 onMounted(()=>{
 	loadllm();
@@ -162,11 +165,11 @@ onMounted(()=>{
 		<li class="nav-li flex" >
 			<b class="opacity-70">{{t('LLM')}}</b>
 			<div class="flex-item text-right pr-2">
-				<Select v-model="llm" :options="llms" optionLabel="name" :placeholder="t('Select a LLM')" class="selector" >
+				<Select v-model="llm" :options="llms" optionLabel="name" optionValue="name" :placeholder="t('Select a LLM')" class="selector" >
 					<template #value="slotProps">
 						<div v-if="slotProps.value" class="flex items-center">
 							<img :src="llmSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
-							<div>{{ slotProps.value.name }}</div>
+							<div>{{ slotProps.value }}</div>
 						</div>
 						<span v-else>
 							{{ slotProps.placeholder }}
