@@ -512,7 +512,7 @@ onMounted(() => {
 				</Button>
 			</div> -->
 			<div class="flex-item" v-if="platform!='android' && platform!='ios' && (!meshes || (meshes.length>0 && !meshes.find((m)=>m.name == 'Sample')))">
-				<Button :loading="tryLoading" @click="openTryMesh" v-tooltip="t('Trial')" class="pointer" severity="help" rounded text aria-label="Filter" >
+				<Button :loading="tryLoading" @click="openTryMesh" v-tooltip="t('Try ZTM Cloud')" class="pointer" severity="help" rounded text aria-label="Filter" >
 					<i class="pi pi-sparkles text-3xl"  />
 				</Button>
 			</div>
