@@ -468,7 +468,7 @@ defineExpose({
 	<AppHeader :back="back">
 	    <template #center >
 				<Status :run="true" />
-	      <b>{{t('AI Bot')}} ({{llm?.name}})</b>
+	      <b>{{t('Agent Bot')}} ({{llm?.name}})</b>
 	    </template>
 	    <template #end> 
 				<Button icon="pi pi-history" @click="gohistory" severity="secondary" text />
