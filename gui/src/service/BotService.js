@@ -73,17 +73,15 @@ export default class BotService {
 	makePrompt(role, content){
 		switch (role){
 			case 'user':
-				return `请完成以下请求（**如判定为工具调用请求，必须返回工具调用并遵守system_prompt。如果判断为非工具调用，请用自然语言回答。**）
+				return `请完成以下请求（如判定为tool_calls请求，**必须立即返回tool_calls**并遵守system_prompt。如果判断为非tool_calls请求，请用自然语言回答。）
 请求：${content}`;
 			case 'system':
 				return `你是一个工具调用助手，必须严格遵循以下规则：
-1. 当用户请求需要tool时，**只能**返回合法的 \`tool_calls\`，自然语言只能回复**正在请求任务...\n\n**。
-2. 当tool消息执行返回结果，只能回复**描述性列表**
-
-这是listTools：
-\`\`\`json
-${JSON.stringify(content)}
-\`\`\``;
+1. 判定为tool_calls请求时，你的**finish_reason**必须是**tool_calls**，不能是**stop**
+2. 任务需要多条tool_calls完成时，一次性返回多条tool_calls
+3. 自然语言（content字段）中禁止包含tool_calls结构，相关结构只应出现在**tool_calls字段**中，自然语言（content字段）开头加上**正在请求任务...\n\n**。
+4. 当工具调用返回结果，只能自然语言总结回复**描述性列表**
+`;
 			case 'tool':
 				let _content = content?.text;
 				if(content?.type!='text') {
@@ -97,6 +95,7 @@ ${JSON.stringify(content)}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
 	async callRunnerBySDK({message, llm, mcps, callback}) {
 		const mesh = this.getMesh();
+		let tools = [];
 		const usermessages = [
 			{
 				"role":"user",
@@ -109,18 +108,20 @@ ${JSON.stringify(content)}
 			
 			let allmessages = [];
 			const sysmessages = [];
+			
 			allClients.forEach((client,idx)=>{
-				let tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
-				tools.forEach((tool)=>{
+				let _tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
+				_tools.forEach((tool)=>{
 					tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
 				})
-				sysmessages.push({"role": "system", "content": this.makePrompt("system",tools)})
+				tools = tools.concat(_tools);
+				sysmessages.push({"role": "system", "content": this.makePrompt("system")})
 			});
 			allmessages = sysmessages.concat(usermessages);
 			let tool_calls = [];
 			let toolReqs = [];
 			// get tool_calls with llm
-			const resp = await this.chatLLM(allmessages, llm, (res,ending)=> {
+			const resp = await this.chatLLM(allmessages, tools, llm, (res,ending)=> {
 				const finish_reason = res.choices[0]?.finish_reason;
 				const msg = res.choices[0]?.delta || res.choices[0]?.message;
 				
@@ -152,7 +153,7 @@ ${JSON.stringify(content)}
 							
 							toolReqs = [];
 							
-							this.chatLLM(allmessages, llm, callback);
+							this.chatLLM(allmessages, tools, llm, callback);
 						});
 					} else {
 						callback(res, ending);
@@ -206,7 +207,7 @@ ${JSON.stringify(content)}
 				} 
 			});
 		} else {
-			this.chatLLM(usermessages, llm, callback);
+			this.chatLLM(usermessages,null, llm, callback);
 		}
 	}
 	replayToolcalls(replay_tool_calls) {
@@ -223,8 +224,39 @@ ${JSON.stringify(content)}
 		const args = !!tool_call[tool_call?.type]?.arguments?JSON.parse(tool_call[tool_call?.type].arguments):{};
 		return this.mcpService.callTool(uniqueToolName, args);
 	}
-	chatLLM(messages, llm, callback) {
-		const body = { messages };
+/**
+"tools": [
+		 {
+			 "type": "function",
+			 "function": {
+				 "description": "<string>",
+				 "name": "<string>",
+				 "parameters": {},
+				 "strict": false
+			 }
+		 }
+	 ]
+*/
+	makeLLMToolsFormat(tools){
+		const llmTools = [];
+		tools.forEach((t)=>{
+			llmTools.push({
+			 "type": "function",
+			 "function": {
+				 "description": t.description,
+				 "name": t.name,
+				 "parameters": t.inputSchema,
+				 "strict": false
+			 }
+			});
+		});
+		return llmTools;
+	}
+	chatLLM(messages, tools, llm, callback) {
+		let body = { messages };
+		if(tools && tools.length>0){
+			body.tools = this.makeLLMToolsFormat(tools);
+		}
 		const stream = fetchAsStream();
 		stream.post(
 			this.getSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`), 

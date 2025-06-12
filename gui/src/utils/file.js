@@ -118,7 +118,7 @@ const writeFile = (file, target, after) => {
 	reader.readAsArrayBuffer(file);
 }
 const keywordIcon = {
-	excel:excel2, file, zip, mcp, github
+	excel:excel2, file, zip, github, mcp
 }
 const getKeywordIcon = (keyword, dft) => {
 	const keys = Object.keys(keywordIcon);
