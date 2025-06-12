@@ -147,7 +147,9 @@ defineExpose({
 									</Fieldset>
 								</div>
 								<div class="mt-2 mb-4" v-if="tc?.data">
-									<Message v-for="(msg) in tc?.data?.content||[]" severity="success" icon="pi pi-check">{{msg?.text}}</Message>
+									<Message v-tooltip="msg?.text" style="word-break: break-all;" v-for="(msg) in tc?.data?.content||[]" severity="success" icon="pi pi-check">
+										{{msg?.text.length>150?(msg?.text?.substr(0,150)+'...'):msg?.text}}
+									</Message>
 								</div>
 								<ProgressBar v-else mode="indeterminate" style="height: 6px"></ProgressBar>
 							
