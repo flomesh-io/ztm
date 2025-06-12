@@ -276,7 +276,7 @@ onActivated(()=>{
 										<div class="flex-item">
 												<div class="flex" v-if="!!item?.bot">
 													<div class="flex-item" >
-														<b>{{t('AI Bot')}}</b>
+														<b>{{t('Agent Bot')}}</b>
 													</div>
 												</div>
 												<div class="flex" v-else-if="!!item?.peer">
