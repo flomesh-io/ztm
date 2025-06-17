@@ -1,10 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
 
-export const setItem = (key, value, callback) => {
+export const setItem = (key, value, callback, max) => {
+	let _value = value;
+	if(!!max && _value.length>max){
+		_value = _value.slice(_value.length-max);
+	}
 	if(!!window.__TAURI_INTERNALS__ ){
-		invoke('set_store_list',{ key, value}).then((res)=> callback());
+		invoke('set_store_list',{ key, value: _value }).then((res)=> callback());
 	} else {
-		localStorage.setItem(key, JSON.stringify(value))
+		localStorage.setItem(key, JSON.stringify(_value))
 		callback()
 	}
 }
@@ -17,7 +21,7 @@ export const getItem = (key, callback) => {
 	}
 }
 
-export const pushItem = (key, value, max, callback) => {
+export const pushItem = (key, value, callback, max) => {
 	getItem(key,(res)=>{
 		let ary = res || [];
 		if(!!max && ary.length>max){
@@ -27,7 +31,7 @@ export const pushItem = (key, value, max, callback) => {
 		setItem(key,ary,callback);
 	});
 }
-export const unshiftItem = (key, value, max, callback) => {
+export const unshiftItem = (key, value, callback, max) => {
 	getItem(key,(res)=>{
 		let ary = res || [];
 		if(!!max && ary.length>max){
@@ -45,3 +49,22 @@ export const deleteItem = (key, index, callback) => {
 		setItem(key,ary,callback);
 	});
 }
+export const STORE_SETTING_LLM = (mesh, id) => {
+	return `llm-${mesh}`+ (!!id?`-${id}`:'');
+}
+export const STORE_SETTING_MCP = (mesh, id) => {
+	return `mcp-${mesh}`+ (!!id?`-${id}`:'');
+}
+export const STORE_BOT_CONTENT = (mesh, id) => {
+	return `bot-content-${mesh}`+ (!!id?`-${id}`:'');
+}
+export const STORE_BOT_REPLAY = (mesh, id) => {
+	return `bot-replay-${mesh}`+ (!!id?`-${id}`:'');
+}
+export const STORE_BOT_HISTORY = (mesh, id) => {
+	return `bot-history-${mesh}`+ (!!id?`-${id}`:'');
+}
+export const STORE_BOT_ROOMS = (mesh) => {
+	return `bot-rooms-${mesh}`;
+}
+
