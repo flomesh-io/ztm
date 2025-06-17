@@ -97,6 +97,9 @@ export default class BotService {
 	async callRunnerBySDK({message, llm, mcps, callback}) {
 		const mesh = this.getMesh();
 		let tools = [];
+		let allmessages = store.getters['mcp/historyContext'] || [];
+
+		const sysmessages = [];
 		const usermessages = [
 			{
 				"role":"user",
@@ -106,10 +109,6 @@ export default class BotService {
 		if(!!mcps && mcps.length>0){
 			// get tools param
 			const allClients = store.getters['mcp/clients'];
-			
-			let allmessages = [];
-			const sysmessages = [];
-			
 			allClients.forEach((client,idx)=>{
 				let _tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
 				_tools.forEach((tool)=>{
@@ -118,11 +117,13 @@ export default class BotService {
 				tools = tools.concat(_tools);
 				sysmessages.push({"role": "system", "content": this.makePrompt("system")})
 			});
-			allmessages = sysmessages.concat(usermessages);
+			allmessages = allmessages.concat(usermessages);
 			let tool_calls = [];
 			let toolReqs = [];
 			// get tool_calls with llm
-			const resp = await this.chatLLM(allmessages, tools, llm, (res,ending)=> {
+			
+			store.commit('mcp/setHistoryContext', allmessages);
+			const resp = await this.chatLLM(sysmessages.concat(allmessages), tools, llm, (res,ending)=> {
 				const finish_reason = res.choices[0]?.finish_reason;
 				const msg = res.choices[0]?.delta || res.choices[0]?.message;
 				
@@ -156,7 +157,8 @@ export default class BotService {
 							
 							toolReqs = [];
 							
-							this.chatLLM(allmessages, tools, llm, callback);
+							store.commit('mcp/setHistoryContext', allmessages);
+							this.chatLLM(sysmessages.concat(allmessages), tools, llm, callback);
 						});
 					} else {
 						
@@ -211,7 +213,9 @@ export default class BotService {
 				} 
 			});
 		} else {
-			this.chatLLM(usermessages,null, llm, callback);
+			allmessages = allmessages.concat(usermessages);
+			store.commit('mcp/setHistoryContext', allmessages);
+			this.chatLLM(allmessages,null, llm, callback);
 		}
 	}
 	replayToolcalls(replay_tool_calls) {

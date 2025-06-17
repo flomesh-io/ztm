@@ -1,7 +1,7 @@
 import { send } from "@/utils/notification";
 import BotService from '@/service/BotService';
 const botService = new BotService();
-
+const MAX_CONTENT = 10;
 export default {
   namespaced: true,
   state: {
@@ -10,6 +10,7 @@ export default {
 		logs:{},
 		listTools:[],
 		messages:[],
+		historyContext:[],
 		latest:'',
 		notice: true,
   },
@@ -22,6 +23,9 @@ export default {
     },
     messages: (state) => {
       return state.messages;
+    },
+    historyContext: (state) => {
+      return state.historyContext;
     },
     clients: (state) => {
       return state.clients;
@@ -56,6 +60,13 @@ export default {
 							if(!!ending) {
 								const latest = delta.split('\n').slice(-1)[0];
 								commit('setLatest', latest);
+								const _content = getters['historyContext'] || [];
+								_content.push({
+									'content': delta, 
+									'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
+									'role': 'assistant', 
+								})
+								commit('setHistoryContext', _content);
 								delta = '';
 								const notice = getters['notice'];
 								if(notice){
@@ -88,6 +99,14 @@ export default {
     },
     setMessages(state, messages) {
       state.messages = messages;
+    },
+    setHistoryContext(state, historyContext) {
+			const _historyContext = historyContext || [];
+			if(historyContext.length>MAX_CONTENT){
+				state.historyContext = historyContext.slice(historyContext.length-MAX_CONTENT);
+			} else {
+				state.historyContext = historyContext;
+			}
     },
     pushMessage(state, message) {
       state.messages.push(message);
