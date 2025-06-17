@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import { useStore } from 'vuex';
-import { getItem, setItem, pushItem, deleteItem } from "@/utils/localStore";
+import { getItem, setItem, pushItem, deleteItem,STORE_BOT_REPLAY } from "@/utils/localStore";
 import confirm from "@/utils/confirm";
 import { getKeywordIcon } from '@/utils/file';
 import { dayjs, extend } from '@/utils/dayjs';
@@ -11,7 +11,7 @@ const { t, locale } = useI18n();
 extend(locale.value)
 const store = useStore();
 const props = defineProps(['room']);
-const emits = defineEmits(['back','ep','clear']);
+const emits = defineEmits(['back','ep','clear','update:room']);
 const windowWidth = ref(window.innerWidth);
 const isMobile = computed(() => windowWidth.value<=768);
 const windowHeight = ref(window.innerHeight);
@@ -35,7 +35,7 @@ const timeago = computed(() => (ts) => {
 })
 
 const loaddata = () => {
-	getItem(`bot-replay-${selectedMesh.value?.name}`,(res)=>{
+	getItem(STORE_BOT_REPLAY(selectedMesh.value?.name,props?.room?.id),(res)=>{
 		replays.value = res || {};
 		replays.value.forEach((r)=>{
 			r.loading = false;
@@ -48,10 +48,10 @@ const clear = () => {
 		header: 'Tip',
 		icon: 'pi pi-info-circle',
 		accept: () => {
-			setItem(`bot-replay-${selectedMesh.value?.name}`,[],(res)=>{
+			setItem(STORE_BOT_REPLAY(selectedMesh.value?.name,props?.room?.id),[],(res)=>{
 				loaddata();
 			});
-			setItem(`bot-history-${selectedMesh.value?.name}`,[],(res)=>{
+			setItem(STORE_BOT_HISTORY(selectedMesh.value?.name,props?.room?.id),[],(res)=>{
 				emits('clear')
 			});
 		},
@@ -60,7 +60,7 @@ const clear = () => {
 	});
 }
 const delReplay = (index) => {
-	deleteItem(`bot-replay-${selectedMesh.value?.name}`,index,()=>{
+	deleteItem(STORE_BOT_REPLAY(selectedMesh.value?.name,props?.room?.id),index,()=>{
 		loaddata();
 	})
 }

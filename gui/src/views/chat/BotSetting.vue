@@ -8,13 +8,14 @@ import { openFolder, getKeywordIcon } from '@/utils/file';
 import { isPC } from '@/utils/platform';
 import llmSvg from "@/assets/img/llm/deepseek.png";
 import { useI18n } from 'vue-i18n';
-import { getItem, setItem } from "@/utils/localStore";
+import { getItem, setItem, STORE_SETTING_LLM, STORE_SETTING_MCP } from "@/utils/localStore";
 const { t, locale } = useI18n();
 const store = useStore();
 const botService = new BotService();
 const mcpService = new MCPService();
 
-const emits = defineEmits(['back','history','saved']);
+const props = defineProps(['room']);
+const emits = defineEmits(['back','history','saved','update:room']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -32,11 +33,6 @@ const llmName = ref('');
 const history = () => {
 	emits('history');
 }
-const openBox = () => {
-	const mesh = selectedMesh.value?.name;
-	const base = props.llm?.name;
-	openFolder(`ztmChat/${mesh}/${base}`)
-}
 
 const mcp = ref(null);
 const llm = ref(null);
@@ -45,13 +41,13 @@ const matchLLM = computed(()=>{
 	return llms.value.find((l) => l.name == llm.value)
 })
 const loadllm = () => {
-	botService.checkLLM((res) => {
+	botService.checkLLM(props?.room?.id,(res) => {
 		llm.value = res?.name
 	});
 }
 const localMcps = ref([]);
 const loadLocalMcp = () => {
-	getItem(`mcp-${selectedMesh.value?.name}`,(res)=>{
+	getItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id),(res)=>{
 		localMcps.value = res || [];
 	});
 }
@@ -75,7 +71,7 @@ const addMcp = () => {
 			}
 		}).then(()=>{
 			localMcps.value.push({...mcp.value, enabled: false});
-			setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
+			setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{})
 			setTimeout(()=>{
 				mcp.value = null;
 				adding.value = false;
@@ -85,7 +81,7 @@ const addMcp = () => {
 		})
 	} else {
 		localMcps.value.push({...mcp.value, enabled: false});
-		setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{})
+		setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{})
 		setTimeout(()=>{
 			mcp.value = null;
 			adding.value = false;
@@ -108,8 +104,8 @@ const save = () => {
 	saving.value = true;
 	const path = `${matchLLM.value?.kind}/${llm.value}`;
 	
-	setItem(`llm-${selectedMesh.value?.name}`, [matchLLM.value], ()=>{})
-	setItem(`mcp-${selectedMesh.value?.name}`, localMcps.value, ()=>{});
+	setItem(STORE_SETTING_LLM(selectedMesh.value?.name,props?.room?.id), [matchLLM.value], ()=>{})
+	setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{});
 	const mcps = localMcps.value.filter((n)=> n.enabled);
 	
 	if(!matchLLM.value.localRoutes?.length){

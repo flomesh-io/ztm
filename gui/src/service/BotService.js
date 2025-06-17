@@ -1,7 +1,7 @@
 import { mock, request, getBaseUrl, getUrl,merge,fetchAsStream } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
-import { getItem, setItem, unshiftItem } from "@/utils/localStore";
+import { getItem, setItem, unshiftItem, STORE_SETTING_LLM, STORE_BOT_CONTENT, STORE_BOT_REPLAY } from "@/utils/localStore";
 import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
@@ -48,15 +48,15 @@ export default class BotService {
 	deleteRoute({ep, path}) {
 		return this.llmRequest(`/api/endpoints/${ep}/routes/${path.charAt(0)=='/'?path.substr(1):path}`,"DELETE",);
 	}
-	checkLLM(callback) {
+	checkLLM(roomId, callback) {
 		const mesh = this.getMesh();
-		getItem(`llm-${mesh?.name}`, (res)=>{
+		getItem(STORE_SETTING_LLM(mesh?.name, roomId), (res)=>{
 			const llm = res && res[0] ? res[0] : null;
 			if(!llm){
 				this.getServices().then((llmRes)=>{
 					const llms = llmRes?.services || [];
 					if(llms && llms[0]){
-						setItem(`llm-${mesh?.name}`, [llms[0]], (res)=>{});
+						setItem(STORE_SETTING_LLM(mesh?.name, roomId), [llms[0]], (res)=>{});
 						this.createRoute({
 							ep: mesh?.agent?.id,
 							path: `${llms[0].kind}/${llms[0].name}`,
@@ -94,19 +94,16 @@ export default class BotService {
 		}
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
-	async callRunnerBySDK({message, llm, mcps, callback}) {
+	async callRunnerBySDK({roomId, historyContext, message, llm, mcps, callback}) {
 		const mesh = this.getMesh();
 		let tools = [];
-		let allmessages = store.getters['mcp/historyContext'] || [];
-
-		const sysmessages = [];
-		const usermessages = [
-			{
+		const usermessages = [{
 				"role":"user",
 				"content":this.makePrompt("user",message?.text)
-			}
-		]
+		}]
+		const allmessages = (historyContext || []).concat(usermessages);
 		if(!!mcps && mcps.length>0){
+			const sysmessages = [];
 			// get tools param
 			const allClients = store.getters['mcp/clients'];
 			allClients.forEach((client,idx)=>{
@@ -117,13 +114,11 @@ export default class BotService {
 				tools = tools.concat(_tools);
 				sysmessages.push({"role": "system", "content": this.makePrompt("system")})
 			});
-			allmessages = allmessages.concat(usermessages);
+			
 			let tool_calls = [];
 			let toolReqs = [];
 			// get tool_calls with llm
-			
-			store.commit('mcp/setHistoryContext', allmessages);
-			const resp = await this.chatLLM(sysmessages.concat(allmessages), tools, llm, (res,ending)=> {
+			const resp = await this.chatLLM(roomId, sysmessages, allmessages, tools, llm, (res,ending)=> {
 				const finish_reason = res.choices[0]?.finish_reason;
 				const msg = res.choices[0]?.delta || res.choices[0]?.message;
 				
@@ -149,16 +144,14 @@ export default class BotService {
 								}
 							});
 							
-							unshiftItem(`bot-replay-${mesh?.name}`,{
+							unshiftItem(STORE_BOT_REPLAY(mesh?.name, roomId),{
 								message: message?.text,
 								toolcalls: allToolsResult,
 								date: new Date().getTime(),
-							}, 10 ,(res)=>{});
+							},(res)=>{}, 10);
 							
 							toolReqs = [];
-							
-							store.commit('mcp/setHistoryContext', allmessages);
-							this.chatLLM(sysmessages.concat(allmessages), tools, llm, callback);
+							this.chatLLM(roomId, sysmessages, allmessages, tools, llm, callback);
 						});
 					} else {
 						
@@ -213,9 +206,7 @@ export default class BotService {
 				} 
 			});
 		} else {
-			allmessages = allmessages.concat(usermessages);
-			store.commit('mcp/setHistoryContext', allmessages);
-			this.chatLLM(allmessages,null, llm, callback);
+			this.chatLLM(roomId, [], allmessages,null, llm, callback);
 		}
 	}
 	replayToolcalls(replay_tool_calls) {
@@ -260,18 +251,22 @@ export default class BotService {
 		});
 		return llmTools;
 	}
-	chatLLM(messages, tools, llm, callback) {
-		let body = { messages };
+	chatLLM(roomId, sysmessages, messages, tools, llm, callback) {
+		const mesh = this.getMesh();
+		let body = { messages: (sysmessages||[]).concat(messages)  };
 		if(tools && tools.length>0){
 			body.tools = this.makeLLMToolsFormat(tools);
 		}
 		let url = this.getSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`);
 		writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] request llm ${url} by ${JSON.stringify(body)}\n`);
-		const stream = fetchAsStream();
-		stream.post(
-			url, 
-			body,
-			callback
-		)
+		
+		setItem(STORE_BOT_CONTENT(mesh?.name, roomId), messages, ()=> {
+			const stream = fetchAsStream();
+			stream.post(
+				url, 
+				body,
+				callback
+			)
+		},10)
 	}
 }

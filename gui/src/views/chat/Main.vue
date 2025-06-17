@@ -28,24 +28,44 @@ const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
 
-const mcpLatest = computed(() => {
-	return store.getters["mcp/latest"]
-});
-const aiRooms = [
-	{
-		id: 'gpt',
-		name: 'Chat GPT',
-		isAi: true,
-		latest:{
-			type: "text",
-			content:'Welcome ztm.',
-			time: Date.now()
+const currentDate = Date.now();
+const aiRooms = computed(() => {
+	const rtn = [];
+	(store.getters["mcp/rooms"] || []).filter((n)=>n.mesh == selectedMesh.value?.name).forEach((r,index)=>{
+		rtn.push({
+			...a,
+			index,
+			bot: true,
+		})
+	});
+	if(rtn.length == 0){
+		const demoAgent = {
+			id: 'default',
+			name: t('Agent Bot'),
+			latest:{
+				message:{
+					text: t('My MCP Assistant.'),
+				},
+				time: currentDate
+			}
 		}
+		store.commit('mcp/setRooms',{
+			store: true,
+			mesh:	selectedMesh.value?.name,
+			rooms: [demoAgent]
+		});
+		rtn.push({
+			index: 0,
+			bot: true,
+			...demoAgent
+		});
 	}
-];
+	
+	return rtn;
+});
 const rooms = computed(() => store.getters["notice/rooms"]);
 const uniRooms = computed(() => {
-	let rtn = _.cloneDeep(rooms.value);
+	let rtn = _.cloneDeep((rooms.value||[]).concat(aiRooms.value));
 	let index = rtn.findIndex(item => item.peer == selectedMesh.value?.agent?.username);
 	if (index != -1) {
 	  let node = rtn.splice(index, 1)[0];
@@ -57,20 +77,11 @@ const uniRooms = computed(() => {
 				message:{
 					text:t('My Room.'),
 				},
-				time: Date.now()
+				time: currentDate
 			}
 		})
 	}
-	rtn.unshift({
-		bot: true,
-		latest:{
-			message:{
-				text: mcpLatest.value || t('My MCP Assistant.'),
-			},
-			time: Date.now()
-		}
-	})
-	return rtn;
+	return rtn.sort((a,b)=>a?.latest?.time - b?.latest?.time);
 });
 const unread = computed(() => {
 	return store.getters["notice/unread"];
@@ -221,6 +232,9 @@ watch(()=>selectedMesh,()=>{
 onActivated(()=>{
 	load();
 })
+onMounted(()=>{
+	store.dispatch('mcp/initRooms', selectedMesh.value?.name);
+})
 
 </script>
 
@@ -274,12 +288,7 @@ onActivated(()=>{
 											<UserAvatar v-else :username="item?.peer" />
 										</div>
 										<div class="flex-item">
-												<div class="flex" v-if="!!item?.bot">
-													<div class="flex-item" >
-														<b>{{t('Agent Bot')}}</b>
-													</div>
-												</div>
-												<div class="flex" v-else-if="!!item?.peer">
+												<div class="flex" v-if="!!item?.peer">
 													<div class="flex-item" >
 														<b>{{item?.peer}}</b>
 													</div>
@@ -335,12 +344,12 @@ onActivated(()=>{
 		</div>
 		<div v-else-if="botHistory" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotHistory ref="botHistoryRef" @clear="botClear" @back="backmanage" />
+				<BotHistory v-model:room="selectRoom" ref="botHistoryRef" @clear="botClear" @back="backmanage" />
 			</div>
 		</div>
 		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotSetting @clear="botClear" @saved="changeBot" @back="backmanage" />
+				<BotSetting v-model:room="selectRoom" @clear="botClear" @saved="changeBot" @back="backmanage" />
 			</div>
 		</div>
 	</div>

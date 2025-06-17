@@ -7,7 +7,7 @@ import MCPService from '@/service/MCPService';
 import userSvg from "@/assets/img/user.png";
 import botSvg from "@/assets/img/bot.svg";
 import { platform } from '@/utils/platform';
-import { getItem, setItem, pushItem } from "@/utils/localStore";
+import { getItem, setItem, pushItem, STORE_SETTING_MCP,STORE_BOT_HISTORY } from "@/utils/localStore";
 import _ from 'lodash';
 import 'deep-chat';
 import { useStore } from 'vuex';
@@ -22,7 +22,8 @@ const loading = ref(true);
 const store = useStore();
 const botService = new BotService();
 const mcpService = new MCPService();
-const emits = defineEmits(['back','peer','manager','history','notify']);
+const props = defineProps(['room']);
+const emits = defineEmits(['back','peer','manager','history','notify','update:room']);
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
@@ -52,7 +53,7 @@ const msgHtml = (msg) => {
 	return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`;
 }
 const getHistory = () => {
-	getItem(`bot-history-${selectedMesh.value?.name}`,(res)=>{
+	getItem(STORE_BOT_HISTORY(selectedMesh.value?.name,props?.room?.id),(res)=>{
 		history.value = !!res && res.length>0 ? res : [{html:msgHtml('有什么可以帮助您？'), role:'ai'}];
 	});
 }
@@ -63,7 +64,7 @@ const setHistory = (msg) => {
 	if(newHis.length>50){
 		newHis.splice(0,newHis.length-50);
 	}
-	setItem(`bot-history-${selectedMesh.value?.name}`,newHis,(res)=>{});
+	setItem(STORE_BOT_HISTORY(selectedMesh.value?.name,props?.room?.id),newHis,(res)=>{});
 }
 
 const init = ref(false);
@@ -192,6 +193,8 @@ const postMessage = (message) => {
 		loading.value = true;
 		setHistory(message);
 		store.dispatch('mcp/worker', {
+			roomId: props?.room?.id,
+			mesh: selectedMesh.value?.name,
 			message,
 			llm: llm.value, 
 			mcps: mcps.value,
@@ -392,7 +395,7 @@ const openPeer = () => {
 }
 
 const loadllm = (callback) => {
-	botService.checkLLM((res) => {
+	botService.checkLLM(props?.room?.id,(res) => {
 		llm.value = res;
 		if(callback){
 			callback();
@@ -436,7 +439,7 @@ const connectMcps = () => {
 }
 
 const loadLocalMcp = () => {
-	getItem(`mcp-${selectedMesh.value?.name}`,(res)=>{
+	getItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id),(res)=>{
 		mcps.value = (res || []).filter((n)=> n.enabled == true);
 		connectMcps();
 	});
@@ -468,7 +471,7 @@ defineExpose({
 	<AppHeader :back="back">
 	    <template #center >
 				<Status :run="true" />
-	      <b>{{t('Agent Bot')}} ({{llm?.name}})</b>
+	      <b>{{props?.room?.name}} ({{llm?.name}})</b>
 	    </template>
 	    <template #end> 
 				<Button icon="pi pi-history" @click="gohistory" severity="secondary" text />
