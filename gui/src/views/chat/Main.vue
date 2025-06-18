@@ -8,7 +8,7 @@ import BotHistory from './BotHistory.vue'
 import BotSetting from './BotSetting.vue'
 import History from './History.vue'
 import { dayjs, extend } from '@/utils/dayjs';
-import { useRouter } from 'vue-router'
+import { useRouter,useRoute } from 'vue-router'
 import ChatService from '@/service/ChatService';
 import ZtmService from '@/service/ZtmService';
 import { platform } from '@/utils/platform';
@@ -22,6 +22,7 @@ const props = defineProps(['app']);
 const emits = defineEmits(['close'])
 const store = useStore();
 const router = useRouter();
+const route = useRoute();
 const chatService = new ChatService();
 const ztmService = new ZtmService();
 const selectedMesh = computed(() => {
@@ -145,7 +146,9 @@ const newChat = () => {
 	}
 	
 	selectRoom.value = null;
-	resize(1280,860,false);
+	if(!route.query?.user){
+		resize(1280,860,false);
+	}
 	if(!firstOpen.value){
 		position(30,30)
 		firstOpen.value = true;
@@ -156,7 +159,9 @@ const newChat = () => {
 }
 const openChat = (item) => {
 	selectRoom.value = null;
-	resize(1280,860,false);
+	if(!route.query?.user){
+		resize(1280,860,false);
+	}
 	if(!firstOpen.value){
 		position(30,30)
 		firstOpen.value = true;
@@ -178,7 +183,7 @@ const cnt = () => {
 	return rtn;
 }
 const back = () => {
-	if(platform() == 'web' || !platform()){
+	if(platform() == 'web' || !platform() || !!route.query?.user){
 		router.go(-1)
 	} else {
 		emits('close');
@@ -188,11 +193,15 @@ const manager = ref(false);
 const history = ref(false);
 const botHistory = ref(false);
 const backList = () => {
-	selectRoom.value = false;
-	history.value = false;
-	botHistory.value = false;
-	manager.value = false;
-	resize(330,860,false);
+	if(!!route.query?.user){
+		router.go(-1)
+	} else {
+		selectRoom.value = false;
+		history.value = false;
+		botHistory.value = false;
+		manager.value = false;
+		resize(330,860,false);
+	}
 }
 const backmanage = () => {
 	botHistory.value = false;
@@ -233,6 +242,10 @@ onActivated(()=>{
 	load();
 })
 onMounted(()=>{
+	if(!!route.query?.user){
+		selectedNewChatUsers.value[route.query.user] = true;
+		newChat();
+	}
 	store.dispatch('mcp/initRooms', selectedMesh.value?.name);
 })
 
@@ -240,7 +253,7 @@ onMounted(()=>{
 
 <template>
 	<div class="flex flex-row min-h-screen surface-ground">
-		<div class="relative h-full min-h-screen" :class="{'w-22rem':!!selectRoom,'w-full':!selectRoom,'mobile-hidden':!!selectRoom}">
+		<div v-if="!route.query?.user" class="relative h-full min-h-screen" :class="{'w-22rem':!!selectRoom,'w-full':!selectRoom,'mobile-hidden':!!selectRoom}">
 				
 			<AppHeader>
 					<template #start>

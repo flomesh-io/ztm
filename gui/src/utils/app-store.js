@@ -4,7 +4,7 @@ import rdp from "@/assets/img/apps/rdp.png";
 import terminal from "@/assets/img/apps/terminal.png";
 import scriptIcon from "@/assets/img/apps/script.png";
 import chatIcon from "@/assets/img/apps/chat.png";
-import usersIcon from "@/assets/img/apps/users.png";
+import usersIcon from "@/assets/img/apps/contact.png";
 import tunnel from "@/assets/img/apps/tunnel.png";
 import meshIcon from "@/assets/img/apps/mesh.png";
 import epIcon from "@/assets/img/apps/ep2.png";
@@ -32,7 +32,7 @@ const defaultApp = [{
 		name: "Endpoints",
 		label: "Endpoints",
 		url:'/#/mesh/endpoints',
-		width:1280,
+		width:860,
 		height:860,
 		icon: epIcon,
 	},{
@@ -74,7 +74,7 @@ const mobileApp = [{
 		name: "EPLog",
 		label: "EP Log",
 		url:'/#/mesh/log',
-		width:1280,
+		width:860,
 		height:860,
 		icon: eplog,
 	},{
@@ -124,8 +124,8 @@ const appMapping = {
 	"ztm/users": {
 		icon: usersIcon,
 		url:'/#/mesh/endpoints',
-		name: "Users",
-		width:1280,
+		name: "Contact",
+		width:860,
 		height:860,
 	},
 	"ztm/chat": {
