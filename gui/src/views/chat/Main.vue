@@ -287,16 +287,17 @@ onMounted(()=>{
 			<AppHeader>
 					<template #start>
 						<Button @click="back" icon="pi pi-angle-left" severity="secondary" text />
+						<Button style="opacity: 0;max-width: 34px;" icon="pi pi-angle-left" severity="secondary" text />
 					</template>
 					<template #center>
 						<b>{{t('Messages')}} <span v-if="cnt>0">({{cnt}})</span></b>
 					</template>
 					<template #end> 
-						<Button text v-tooltip.left="t('New Chat')" icon="iconfont icon-add-chat"  @click="()=> {visibleUserSelector = true}" />
-						<Button text v-tooltip.left="t('New Bot')" icon="iconfont icon-add-bot"  @click="()=> {visibleBotSelector = true}" />
+						<Button style="max-width: 42px;" text v-tooltip.left="t('New Chat')" icon="iconfont icon-add-chat"  @click="()=> {visibleUserSelector = true}" />
+						<Button style="max-width: 42px;" text v-tooltip.left="t('New Bot')" icon="iconfont icon-add-bot"  @click="()=> {visibleBotSelector = true}" />
 					</template>
 			</AppHeader>
-			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal  :style="{ width: '25rem' }">
+			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal  :style="{ width: '25rem',minHeight:'300px' }">
 					
 					<AppHeader :back="() => visibleUserSelector = false" :main="false">
 							<template #center>
@@ -316,7 +317,7 @@ onMounted(()=>{
 						:user="selectedMesh?.agent?.username" 
 						v-model="selectedNewChatUsers" />
 			</Dialog>
-			<Dialog class="noheader" v-model:visible="visibleBotSelector" modal :style="{ width: '25rem' }">
+			<Dialog class="noheader" v-model:visible="visibleBotSelector" modal :style="{ width: '25rem',minHeight:'300px'  }">
 					
 					<AppHeader :back="() => visibleBotSelector = false" :main="false">
 							<template #center>
