@@ -127,6 +127,7 @@ import UserAvatar from '@/components/common/Avatar.vue';
 import Ep from '@/components/common/Ep.vue';
 import EpSelector from '@/components/common/EpSelector.vue';
 import UserSelector from '@/components/common/UserSelector.vue';
+import BotSelector from '@/components/common/BotSelector.vue';
 import FloatLabel from 'primevue/floatlabel';
 import TagInput from '@/components/common/TagInput.vue';
 
@@ -265,5 +266,6 @@ export function useComponent(app){
 	app.component('Ep', Ep);
 	app.component('EpSelector', EpSelector);
 	app.component('UserSelector', UserSelector);
+	app.component('BotSelector', BotSelector);
 	app.component('TagInput', TagInput);
 }

@@ -8,15 +8,21 @@ import {
 	pushItem, 
 	STORE_SETTING_LLM, 
 	STORE_BOT_CONTENT, 
-	STORE_BOT_ROOMS ,
+	STORE_BOT_ROOMS,
+	STORE_BOT_AGENTS,
 } from "@/utils/localStore";
 const botService = new BotService();
 const MAX_CONTENT = 10;
+const DEFAULT_BOT = {
+	id: 'default',
+	name: 'Agent Bot'
+}
 export default {
   namespaced: true,
   state: {
 		running:false,
 		rooms:[],
+		bots:[],
 		clients:[],
 		logs:{},
 		listTools:[],
@@ -24,6 +30,9 @@ export default {
 		notice: true,
   },
   getters: {
+    bots: (state) => {
+      return state.bots;
+    },
     rooms: (state) => {
       return state.rooms;
     },
@@ -47,9 +56,40 @@ export default {
     },
   },
 	actions: {
-		initRooms({ commit, getters }, mesh) {
-			getItem(STORE_BOT_ROOMS(mesh), (rooms)=>{
-				commit('setRooms', { rooms:rooms || [] });
+		initAgents({ commit, getters }, mesh) {
+			const currentDate = Date.now();
+			getItem(STORE_BOT_ROOMS(mesh), (res)=>{
+				const rooms = res||[];
+				if(rooms.length == 0){
+					commit('setRooms',{
+						store: true,
+						mesh,
+						rooms: [{
+							...DEFAULT_BOT,
+							latest:{
+								message:{
+									text: 'My MCP Assistant.',
+								},
+								time: currentDate
+							}
+						}]
+					});
+				} else {
+					commit('setRooms', { rooms });
+				}
+			});
+			
+			getItem(STORE_BOT_AGENTS(mesh), (res)=>{
+				const bots = res||[];
+				if(bots.length == 0){
+					commit('setBots',{
+						store: true,
+						mesh,
+						bots: [DEFAULT_BOT]
+					});
+				} else {
+					commit('setBots', { bots });
+				}
 			});
 		},
 		worker({ commit, getters }, data) {
@@ -121,13 +161,39 @@ export default {
 	},
   mutations: {
 		
-		addRoom(state, room) {
-		  state.rooms.unshift(room);
-			unshiftItem(STORE_BOT_ROOMS(room?.mesh), room, ()=>{});
+		addBot(state, d) {
+		  state.bots.unshift(d?.bot);
+			unshiftItem(STORE_BOT_AGENTS(d?.mesh), d?.bot, ()=>{});
 		},
-		deleteRoom(state, room) {
-		  state.rooms.splice(room?.index,1);
-			deleteItem(STORE_BOT_ROOMS(room?.mesh), room?.index, ()=>{});
+		deleteBot(state, d) {
+			const remIdx = state.bots.findIndex((b)=>b.id == d?.bot);
+			if(remIdx>=0){
+				state.bots.splice(remIdx,1);
+				deleteItem(STORE_BOT_AGENTS(d?.mesh), remIdx, ()=>{});
+			}
+			
+			const remRoomIdx = state.rooms.findIndex((b)=>b.id == d?.bot);
+			if(remRoomIdx>=0){
+				state.rooms.splice(remRoomIdx,1);
+				deleteItem(STORE_BOT_ROOMS(d?.mesh), remRoomIdx, ()=>{});
+			}
+		},
+		setBots(state, d) {
+		  state.bots = d?.bots;
+			if(d?.store){
+				setItem(STORE_BOT_AGENTS(d?.mesh), d?.bots, ()=>{});
+			}
+		},
+		addRoom(state, d) {
+		  state.rooms.unshift(d?.room);
+			unshiftItem(STORE_BOT_ROOMS(d?.mesh), d?.room, ()=>{});
+		},
+		deleteRoom(state, d) {
+			const remRoomIdx = state.rooms.findIndex((b)=>b.id == d?.bot);
+			if(remRoomIdx>=0){
+				state.rooms.splice(remRoomIdx,1);
+				deleteItem(STORE_BOT_ROOMS(d?.mesh), remRoomIdx, ()=>{});
+			}
 		},
     setRooms(state, d) {
       state.rooms = d?.rooms;

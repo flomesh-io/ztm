@@ -67,4 +67,7 @@ export const STORE_BOT_HISTORY = (mesh, id) => {
 export const STORE_BOT_ROOMS = (mesh) => {
 	return `bot-rooms-${mesh}`;
 }
+export const STORE_BOT_AGENTS = (mesh) => {
+	return `bot-agents-${mesh}`;
+}
 
