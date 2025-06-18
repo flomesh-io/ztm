@@ -29,39 +29,15 @@ const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
 
-const currentDate = Date.now();
 const aiRooms = computed(() => {
 	const rtn = [];
-	(store.getters["mcp/rooms"] || []).filter((n)=>n.mesh == selectedMesh.value?.name).forEach((r,index)=>{
+	(store.getters["mcp/rooms"] || []).forEach((r,index)=>{
 		rtn.push({
-			...a,
+			...r,
 			index,
 			bot: true,
 		})
 	});
-	if(rtn.length == 0){
-		const demoAgent = {
-			id: 'default',
-			name: t('Agent Bot'),
-			latest:{
-				message:{
-					text: t('My MCP Assistant.'),
-				},
-				time: currentDate
-			}
-		}
-		store.commit('mcp/setRooms',{
-			store: true,
-			mesh:	selectedMesh.value?.name,
-			rooms: [demoAgent]
-		});
-		rtn.push({
-			index: 0,
-			bot: true,
-			...demoAgent
-		});
-	}
-	
 	return rtn;
 });
 const rooms = computed(() => store.getters["notice/rooms"]);
@@ -78,7 +54,7 @@ const uniRooms = computed(() => {
 				message:{
 					text:t('My Room.'),
 				},
-				time: currentDate
+				time: Date.now()
 			}
 		})
 	}
@@ -142,6 +118,59 @@ const newChat = () => {
 			_room = {
 				peer: users[0]
 			}
+		}
+	}
+	
+	selectRoom.value = null;
+	if(!route.query?.user){
+		resize(1280,860,false);
+	}
+	if(!firstOpen.value){
+		position(30,30)
+		firstOpen.value = true;
+	}
+	setTimeout(()=>{
+		selectRoom.value = _room;
+	},100)
+}
+
+const visibleBotSelector = ref(false);
+const selectedNewBots = ref({});
+
+const bots = computed(() => store.getters["mcp/bots"]);
+const deleteRoom = (bot) => {
+	store.commit('mcp/deleteRoom', {
+		mesh: selectedMesh.value?.name,
+		bot
+	})
+	selectRoom.value = null;
+}
+const newBotRoom = () => {
+	const _bots = Object.keys(selectedNewBots.value);
+	let _room = null;
+	if(!!_bots && _bots.length > 1){
+		//todo
+	} else {
+		selectedNewBots.value = {};
+		visibleBotSelector.value = false;
+		const findroom = aiRooms.value.find(room => room.id == _bots[0]);
+		if(findroom){
+			_room = findroom;
+		}else{
+			const _bot = bots.value.find((b)=>b.id == _bots[0])
+			_room = {
+				..._bot,
+				latest:{
+					message:{
+						text: `${_bot?.name} Assistant.`,
+					},
+					time: Date.now()
+				}
+			}
+			store.commit('mcp/addRoom', {
+				mesh: selectedMesh.value?.name,
+				room: _room
+			})
 		}
 	}
 	
@@ -246,7 +275,7 @@ onMounted(()=>{
 		selectedNewChatUsers.value[route.query.user] = true;
 		newChat();
 	}
-	store.dispatch('mcp/initRooms', selectedMesh.value?.name);
+	store.dispatch('mcp/initAgents', selectedMesh.value?.name);
 })
 
 </script>
@@ -263,10 +292,11 @@ onMounted(()=>{
 						<b>{{t('Messages')}} <span v-if="cnt>0">({{cnt}})</span></b>
 					</template>
 					<template #end> 
-						<Button text v-tooltip="t('New Chat')" icon="pi pi-plus"  @click="()=> {visibleUserSelector = true}" />
+						<Button text v-tooltip.left="t('New Chat')" icon="iconfont icon-add-chat"  @click="()=> {visibleUserSelector = true}" />
+						<Button text v-tooltip.left="t('New Bot')" icon="iconfont icon-add-bot"  @click="()=> {visibleBotSelector = true}" />
 					</template>
 			</AppHeader>
-			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal header="New chat" :style="{ width: '25rem' }">
+			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal  :style="{ width: '25rem' }">
 					
 					<AppHeader :back="() => visibleUserSelector = false" :main="false">
 							<template #center>
@@ -285,6 +315,24 @@ onMounted(()=>{
 						multiple="tree" 
 						:user="selectedMesh?.agent?.username" 
 						v-model="selectedNewChatUsers" />
+			</Dialog>
+			<Dialog class="noheader" v-model:visible="visibleBotSelector" modal :style="{ width: '25rem' }">
+					
+					<AppHeader :back="() => visibleBotSelector = false" :main="false">
+							<template #center>
+								<b>{{t('Bots')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewBots).length>0" :value="Object.keys(selectedNewBots).length"/></b>
+							</template>
+					
+							<template #end> 
+								<Button icon="pi pi-check" @click="newBotRoom" :disabled="Object.keys(selectedNewBots).length!=1"/>
+							</template>
+					</AppHeader>
+					<BotSelector
+						size="small"
+						class="w-full"
+						:mesh="selectedMesh?.name"
+						multiple="tree" 
+						v-model="selectedNewBots" />
 			</Dialog>
 			
 			<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top': (isMobile && !selectRoom?'50px':'35px')}" >
@@ -307,10 +355,12 @@ onMounted(()=>{
 													</div>
 													<Status :run="true" style="top: 7px;margin-right: 0;right: -10px;"/>
 												</div>
-												<div class="flex" v-else>
+												<div class="flex relative" v-else>
 													<div class="flex-item" >
 														<b>{{item.name}}</b>
 													</div>
+													<Button class="absolute pointer" style="right:-12px;top: -12px;opacity: 0.6;" v-if="item.id != 'default'" severity="secondary" text size="small" icon="pi pi-times" v-tooltip.right="t('Remove Room')" @click.stop="deleteRoom(item.id)" />
+													
 												</div>
 												<div class="flex mt-1">
 													<div class="flex-item" >
