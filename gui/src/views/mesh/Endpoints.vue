@@ -182,7 +182,9 @@ const removeGroupUser = (group,user) => {
 		}
 	})
 }
-
+const chatUser = (n) => {
+	router.push(`/mesh/chat?user=${n}`)
+}
 const visibleUserSelector = ref(false);
 const selectedUsers = ref({});
 const usersTree = computed(()=>{
@@ -349,10 +351,13 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 														<ChipList @change="changeLabels(user.endpoints?.instances[0])" class="ml-2 relative" style="top: 4px;" :readonly="user.endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="user.endpoints.instances[0].labels"/>
 													</div>
 													<div class="flex" v-if="!selectEp">
+														
 														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↑{{bitUnit(stats[user.endpoints?.instances[0].id]?.send)}}</span>
 														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↓{{bitUnit(stats[user.endpoints?.instances[0].id]?.receive)}}</span>
 														<Status :run="user.endpoints?.instances[0]?.online" :tip="timeago(user.endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
-														<Button severity="secondary" size="small" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
+														
+														<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(user.name)"  v-if="!selectEp && manage"/>
+														<Button severity="secondary" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
 													</div>
 												</div>
 												
@@ -364,7 +369,8 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																<b class="line-height-4">{{ user.name }}</b>
 																<OverlayBadge :value="user.endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 															</div>
-															<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
+															<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(user.name)"  v-if="!selectEp && manage"/>
+															<Button severity="secondary" class="mr-2" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
 														</AccordionHeader>
 														<AccordionContent>	
 															<div class="flex flex-col message-item pointer" v-for="(ep, index) in (usersMap[user.name]?.endpoints?.instances||[])" :key="index" >
@@ -423,7 +429,9 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 															<span class="py-1 px-2 opacity-70" v-if="!isMobile && !selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↑{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.send)}}</span>
 															<span class="py-1 px-2 opacity-70 mr-4" v-if="!isMobile && !selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↓{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.receive)}}</span>
 															<Status :run="usersMap[key].endpoints?.instances[0]?.online" :tip="timeago(usersMap[key].endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
-															<Button severity="secondary" size="small" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
+															
+															<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(key)"  v-if="!selectEp && manage"/>
+															<Button severity="secondary" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 														</div>
 													</div>
 													
@@ -435,6 +443,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																	<b class="line-height-4">{{ key }}</b>
 																	<OverlayBadge :value="usersMap[key].endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
 																</div>
+																<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(key)"  v-if="!selectEp && manage"/>
 																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
 															</AccordionHeader>
 															<AccordionContent>	

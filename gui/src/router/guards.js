@@ -67,7 +67,7 @@ const loginGuard = (to, from, next, options) => {
 			store.commit('account/setPlatform', pm);
 		}
 		if(to.path.indexOf("/app") == -1){
-			resize(1280,860,true);
+			// resize(1280,860,true);
 		}
 		if(to.path.indexOf("/mesh") >= 0){
 			const _meshes = store.getters['account/meshes']
