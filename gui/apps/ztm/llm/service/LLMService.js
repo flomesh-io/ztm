@@ -16,21 +16,6 @@ export default class LLMService {
 	getServices(ep) {
 		return ep?request(`/api/endpoints/${ep}/services`):request(`/api/services`);
 	}
-	/*
-		protocol: 'http' | 'mcp',
-		metainfo: 
-			version: string
-			provider: string
-			description: string
-		target:
-			address: <URL> | <pathname>
-			headers:
-				Authorization: Bearer <apikey>
-			body: （default to route body）
-				model: Pro/deepseek-ai/DeepSeek-V3,
-				...
-			...(other configurations)
-	*/
 	getService(ep, {kind, name}) {
 		return request(`/api/endpoints/${ep}/services/${kind}/${name}`);
 	}

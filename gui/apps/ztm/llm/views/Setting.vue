@@ -55,7 +55,8 @@ const newLlm = {
 		address: 'https://api.siliconflow.cn/v1',//'https://api.siliconflow.cn/v1/chat/completions',
 		headers: {
 			Authorization: 'Bearer <token>',
-			"Content-Type": "application/json"
+			"Content-Type": "application/json",
+			"origin": "localhost"
 		},
 		body: {
 			"model": "Pro/deepseek-ai/DeepSeek-V3",
