@@ -88,7 +88,6 @@ const selectRoom = ref();
 const selectPeer = ref();
 const visibleUserSelector = ref(false);
 const selectedNewChatUsers = ref({});
-const firstOpen = ref(false);
 const newChat = () => {
 	const users = Object.keys(selectedNewChatUsers.value);
 	let _room = null;
@@ -124,10 +123,6 @@ const newChat = () => {
 	selectRoom.value = null;
 	if(!route.query?.user){
 		resize(1280,860,false);
-	}
-	if(!firstOpen.value){
-		position(30,30)
-		firstOpen.value = true;
 	}
 	setTimeout(()=>{
 		selectRoom.value = _room;
@@ -178,10 +173,6 @@ const newBotRoom = () => {
 	if(!route.query?.user){
 		resize(1280,860,false);
 	}
-	if(!firstOpen.value){
-		position(30,30)
-		firstOpen.value = true;
-	}
 	setTimeout(()=>{
 		selectRoom.value = _room;
 	},100)
@@ -190,10 +181,6 @@ const openChat = (item) => {
 	selectRoom.value = null;
 	if(!route.query?.user){
 		resize(1280,860,false);
-	}
-	if(!firstOpen.value){
-		position(30,30)
-		firstOpen.value = true;
 	}
 	setTimeout(()=>{
 		selectRoom.value = item;

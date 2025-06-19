@@ -429,6 +429,7 @@ const toggleLeft = () => {
 }
 const isLogined = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit == true && !!meshes.value.find((m)=> m.name == DEFAULT_MESH_NAME)))
 const needLogin = computed(()=> !!VITE_APP_AUTH_URL && (auth.value.permit != true || !meshes.value.find((m)=> m.name == DEFAULT_MESH_NAME)))
+const findMesh = computed(() => (n) => meshes.value.find((m) => m.name == n) || {})
 onMounted(() => {
 	// invoke('set_store_list',{ key: 'auth', value: []}).then((res)=>{});
 	autoReg();
@@ -489,8 +490,8 @@ onMounted(() => {
 							{{t('No Mesh')}}.
 				    </template>
 						<template #value="slotProps">
-								<div  v-if="slotProps.value" class="flex align-items-center">
-										<Status :run="slotProps.value.connected" :errors="slotProps.value.errors" />
+								<div v-if="findMesh(slotProps.value?.name)" class="flex align-items-center">
+										<Status :run="findMesh(slotProps.value.name).connected" :errors="findMesh(slotProps.value.name).errors" />
 										<div>{{ decodeURI(slotProps.value.name) }}</div>
 								</div>
 								<span v-else >
