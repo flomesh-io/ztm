@@ -521,7 +521,7 @@ onMounted(() => {
 									<BlockViewer containerClass="surface-section p-3" >
 										<div>
 											<Tag >{{t('LLM')}}
-												<Badge :value="allMcps.length" />
+												<Badge :value="allLlms.length" />
 											</Tag> 
 										</div>
 										<DataView class="transparent" :value="allLlms">
