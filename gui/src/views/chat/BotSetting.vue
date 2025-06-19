@@ -195,7 +195,7 @@ onMounted(()=>{
 			<Button icon="pi pi-trash" severity="secondary" @click="remMcp(idx)"/>
 		</li>
 		<li class="nav-li flex" >
-			<b class="opacity-70">{{t('MCP Server')}}</b>
+			<b class="opacity-70">{{t('Add MCP')}}</b>
 			<div class="flex-item text-right">
 				<Select v-model="mcp" :options="mcps" optionLabel="name" :placeholder="t('Select a tool')" class="selector" >
 					<template #value="slotProps">
