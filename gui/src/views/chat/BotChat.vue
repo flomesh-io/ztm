@@ -107,6 +107,7 @@ const setHistory = (msg) => {
 const init = ref(false);
 const openToolcall = () => {
 	openToolcallEditor.value = true;
+	loaddata();
 }
 //any-file-message-bubble
 const htmlClassUtilities = () => {
@@ -118,38 +119,46 @@ const htmlClassUtilities = () => {
 				)
 			},
 			styles: {
-				default: {display: 'none'},
+				default: {display: 'none'}
 			}
 		},
 		
 		['toolcall-yes-button']: {
 			events: {
 				click: (event) => {
+					event.target.innerText = t('Running');
 					makeToolcall();
+					event.preventDefault();
 				}
 			},
 			styles: {
 				default: {cursor: 'pointer',border:'1px solid green',borderRadius:'6px',marginLeft:'10px',background: 'transparent'},
+				hover: {opacity: 0.8},
+				click: {opacity: 0.8}
 			},
 		},
 		['toolcall-edit-button']: {
 			events: {
 				click: (event) => {
-					openToolcall()
+					openToolcall();
+					event.preventDefault();
 				}
 			},
 			styles: {
 				default: {cursor: 'pointer',border:'1px solid orange',borderRadius:'6px',marginLeft:'10px',background: 'transparent'},
+				hover: {opacity: 0.8}
 			},
 		},
 		['toolcall-no-button']: {
 			events: {
 				click: (event) => {
 					cancelToolcall();
+					event.preventDefault();
 				}
 			},
 			styles: {
 				default: {cursor: 'pointer',border:'1px solid #d80000',borderRadius:'6px',background: 'transparent'},
+				hover: {opacity: 0.8}
 				// hover: {backgroundColor: 'yellow'},
 			},
 		},
@@ -418,7 +427,9 @@ const request = ref({
 						chat.value.addMessage({html,role: 'ai',overwrite: overwrite},overwrite);
 						chat.value.scrollToBottom();
 						if(ending){
-							setHistory({html,role: 'ai'});
+							if(html.indexOf('"toolcall-yes-button"')==-1){
+								setHistory({html,role: 'ai'});
+							}
 							signals.onResponse({files:[],overwrite: false});
 							emits('notify')
 						}
@@ -523,6 +534,8 @@ const setBot = (val) => {
 }
 
 onMounted(()=>{
+	
+	store.commit('mcp/setToolcall', null);
 	store.commit('mcp/setNotice', false);
 	loadllm(()=>{
 		folderInit(['ztmChat',selectedMesh.value?.name], llm.value?.name);
@@ -579,7 +592,6 @@ defineExpose({
 			:camera="hasMediaDevices?menuStyle('inside-left','70px'):false"
 			/>
 	</div>
-	
 	<Dialog class="noheader" v-model:visible="openToolcallEditor" modal :style="{ minHeight:'400px',minWidth:'400px'  }">
 		<AppHeader :back="() => openToolcallEditor = false" :main="false">
 				<template #center>
