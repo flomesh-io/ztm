@@ -469,6 +469,11 @@ export default function ({ app, mesh }) {
               if (!$mcpSession) return initMCP
               if ($mcpSession.upstream.transport === 'streamable') return forwardMCP
               return sendMCP
+            case 'DELETE':
+              if (!$mcpSessionID) return '400'
+              if (!$mcpSession) return '404'
+              $mcpSession.terminate()
+              return '204'
             default: return '405'
           }
         }
@@ -484,6 +489,7 @@ export default function ({ app, mesh }) {
             return new Message({ headers })
           })
         ),
+        '204': $=>$.replaceData().replaceMessage(new Message({ status: 204 })),
         '400': $=>$.replaceData().replaceMessage(new Message({ status: 400 })),
         '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
         '405': $=>$.replaceData().replaceMessage(new Message({ status: 405 })),
@@ -527,7 +533,7 @@ export default function ({ app, mesh }) {
             return $mcpSession.init($service, msg).then(
               result => {
                 if (result) {
-                  mcpSessions[$mcpSession.id] = $mcpSession
+                  $mcpSession.start()
                   return new Message(
                     {
                       status: 200,
@@ -564,12 +570,14 @@ export default function ({ app, mesh }) {
   )
 
   function MCPSession() {
+    var self = null
     var id = algo.uuid()
     var listenStream = MCPStream()
     var upstream = {}
     var agent = null
     var pendingRequests = new algo.Cache
     var lastActiveTime = Date.now()
+    var terminated = false
     var stdioExecutablePath
     var stdioExecutableArgv
     var stdioExecutableEnv
@@ -631,7 +639,15 @@ export default function ({ app, mesh }) {
       }
     }
 
+    function start() {
+      mcpSessions[id] = self
+      keepAlive()
+      checkTimeout()
+      app.log(`Session ${id} started`)
+    }
+
     function send(msg) {
+      keepAlive()
       var stream = null
       var batch = msg instanceof Array ? msg : [msg]
       var requests = batch.filter(msg => msg && typeof msg === 'object' && 'id' in msg)
@@ -663,6 +679,7 @@ export default function ({ app, mesh }) {
     }
 
     function receive(msg) {
+      keepAlive()
       var batch = msg instanceof Array ? msg : [msg]
       batch.forEach(msg => {
         if (msg && typeof msg === 'object') {
@@ -682,21 +699,41 @@ export default function ({ app, mesh }) {
       })
     }
 
-    function killService() {
-      if (Date.now() - lastActiveTime > 10000) {
-        return new StreamEnd
-      } else {
-        return new Timeout(1).wait().then(killService)
-      }
+    function keepAlive() {
+      lastActiveTime = Date.now()
     }
+
+    function checkTimeout() {
+      new Timeout(10).wait().then(() => {
+        if (Date.now() - lastActiveTime > 300 * 1000) {
+          app.log(`Session ${id} timeout`)
+          terminate()
+        } else if (!terminated) {
+          checkTimeout()
+        }
+      })
+    }
+
+    function terminate() {
+      if (upstream.transport === 'stdio') {
+        stdioInput.broadcast(new StreamEnd)
+      }
+      delete mcpSessions[id]
+      terminated = true
+      app.log(`Session ${id} terminated`)
+    }
+
+    var $stdioState
 
     var writeStdio = pipeline($=>$
       .onStart(new Data)
-      // TODO: Make this work without quitting pipy silently
-      // .insert(() => killService())
       .swap(() => stdioInput)
       .replaceMessage(
         msg => {
+          if (!$stdioState) {
+            var req = JSON.decode(msg.body)
+            $stdioState = { initMsgID: req.id }
+          }
           var data = msg.body
           data.push('\n')
           return data
@@ -705,13 +742,34 @@ export default function ({ app, mesh }) {
       .exec(() => [stdioExecutablePath, ...stdioExecutableArgv], {
         env: () => stdioExecutableEnv,
         onStart: (pid) => app.log(`Child process started (pid = ${pid}): ${stdioExecutablePath}`),
-        onExit: (code) => app.log(`Child process exited with result ${code}: ${stdioExecutablePath}`),
+        onExit: (code, err) => {
+          app.log(`Child process exited with result ${code}: ${stdioExecutablePath}`)
+          if ($stdioState.initMsgID !== undefined) {
+            if (err) {
+              var text = err.toString()
+              var lines = text.split('\n')
+              if (lines.length > 500) lines.splice(0, lines.length - 500)
+              lines.forEach(line => app.log(line))
+            }
+            receive({
+              jsonrpc: '2.0',
+              id: $stdioState.initMsgID,
+              error: {
+                code,
+                message: 'MCP server process exited',
+                data: { stderr: text || '' },
+              }
+            })
+            delete $stdioState.initMsgID
+          }
+        },
       })
       .split('\n')
       .handleMessage(
         msg => {
           try {
             receive(JSON.decode(msg.body))
+            $stdioState.initMsgID = undefined
           } catch {}
         }
       )
@@ -767,13 +825,15 @@ export default function ({ app, mesh }) {
       )
     )
 
-    return {
+    return (self = {
       id,
       listenStream,
       upstream,
       init,
+      start,
       send,
-    }
+      terminate,
+    })
   }
 
   function MCPStream(requests) {
