@@ -231,7 +231,8 @@ const backhistory = () => {
 const botchat = ref();
 const changeBot = (val)=> {
 	botchat.value?.setBot(val);
-	backmanage()
+	backmanage();
+	botClear();
 }
 const botClear = ()=>{
 	const _selectRoom = selectRoom.value;
@@ -400,7 +401,7 @@ onMounted(()=>{
 		</div>
 		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
-				<BotSetting v-model:room="selectRoom" @clear="botClear" @saved="changeBot" @back="backmanage" />
+				<BotSetting v-model:room="selectRoom" @saved="changeBot" @back="backmanage" />
 			</div>
 		</div>
 	</div>

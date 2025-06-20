@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted,onBeforeUnmount, onActivated, watch, computed } from "vue";
 import { useStore } from 'vuex';
-import { getItem, setItem, pushItem, deleteItem,STORE_BOT_REPLAY } from "@/utils/localStore";
+import { getItem, setItem, pushItem, deleteItem,STORE_BOT_REPLAY,STORE_BOT_HISTORY,STORE_BOT_CONTENT } from "@/utils/localStore";
 import confirm from "@/utils/confirm";
 import { getKeywordIcon } from '@/utils/file';
 import { dayjs, extend } from '@/utils/dayjs';
 import BotService from '@/service/BotService';
 import { useI18n } from 'vue-i18n';
+import ToolCallCard from "./ToolCallCard.vue"
 const { t, locale } = useI18n();
 extend(locale.value)
 const store = useStore();
@@ -36,7 +37,7 @@ const timeago = computed(() => (ts) => {
 
 const loaddata = () => {
 	getItem(STORE_BOT_REPLAY(selectedMesh.value?.name,props?.room?.id),(res)=>{
-		replays.value = res || {};
+		replays.value = res || [];
 		replays.value.forEach((r)=>{
 			r.loading = false;
 		})
@@ -51,6 +52,7 @@ const clear = () => {
 			setItem(STORE_BOT_REPLAY(selectedMesh.value?.name,props?.room?.id),[],(res)=>{
 				loaddata();
 			});
+			setItem(STORE_BOT_CONTENT(selectedMesh.value?.name,props?.room?.id),[],(res)=>{});
 			setItem(STORE_BOT_HISTORY(selectedMesh.value?.name,props?.room?.id),[],(res)=>{
 				emits('clear')
 			});
@@ -81,20 +83,6 @@ const makeReplay = (index) => {
 		replays.value[index].loading = false;
 	}
 }
-const args = computed(() => (tc) => {
-	try{
-		return JSON.parse(tc.tool_call[tc.tool_call?.type]?.arguments);
-	}catch(e){
-		return {}
-	}
-})
-const args_key = computed(() => (tc) => {
-	try{
-		return Object.keys(JSON.parse(tc.tool_call[tc.tool_call?.type]?.arguments));
-	}catch(e){
-		return []
-	}
-})
 onMounted(()=>{
 	loaddata();
 })
@@ -123,39 +111,7 @@ defineExpose({
 								<i class="pi pi-angle-double-down relative" style="top:2px;"/>
 							</div>
 						</template>
-						<ul class="px-4" style="list-style: none;">
-							<li class="mb-2" v-for="(tc,idx) in item.toolcalls" :key="idx">
-								<div v-if="tc?.tool_call">
-									<Fieldset class="innerset" :collapsed="true" :toggleable="true">
-											<template #legend="{ toggleCallback }">
-												<div class="flex items-center p-2 pointer" @click="toggleCallback">
-													<div>
-														<Badge style="padding:0 !important" size="small"  :value="tc.tool_call?.index+1"/>
-													</div>
-													<div class="flex-item relative pl-2" style="top:-2px">
-														<img :src="getKeywordIcon(tc.tool_call[tc.tool_call?.type]?.name.split('___')[1], 'mcp')" width="20px" height="20px" class="relative mr-1" style="top:4px"/>
-														<b class="pr-2 " >{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
-													</div>
-													<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
-												</div>
-											</template>
-											<p class="mt-2 mx-0 mb-0 argList">
-												<div class="pl-2 m-1" :key="pi" v-for="(pk,pi) in args_key(tc)">
-													<span>{{pk}}</span> : <TagInput v-if="tc.tool_call[tc.tool_call?.type]?.arguments" v-model:obj="tc.tool_call[tc.tool_call.type]" :k="pk"/>
-												</div>
-											</p>
-									</Fieldset>
-								</div>
-								<div class="mt-2 mb-4" v-if="tc?.data">
-									<Message v-tooltip="msg?.text" style="word-break: break-all;" v-for="(msg) in tc?.data?.content||[]" severity="success" icon="pi pi-check">
-										{{msg?.text.length>150?(msg?.text?.substr(0,150)+'...'):msg?.text}}
-									</Message>
-								</div>
-								<ProgressBar v-else mode="indeterminate" style="height: 6px"></ProgressBar>
-							
-							</li>
-						</ul>
-					
+						<ToolCallCard v-model:toolcalls="item.toolcalls" :isHistory="true"/>
 					</Fieldset>
 				</template>
 				<template #footer>

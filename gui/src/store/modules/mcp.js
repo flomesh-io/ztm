@@ -28,8 +28,12 @@ export default {
 		listTools:[],
 		messages:[],
 		notice: true,
+		toolcall: null,
   },
   getters: {
+    toolcall: (state) => {
+      return state.toolcall;
+    },
     bots: (state) => {
       return state.bots;
     },
@@ -96,12 +100,14 @@ export default {
 			let delta = "";
 			const mesh = data?.mesh;
 			const roomId = data?.roomId;
+			let first = true;
 			getItem(STORE_BOT_CONTENT(mesh, roomId), (historyContext)=>{
+				commit('setToolcall', null);
 				botService.callRunnerBySDK({
 					...data,
 					roomId,
 					historyContext,
-					callback(res, ending){
+					callback(res, ending, toolcall){
 						const choices = res?.choices;
 						const choice = !!choices && choices[0];
 						if(choice?.message){
@@ -109,10 +115,10 @@ export default {
 							commit('pushMessage', {message, ending:true});
 						} else {
 							const _delta = choice?.delta?.reasoning_content||choice?.delta?.content||'';
-							if(!!_delta || ending){
-								const first = !delta;
+							if(!!_delta || ending || toolcall){
 								delta += _delta;
 								commit('pushMessage', {delta, ending, first});
+								first = false;
 								if(!!ending) {
 									const latest = delta.split('\n').slice(-1)[0];
 									
@@ -160,7 +166,9 @@ export default {
 		},
 	},
   mutations: {
-		
+    setToolcall(state, toolcall) {
+      state.toolcall = toolcall;
+    },
 		addBot(state, d) {
 		  state.bots.unshift(d?.bot);
 			unshiftItem(STORE_BOT_AGENTS(d?.mesh), d?.bot, ()=>{});

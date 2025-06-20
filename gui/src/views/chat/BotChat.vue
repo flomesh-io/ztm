@@ -13,6 +13,7 @@ import 'deep-chat';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { generateList } from "@/utils/svgAvatar";
+import ToolCallCard from "./ToolCallCard.vue"
 
 const { t } = useI18n();
 
@@ -34,6 +35,9 @@ const messages = ref({});
 const history = ref([]);
 const chat = ref();
 const chatReady = ref(false)
+
+const pusher = computed(()=>store.getters["mcp/messages"])
+
 const sendMessage = (e) => {
 	if(!e.detail.isInitial){
 		if(e.detail.message?.text){
@@ -46,11 +50,44 @@ const sendMessage = (e) => {
 		}
 	}
 }
-
-const since = ref();
-
-const msgHtml = (msg) => {
-	return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`;
+const toolcallTarget = ref({})
+const lastmsg = ref('');
+const msgHtml = (msg, toolcall) => {
+	if(toolcall?.status == 'before') {
+		toolcallTarget.value = toolcall;
+		lastmsg.value = msg;
+		let filterMsg = msg.replace(/```json[^`]*```/,t("Do you want to execute a tool call?")) || t("Do you want to execute a tool call?");
+		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;"><div>${filterMsg}</div></pre>
+		<div style="display: flex;text-align:right;padding:10px">
+			<button class="toolcall-no-button">${t("No")}</button>
+			<button class="toolcall-edit-button">${t("Edit")}</button>
+			<button class="toolcall-yes-button">${t("Yes")}</button>
+		</div>`
+	} else if(toolcall?.status == 'progress') {
+		let filterMsg = msg.replace(/```json[^`]*```/,t("Requesting task ...")) || t("Requesting task ...");
+		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;"><div>${filterMsg}</div></pre>`
+	} else if(toolcall?.status == 'cancel') {
+		let filterMsg = msg.replace(/```json[^`]*```/,t("Task aborted.")) || t("Task aborted.");
+		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;"><div>${filterMsg}</div></pre>`
+	} else {
+		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`;
+	} 
+}
+const openToolcallEditor = ref(false);
+const makeToolcall = () => {
+	openToolcallEditor.value = false;
+	toolcallTarget.value.status = "progress"
+	toolcallTarget.value.execute(toolcallTarget.value.tool_calls);
+}
+const cancelToolcall = () => {
+	openToolcallEditor.value = false;
+	toolcallTarget.value.status = "cancel"
+	callbackProxy(
+		msgHtml(lastmsg.value, toolcallTarget.value),
+		false,
+		true
+	);
+	toolcallTarget.value.cancel()
 }
 const getHistory = () => {
 	getItem(STORE_BOT_HISTORY(selectedMesh.value?.name,props?.room?.id),(res)=>{
@@ -68,6 +105,9 @@ const setHistory = (msg) => {
 }
 
 const init = ref(false);
+const openToolcall = () => {
+	openToolcallEditor.value = true;
+}
 //any-file-message-bubble
 const htmlClassUtilities = () => {
 	return {
@@ -82,6 +122,37 @@ const htmlClassUtilities = () => {
 			}
 		},
 		
+		['toolcall-yes-button']: {
+			events: {
+				click: (event) => {
+					makeToolcall();
+				}
+			},
+			styles: {
+				default: {cursor: 'pointer',border:'1px solid green',borderRadius:'6px',marginLeft:'10px',background: 'transparent'},
+			},
+		},
+		['toolcall-edit-button']: {
+			events: {
+				click: (event) => {
+					openToolcall()
+				}
+			},
+			styles: {
+				default: {cursor: 'pointer',border:'1px solid orange',borderRadius:'6px',marginLeft:'10px',background: 'transparent'},
+			},
+		},
+		['toolcall-no-button']: {
+			events: {
+				click: (event) => {
+					cancelToolcall();
+				}
+			},
+			styles: {
+				default: {cursor: 'pointer',border:'1px solid #d80000',borderRadius:'6px',background: 'transparent'},
+				// hover: {backgroundColor: 'yellow'},
+			},
+		},
 		['download-button']: {
 			events: {
 				click: (event) => (
@@ -164,22 +235,22 @@ const hasMediaDevices = computed(() => true);
 const delta = ref('');
 let callbackProxy = null;
 const workerOnMessage = (msg) => {
+	const toolcall = store.getters["mcp/toolcall"]
 	if(msg?.message){
 		callbackProxy(
-			msgHtml(msg?.message),
+			msgHtml(msg?.message, toolcall),
 			true
 		);
 	} else {
 		setTimeout(()=>{
 			callbackProxy(
-				msgHtml(msg?.delta),
+				msgHtml(msg?.delta, toolcall),
 				msg?.ending,
 				!msg?.first
 			);
 		},100);
 	}
 }
-const pusher = computed(()=>store.getters["mcp/messages"])
 watch(()=> pusher.value, () => {
 	if(pusher.value.length>0){
 		pusher.value.forEach((message)=>{
@@ -508,6 +579,19 @@ defineExpose({
 			:camera="hasMediaDevices?menuStyle('inside-left','70px'):false"
 			/>
 	</div>
+	
+	<Dialog class="noheader" v-model:visible="openToolcallEditor" modal :style="{ minHeight:'400px',minWidth:'400px'  }">
+		<AppHeader :back="() => openToolcallEditor = false" :main="false">
+				<template #center>
+					<b>{{t('Modify Toolcalls')}} <Badge class="ml-2 relative" style="top:-2px" v-if="toolcallTarget.tool_calls.length>0" :value="toolcallTarget.tool_calls.length"/></b>
+				</template>
+		
+				<template #end> 
+					<Button icon="pi pi-caret-right" @click="makeToolcall" />
+				</template>
+		</AppHeader>
+		<ToolCallCard v-model:toolcalls="toolcallTarget.tool_calls"/>
+	</Dialog>
 	<DrawMenu :menus="menus" v-model:open="menuOpen" :title="forwardTarget?.name"/>
 	<Forward v-model:open="forwardOpen" :message="forwardMessage" />
 </template>

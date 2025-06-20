@@ -80,7 +80,7 @@ export default class BotService {
 				return `你是一个工具调用助手，必须严格遵循以下规则：
 1. 判定为tool_calls请求时，你的**finish_reason**必须是**tool_calls**，不能是**stop**
 2. 任务需要多条tool_calls完成时，一次性返回多条tool_calls
-3. 自然语言（content字段）中禁止包含tool_calls结构，相关结构只应出现在**tool_calls字段**中，自然语言（content字段）开头加上**正在请求任务...\n\n**。
+3. 自然语言（content字段）中禁止包含tool_calls结构，相关结构只应出现在**tool_calls字段**中。
 4. 当工具调用返回结果，只能自然语言总结回复**描述性列表**
 `;
 			case 'tool':
@@ -91,6 +91,47 @@ export default class BotService {
 				return `以下是工具调用结果，请整理为**描述性列表**再回复，禁止回复**tool▁calls▁begin**：${_content}`;
 			default:
 				return text;
+		}
+	}
+	makeLLMToolsFormat(tools){
+		const llmTools = [];
+		tools.forEach((t)=>{
+			if(!!t.type){
+				llmTools.push(t)
+			} else if(t.inputSchema) {
+				llmTools.push({
+				 "type": "function",
+				 "function": {
+					 "description": t.description,
+					 "name": t.name,
+					 "parameters": t.inputSchema,
+					 "strict": false
+				 }
+				});
+			} else if(t.name) {
+				llmTools.push({
+				 "type": "function",
+				 "function": {
+					 "name": t.name,
+					 "parameters": t?.parameters,
+				 }
+				});
+			}
+		});
+		return llmTools;
+	}
+	sliceContentToolcalls(content){
+		let ary = content.split("```json");
+		if(ary.length>=2 && !!ary[1]){
+			let _json_str = ary[1].split("```")[0];
+			try{
+				let _json = JSON.parse(_json_str);
+				return _json?.tool_calls || false;
+			}catch(e){
+				return false;
+			}
+		} else {
+			return false;
 		}
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
@@ -116,43 +157,77 @@ export default class BotService {
 			});
 			
 			let tool_calls = [];
-			let toolReqs = [];
+			let merge_tool_calls = [];
+			let delta = "";
 			// get tool_calls with llm
 			const resp = await this.chatLLM(roomId, sysmessages, allmessages, tools, llm, (res,ending)=> {
 				const finish_reason = res.choices[0]?.finish_reason;
 				const msg = res.choices[0]?.delta || res.choices[0]?.message;
+				delta += msg?.content || msg?.reasoning_content || '';
 				
 				if(ending) {
-					if(toolReqs.length>0){
-						merge(toolReqs).then((allToolsResult)=>{
-							
-							writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] tool called: ${JSON.stringify(allToolsResult)}\n`);
-							// push result msg
-							allToolsResult.forEach((res)=>{
-								const toolResult = res?.data;
-								if(toolResult){
-									if(toolResult?.result?.content){
-										toolResult?.result?.content.forEach((toolResultContent)=>{
-											allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
-										})
-									}
-									if(toolResult?.content){
-										toolResult?.content.forEach((toolResultContent)=>{
-											allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
-										})
-									}
-								}
+					if(merge_tool_calls.length>0){
+						const execute = (calls) => {
+							// push tool msg
+							store.commit('mcp/setToolcall', {
+								status: 'progress',
+								tool_calls: calls
 							});
+							callback(res, false, true);
+							if(calls.length>0){
+								allmessages.push({
+									'content': '', 
+									'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
+									'role': 'assistant', 
+									tool_calls: calls
+								});
+							}
 							
-							unshiftItem(STORE_BOT_REPLAY(mesh?.name, roomId),{
-								message: message?.text,
-								toolcalls: allToolsResult,
-								date: new Date().getTime(),
-							},(res)=>{}, 10);
-							
-							toolReqs = [];
-							this.chatLLM(roomId, sysmessages, allmessages, tools, llm, callback);
-						});
+							this.replayToolcalls(calls).then((allToolsResult)=>{
+								writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] tool called: ${JSON.stringify(allToolsResult)}\n`);
+								// push result msg
+								allToolsResult.forEach((res)=>{
+									const toolResult = res?.data;
+									if(toolResult){
+										if(toolResult?.result?.content){
+											toolResult?.result?.content.forEach((toolResultContent)=>{
+												allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
+											})
+										}
+										if(toolResult?.content){
+											toolResult?.content.forEach((toolResultContent)=>{
+												allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
+											})
+										}
+									}
+								});
+								
+								unshiftItem(STORE_BOT_REPLAY(mesh?.name, roomId),{
+									message: message?.text,
+									toolcalls: allToolsResult,
+									date: new Date().getTime(),
+								},(res)=>{}, 10);
+								
+								this.chatLLM(roomId, sysmessages, allmessages, tools, llm, callback);
+							});
+						}
+						if(!!llm?.immediate){
+							execute(merge_tool_calls);
+						} else {
+							const toolcall = {
+								status: llm?.immediate?'immediate':'before',
+								tool_calls: merge_tool_calls,
+								cancel: ()=>{
+									store.commit('mcp/setToolcall', {
+										status: 'cancel',
+									});
+								},
+								execute
+							}
+							store.commit('mcp/setToolcall', toolcall);
+							callback(res, false, true);
+						}
+						
 					} else {
 						
 						callback(res, ending);
@@ -160,10 +235,11 @@ export default class BotService {
 				} else if(!!msg?.tool_calls && msg?.tool_calls?.length>0){
 					// push assistant msg
 					tool_calls = tool_calls.concat(msg?.tool_calls)
+				} else if(finish_reason == "stop" && !tool_calls?.length && this.sliceContentToolcalls(delta)){
+					merge_tool_calls = this.makeLLMToolsFormat(this.sliceContentToolcalls(delta))
 				} else if(finish_reason == "tool_calls" || (finish_reason == "stop" && tool_calls.length>0)){
 					
 					let _arguments = "";
-					const merge_tool_calls = []
 					//concat tool_calls arguments
 					tool_calls.forEach((tool_call)=>{
 						if(!!tool_call?.function?.name){
@@ -186,21 +262,9 @@ export default class BotService {
 						_arguments = "";
 					}
 					tool_calls = [];
-					// push tool msg
-					if(merge_tool_calls.length>0){
-						allmessages.push({
-							'content': '', 
-							'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
-							'role': 'assistant', 
-							tool_calls: merge_tool_calls
-						});
-					}
 					// push tool call req
-					merge_tool_calls.forEach((tool_call)=>{
-						toolReqs.push(this.callMcpToolBySDK(tool_call).then((res)=> {
-							return { data:res, tool_call }
-						}).catch((e)=>{}));
-					})
+					// todo
+					
 				} else if(!!msg?.content || !!msg?.reasoning_content) {
 					callback(res, ending);
 				} 
@@ -212,8 +276,8 @@ export default class BotService {
 	replayToolcalls(replay_tool_calls) {
 		const toolReqs = [];
 		replay_tool_calls.forEach((t)=>{
-			toolReqs.push(this.callMcpToolBySDK(t.tool_call).then((res)=> {
-				return { data:res, tool_call:t.tool_call }
+			toolReqs.push(this.callMcpToolBySDK(t?.tool_call || t).then((res)=> {
+				return { data:res, tool_call:t.tool_call||t }
 			}).catch((e)=>{}));
 		})
 		return merge(toolReqs);
@@ -236,21 +300,6 @@ export default class BotService {
 		 }
 	 ]
 */
-	makeLLMToolsFormat(tools){
-		const llmTools = [];
-		tools.forEach((t)=>{
-			llmTools.push({
-			 "type": "function",
-			 "function": {
-				 "description": t.description,
-				 "name": t.name,
-				 "parameters": t.inputSchema,
-				 "strict": false
-			 }
-			});
-		});
-		return llmTools;
-	}
 	chatLLM(roomId, sysmessages, messages, tools, llm, callback) {
 		const mesh = this.getMesh();
 		let body = { messages: (sysmessages||[]).concat(messages)  };

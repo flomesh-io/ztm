@@ -126,10 +126,14 @@ const keywordIcon = {
 	excel:excel2, file, zip, github, mcp, deepseek, llm, ds:deepseek
 }
 const getKeywordIcon = (keyword, dft) => {
-	const keys = Object.keys(keywordIcon);
-	const findKey = keys.find((k) => keyword.indexOf(k) >= 0);
-	if(findKey){
-		return keywordIcon[findKey];
+	if(!!keyword){
+		const keys = Object.keys(keywordIcon);
+		const findKey = keys.find((k) => keyword.indexOf(k) >= 0);
+		if(findKey){
+			return keywordIcon[findKey];
+		} else {
+			return keywordIcon[dft];
+		}
 	} else {
 		return keywordIcon[dft];
 	}

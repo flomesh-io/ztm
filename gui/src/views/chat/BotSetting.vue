@@ -39,9 +39,11 @@ const llms = ref([]);
 const matchLLM = computed(()=>{
 	return llms.value.find((l) => l.name == llm.value)
 })
+const immediate = ref(false);
 const loadllm = () => {
 	botService.checkLLM(props?.room?.id,(res) => {
-		llm.value = res?.name
+		llm.value = res?.name;
+		immediate.value = res?.immediate || false;
 	});
 }
 const localMcps = ref([]);
@@ -103,7 +105,10 @@ const save = () => {
 	saving.value = true;
 	const path = `${matchLLM.value?.kind}/${llm.value}`;
 	
-	setItem(STORE_SETTING_LLM(selectedMesh.value?.name,props?.room?.id), [matchLLM.value], ()=>{})
+	setItem(STORE_SETTING_LLM(selectedMesh.value?.name,props?.room?.id), [{
+		...matchLLM.value,
+		immediate:immediate.value
+	}], ()=>{})
 	setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{});
 	const mcps = localMcps.value.filter((n)=> n.enabled);
 	
@@ -182,6 +187,15 @@ onMounted(()=>{
 		</li>
 		
 		
+		<li class="nav-li flex" >
+			<b class="opacity-70">{{t('Execute')}}</b>
+			<div class="flex-item text-right pr-3">
+				<span>{{immediate?t('Immediate'):t('Every Time Confirm')}}</span>
+			</div>
+			<div class="px-2">
+				<ToggleSwitch class="relative" style="top:5px" v-model="immediate" />
+			</div>
+		</li>
 		<li class="nav-li flex" v-for="(localMcp,idx) in localMcps">
 			<b class="opacity-70">{{t('MCP Server')}}</b>
 			<div class="flex-item text-right pr-3">
@@ -216,19 +230,6 @@ onMounted(()=>{
 			</div>
 			<Button :disabled="!mcp" :loading="adding" icon="pi pi-plus" severity="secondary" @click="addMcp"/>
 		</li>
-		<!-- <li class="nav-li flex" @click="history">
-			<b class="opacity-70">{{t('History')}}</b>
-			<div class="flex-item">
-				
-			</div>
-			<i class="pi pi-angle-right"/>
-		</li>
-		<li v-if="hasPC" class="nav-li flex" @click="openBox">
-			<b class="opacity-70">{{t('Files')}}</b>
-			<div class="flex-item">
-			</div>
-			<i class="pi pi-external-link"/>
-		</li> -->
 	</ul>
 </template>
 <style scoped>
