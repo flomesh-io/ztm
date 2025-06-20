@@ -108,6 +108,13 @@ const init = ref(false);
 const openToolcall = () => {
 	openToolcallEditor.value = true;
 	loaddata();
+	setTimeout(()=>{
+		callbackProxy(
+			msgHtml(lastmsg.value, toolcallTarget.value),
+			false,
+			false
+		);
+	},300)
 }
 //any-file-message-bubble
 const htmlClassUtilities = () => {
@@ -126,13 +133,16 @@ const htmlClassUtilities = () => {
 		['toolcall-yes-button']: {
 			events: {
 				click: (event) => {
+					const parent = event.target.parentNode;
+					parent.removeChild(parent.querySelector(".toolcall-edit-button"));
+					parent.removeChild(parent.querySelector(".toolcall-no-button"));
 					event.target.innerText = t('Running');
 					makeToolcall();
 					event.preventDefault();
 				}
 			},
 			styles: {
-				default: {cursor: 'pointer',border:'1px solid green',borderRadius:'6px',marginLeft:'10px',background: 'transparent'},
+				default: {cursor: 'pointer',border:'1px solid green',borderRadius:'6px',background: 'transparent'},
 				hover: {opacity: 0.8},
 				click: {opacity: 0.8}
 			},
@@ -145,7 +155,7 @@ const htmlClassUtilities = () => {
 				}
 			},
 			styles: {
-				default: {cursor: 'pointer',border:'1px solid orange',borderRadius:'6px',marginLeft:'10px',background: 'transparent'},
+				default: {cursor: 'pointer',border:'1px solid orange',borderRadius:'6px',marginRight:'10px',background: 'transparent'},
 				hover: {opacity: 0.8}
 			},
 		},
@@ -157,7 +167,7 @@ const htmlClassUtilities = () => {
 				}
 			},
 			styles: {
-				default: {cursor: 'pointer',border:'1px solid #d80000',borderRadius:'6px',background: 'transparent'},
+				default: {cursor: 'pointer',border:'1px solid #d80000',borderRadius:'6px',marginRight:'10px',background: 'transparent'},
 				hover: {opacity: 0.8}
 				// hover: {backgroundColor: 'yellow'},
 			},
