@@ -11,7 +11,7 @@ export default class LLMService {
 		return ztmService.getEndpoints();
 	}
 	getSvcUrl(path){
-		return getUrl(path,true);
+		return getUrl(`/svc${path}`,true);
 	}
 	getServices(ep) {
 		return ep?request(`/api/endpoints/${ep}/services`):request(`/api/services`);

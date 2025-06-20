@@ -9,7 +9,6 @@ import ClipboardJS from "clipboard";
 import { useStore } from 'vuex';
 import _ from "lodash"
 import toast from "@/utils/toast";
-import llmSvg from "@/assets/img/llm/deepseek.png";
 import { getKeywordIcon } from "@/utils/file";
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
@@ -382,7 +381,7 @@ onMounted(() => {
 											 <div class="surface-card shadow-2 p-3 border-round">
 													 <div class="flex justify-content-between">
 															<div class="pr-4">
-																<img :src="llmSvg" height="30px" />
+																<img :src="getKeywordIcon(item?.name, 'llm')" width="30px" />
 															</div>
 															<div class="flex-item">
 																	<span class="block text-tip font-medium mb-3">
@@ -532,7 +531,7 @@ onMounted(() => {
 												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 														<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 																<div>
-																	<img :src="llmSvg" width="30px" />
+																	<img :src="getKeywordIcon(item?.name, 'llm')" width="30px" />
 																</div>
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
@@ -551,7 +550,7 @@ onMounted(() => {
 																			</div>
 																			<div v-if="route.cors">
 																				<div class="flex" style="align-items:center">
-																					<Button link icon=" pi pi-desktop" /> 
+																					<Button  class="px-3" link icon=" pi pi-desktop" /> 
 																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
 																				</div>
@@ -615,7 +614,7 @@ onMounted(() => {
 																			</div>
 																			<div  v-if="route.cors">
 																				<div class="flex" style="align-items:center">
-																					<Button link icon=" pi pi-desktop" /> 
+																					<Button class="px-3" link icon=" pi pi-desktop" /> 
 																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
 																				</div>

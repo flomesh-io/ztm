@@ -15,7 +15,8 @@ import zip from "@/assets/img/files/zip.png";
 import userfolder from "@/assets/img/files/userfolder.png";
 import github from "@/assets/img/mcp/github.png";
 import mcp from "@/assets/img/mcp/mcp2.png";
-
+import deepseek from "@/assets/img/llm/deepseek.png";
+import llm from "@/assets/img/llm/default.png";
 import { open } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
 import { platform } from '@/utils/platform';
@@ -122,7 +123,7 @@ const writeFile = (file, target, after) => {
 	reader.readAsArrayBuffer(file);
 }
 const keywordIcon = {
-	excel:excel2, file, zip, github, mcp
+	excel:excel2, file, zip, github, mcp, deepseek, llm, ds:deepseek
 }
 const getKeywordIcon = (keyword, dft) => {
 	const keys = Object.keys(keywordIcon);
