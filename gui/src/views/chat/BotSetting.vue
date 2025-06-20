@@ -6,7 +6,6 @@ import MCPService from '@/service/MCPService';
 import _ from 'lodash';
 import { openFolder, getKeywordIcon } from '@/utils/file';
 import { isPC } from '@/utils/platform';
-import llmSvg from "@/assets/img/llm/deepseek.png";
 import { useI18n } from 'vue-i18n';
 import { getItem, setItem, STORE_SETTING_LLM, STORE_SETTING_MCP } from "@/utils/localStore";
 const { t, locale } = useI18n();
@@ -164,7 +163,7 @@ onMounted(()=>{
 				<Select v-model="llm" :options="llms" optionLabel="name" optionValue="name" :placeholder="t('Select a LLM')" class="selector" >
 					<template #value="slotProps">
 						<div v-if="slotProps.value" class="flex items-center">
-							<img :src="llmSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
+							<img :src="getKeywordIcon(slotProps.value, 'llm')" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
 							<div>{{ slotProps.value }}</div>
 						</div>
 						<span v-else>
@@ -173,7 +172,7 @@ onMounted(()=>{
 					</template>
 					<template #option="slotProps">
 						<div class="flex items-center">
-							<img :src="llmSvg" width="18px" height="18px" class="relative mr-1" style=""/>
+							<img :src="getKeywordIcon(slotProps.option.name, 'llm')" width="18px" height="18px" class="relative mr-1"/>
 							<div>{{ slotProps.option.name }}</div>
 						</div>
 					</template>
