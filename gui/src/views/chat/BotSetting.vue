@@ -40,10 +40,12 @@ const matchLLM = computed(()=>{
 	return llms.value.find((l) => l.name == llm.value)
 })
 const immediate = ref(false);
+const memoryLength = ref(10);
 const loadllm = () => {
 	botService.checkLLM(props?.room?.id,(res) => {
 		llm.value = res?.name;
 		immediate.value = res?.immediate || false;
+		memoryLength.value = res?.memoryLength || 10;
 	});
 }
 const localMcps = ref([]);
@@ -107,7 +109,8 @@ const save = () => {
 	
 	setItem(STORE_SETTING_LLM(selectedMesh.value?.name,props?.room?.id), [{
 		...matchLLM.value,
-		immediate:immediate.value
+		immediate:immediate.value,
+		memoryLength:memoryLength.value
 	}], ()=>{})
 	setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{});
 	const mcps = localMcps.value.filter((n)=> n.enabled);
@@ -185,8 +188,12 @@ onMounted(()=>{
 				
 			</div>
 		</li>
-		
-		
+		<li class="nav-li flex" >
+			<b class="opacity-70">{{t('Memory Length')}}</b>
+			<div class="flex-item text-right pr-3">
+				<InputNumber :min="10" :max="50" placeholder="10-50" v-model="memoryLength" />
+			</div>
+		</li>
 		<li class="nav-li flex" >
 			<b class="opacity-70">{{t('Execute')}}</b>
 			<div class="flex-item text-right pr-3">

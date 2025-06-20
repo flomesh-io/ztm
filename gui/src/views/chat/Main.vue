@@ -255,6 +255,31 @@ watch(()=>selectedMesh,()=>{
 	deep:true,
 	immediate:true
 })
+
+const menuRef = ref();
+const menus = ref([
+	{
+			label: t('New Chat'),
+			icon: 'iconfont icon-add-chat',
+			command(){
+				backList();
+				visibleUserSelector.value = true;
+			}
+	},
+	{
+			label: t('New Bot'),
+			icon: 'iconfont icon-add-bot',
+			command(){
+				backList();
+				visibleBotSelector.value = true;
+			}
+	}
+]);
+
+const menuToggle = (event) => {
+    menuRef.value.toggle(event);
+};
+
 onActivated(()=>{
 	load();
 })
@@ -270,59 +295,59 @@ onMounted(()=>{
 
 <template>
 	<div class="flex flex-row min-h-screen surface-ground">
-		<div v-if="!route.query?.user" class="relative h-full min-h-screen" :class="{'w-22rem':!!selectRoom,'w-full':!selectRoom,'mobile-hidden':!!selectRoom}">
+		<div v-if="visibleUserSelector" class="w-full" :style="{ minHeight:'300px' }">
+				
+				<AppHeader :back="() => visibleUserSelector = false" :main="false">
+						<template #center>
+							<b>{{t('New Chat')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
+						</template>
+				
+						<template #end> 
+							<Button icon="pi pi-check" @click="newChat" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
+						</template>
+				</AppHeader>
+				<UserSelector
+					:app="true" 
+					size="small"
+					class="w-full"
+					:mesh="selectedMesh"
+					multiple="tree" 
+					:user="selectedMesh?.agent?.username" 
+					v-model="selectedNewChatUsers" />
+		</div>
+		<div v-else-if="visibleBotSelector" class="w-full" :style="{ minHeight:'300px'  }">
+				
+				<AppHeader :back="() => visibleBotSelector = false" :main="false">
+						<template #center>
+							<b>{{t('Bots')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewBots).length>0" :value="Object.keys(selectedNewBots).length"/></b>
+						</template>
+				
+						<template #end> 
+							<Button icon="pi pi-check" @click="newBotRoom" :disabled="Object.keys(selectedNewBots).length!=1"/>
+						</template>
+				</AppHeader>
+				<BotSelector
+					size="small"
+					class="w-full"
+					:mesh="selectedMesh?.name"
+					multiple="tree" 
+					v-model="selectedNewBots" />
+		</div>
+		<div v-else-if="!route.query?.user" class="relative h-full min-h-screen" :class="{'w-22rem':!!selectRoom,'w-full':!selectRoom,'mobile-hidden':!!selectRoom}">
 				
 			<AppHeader>
 					<template #start>
 						<Button @click="back" icon="pi pi-angle-left" severity="secondary" text />
-						<Button style="opacity: 0;max-width: 34px;" icon="pi pi-angle-left" severity="secondary" text />
 					</template>
 					<template #center>
 						<b>{{t('Messages')}} <span v-if="cnt>0">({{cnt}})</span></b>
 					</template>
 					<template #end> 
-						<Button style="max-width: 42px;" text v-tooltip.left="t('New Chat')" icon="iconfont icon-add-chat"  @click="()=> {visibleUserSelector = true}" />
-						<Button style="max-width: 42px;" text v-tooltip.left="t('New Bot')" icon="iconfont icon-add-bot"  @click="()=> {visibleBotSelector = true}" />
+						<Button type="button" icon="pi pi-plus" text @click="menuToggle" aria-haspopup="true" aria-controls="overlay_menu" />
+						<Menu ref="menuRef" id="overlay_menu" :model="menus" :popup="true" />
 					</template>
 			</AppHeader>
-			<Dialog class="noheader" v-model:visible="visibleUserSelector" modal  :style="{ width: '25rem',minHeight:'300px' }">
-					
-					<AppHeader :back="() => visibleUserSelector = false" :main="false">
-							<template #center>
-								<b>{{t('New Chat')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
-							</template>
-					
-							<template #end> 
-								<Button icon="pi pi-check" @click="newChat" :disabled="Object.keys(selectedNewChatUsers).length==0"/>
-							</template>
-					</AppHeader>
-					<UserSelector
-						:app="true" 
-						size="small"
-						class="w-full"
-						:mesh="selectedMesh"
-						multiple="tree" 
-						:user="selectedMesh?.agent?.username" 
-						v-model="selectedNewChatUsers" />
-			</Dialog>
-			<Dialog class="noheader" v-model:visible="visibleBotSelector" modal :style="{ width: '25rem',minHeight:'300px'  }">
-					
-					<AppHeader :back="() => visibleBotSelector = false" :main="false">
-							<template #center>
-								<b>{{t('Bots')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewBots).length>0" :value="Object.keys(selectedNewBots).length"/></b>
-							</template>
-					
-							<template #end> 
-								<Button icon="pi pi-check" @click="newBotRoom" :disabled="Object.keys(selectedNewBots).length!=1"/>
-							</template>
-					</AppHeader>
-					<BotSelector
-						size="small"
-						class="w-full"
-						:mesh="selectedMesh?.name"
-						multiple="tree" 
-						v-model="selectedNewBots" />
-			</Dialog>
+			
 			
 			<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top': (isMobile && !selectRoom?'50px':'35px')}" >
 			<DataView class="message-list" :value="uniRooms">
