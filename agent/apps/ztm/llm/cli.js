@@ -343,7 +343,7 @@ export default function ({ app, mesh, api, utils }) {
               var val = obj[key]
               if (typeof val !== 'undefined' && typeof val !== 'object') {
                 throw `key '${key}' has conflict value types`
-              } else {
+              } else if (typeof val !== 'object') {
                 obj[key] = val = {}
               }
               return val
