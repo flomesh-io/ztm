@@ -43,9 +43,9 @@ const enterVal = () => {
 		{{args[props.k]}}
 	</Tag>
 	<Tag size="small" v-else severity="secondary">
-		<i  @click="enterVal" class="pi pi-times opacity-70 pointer"/>
+		<i  @click="isEdit = false" class="pi pi-times opacity-70 pointer"/>
 		<input style="background-color: transparent;border-style: none none solid none; border-width: 1px;border-color: #aaa;outline:none" @keyup.enter="enterVal" type="text" v-model="inputVal"/>
-		<i  @click="isEdit = false" class="pi pi-check opacity-70 pointer"/>
+		<i  @click="enterVal" class="pi pi-check opacity-70 pointer"/>
 	</Tag>
 </template>
 
