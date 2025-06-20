@@ -316,6 +316,6 @@ export default class BotService {
 				body,
 				callback
 			)
-		},10)
+		},llm?.memoryLength||10)
 	}
 }

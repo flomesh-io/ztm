@@ -139,7 +139,7 @@ export default {
 										'content': delta, 
 										'refusal': null, 'annotations': null, 'audio': null, 'function_call': null, 
 										'role': 'assistant', 
-									}, ()=>{},10);
+									}, ()=>{},data?.llm?.memoryLength||10);
 									
 									delta = '';
 									const notice = getters['notice'];
