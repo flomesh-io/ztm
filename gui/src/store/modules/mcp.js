@@ -118,8 +118,9 @@ export default {
 							if(!!_delta || ending){
 								delta += _delta;
 								commit('pushMessage', {delta, ending, first});
-								first = false;
+								
 								if(!!ending) {
+									first = true;
 									const latest = delta.split('\n').slice(-1)[0];
 									
 									//upd room lasted msg
@@ -145,6 +146,8 @@ export default {
 									if(notice){
 										send('AI机器人', latest);
 									}
+								} else {
+									first = false;
 								}
 							}
 						}
