@@ -107,7 +107,7 @@ export default {
 					...data,
 					roomId,
 					historyContext,
-					callback(res, ending, toolcall){
+					callback(res, ending){
 						const choices = res?.choices;
 						const choice = !!choices && choices[0];
 						if(choice?.message){
@@ -115,7 +115,7 @@ export default {
 							commit('pushMessage', {message, ending:true});
 						} else {
 							const _delta = choice?.delta?.reasoning_content||choice?.delta?.content||'';
-							if(!!_delta || ending || toolcall){
+							if(!!_delta || ending){
 								delta += _delta;
 								commit('pushMessage', {delta, ending, first});
 								first = false;

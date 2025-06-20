@@ -173,7 +173,7 @@ export default class BotService {
 								status: 'progress',
 								tool_calls: calls
 							});
-							callback(res, false, true);
+							callback(res, false);
 							if(calls.length>0){
 								allmessages.push({
 									'content': '', 
@@ -225,7 +225,7 @@ export default class BotService {
 								execute
 							}
 							store.commit('mcp/setToolcall', toolcall);
-							callback(res, false, true);
+							callback(res, ending);
 						}
 						
 					} else {
