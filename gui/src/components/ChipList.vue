@@ -93,6 +93,25 @@ const initEmptyList = () => {
 		props.list.push(epy);
 	}
 }
+const edit = ref({});
+const values = ref([]);
+const saveVal = (idx) => {
+	if(values.value[idx] != '' && props.list[idx]){
+		if(!!props?.listKey){
+			props.list[idx][props.listKey] = values.value[idx];
+		} else {
+			props.list[idx] = values.value[idx];
+		}
+	}
+}
+const openEdit = (idx,tag) => {
+	edit.value[idx] = true;
+	if(!!props?.listKey){
+		values.value[idx] = tag[props.listKey]
+	} else {
+		values.value[idx] = tag
+	}
+} 
 </script>
 
 <template>
@@ -136,12 +155,17 @@ const initEmptyList = () => {
 		</span>
 		<div v-else v-for="(tag,tagidx) in props.list">
 			<Chip v-if="tagidx<props.list.length - 1" class="pl-0 custom-chip">
-				<span class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center">
-					<i class="pi" :class="icon"/>
+				<span @click="openEdit(tagidx,tag)" class="bg-primary border-circle w-2rem h-2rem flex align-items-center justify-content-center pointer">
+					<i class="pi" :class="!edit[tagidx]?'pi-pencil':icon"/>
 				</span>
-				<span class="ml-2 font-medium">
-					<span v-if="!props.listKey">{{tag}}</span><span v-else>{{tag[props.listKey]}}</span>
+				<span v-if="!edit[tagidx]" class="ml-2 font-medium">
+					<span v-if="!props.listKey" @click="openEdit(tagidx,tag)">{{tag}}</span>
+					<span v-else  @click="openEdit(tagidx,tag)">{{tag[props.listKey]}}</span>
 					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
+				</span>
+				<span v-else class="ml-2 font-medium">
+					<InputText @input="saveVal(tagidx)" @keyup.enter="edit[tagidx] = false;"  class="add-tag-input xl" :unstyled="true" v-model="values[tagidx]" type="text" />
+					<i class="pi pi-arrow-down-left" />
 				</span>
 			</Chip>
 			<Chip v-else-if="!slots.input" class="pl-0 custom-chip">
