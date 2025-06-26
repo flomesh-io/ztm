@@ -433,13 +433,10 @@ export default function ({ app, mesh }) {
   )
 
   var mcpSessions = {}
-  var mcpProtocol = {}
   var mcpStreams = {}
 
   var $mcpSessionID
   var $mcpSession
-  var $mcpProtocolVersion
-  var $mcpProtocol
   var $mcpStream
 
   var connectMCP = pipeline($=>$
