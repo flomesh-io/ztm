@@ -433,10 +433,13 @@ export default function ({ app, mesh }) {
   )
 
   var mcpSessions = {}
+  var mcpProtocol = {}
   var mcpStreams = {}
 
   var $mcpSessionID
   var $mcpSession
+  var $mcpProtocolVersion
+  var $mcpProtocol
   var $mcpStream
 
   var connectMCP = pipeline($=>$
@@ -484,7 +487,7 @@ export default function ({ app, mesh }) {
           .replaceMessage(() => {
             var headers = {
               'access-control-allow-methods': '*',
-              'access-control-allow-headers': 'Content-Type, Mcp-Session-Id',
+              'access-control-allow-headers': 'Content-Type, Mcp-Session-Id, Mcp-Protocol-Version',
             }
             return new Message({ headers })
           })
