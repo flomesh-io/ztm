@@ -159,9 +159,9 @@ const openEdit = (idx,tag) => {
 					<i class="pi" :class="!edit[tagidx]?'pi-pencil':icon"/>
 				</span>
 				<span v-if="!edit[tagidx]" class="ml-2 font-medium">
-					<span v-if="!props.listKey" @click="openEdit(tagidx,tag)">{{tag}}</span>
-					<span v-else  @click="openEdit(tagidx,tag)">{{tag[props.listKey]}}</span>
-					<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
+					<span class="vm" v-if="!props.listKey" @click="openEdit(tagidx,tag)">{{tag}}</span>
+					<span class="vm" v-else  @click="openEdit(tagidx,tag)">{{tag[props.listKey]}}</span>
+					<Button class="ml-2 vm" size="small" @click="removeTag(tagidx)" icon="pi pi-minus" severity="secondary" />
 				</span>
 				<span v-else class="ml-2 font-medium">
 					<InputText @input="saveVal(tagidx)" @keyup.enter="edit[tagidx] = false;"  class="add-tag-input xl" :unstyled="true" v-model="values[tagidx]" type="text" />
@@ -177,9 +177,8 @@ const openEdit = (idx,tag) => {
 						<InputText v-else @keyup.enter="addTag(tag)" :placeholder="placeholder" class="add-tag-input xl" :unstyled="true" :value="tag[props.listKey]" @input="typing($event,tagidx)" type="text" />
 						<i class="pi pi-arrow-down-left" />
 					</span>
-					<span class="font-medium">
-						<i class="pi pi-times-circle" @click="removeTag(tagidx)"/>
-					</span>
+					<Button size="small" @click="removeTag(tagidx)" icon="pi pi-minus" severity="secondary" />
+					<Button :disabled="tag==''" size="small" @click="addTag(tag)" icon="pi pi-plus" severity="secondary" />
 			</Chip>
 			<slot v-else name="input"/>
 		</div>

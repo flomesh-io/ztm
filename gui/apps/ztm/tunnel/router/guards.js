@@ -42,6 +42,7 @@ const infoGuard = (to, from, next, options) => {
 				store.commit('app/setInfo', res);
 			})
 			.catch(err => console.log('Request Failed', err)); 
+		
 	}
 };
 

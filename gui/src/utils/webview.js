@@ -9,9 +9,23 @@ const openWebview = (app, broswer)=>{
 	try{
 		const platform = store.getters['account/platform'];
 		const mesh = store.getters['account/selectedMesh'];
-		if(app.url.indexOf('/#/') == 0 && !!mesh?.name){
-			app.url += `?mesh=${mesh.name}`;
+		const params = [];
+		const lang = localStorage.getItem('lang');
+		if(!!mesh?.name){
+			params.push(`mesh=${mesh.name}`)
 		}
+		if(!!lang){
+			
+			params.push(`lang=${lang}`)
+		}
+		if(params.length>0){
+			if(app.url.indexOf('/#/') == 0){
+				app.url += `?${params.join('&')}`
+			}else {
+				app.url += `#/?${params.join('&')}`
+			}
+		}
+		
 		console.log(app.url);
 		if(!window.__TAURI_INTERNALS__  ){
 			//|| platform=='android' || platform=='ios'

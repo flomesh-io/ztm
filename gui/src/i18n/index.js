@@ -15,6 +15,17 @@ if (timeZone === "Asia/Shanghai" || timeZone === "Asia/Chongqing") {
 } else if (timeZone === "Asia/Hong_Kong") {
 	tzLang = 'zh'
 }
+const setLangByRoute = () => {
+	const hash = location.hash.split("?");
+	if(hash[1]){
+		const params = hash[1].split("&");
+		const lang = params.find((p)=>p.indexOf("lang=")==0);
+		if(lang.split("=")[1]){
+			localStorage.setItem('lang',lang.split("=")[1])
+		}
+	}
+}
+setLangByRoute();
 const defaultLang = localStorage.getItem('lang')|| tzLang ||import.meta.env.VITE_APP_LANG;
 // 创建 i18n 实例
 const i18n = createI18n({

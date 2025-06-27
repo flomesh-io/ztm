@@ -93,17 +93,25 @@ const mcpEditor = ref(false);
 const savingLlm = ref(false);
 const createLlm = () => {
 	savingLlm.value = true
-	llmService.createService({
+	const _svc = {
 		kind: 'llm',
 		name: llm.value.name,
 		ep: info?.value.endpoint?.id,
 		body: {
 			...llm.value
 		}
-	}).then(()=>{
+	}
+	llmService.createService(_svc).then(()=>{
 		toast.add({ severity: 'success', summary:t('Tips'), detail: t('Save successfully.'), life: 3000 });
 		savingLlm.value = false;
 		llmEditor.value = false;
+		routeCreate({
+			name: _svc.name,
+			kind: _svc.kind,
+			protocol: _svc.protocol,
+			metainfo: _svc.body?.metainfo||{},
+			endpoint: {id:_svc.ep},
+		});
 		loaddata();
 	}).catch((e)=>{
 		savingLlm.value = false;
@@ -113,17 +121,25 @@ const createLlm = () => {
 const savingMcp = ref(false);
 const createMcp = () => {
 	savingMcp.value = true
-	llmService.createService({
+	const _svc = {
 		kind: 'tool',
 		name: mcp.value.name,
 		ep: info?.value.endpoint?.id,
 		body: {
 			...mcp.value
 		}
-	}).then(()=>{
+	}
+	llmService.createService(_svc).then((res)=>{
 		toast.add({ severity: 'success', summary:t('Tips'), detail: t('Save successfully.'), life: 3000 });
 		savingMcp.value = false;
 		mcpEditor.value = false;
+		routeCreate({
+			name: _svc.name,
+			kind: _svc.kind,
+			protocol: _svc.protocol,
+			metainfo: _svc.body?.metainfo||{},
+			endpoint: {id:_svc.ep},
+		});
 		loaddata();
 	}).catch((e)=>{
 		savingMcp.value = false;
@@ -339,7 +355,7 @@ onMounted(() => {
 									</div>
 									<div class="flex-item text-right">
 										<div v-if="llmEditor" >
-											<Button :disabled="!llmEnabled" @click="createLlm()()" :loading="savingLlm"  size="small" icon="pi pi-check" ></Button>
+											<Button :disabled="!llmEnabled" @click="createLlm()" :loading="savingLlm"  size="small" icon="pi pi-check" ></Button>
 										</div>
 								</div>
 								</h6>
