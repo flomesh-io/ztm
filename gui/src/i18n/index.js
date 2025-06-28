@@ -20,7 +20,7 @@ const setLangByRoute = () => {
 	if(hash[1]){
 		const params = hash[1].split("&");
 		const lang = params.find((p)=>p.indexOf("lang=")==0);
-		if(lang.split("=")[1]){
+		if(lang && lang.split("=")[1]){
 			localStorage.setItem('lang',lang.split("=")[1])
 		}
 	}
