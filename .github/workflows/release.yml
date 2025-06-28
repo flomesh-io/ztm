@@ -54,7 +54,7 @@ jobs:
   archive-ztm-src:
     needs: set-release-version
     name: archive-ztm-src
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -80,7 +80,7 @@ jobs:
   build-ztm-aio-linux-x86_64:
     needs: set-release-version
     name: build-ztm-aio-linux-x86_64
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -242,7 +242,7 @@ jobs:
   build-libztm-android:
     needs: set-release-version
     name: build-libztm-android
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -282,7 +282,7 @@ jobs:
 
   create-release:
     name: create release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - set-release-version
       - build-ztm-aio-linux-x86_64
