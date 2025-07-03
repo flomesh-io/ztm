@@ -45,7 +45,7 @@ const showAtionMenu = (e) => {
 };
 const layout = ref('grid');
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 
 const emptyMsg = computed(()=>{
 	return t('Empty.')

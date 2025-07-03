@@ -173,7 +173,6 @@ const goApp = (item) => {
 					</a>
 			</template>
 	</Menubar>
-	<!-- <div v-if="isMobile" class="empty-bottom"/> -->
 </template>
 
 <style scoped lang="scss">

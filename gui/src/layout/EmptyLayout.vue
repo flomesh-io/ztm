@@ -28,9 +28,6 @@ const containerClass = computed(() => {
 		return classAry;
 });
 
-const windowWidth = computed(() => window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
-
 </script>
 
 <template>

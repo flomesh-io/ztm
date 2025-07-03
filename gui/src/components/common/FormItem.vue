@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 const props = defineProps(['label','border']);
 const windowWidth = computed(() =>  window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 </script>
 <template>
     <li class="flex align-items-center py-3 px-2 surface-border flex-wrap" :class="{'border-bottom-1':props.border!=false}">
