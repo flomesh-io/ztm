@@ -221,8 +221,6 @@ const usermenuitems = ref([
 const toggleUsermenu = (event) => {
     usermenu.value.toggle(event);
 };
-const windowWidth = computed(() =>  window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
 const pay = () => {
 	inAppPay(()=>{
 		console.log(res)

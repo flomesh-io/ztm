@@ -239,7 +239,7 @@ const loaddata = () => {
 	getHistory();
 }
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 const windowHeight = ref(window.innerHeight);
 const viewHeight = computed(() => windowHeight.value - (isMobile.value?49:36));
 const submitStyle = computed(() => style.submitStyle)

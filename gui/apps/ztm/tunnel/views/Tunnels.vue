@@ -48,7 +48,7 @@ const back = () => {
 }
 
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 
 const emptyMsg = computed(()=>{
 	return t('No tunnels.')

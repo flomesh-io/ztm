@@ -23,7 +23,7 @@ const back = () => {
 	emits('back')
 }
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 const windowHeight = ref(window.innerHeight);
 const viewHeight = computed(() => windowHeight.value - (isMobile.value?313:300));
 const today = ref(new Date());

@@ -32,7 +32,7 @@ const home = () => {
 	router.push('/root');
 }
 const windowWidth = computed(() => window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);

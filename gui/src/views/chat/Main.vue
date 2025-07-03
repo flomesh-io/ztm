@@ -64,7 +64,7 @@ const unread = computed(() => {
 	return store.getters["notice/unread"];
 });
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 const read = (updated) => {
 	const _unread = unread.value - updated
 	store.commit('notice/setUnread',_unread >0?_unread:0);

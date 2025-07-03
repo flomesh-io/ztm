@@ -47,7 +47,7 @@ const filters = ref({
 const logs = computed(() => props.d || []);
 
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 </script>
 
 <template>

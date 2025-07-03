@@ -7,8 +7,6 @@ const { t } = useI18n();
 const store = useStore();
 const ztmService = new ZtmService();
 const props = defineProps(['ep','loading']);
-const windowWidth = computed(() =>  window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
 
 const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]

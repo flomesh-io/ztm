@@ -14,7 +14,7 @@ const store = useStore();
 const props = defineProps(['room']);
 const emits = defineEmits(['back','ep','clear','update:room']);
 const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=768);
+const isMobile = computed(() => windowWidth.value<=1000);
 const windowHeight = ref(window.innerHeight);
 const viewHeight = computed(() => windowHeight.value - (isMobile.value?43:30));
 const today = ref(new Date());
