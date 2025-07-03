@@ -27,7 +27,7 @@ const isMobile = () => {
 }
 
 const isMobileWidth = () => {
-	return window.innerWidth <= 1000
+	return window.innerWidth <= window.innerHeight
 }
 
 export {
