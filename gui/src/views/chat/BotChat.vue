@@ -6,7 +6,7 @@ import BotService from '@/service/BotService';
 import MCPService from '@/service/MCPService';
 import userSvg from "@/assets/img/user.png";
 import botSvg from "@/assets/img/bot.svg";
-import { platform } from '@/utils/platform';
+import { platform, isMobileWidth } from '@/utils/platform';
 import { getItem, setItem, pushItem, STORE_SETTING_MCP,STORE_BOT_HISTORY } from "@/utils/localStore";
 import _ from 'lodash';
 import 'deep-chat';
@@ -238,8 +238,7 @@ const loaddata = () => {
 	}
 	getHistory();
 }
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 const windowHeight = ref(window.innerHeight);
 const viewHeight = computed(() => windowHeight.value - (isMobile.value?49:36));
 const submitStyle = computed(() => style.submitStyle)
@@ -565,7 +564,7 @@ defineExpose({
 	<AppHeader :back="back">
 	    <template #center >
 				<Status :run="true" />
-	      <b>{{props?.room?.name}} ({{llm?.name}})</b>
+	      <b>{{props?.room?.name}} ({{llm?.name||t('No LLM')}})</b>
 	    </template>
 	    <template #end> 
 				<Button icon="pi pi-history" @click="gohistory" severity="secondary" text />

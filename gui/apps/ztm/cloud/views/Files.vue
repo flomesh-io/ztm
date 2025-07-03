@@ -12,6 +12,7 @@ import { useToast } from "primevue/usetoast";
 import Config from './Config.vue'
 import _ from "lodash";
 import { useI18n } from 'vue-i18n';
+import { isMobileWidth } from '@/utils/platform';
 const { t } = useI18n();
 const toast = useToast();
 const store = useStore();
@@ -44,8 +45,7 @@ const showAtionMenu = (e) => {
 	fileConfig.value.open(e);
 };
 const layout = ref('grid');
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 
 const emptyMsg = computed(()=>{
 	return t('Empty.')

@@ -16,6 +16,7 @@ import gptSvg from "@/assets/img/gpt.png";
 import { resize, position } from "@/utils/window";
 import _ from "lodash";
 import { useI18n } from 'vue-i18n';
+import { isMobileWidth } from '@/utils/platform';
 const { t, locale } = useI18n();
 extend(locale.value)
 const props = defineProps(['app']);
@@ -63,8 +64,7 @@ const uniRooms = computed(() => {
 const unread = computed(() => {
 	return store.getters["notice/unread"];
 });
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 const read = (updated) => {
 	const _unread = unread.value - updated
 	store.commit('notice/setUnread',_unread >0?_unread:0);

@@ -2,7 +2,7 @@
 import { ref, computed,onActivated,onMounted,useSlots } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { platform, isPC } from '@/utils/platform';
+import { platform, isPC, isMobileWidth } from '@/utils/platform';
 import XeyeSvg from "@/assets/img/logo.png";
 const slots = useSlots();
 const props = defineProps(['main','back','child'])
@@ -38,16 +38,15 @@ const home = () => {
 		router.push("/mesh/list");
 	}
 }
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = ref(isMobileWidth());
 onActivated(()=>{
 	setTimeout(()=>{
-		windowWidth.value = window.innerWidth;
+		isMobile.value = isMobileWidth();
 	},500)
 })
 onMounted(()=>{
 	setTimeout(()=>{
-		windowWidth.value = window.innerWidth;
+		isMobile.value = isMobileWidth();
 	},500)
 })
 

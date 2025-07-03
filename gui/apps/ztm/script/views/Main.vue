@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted,onActivated, computed,watch } from "vue";
+import { isMobileWidth } from '@/utils/platform';
 import Scripts from './Scripts.vue'
 import Editor from './Editor.vue'
 import Result from './Result.vue'
@@ -43,8 +44,7 @@ const reloadScripts = () => {
 	},100)
 }
 
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 
 </script>
 

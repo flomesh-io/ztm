@@ -19,7 +19,7 @@ import deepseek from "@/assets/img/llm/deepseek.png";
 import llm from "@/assets/img/llm/default.png";
 import { open } from '@tauri-apps/plugin-shell';
 import { download } from '@tauri-apps/plugin-upload';
-import { platform } from '@/utils/platform';
+import { platform, isMobile, isPC } from '@/utils/platform';
 import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { create, open as fsOpen, remove, copyFile, writeFile as fsWriteFile, exists,mkdir, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { documentDir } from '@tauri-apps/api/path';
@@ -44,13 +44,6 @@ function convertToUint8Array(input) {
     throw new Error('Unsupported input type for conversion to Uint8Array');
   }
 }
-const isMobile = () => {
-	return platform() == 'ios' || platform() == 'android';
-}
-const isPC = () => {
-	return !!platform() && platform() !='web' && platform() != 'ios' && platform() != 'android';
-}
-
 const getSavePath = (target, dft) => {
 	if(!target){
 		return dft;

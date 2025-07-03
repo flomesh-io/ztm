@@ -12,6 +12,7 @@ import { dayjs, extend } from '@/utils/dayjs';
 import { downloadFile } from '@/utils/file';
 import clipboard from 'clipboardy';
 import { useI18n } from 'vue-i18n';
+import { isMobileWidth } from '@/utils/platform';
 const { t, locale } = useI18n();
 extend(locale.value)
 
@@ -289,8 +290,7 @@ const changeLabels = (ep) => {
 		.catch(err => console.log('Request Failed', err)); 
 }
 
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 onActivated(()=>{
 	load()
 })

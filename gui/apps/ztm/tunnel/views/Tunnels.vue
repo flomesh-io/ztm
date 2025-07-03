@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useConfirm } from "primevue/useconfirm";
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
+import { isMobileWidth } from '@/utils/platform';
 const { t } = useI18n();
 const store = useStore();
 
@@ -47,8 +48,7 @@ const back = () => {
 	router.go(-1)
 }
 
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 
 const emptyMsg = computed(()=>{
 	return t('No tunnels.')
