@@ -237,6 +237,7 @@
 	"Headers": "请求头",
 	"Url": "路径",
 	"No LLM.":"没有大模型",
+	"No LLM":"无大模型",
 	"Add LLM":"添加大模型",
 	"No MCP Server.":"没有MCP服务",
 	"Add MCP Server":"添加MCP服务",

@@ -13,7 +13,7 @@ import { useStore } from 'vuex';
 import { AcceptFile } from "@/doms/AcceptFile";
 import { reg } from "@/utils/notification";
 import { getShared } from '@/utils/file';
-import { platform } from '@/utils/platform';
+import { isMobile } from '@/utils/platform';
 import { useI18n } from 'vue-i18n';
 const { t, locale } = useI18n(); 
 const store = useStore();
@@ -31,16 +31,11 @@ const selectedMesh = computed(() => {
 	return store.getters["account/selectedMesh"]
 });
 
-const isMobile = computed(()=>{
-	const pm = platform();
-	return pm == 'ios' || pm == 'android';
-})
-
 const open = ref(false);
 const paths = ref()
 const timmer = () => {
 	store.dispatch('notice/rooms');
-	if(!paths.value && isMobile.value){
+	if(!paths.value && isMobile()){
 		getShared(false, (res)=>{
 			if(res && res.length>0){
 				open.value = true;
@@ -49,9 +44,7 @@ const timmer = () => {
 		})
 	}
 	setTimeout(()=>{
-		//if (platform() == 'ios') {
-			timmer();
-		//}
+		timmer();
 	},1000)
 }
 onMounted(()=>{

@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { dayjs,extend } from '@/utils/dayjs';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useI18n } from 'vue-i18n';
+import { isMobileWidth } from '@/utils/platform';
 const { t, locale } = useI18n();
 extend(locale.value)
 const props = defineProps(['d','endpoints']);
@@ -46,8 +47,7 @@ const filters = ref({
 
 const logs = computed(() => props.d || []);
 
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 </script>
 
 <template>

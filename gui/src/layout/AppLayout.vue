@@ -8,6 +8,7 @@ import AppSidebar from './AppSidebar.vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { isMobileWidth } from '@/utils/platform';
 // import { listen } from '@tauri-apps/api/event';
 // import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -31,8 +32,7 @@ const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const home = () => {
 	router.push('/root');
 }
-const windowWidth = computed(() => window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 
 const toggleLeft = () => {
 	store.commit('account/setMobileLeftbar', false);

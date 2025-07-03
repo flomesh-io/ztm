@@ -8,13 +8,13 @@ import { dayjs, extend } from '@/utils/dayjs';
 import BotService from '@/service/BotService';
 import { useI18n } from 'vue-i18n';
 import ToolCallCard from "./ToolCallCard.vue"
+import { isMobileWidth } from '@/utils/platform';
 const { t, locale } = useI18n();
 extend(locale.value)
 const store = useStore();
 const props = defineProps(['room']);
 const emits = defineEmits(['back','ep','clear','update:room']);
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value<=1000);
+const isMobile = computed(isMobileWidth);
 const windowHeight = ref(window.innerHeight);
 const viewHeight = computed(() => windowHeight.value - (isMobile.value?43:30));
 const today = ref(new Date());
