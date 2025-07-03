@@ -199,7 +199,7 @@ const toggleLeft = () => {
 }
 const goApp = (item) => {
 	const webviewOptions = {
-		url: item.app,
+		url: item.url,
 		name: item.label,
 		width:item?.width || 1280,
 		height:item?.height || 860,
@@ -207,7 +207,7 @@ const goApp = (item) => {
 	}
 	console.log(webviewOptions)
 	openWebview(webviewOptions);
-	focusMenu.value = item.app;
+	focusMenu.value = item.url;
 }
 </script>
 
@@ -235,7 +235,7 @@ const goApp = (item) => {
 							<div class="text-sm">{{ t(item.label) }} </div>
 							<!-- <span v-if="hasSubmenu" class="pi pi-fw pi-angle-right ml-2 relative" style="top: 2px;" /> -->
 					</a>
-					<a :class="{'actived':focusMenu == item.app}" class="flex flex-column" v-else-if="!!item.app" v-ripple href="javascript:void(0)" @click="goApp(item)" v-bind="props.action">
+					<a :class="{'actived':focusMenu == item.url}" class="flex flex-column" v-else-if="!!item.url" v-ripple href="javascript:void(0)" @click="goApp(item)" v-bind="props.action">
 							<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
 								<use :xlink:href="item.svg"></use>
 							</svg>

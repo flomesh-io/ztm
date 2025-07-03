@@ -791,6 +791,10 @@ iframe{
 		// background: #1e1e1e;
 		height: calc(65px + env(safe-area-inset-bottom, 0));
 	}
+	
+	.empty-header{
+		height: calc(50px + env(safe-area-inset-top, 0)) !important;
+	}
 }
 
 @media screen and (min-width: 768px){
@@ -898,7 +902,7 @@ fieldset{
 .small.p-button.p-button-icon-only,.p-button-sm.p-button.p-button-icon-only{
 	font-size: 0.875rem;
 	width: 2.2rem;
-	height: 2.2rem;
+	height: 2.2rem !important;
 }
 .p-selectbutton .p-togglebutton{
 	width: 100%;
@@ -1451,6 +1455,18 @@ fieldset{
 		display: block;
 		height: 50px;
 		background: var(--p-toolbar-background);
+	}
+}
+
+.transparent-header{
+	background-color: transparent !important;
+	color: #fff !important;
+	.p-togglebutton{
+		border: none;
+		color: transparent;
+	}
+	.p-togglebutton .pi{
+		color: #fff !important;
 	}
 }
 @media screen and (min-width: 768px) and (max-width: 1024px){

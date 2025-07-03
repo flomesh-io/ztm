@@ -82,7 +82,7 @@ onActivated(()=>{
 </script>
 
 <template>
-	<AppHeader :main="true" >
+	<AppHeader >
 			<template #center>
 				<b>{{t('Endpoint Logs')}}</b>
 			</template>

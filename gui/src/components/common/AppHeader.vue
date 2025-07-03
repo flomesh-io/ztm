@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { platform, isPC, isMobileWidth } from '@/utils/platform';
 import XeyeSvg from "@/assets/img/logo.png";
 const slots = useSlots();
-const props = defineProps(['main','back','child'])
+const props = defineProps(['main','back','child','class','style'])
 const store = useStore();
 const router = useRouter();
 const hasStartSlot = computed(() => !!slots.start);
@@ -54,7 +54,7 @@ onMounted(()=>{
 
 <template>
 	<div v-if="isMobile" class="empty-header"/>
-	<Toolbar class="nopd-header">
+	<Toolbar class="nopd-header" :class="props.class" :style="props.style">
 			<template #start>
 				<slot v-if="hasStartSlot" name="start"/>
 				<Button v-else-if="props.main && (isMobile || pm =='android'|| pm =='ios')" @click.stop="toggleLeft" class="mobile-show"   text >

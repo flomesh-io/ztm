@@ -5172,8 +5172,8 @@
   }
 
   .p-toolbar {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+		position: relative;
+		z-index: 2;
     padding: 1.125rem;
     border-radius: 6px;
     gap: 0.5rem;

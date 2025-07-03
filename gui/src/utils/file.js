@@ -79,7 +79,7 @@ const writeMobileFile = (name, append) => {
 	}
 }
 const writeLogFile = async (name, append) => {
-	if(isPC()){
+	if(!!platform() && platform() != 'web'){
 		try{
 			const encoder = new TextEncoder();
 			const data = encoder.encode(append);

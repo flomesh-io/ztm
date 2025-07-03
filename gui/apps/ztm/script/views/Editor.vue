@@ -83,7 +83,7 @@ defineExpose({ setPjs })
 
 <template>
 	<div  class="relative h-full min-h-screen w-full" >
-		<AppHeader >
+		<AppHeader style="z-index: 1000;">
 				<template #start>
 					<Button v-if="showBack" @click="back" icon="pi pi-angle-left" severity="secondary" text />
 					<Button v-tooltip="t('Show Favorites')" v-if="props.scriptsHide || props.isMobile" icon="pi pi-list-check" aria-haspopup="true" aria-controls="op" @click="show"/>
@@ -95,6 +95,7 @@ defineExpose({ setPjs })
 		
 				<template #end> 
 					<EpSelector 
+						style="height: 100%;align-items:center;"
 						:app="true" 
 						:multiple="false" 
 						:endpoint="info?.endpoint" 
