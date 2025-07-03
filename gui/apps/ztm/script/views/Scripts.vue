@@ -40,7 +40,7 @@ onMounted(()=>{
 						<b>{{t('Favorites')}}</b>
 					</template>
 			</AppHeader>
-			<ScrollPanel class="absolute-scroll-panel" v-if="scripts && scripts.length >0">
+			<ScrollPanel class="absolute-scroll-panel" style="top: 50px;" v-if="scripts && scripts.length >0">
 			<div class="text-center">
 				
 				<div class="grid text-left mt-1 px-3" v-if="scripts && scripts.length >0">

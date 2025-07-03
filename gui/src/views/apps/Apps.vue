@@ -164,11 +164,14 @@ const close = () => {
 const hasTauri = ref(!!window.__TAURI_INTERNALS__);
 const routeApp = (app) => {
 	if(!hasTauri.value){
-		router.push(`/mesh/app/${app.provider||'ztm'}/${app.name}`);
+		if((app?.url||'').indexOf('/#/') == 0){
+			router.push(app.url.replace('/#/','/'));
+		}else {
+			router.push(`/mesh/app/${app.provider||'ztm'}/${app.name}`);
+		}
 	} else {
 		openAppContent(app)
 	}
-	
 }
 onMounted(()=>{
 	resize(455,570,false);
@@ -202,7 +205,7 @@ watch(()=>selectedMesh,()=>{
 	<div class="relative" style="z-index:3" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
 		<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="close"/>
 	</div>
-	<ScrollPanel v-else class="container_pannel" :class="props.layout" >
+	<div v-else>
 		<AppHeader v-if="props.layout=='absolute_container'" :main="true">
 				<template #center>
 					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
@@ -216,55 +219,59 @@ watch(()=>selectedMesh,()=>{
 											offIcon="pi pi-sliders-h"  :onLabel="t('Manage')" :offLabel="' '"/>
 				</template>
 		</AppHeader>
-		<div v-else class="flex actions transparent-header">
-			<div class="flex-item">
-				<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
-			</div>
-			<div v-if="!!selectedMesh" class="flex-item text-center " :class="{'text-white':!props.theme}" style="line-height: 30px;">
-				<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
-				{{selectedMesh?.name}}
-			</div>
-			<div v-else class="flex-item text-center" :class="{'text-white-alpha-70':!props.theme}" style="line-height: 30px;">
-				<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
-			</div>
-			<div class="flex-item text-right">
-				<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-times" 
-										offIcon="pi pi-sliders-h"  :onLabel="t('Manage')" :offLabel="'.'"/>
-			</div>
-		</div>
-			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'pt-5':'pt-2'" v-if="!manage">
-				<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
-					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
-				</div>
-				<div class="grid text-center" >
-						<div  
-							v-for="(app) in mergeApps"
-							:class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" 
-							@click="routeApp(app)" 
-							class="py-4 relative text-center col-3 md:col-2" >
-							<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-							<Badge class="absolute opacity-90" v-if="`${app?.provider||''}/${app.name}` == 'ztm/chat' && unread>0" style="margin-left: -10px;margin-top: -10px;" :value="unread" severity="danger"/>
-							<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
-									animationDuration="2s" aria-label="Progress" />
-							<div class="mt-1" v-tooltip="`${app.provider||'local'}/${app.name}`">
-								<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
-									<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
-									{{ t(app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name)}}
-								</b>
+		<AppHeader class="transparent-header" v-else :main="true">
+				<template #start> 
+					<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
+				</template>
+				<template #center>
+					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;" :class="{'text-white':!props.theme}">
+						<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
+						{{selectedMesh?.name}}
+					</div>
+					<div v-else class="flex-item text-center" :class="{'text-white-alpha-70':!props.theme}" style="line-height: 30px;">
+						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
+					</div>
+				</template>
+				<template #end> 
+					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
+											offIcon="pi pi-sliders-h"  :onLabel="t('Manage')" :offLabel="' '"/>
+				</template>
+		</AppHeader>
+		<ScrollPanel class="container_pannel" :class="props.layout" >
+				<div class="terminal_body px-4 pt-8"  v-if="!manage">
+					<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
+						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
+					</div>
+					<div class="grid text-center" >
+							<div  
+								v-for="(app) in mergeApps"
+								:class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" 
+								@click="routeApp(app)" 
+								class="py-4 relative text-center col-3 md:col-2" >
+								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
+								<Badge class="absolute opacity-90" v-if="`${app?.provider||''}/${app.name}` == 'ztm/chat' && unread>0" style="margin-left: -10px;margin-top: -10px;" :value="unread" severity="danger"/>
+								<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
+										animationDuration="2s" aria-label="Progress" />
+								<div class="mt-1" v-tooltip="`${app.provider||'local'}/${app.name}`">
+									<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
+										<i v-if="app.uninstall" class="pi pi-cloud-download mr-1" />
+										{{ t(app.label || mapping[`${app?.provider||''}/${app.name}`]?.name || app.name)}}
+									</b>
+								</div>
 							</div>
-						</div>
+					</div>
+					<div v-if="props.layout=='absolute_container' && !selectedMesh && !props.noInners" class="flex-item text-center text-xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px">
+						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
+					</div>
 				</div>
-				<div v-if="props.layout=='absolute_container' && !selectedMesh && !props.noInners" class="flex-item text-center text-xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px">
-					<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
+				<div class="terminal_body px-4 pt-8" v-else>
+					<AppManage 
+						:theme="props.theme"
+						:meshApps="meshApps" 
+						@reload="loaddata"/>
 				</div>
-			</div>
-			<div class="terminal_body px-4" :class="props.layout=='absolute_container'?'py-6':'py-2'" v-else>
-				<AppManage 
-					:theme="props.theme"
-					:meshApps="meshApps" 
-					@reload="loaddata"/>
-			</div>
-	</ScrollPanel>
+		</ScrollPanel>
+	</div>
 </template>
 
 <style lang="scss" scoped>
@@ -283,15 +290,6 @@ watch(()=>selectedMesh,()=>{
 	}
 	:deep(.p-radiobutton .p-radiobutton-box){
 		background-color: #41403A;
-	}
-	.transparent-header{
-		:deep(.p-togglebutton){
-			border: none;
-			color: transparent;
-		}
-		:deep(.p-togglebutton .pi){
-			color: #fff !important;
-		}
 	}
 	.terminal_toolbar {
 	  display: flex;

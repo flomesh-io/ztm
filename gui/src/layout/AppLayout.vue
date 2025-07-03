@@ -4,7 +4,6 @@ import AppRoot from './AppRoot.vue';
 import AppTopbar from './AppTopbar.vue';
 import AppBottombar from './AppBottombar.vue';
 import AppFooter from './AppFooter.vue';
-import AppSidebar from './AppSidebar.vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';

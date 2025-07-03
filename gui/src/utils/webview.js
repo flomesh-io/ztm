@@ -12,8 +12,14 @@ const openWebview = (app, broswer)=>{
 		const params = [];
 		const lang = localStorage.getItem('lang');
 		if(!!mesh?.name){
-			params.push(`mesh=${mesh.name}`)
+			params.push(`mesh=${mesh.name}`);
+			if(app.url){
+				app.url = app.url.replace(':mesh',mesh?.name)
+			}
+		} else if(!!app?.url && app.url.indexOf(':mesh')>0){
+			return
 		}
+		
 		if(!!lang){
 			
 			params.push(`lang=${lang}`)

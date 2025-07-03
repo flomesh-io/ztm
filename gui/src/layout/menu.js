@@ -1,4 +1,5 @@
 import { platform } from '@tauri-apps/plugin-os';
+import { getUrl } from '@/service/common/request';
 const menus = {
 	tauri: [
 		{
@@ -11,7 +12,7 @@ const menus = {
 				label: 'Chat',short:'Chat', svg: '#svg-log', route: '/mesh/chat'
 		},
 		{
-				label: 'Cloud',short:'Cloud', svg: '#svg-cloud', app: '/api/meshes/Local/apps/ztm/cloud/'
+				label: 'Cloud',short:'Cloud', svg: '#svg-cloud', url: getUrl('/api/meshes/:mesh/apps/ztm/cloud/')
 		},
 		// {
 		// 		label: 'Logs',short:'Log', svg: '#svg-log', route: '/mesh/log'
@@ -28,7 +29,7 @@ const menus = {
 				label: 'Chat',short:'Chat', svg: '#svg-chat', route: '/mesh/chat'
 		},
 		{
-				label: 'Cloud',short:'Cloud', svg: '#svg-cloud', app: '/api/meshes/Local/apps/ztm/cloud/'
+				label: 'Cloud',short:'Cloud', svg: '#svg-cloud', url: getUrl('/api/meshes/:mesh/apps/ztm/cloud/')
 		},
 		{
 				label: 'Apps',short:'Apps', svg: '#svg-grid', route: '/mesh/apps'
@@ -40,5 +41,6 @@ const menus = {
 };
 
 export function getMenu(){
-	return menus[!!window.__TAURI_INTERNALS__ && platform() != "android" && platform() != "ios" ?'tauri':'web'];
+	const _key = !!window.__TAURI_INTERNALS__ && platform() != "android" && platform() != "ios" ?'tauri':'web';
+	return JSON.parse(JSON.stringify(menus[_key]));
 }

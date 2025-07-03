@@ -8,7 +8,7 @@ import ZtmService from '@/service/ZtmService';
 
 const { t } = useI18n();
 const ztmService = new ZtmService();
-const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint','size','class','user']);
+const props = defineProps(['multiple','modelValue','mesh','disabled','app','endpoint','size','class','user','style']);
 const emits = defineEmits(['select','update:modelValue']);
 
 const endpoints = ref([]);
@@ -85,6 +85,7 @@ onMounted(()=>{
 		:options="endpoints" 
 		optionLabel="name" 
 		:class="props.class"
+		:style="props.style"
 		optionValue="id" 
 		:filter="true" 
 		:placeholder="t('Endpoints')"
@@ -109,6 +110,7 @@ onMounted(()=>{
 		optionLabel="name" 
 		optionValue="id"
 		:placeholder="t('Endpoint')" 
+		:style="props.style"
 		:class="props.class">
 			<template #option="slotProps">
 				<i class="pi pi-mobile mr-1"/>
