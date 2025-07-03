@@ -174,7 +174,10 @@ const newBotRoom = () => {
 		resize(1280,860,false);
 	}
 	setTimeout(()=>{
-		selectRoom.value = _room;
+		selectRoom.value = {
+			..._room,
+			bot:true
+		};
 	},100)
 }
 const openChat = (item) => {
