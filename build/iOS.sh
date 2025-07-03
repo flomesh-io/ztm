@@ -50,6 +50,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# build pack on host
+xcodebuild -project pipy.xcodeproj -scheme pack -sdk macosx ONLY_ACTIVE_ARCH=NO
 # build libpipy.a
 cmake --build .  --config Release -t pipy
 
