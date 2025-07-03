@@ -249,10 +249,13 @@ const mcpRemove = (t,index) => {
 	})
 }
 
+const savingMap = ref({})
 const routeRemove = (t) => {
+	savingMap.value[t?.name] = true;
 	llmService.deleteRoute({
 		ep:info?.value.endpoint?.id, path:t.path
 	},()=>{
+		savingMap.value[t?.name] = false;
 		loaddata();
 		emits("save");
 	})
@@ -268,16 +271,19 @@ const removeAnyRoutes = () => {
 	})
 }
 const routeSave = (service, route) => {
+	savingMap.value[service?.name] = true;
 	llmService.createRoute({
 		ep:info?.value.endpoint?.id, path:`${service?.kind}/${service?.name}`,
 		service,
 		cors:route.cors
 	}).then(()=>{
+		// savingMap.value[service?.name] = false;
 		loaddata();
 		emits("save");
 	})
 }
 const routeCreate = (service) => {
+	savingMap.value[service?.name] = true;
 	llmService.createRoute({
 		ep:info?.value.endpoint?.id, path:`${service?.kind}/${service?.name}`,
 		service,
@@ -286,7 +292,10 @@ const routeCreate = (service) => {
 			// allowHeaders: service?.protocol=='http'?[]:['content-type']
 		}
 	}).then(()=>{
-		loaddata();
+		setTimeout(()=>{
+			savingMap.value[service?.name] = false;
+			loaddata();
+		},2000)
 		emits("save");
 	})
 }
@@ -296,7 +305,6 @@ const browser = () => {
 		mcp.value.target.address = dir;
 	})
 }
-
 onMounted(() => {
 	loaddata()
 });
@@ -552,12 +560,12 @@ onMounted(() => {
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																		<div class="flex w-full" style="align-items:center">
-																			<Tag class="mr-2 relative text-uppercase" style="top:-2px;" v-if="item?.kind">{{item?.kind}}</Tag>
+																			<Tag class="mr-2 text-uppercase" v-if="item?.kind">{{item?.kind}}</Tag>
 																			<b class="flex-item">{{item?.name}}</b>
 																			
-																			<Button class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
-																			<Button v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
-																			<Button v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
+																			<Button :loading="savingMap[item?.name]" class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
+																			<Button :loading="savingMap[item?.name]" v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
+																			<Button :loading="savingMap[item?.name]" v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
 																		</div>
 																		<span class=" text-sm mt-2"  v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
 																			<div class="flex" style="word-break: break-all;align-items:center">
@@ -614,14 +622,14 @@ onMounted(() => {
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																		<div class="flex w-full" style="align-items:center">
-																			<Tag class="mr-2 relative" style="top:-2px" v-if="item?.kind">
+																			<Tag class="mr-2" v-if="item?.kind">
 																				Streamable
 																			</Tag>
 																			<b class="flex-item">{{item?.name}}</b>
 																			
-																			<Button class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
-																			<Button v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
-																			<Button v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
+																			<Button :loading="savingMap[item?.name]" class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
+																			<Button :loading="savingMap[item?.name]" v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
+																			<Button :loading="savingMap[item?.name]" v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
 																		</div>
 																		<span class="text-sm mt-2" v-if="item.localRoutes.length>0" v-for="(route) in item.localRoutes">
 																			<div class="flex" style="word-break: break-all;align-items:center">
