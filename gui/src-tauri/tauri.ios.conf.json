@@ -4,7 +4,7 @@
     "targets": "all",
     "resources": [],
 		"iOS": {
-			"minimumSystemVersion": "16.2"
+			"minimumSystemVersion": "18.0"
 		},
     "externalBin": [],
     "icon": [

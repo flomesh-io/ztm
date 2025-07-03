@@ -1,7 +1,7 @@
 # Uncomment the next line to define a global platform for your project
 
 target 'ztm_iOS' do
-platform :ios, '16.2'
+platform :ios, '18.0'
   # Pods for ztm_iOS
 end
 
