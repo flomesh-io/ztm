@@ -244,8 +244,9 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           }
         )
         .to($=>$
-          .muxHTTP({
+          .muxHTTP(() => $sessionID, {
             version: 2,
+            maxSessions: 1,
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS({ ...tlsOptions }).to($=>$
@@ -581,6 +582,45 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       )
     }
 
+    function pingEndpoint(ep, timeout) {
+      timeout = timeout || 30
+      var timestamp = {
+        endpoint: config.agent.id,
+        start: Date.now(),
+        end: null,
+        error: null,
+      }
+      return Promise.race([
+        new Timeout(timeout).wait().then(() => {
+          timestamp.end = Date.now()
+          timestamp.error = 'Response timeout'
+          return [timestamp]
+        }),
+        requestHub.spawn(
+          new Message({ method: 'GET', path: `/api/ping/endpoints/${ep}?timeout=${timeout}`})
+        ).then(
+          function (res) {
+            timestamp.end = Date.now()
+            var status = res?.head?.status
+            if (status === 200) {
+              try {
+                var payload = JSON.decode(res.body)
+                if (payload instanceof Array) {
+                  return [timestamp, ...payload]
+                }
+              } catch {}
+            }
+            if (res.body) {
+              timestamp.error = `Invalid response (status ${status}): ${res.body.shift(100).toString()}`
+            } else {
+              timestamp.error = `Invalid empty response (status ${status})`
+            }
+            return [timestamp]
+          }
+        )
+      ])
+    }
+
     function leave() {
       closed = true
       connections.forEach(
@@ -612,6 +652,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       findEndpoint,
       findFile,
       getEndpointStats,
+      pingEndpoint,
       leave,
     }
 
@@ -2075,6 +2116,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     return hubActive[0].getEndpointStats(ep)
   }
 
+  function pingEndpoint(ep) {
+    return hubActive[0].pingEndpoint(ep)
+  }
+
   function leave() {
     hubActive.forEach(hub => hub.leave())
     exited = true
@@ -2227,6 +2272,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     syncFile,
     remoteQueryLog,
     getEndpointStats,
+    pingEndpoint,
     leave,
   }
 }

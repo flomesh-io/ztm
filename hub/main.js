@@ -104,6 +104,10 @@ var routes = Object.entries({
     'GET': () => getEndpointStats,
   },
 
+  '/api/ping/endpoints/{ep}': {
+    'GET': () => pingEndpoint,
+  },
+
   '/api/forward/{ep}/*': {
     'GET': () => forwardRequest,
     'POST': () => forwardRequest,
@@ -1005,6 +1009,58 @@ var getEndpointStats = pipeline($=>$
         )
         return response(200, all)
       }
+    }
+  )
+)
+
+var pingEndpoint = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function (req) {
+      var timestamp = {
+        hub: myID,
+        start: Date.now(),
+        end: null,
+        error: null,
+      }
+      var id = $params.ep
+      var ep = endpoints[id]
+      if (!ep) {
+        timestamp.end = Date.now()
+        timestamp.error = 'Endpoint not found'
+        return new Message(JSON.encode([timestamp]))
+      }
+      var hub = null
+      sessions[id]?.forEach?.(h => hub = h)
+      if (!hub) {
+        timestamp.end = Date.now()
+        timestamp.error = 'Active session not found'
+        return new Message(JSON.encode([timestamp]))
+      }
+      var url = new URL(req.head.path)
+      var timeout = url.searchParams.get('timeout') || 30
+      return Promise.race([
+        new Timeout(Math.max(timeout / 2, 1)).wait().then(() => {
+          timestamp.end = Date.now()
+          timestamp.error = 'Response timeout'
+          return new Message(JSON.encode([timestamp]))
+        }),
+        pipeline($=>$
+          .onStart(hub => {
+            $hubSelected = hub
+            return new Message({ path: '/api/ping' })
+          })
+          .pipe(muxToAgent)
+          .replaceMessage(res => {
+            timestamp.end = Date.now()
+            var status = res?.head?.status
+            if (status !== 200) {
+              timestamp.error = `Invalid response (status ${status})`
+            }
+            return new StreamEnd
+          })
+        ).spawn(hub).then(() => new Message(JSON.encode([timestamp])))
+      ])
     }
   )
 )
