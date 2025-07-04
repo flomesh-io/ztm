@@ -530,7 +530,7 @@ function doCommand(meshName, epName, argv, program) {
           var type = args['<object type>']
           var name = args['[object name]']
           switch (type) {
-            case 'endpoint': case 'ep':return selectMeshEndpoint(meshName, epName).then(({ mesh, ep }) => pingEndpoint(mesh, ep))
+            case 'endpoint': case 'ep':return selectMeshEndpoint(meshName, name).then(({ mesh, ep }) => pingEndpoint(mesh, ep))
             default: return invalidObjectType(type, 'ping')
           }
         }
