@@ -1054,12 +1054,26 @@ var pingEndpoint = pipeline($=>$
           .replaceMessage(res => {
             timestamp.end = Date.now()
             var status = res?.head?.status
-            if (status !== 200) {
+            if (status === 200 && res.body) {
+              try {
+                var info = JSON.decode(res.body)
+                if (info.id === id) return new StreamEnd
+              } catch {}
+            }
+            if (res.body) {
+              timestamp.error = `Invalid response (status ${status}): ${res.body.shift(100).toString()}`
+            } else {
               timestamp.error = `Invalid response (status ${status})`
             }
             return new StreamEnd
           })
-        ).spawn(hub).then(() => new Message(JSON.encode([timestamp])))
+        ).spawn(hub).then(() => {
+          if (!timestamp.end) {
+            timestamp.end = Date.now()
+            timestamp.error = `Invalid empty response`
+          }
+          return new Message(JSON.encode([timestamp]))
+        })
       ])
     }
   )

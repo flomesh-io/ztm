@@ -613,7 +613,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             if (res.body) {
               timestamp.error = `Invalid response (status ${status}): ${res.body.shift(100).toString()}`
             } else {
-              timestamp.error = `Invalid empty response (status ${status})`
+              timestamp.error = `Invalid response (status ${status})`
             }
             return [timestamp]
           }
@@ -705,7 +705,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var routes = Object.entries({
 
       '/api/ping': {
-        'GET': () => response(200)
+        'GET': () => response(200, { id: config.agent.id })
       },
 
       '/api/log': {
