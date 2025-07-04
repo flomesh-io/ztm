@@ -551,6 +551,15 @@ function main(listen) {
       }
     },
 
+    '/api/meshes/{mesh}/ping/endpoints/{ep}': {
+      'GET': function ({ mesh, ep }) {
+        mesh = URL.decodeComponent(mesh)
+        return api.pingEndpoint(mesh, ep).then(
+          ret => ret ? response(200, ret) : response(404)
+        )
+      }
+    },
+
   }).map(
     function ([path, methods]) {
       var match = new http.Match(path)

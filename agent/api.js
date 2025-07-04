@@ -304,6 +304,12 @@ function getEndpointStats(mesh, ep) {
   return m.getEndpointStats(ep)
 }
 
+function pingEndpoint(mesh, ep) {
+  var m = findMesh(mesh)
+  if (!m) return null
+  return m.pingEndpoint(ep)
+}
+
 export default {
   init,
   setIdentity,
@@ -339,4 +345,5 @@ export default {
   getAppLog,
   connectApp,
   getEndpointStats,
+  pingEndpoint,
 }
