@@ -1018,24 +1018,28 @@ var pingEndpoint = pipeline($=>$
   .replaceMessage(
     function (req) {
       var timestamp = {
-        hub: myID,
+        hub: {
+          id: myID,
+          names: myNames,
+        },
         start: Date.now(),
         end: null,
         error: null,
       }
+      var result = [timestamp]
       var id = $params.ep
       var ep = endpoints[id]
       if (!ep) {
         timestamp.end = Date.now()
         timestamp.error = 'Endpoint not found'
-        return new Message(JSON.encode([timestamp]))
+        return new Message(JSON.encode(result))
       }
       var hub = null
       sessions[id]?.forEach?.(h => hub = h)
       if (!hub) {
         timestamp.end = Date.now()
         timestamp.error = 'Active session not found'
-        return new Message(JSON.encode([timestamp]))
+        return new Message(JSON.encode(result))
       }
       var url = new URL(req.head.path)
       var timeout = url.searchParams.get('timeout') || 30
@@ -1043,7 +1047,7 @@ var pingEndpoint = pipeline($=>$
         new Timeout(Math.max(timeout / 2, 1)).wait().then(() => {
           timestamp.end = Date.now()
           timestamp.error = 'Response timeout'
-          return new Message(JSON.encode([timestamp]))
+          return new Message(JSON.encode(result))
         }),
         pipeline($=>$
           .onStart(hub => {
@@ -1057,7 +1061,15 @@ var pingEndpoint = pipeline($=>$
             if (status === 200 && res.body) {
               try {
                 var info = JSON.decode(res.body)
-                if (info.id === id) return new StreamEnd
+                if (info.id === id) {
+                  result.push({
+                    endpoint: { id, name: info.name },
+                    start: info.time,
+                    end: info.time,
+                    error: null,
+                  })
+                  return new StreamEnd
+                }
               } catch {}
             }
             if (res.body) {
@@ -1072,7 +1084,7 @@ var pingEndpoint = pipeline($=>$
             timestamp.end = Date.now()
             timestamp.error = `Invalid empty response`
           }
-          return new Message(JSON.encode([timestamp]))
+          return new Message(JSON.encode(result))
         })
       ])
     }

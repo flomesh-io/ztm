@@ -1698,53 +1698,26 @@ function statsEndpoint(name, mesh, ep) {
 function pingEndpoint(mesh, ep) {
   return client.get(`/api/meshes/${uri(mesh.name)}/ping/endpoints/${ep.id}`).then(
     ret => {
-      var list = JSON.decode(ret)
-      var endpoints = {}
-      var hubs = {}
-      return Promise.all([
-        ...list.filter(r => r.endpoint).map(
-          r => client.get(`/api/meshes/${uri(mesh.name)}/endpoints?id=${r.endpoint}`).then(
-            ret => {
-              var id = r.endpoint
-              var ep = JSON.decode(ret).find(ep => ep.id === id)
-              if (ep) endpoints[id] = ep
-            }
-          )
-        ),
-        ...list.filter(r => r.hub).map(
-          r => client.get(`/api/meshes/${uri(mesh.name)}/hubs/${r.hub}`).then(
-            ret => {
-              hubs[r.hub] = JSON.decode(ret)
-            }
-          )
-        ),
-      ]).then(() => {
-        printTable(list, {
-          'ID': r => r.endpoint || r.hub || 'n/a',
-          'TYPE': r => {
-            if (r.endpoint) return 'Endpoint'
-            if (r.hub) return 'Hub'
-            return 'n/a'
-          },
-          'NAME': r => {
-            if (r.endpoint) {
-              var ep = endpoints[r.endpoint]
-              if (ep) return ep.isLocal ? ep.name + ' (local)' : ep.name
-            } else if (r.hub) {
-              var hub = hubs[r.hub]
-              if (hub) return hub.ports.map(p => p.name).join(', ')
-            }
-            return 'n/a'
-          },
-          'START': r => r.start ? new Date(r.start).toTimeString() : 'n/a',
-          'END': r => r.end ? new Date(r.end).toTimeString() : 'n/a',
-          'DURATION': r => {
-            var d = r.end - r.start
-            if (typeof d === 'number') return (d/1000) + 's'
-            return 'n/a'
-          },
-          'ERROR': r => r.error || '',
-        })
+      printTable(JSON.decode(ret), {
+        'ID': r => r.endpoint?.id || r.hub?.id || 'n/a',
+        'TYPE': r => {
+          if (r.endpoint) return 'Endpoint'
+          if (r.hub) return 'Hub'
+          return 'n/a'
+        },
+        'NAME': r => {
+          if (r.endpoint) return r.endpoint.name
+          if (r.hub) return r.hub.names.join(', ')
+          return 'n/a'
+        },
+        'START': r => r.start ? new Date(r.start).toTimeString() : 'n/a',
+        'END': r => r.end ? new Date(r.end).toTimeString() : 'n/a',
+        'DURATION': r => {
+          var d = r.end - r.start
+          if (typeof d === 'number') return (d/1000) + 's'
+          return 'n/a'
+        },
+        'ERROR': r => r.error || '',
       })
     }
   )

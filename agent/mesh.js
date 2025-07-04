@@ -585,7 +585,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     function pingEndpoint(ep, timeout) {
       timeout = timeout || 30
       var timestamp = {
-        endpoint: config.agent.id,
+        endpoint: {
+          id: config.agent.id,
+          name: config.agent.name,
+        },
         start: Date.now(),
         end: null,
         error: null,
@@ -705,7 +708,11 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var routes = Object.entries({
 
       '/api/ping': {
-        'GET': () => response(200, { id: config.agent.id })
+        'GET': () => response(200, {
+          id: config.agent.id,
+          name: config.agent.name,
+          time: Date.now(),
+        })
       },
 
       '/api/log': {
