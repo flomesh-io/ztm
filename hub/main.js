@@ -1097,6 +1097,7 @@ var muxToAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, {
     version: 2,
     maxSessions: 1,
+    timeout: 10,
     ping: () => new Timeout(10).wait().then(new Data),
   }).to($=>$
     .insert(() => {
@@ -1298,9 +1299,9 @@ function startPing() {
           })
           .pipe(muxToAgent)
           .replaceData()
-          .replaceMessage(
+          .replaceOneMessage(
             res => {
-              if (res?.head?.status === 200) {
+              if (res instanceof Message && res.head.status === 200) {
                 var ping = Date.now() - $pingTime
                 var ep = endpoints[$pingID]
                 if (ep) ep.ping = ping
