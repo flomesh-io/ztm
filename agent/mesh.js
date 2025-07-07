@@ -210,7 +210,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       )
     )
 
-    // Establish a dedicated session to the hub on demand
+    // Establish a session to the hub on demand
     var establishSession = pipeline($=>$
       .onStart(() => {
         $sessionEstablishedPromise = new Promise(r => { $sessionEstablishedResolve = r })
@@ -888,7 +888,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   //   Local App ----/                  \----> Hub ----> Remote Agent ----> Remote App
   //
 
-  var toRemoteApp = (ep, provider, app, isDedicated, connectOptions) => pipeline($=>$
+  var toRemoteApp = (ep, provider, app, connectOptions) => pipeline($=>$
     .onStart(() => {
       $lastDataTime = {}
       $selectedEp = ep
@@ -902,17 +902,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         .handleData(() => { $lastDataTime.value = Date.now() })
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
-          if (isDedicated) q += '&dedicated'
           return new Message({
             method: 'CONNECT',
             path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}${q}` : `/api/endpoints/${ep}/apps/${app}${q}`,
           })
         }).to($=>$
-          .muxHTTP(() => $selectedHub, {
-            version: 2,
-            maxSessions: 1,
-            ping: () => new Timeout(10).wait().then(new Data),
-          }).to($=>$
+          .muxHTTP().to($=>$
             .connectTLS(tlsOptions).to($=>$
               .insert(() => checkTimeout())
               .connect(() => $selectedHub, connectOptions)
@@ -1905,11 +1900,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
           .pipe(() => $appPipeline, () => ({ source: 'self' }))
         )
       } else {
-        var isDedicated = Boolean(options?.dedicated)
         var bind = options?.bind
         var onState = options?.onState
         var connectOptions = { bind, onState }
-        return toRemoteApp(ep, provider, app, isDedicated, connectOptions)
+        return toRemoteApp(ep, provider, app, connectOptions)
       }
     }
   }

@@ -1097,7 +1097,6 @@ var muxToAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, {
     version: 2,
     maxSessions: 1,
-    timeout: 10,
     ping: () => new Timeout(10).wait().then(new Data),
   }).to($=>$
     .insert(() => {
@@ -1181,25 +1180,19 @@ var connectApp = pipeline($=>$
       if (!$hubSelected) return response(404, 'Agent not found')
       if (numForwardings >= maxForwardings) return response(429, 'Too many forwarding sessions')
       var query = new URL(req.head.path).searchParams.toObject()
-      if ('dedicated' in query) {
-        $sessionID = algo.uuid()
-        return allocateSession.spawn($hubSelected, $sessionID).then(
-          () => {
-            $hubSelected = dedicatedSessions[$sessionID]
-            if ($hubSelected) {
-              logInfo(`Forward to app ${app} at ${endpointName(id)} via session ${$sessionID}`)
-              setupMetrics()
-              return response(200)
-            } else {
-              return response(404)
-            }
+      $sessionID = algo.uuid()
+      return allocateSession.spawn($hubSelected, $sessionID).then(
+        () => {
+          $hubSelected = dedicatedSessions[$sessionID]
+          if ($hubSelected) {
+            logInfo(`Forward to app ${app} at ${endpointName(id)} via session ${$sessionID}`)
+            setupMetrics()
+            return response(200)
+          } else {
+            return response(404)
           }
-        )
-      } else {
-        logInfo(`Forward to app ${app} at ${endpointName(id)}`)
-        setupMetrics()
-        return response(200)
-      }
+        }
+      )
 
       function setupMetrics() {
         var src = query.src
