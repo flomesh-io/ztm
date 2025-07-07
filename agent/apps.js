@@ -230,8 +230,8 @@ export default function (rootDir, mountName, epInfo, meshEnv) {
           $target = ep
           return req
         })
-        .muxHTTP(() => $target, { version: 2 }).to($=>$
-          .pipe(() => connect($target, { dedicated: true }))
+        .muxHTTP(() => $target, { version: 2, maxSessions: 1 }).to($=>$
+          .pipe(() => connect($target))
         )
         .replaceMessage(res => {
           $response = res

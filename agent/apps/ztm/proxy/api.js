@@ -326,7 +326,7 @@ export default function ({ app, mesh }) {
           })
         ).to($=>$
           .muxHTTP().to($=>$
-            .pipe(() => mesh.connect($targetEP, { dedicated: true }))
+            .pipe(() => mesh.connect($targetEP))
           )
         )
       ),
