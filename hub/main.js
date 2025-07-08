@@ -1097,6 +1097,7 @@ var muxToAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, {
     version: 2,
     maxSessions: 1,
+    timeout: 10,
     ping: () => new Timeout(10).wait().then(new Data),
   }).to($=>$
     .insert(() => {

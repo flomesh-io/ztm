@@ -135,7 +135,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
     // Long-lived agent-to-hub connection, multiplexed with HTTP/2
     var hubSession = pipeline($=>$
-      .muxHTTP(() => '', {
+      .muxHTTP({
         version: 2,
         maxSessions: 1,
         ping: () => new Timeout(10).wait().then(new Data),
@@ -214,7 +214,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var establishSession = pipeline($=>$
       .onStart(() => {
         $sessionEstablishedPromise = new Promise(r => { $sessionEstablishedResolve = r })
-        dedicatedSession.spawn($sessionID, $sessionEstablishedResolve)
+        reverseSession.spawn($sessionID, $sessionEstablishedResolve)
       })
       .wait(() => $sessionEstablishedPromise)
       .replaceMessage(new Message({ status: 200 }))
@@ -224,7 +224,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var $sessionEstablishedPromise
     var $sessionEstablishedResolve
 
-    var dedicatedSession = pipeline($=>$
+    var reverseSession = pipeline($=>$
       .onStart((id, cb) => {
         $sessionID = id
         $sessionEstablishedResolve = cb
@@ -246,7 +246,6 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         .to($=>$
           .muxHTTP(() => $sessionID, {
             version: 2,
-            maxSessions: 1,
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS({ ...tlsOptions }).to($=>$
@@ -890,7 +889,6 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
   var toRemoteApp = (ep, provider, app, connectOptions) => pipeline($=>$
     .onStart(() => {
-      $lastDataTime = {}
       $selectedEp = ep
       return selectHub(ep).then(hub => {
         $selectedHub = hub
@@ -899,7 +897,6 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     })
     .pipe(() => $selectedHub ? 'proxy' : 'deny', {
       'proxy': ($=>$
-        .handleData(() => { $lastDataTime.value = Date.now() })
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
           return new Message({
@@ -907,14 +904,15 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             path: provider ? `/api/endpoints/${ep}/apps/${provider}/${app}${q}` : `/api/endpoints/${ep}/apps/${app}${q}`,
           })
         }).to($=>$
-          .muxHTTP().to($=>$
+          .muxHTTP({
+            version: 2,
+            ping: () => new Timeout(10).wait().then(new Data),
+          }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              .insert(() => checkTimeout())
               .connect(() => $selectedHub, connectOptions)
             )
           )
         )
-        .handleData(() => { $lastDataTime.value = Date.now() })
       ),
       'deny': ($=>$
         .onStart(() => logError(`No route to endpoint ${ep}`))
@@ -922,16 +920,6 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       ),
     })
   )
-
-  var $lastDataTime = null
-
-  function checkTimeout() {
-    if (Date.now() - $lastDataTime.value > 60000) {
-      return new StreamEnd
-    } else {
-      return new Timeout(10).wait().then(checkTimeout)
-    }
-  }
 
   // HTTP agents for ad-hoc agent-to-hub sessions
   var httpAgents = new algo.Cache(
