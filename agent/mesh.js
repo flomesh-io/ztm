@@ -149,6 +149,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         }).to($=>$
           .onStart(() => { meshErrors.length = 0 })
           .connect(address, {
+            idleTimeout: 30,
             onState: function (conn) {
               if (conn.state === 'connected') {
                 logInfo(`Connected to hub ${address}`)
@@ -200,7 +201,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
                 var params = matchSessionID(evt.head.path)
                 if (params) {
                   $sessionID = params.id
-                  return establishSession
+                  return establishPassiveSession
                 }
                 return serveHub
               }
@@ -211,10 +212,10 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     )
 
     // Establish a session to the hub on demand
-    var establishSession = pipeline($=>$
+    var establishPassiveSession = pipeline($=>$
       .onStart(() => {
         $sessionEstablishedPromise = new Promise(r => { $sessionEstablishedResolve = r })
-        reverseSession.spawn($sessionID, $sessionEstablishedResolve)
+        passiveSession.spawn($sessionID, $sessionEstablishedResolve)
       })
       .wait(() => $sessionEstablishedPromise)
       .replaceMessage(new Message({ status: 200 }))
@@ -224,7 +225,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
     var $sessionEstablishedPromise
     var $sessionEstablishedResolve
 
-    var reverseSession = pipeline($=>$
+    var passiveSession = pipeline($=>$
       .onStart((id, cb) => {
         $sessionID = id
         $sessionEstablishedResolve = cb
@@ -248,8 +249,8 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             version: 2,
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
-            .connectTLS({ ...tlsOptions }).to($=>$
-              .connect(address)
+            .connectTLS(tlsOptions).to($=>$
+              .connect(address, { idleTimeout: 30 })
             )
           )
         )
@@ -909,7 +910,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              .connect(() => $selectedHub, connectOptions)
+              .connect(() => $selectedHub, { ...connectOptions, idleTimeout: 30 })
             )
           )
         )
@@ -1294,7 +1295,6 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       var isDownloaded = apps.isDownloaded(provider, app)
       var isPublished = Boolean(fs.stat(`/shared/${provider}/pkg/${app}`))
       if (isPublished || isDownloaded || isBuiltin) {
-        var nt = getAppNameTag(app)
         return Promise.resolve({
           ...getAppNameTag(app),
           provider,
