@@ -157,7 +157,7 @@ var routes = Object.entries({
 var endpoints = {}
 var endpointList = []
 var sessions = {}
-var dedicatedSessions = {}
+var passiveSessions = {}
 
 //
 // connections[username] = new Set({
@@ -426,7 +426,7 @@ function start(listen, bootstrap) {
     })
   }
 
-  pipy.listen(listen, $=>$
+  pipy.listen(listen, { idleTimeout: 60 }, $=>$
     .onStart(
       function (conn) {
         $ctx = {
@@ -1142,7 +1142,7 @@ var connectEndpoint = pipeline($=>$
       $ctx.sessionID = sid
       $hub = new pipeline.Hub
       if (sid) {
-        dedicatedSessions[sid] = $hub
+        passiveSessions[sid] = $hub
         logInfo(`Endpoint ${endpointName(id)} established session ${sid}`)
       } else {
         makeEndpoint(id).name = name
@@ -1160,7 +1160,7 @@ var connectEndpoint = pipeline($=>$
       var id = $ctx.endpointID
       var sid = $ctx.sessionID
       if (sid) {
-        delete dedicatedSessions[sid]
+        delete passiveSessions[sid]
         logInfo(`Endpoint ${endpointName(id)} dropped session ${sid}`)
       } else {
         sessions[id]?.delete?.($hub)
@@ -1184,7 +1184,7 @@ var connectApp = pipeline($=>$
       $sessionID = algo.uuid()
       return allocateSession.spawn($hubSelected, $sessionID).then(
         () => {
-          $hubSelected = dedicatedSessions[$sessionID]
+          $hubSelected = passiveSessions[$sessionID]
           if ($hubSelected) {
             logInfo(`Forward to app ${app} at ${endpointName(id)} via session ${$sessionID}`)
             setupMetrics()
