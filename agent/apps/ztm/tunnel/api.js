@@ -483,6 +483,7 @@ export default function ({ app, mesh }) {
       app.log(`No target found for ${key}`)
       return response404
     }).to($=>$
+      .onStart(() => $protocol === 'tcp' ? new Data : null)
       .pipe(() => $protocol, {
         'tcp': ($=>$
           .connect(() => $target)
