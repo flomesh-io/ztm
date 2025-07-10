@@ -341,7 +341,6 @@ var $params = null
 var $endpoint = null
 var $hub = null
 var $hubSelected = null
-var $sendEOS = null
 var $sessionID
 var $broadcastID
 var $pingID
@@ -969,7 +968,7 @@ var getFileData = pipeline($=>$
         if (!$hubSelected) return notFound
         var hash = $params.hash
         req.head.path = `/api/file-data/${hash}`
-        return muxToAgent
+        return toAgent
       }
     }
   )
@@ -1054,7 +1053,7 @@ var pingEndpoint = pipeline($=>$
             $hubSelected = hub
             return new Message({ path: '/api/ping' })
           })
-          .pipe(muxToAgent)
+          .pipe(toAgent)
           .replaceMessage(res => {
             timestamp.end = Date.now()
             var status = res?.head?.status
@@ -1091,25 +1090,18 @@ var pingEndpoint = pipeline($=>$
   )
 )
 
-var muxToAgent = pipeline($=>$
-  .onStart(() => { if ($sessionID) $sendEOS = {} })
-  .handleStreamEnd(() => { $sendEOS?.resolve?.() })
+var toAgent = pipeline($=>$
   .muxHTTP(() => $hubSelected, {
     version: 2,
     maxSessions: 1,
     timeout: 10,
     ping: () => new Timeout(10).wait().then(new Data),
   }).to($=>$
-    .insert(() => {
-      if ($sendEOS) {
-        return new Promise(r => { $sendEOS.resolve = r }).then(new StreamEnd)
-      }
-    })
     .swap(() => $hubSelected)
   )
 )
 
-var broadcastToAgents = pipeline($=>$
+var toAllAgents = pipeline($=>$
   .onStart(msg => msg)
   .forkJoin(() => Object.keys(sessions)).to($=>$
     .onStart(id => { $broadcastID = id })
@@ -1119,7 +1111,7 @@ var broadcastToAgents = pipeline($=>$
       return hubs
     }).to($=>$
       .onStart(hub => { $hubSelected = hub })
-      .pipe(muxToAgent)
+      .pipe(toAgent)
       .replaceData()
       .replaceMessage(new StreamEnd)
     )
@@ -1228,7 +1220,15 @@ var connectApp = pipeline($=>$
         path: provider ? `/api/apps/${provider}/${app}${q}` : `/api/apps/${app}${q}`,
       })
     })
-    .to(muxToAgent)
+    .to($=>$
+      .muxHTTP(() => $hubSelected, {
+        version: 2,
+        maxIdle: 0,
+        ping: () => new Timeout(10).wait().then(new Data),
+      }).to($=>$
+        .swap(() => $hubSelected)
+      )
+    )
     .handleData(data => {
       var size = data.size
       $trafficRecv.increase(size)
@@ -1249,7 +1249,7 @@ var allocateSession = pipeline($=>$
       }
     )
   })
-  .pipe(muxToAgent)
+  .pipe(toAgent)
   .replaceMessage(new StreamEnd)
 )
 
@@ -1266,7 +1266,7 @@ var forwardRequest = pipeline($=>$
         var url = new URL(req.head.path)
         var path = $params['*']
         req.head.path = `/api/${path}${url.search}`
-        return muxToAgent
+        return toAgent
       }
     }
   )
@@ -1291,7 +1291,7 @@ function startPing() {
             $hubSelected = hub
             $pingTime = Date.now()
           })
-          .pipe(muxToAgent)
+          .pipe(toAgent)
           .replaceData()
           .replaceOneMessage(
             res => {
@@ -1543,7 +1543,7 @@ function updateEviction(username, time, expiration) {
 }
 
 function broadcastHub(id, info) {
-  broadcastToAgents.spawn(
+  toAllAgents.spawn(
     new Message({
       method: 'POST',
       path: `/api/hubs/${id}`,
