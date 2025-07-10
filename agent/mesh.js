@@ -247,6 +247,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         .to($=>$
           .muxHTTP(() => $sessionID, {
             version: 2,
+            maxIdle: 0,
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
@@ -907,6 +908,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         }).to($=>$
           .muxHTTP({
             version: 2,
+            maxIdle: 0,
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
