@@ -728,6 +728,10 @@ var getEndpoint = pipeline($=>$
           heartbeat: ep.heartbeat,
           ping: ep.ping,
           online: isEndpointOnline(ep),
+          stats: {
+            controlSessions: sessions[ep.id]?.size || 0,
+            passiveSessions: ep.passiveSessions.size,
+          }
         })
       }
     }
@@ -1135,6 +1139,7 @@ var connectEndpoint = pipeline($=>$
       $hub = new pipeline.Hub
       if (sid) {
         passiveSessions[sid] = $hub
+        makeEndpoint(id).passiveSessions.add(sid)
         logInfo(`Endpoint ${endpointName(id)} established session ${sid}`)
       } else {
         makeEndpoint(id).name = name
@@ -1153,6 +1158,7 @@ var connectEndpoint = pipeline($=>$
       var sid = $ctx.sessionID
       if (sid) {
         delete passiveSessions[sid]
+        endpoints[id]?.passiveSessions?.delete?.(sid)
         logInfo(`Endpoint ${endpointName(id)} dropped session ${sid}`)
       } else {
         sessions[id]?.delete?.($hub)
@@ -1460,6 +1466,7 @@ function makeEndpoint(id) {
       heartbeat: Date.now(),
       ping: null,
       isConnected: true,
+      passiveSessions: new Set,
     }
     endpointList.push(ep)
   } else {
@@ -1516,6 +1523,10 @@ function listEndpoints(id, name, user, keyword, limit, offset) {
       heartbeat: ep.heartbeat,
       ping: ep.ping,
       online: isEndpointOnline(ep),
+      stats: {
+        controlSessions: sessions[ep.id]?.size || 0,
+        passiveSessions: ep.passiveSessions.size,
+      }
     })
   )
 }
