@@ -1432,6 +1432,9 @@ function describeEndpoint(name, mesh) {
       println(`Port: ${ep.port}`)
       println(`Ping: ${ep.ping ? ep.ping + 'ms' : 'N/A'}`)
       println(`Status:`, ep.online ? 'Online' : 'Offline')
+      println(`Stats:`)
+      println(`  Control Sessions: ${ep.stats.controlSessions}`)
+      println(`  Passive Sessions: ${ep.stats.passiveSessions}`)
       println(`Labels:`, ep.agent?.labels?.length > 0 ? ep.agent?.labels.join(' ') : '(none)')
       println(`Version:`)
       printTable([
