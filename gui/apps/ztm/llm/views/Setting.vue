@@ -60,7 +60,7 @@ const newLlm = {
 		body: {
 			"model": "Pro/deepseek-ai/DeepSeek-V3",
 			"stream": true,
-			"max_tokens": 512,
+			"max_tokens": 2048,
 			"enable_thinking": false,
 			"thinking_budget": 512,
 			"min_p": 0.05,
