@@ -144,7 +144,7 @@ const appMapping = {
 	},
 	"ztm/llm": {
 		icon: llmIcon,
-		name: "LLM",
+		name: "Agents",
 		width:1280,
 		height:860,
 	},
