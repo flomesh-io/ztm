@@ -315,7 +315,7 @@ onMounted(() => {
 	<div class="surface-ground h-full min-h-screen relative ">
 		<AppHeader >
 				<template #center>
-					 <b>{{t('LLM')}}</b>
+					 <b>{{t('Agents')}}</b>
 				</template>
 		
 				<template #end> 
