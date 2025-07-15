@@ -1065,6 +1065,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   function renewCertificate() {
     var days = getCertificateDays()
     if (days > 100) return Promise.resolve()
+    if (!isConnected()) return Promise.resolve()
     return hubActive[0].renewCertificate()
   }
 
@@ -1247,10 +1248,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function issuePermit(username, identity) {
+    checkConnectivity()
     return hubActive[0].issuePermit(username, identity)
   }
 
   function evictUser(username) {
+    checkConnectivity()
     return hubActive[0].evictUser(username)
   }
 
@@ -1284,14 +1287,17 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function findEndpoint(ep) {
+    checkConnectivity()
     return hubActive[0].findEndpoint(ep)
   }
 
   function findFile(pathname) {
+    checkConnectivity()
     return hubActive[0].findFile(pathname)
   }
 
   function findApp(ep, provider, app) {
+    checkConnectivity()
     if (ep === config.agent.id) {
       var isBuiltin = apps.isBuiltin(provider, app)
       var isDownloaded = apps.isDownloaded(provider, app)
@@ -1340,6 +1346,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function discoverHubs() {
+    if (!isConnected()) return Promise.resolve({})
     return listAllHubs(config.bootstraps).then(
       all => {
         Object.entries(all).forEach(
@@ -1355,18 +1362,22 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function discoverEndpoints(id, name, user, keyword, offset, limit) {
+    checkConnectivity()
     return hubActive[0].discoverEndpoints(id, name, user, keyword, offset, limit)
   }
 
   function discoverUsers(name, keyword, offset, limit) {
+    checkConnectivity()
     return hubActive[0].discoverUsers(name, keyword, offset, limit)
   }
 
   function discoverFiles(since, wait) {
+    checkConnectivity()
     return hubActive[0].discoverFiles(since, wait)
   }
 
   function discoverApps(ep) {
+    checkConnectivity()
     if (ep === config.agent.id) {
       var list = []
       apps.listDownloaded().forEach(app => {
@@ -1718,6 +1729,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function setACL(pathname, access) {
+    checkConnectivity()
     acl[pathname] = {
       all: access.all || '',
       users: access.users || null,
@@ -1727,6 +1739,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function checkACL(pathname, username) {
+    checkConnectivity()
     return hubActive[0].checkACL(pathname, username)
   }
 
@@ -2104,10 +2117,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function getEndpointStats(ep) {
+    checkConnectivity()
     return hubActive[0].getEndpointStats(ep)
   }
 
   function pingEndpoint(ep) {
+    checkConnectivity()
     return hubActive[0].pingEndpoint(ep)
   }
 
@@ -2119,6 +2134,12 @@ export default function (rootDir, listen, config, onConfigUpdate) {
 
   function isConnected() {
     return hubActive.some(h => h.isConnected())
+  }
+
+  function checkConnectivity() {
+    if (!isConnected()) {
+      throw 'Not connected to mesh'
+    }
   }
 
   function getStatus() {
