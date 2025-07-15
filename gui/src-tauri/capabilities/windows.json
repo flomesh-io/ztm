@@ -121,35 +121,7 @@
       "allow": [
         {
           "name": "bin/ztmctl",
-          "args": [
-            {
-              "validator": ".+"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            },
-            {
-              "validator": ".*"
-            }
-          ],
+          "args": true,
           "sidecar": true
         }
       ]
