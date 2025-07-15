@@ -116,9 +116,7 @@ export default class ShellService {
 				`--listen`,
 				getHubListen(),
 				`--names`,
-				getHubNames(),
-				"",
-				"",
+				getHubNames()
 			];
 			await this.pauseHub();
 			console.log(`[starting hub:${args}]`);
