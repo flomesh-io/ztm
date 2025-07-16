@@ -537,10 +537,10 @@ onMounted(() => {
 					</TabPanel>
 					<TabPanel value="2">
 						<Loading v-if="loading" />
-						<div v-else class="surface-ground surface-section h-full" >
+						<div v-else class="surface-ground surface-section h-full" style="margin: -0.5rem;" >
 							
 							<div class="grid w-full m-0" >
-								<div class="col-12 md:col-6 " >
+								<div class="col-12 md:col-6 p-1" >
 									<BlockViewer containerClass="surface-section p-3" >
 										<div>
 											<Tag >{{t('LLM')}}
@@ -554,13 +554,11 @@ onMounted(() => {
 											<template #list="slotProps">
 												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 														<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-																<div>
-																	<img :src="getKeywordIcon(item?.name, 'llm')" width="30px" />
-																</div>
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																		<div class="flex w-full" style="align-items:center">
-																			<Tag class="mr-2 text-uppercase" v-if="item?.kind">{{item?.kind}}</Tag>
+																			<!-- <Tag class="mr-2 text-uppercase" v-if="item?.kind">{{item?.kind}}</Tag> -->
+																			<img  class="mr-2" :src="getKeywordIcon(item?.name, 'llm')" width="30px" />
 																			<b class="flex-item">{{item?.name}}</b>
 																			
 																			<Button :loading="savingMap[item?.name]" class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
@@ -573,9 +571,9 @@ onMounted(() => {
 																				<div>{{llmService.getSvcUrl(route?.path)}}</div>
 																			</div>
 																			<div v-if="route.cors">
-																				<div class="flex" style="align-items:center">
+																				<div class="flex" style="align-items:start">
 																					<Button  class="px-3" link icon=" pi pi-desktop" /> 
-																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
+																					<span class="pr-2 nowrap pt-2">{{t('Allow Origins')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
 																				</div>
 																				<!-- <div class="flex" style="align-items:center">
@@ -591,7 +589,7 @@ onMounted(() => {
 																			</div>
 																		</span>
 																		<span class="opacity-50 text-sm mt-2" v-else>
-																			<i class="pi pi-link text-primary-500 mr-2 "/> {{t('No Routes.')}}
+																			<i class="pi pi-link text-primary-500 ml-2 "/> {{t('No Routes.')}}
 																		</span>
 																	</div>
 																</div>
@@ -601,7 +599,7 @@ onMounted(() => {
 										</DataView>
 									</BlockViewer>
 								</div>
-								<div class="col-12 md:col-6" >
+								<div class="col-12 md:col-6 p-1" >
 								
 									<BlockViewer containerClass="surface-section p-3" >
 										<div>
@@ -616,17 +614,16 @@ onMounted(() => {
 											<template #list="slotProps">
 												<div class="surface-border py-3" :class="{'border-top-1':index>0}" v-for="(item, index) in slotProps.items" :key="index">
 														<div class="flex py-2 gap-4" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
-																<div>
-																	<img :src="getKeywordIcon(item?.name, 'mcp')" width="30px" />
-																</div>
 																<div class="flex flex-col pr-2 flex-item w-full">
 																	<div class="w-full text-lg font-medium align-items-start flex flex-column" style="justify-content: start;">
 																		<div class="flex w-full" style="align-items:center">
-																			<Tag class="mr-2" v-if="item?.kind">
+																			<img class="mr-2"  :src="getKeywordIcon(item?.name, 'mcp')" width="30px" />
+																			<div class="flex-item">
+																			<b >{{item?.name}}</b>
+																			<Tag class="ml-2" v-if="item?.kind">
 																				Streamable
 																			</Tag>
-																			<b class="flex-item">{{item?.name}}</b>
-																			
+																			</div>
 																			<Button :loading="savingMap[item?.name]" class="mr-2" v-if="item.localRoutes.length > 0" @click="routeRemove(item.localRoutes[0],index)" size="small" icon="pi pi-trash" link></Button>
 																			<Button :loading="savingMap[item?.name]" v-if="item.localRoutes.length > 0" @click="routeSave(item, item.localRoutes[0])" size="small" icon="pi pi-check" ></Button>
 																			<Button :loading="savingMap[item?.name]" v-if="item.localRoutes.length == 0" @click="routeCreate(item)" size="small" icon="pi pi-plus" ></Button>
@@ -637,9 +634,9 @@ onMounted(() => {
 																				<div>{{llmService.getSvcUrl(route?.path)}}</div>
 																			</div>
 																			<div  v-if="route.cors">
-																				<div class="flex" style="align-items:center">
+																				<div class="flex" style="align-items:start">
 																					<Button class="px-3" link icon=" pi pi-desktop" /> 
-																					<span class="pr-2 nowrap">{{t('Allow Origins')}}</span>
+																					<span class="pr-2 nowrap pt-2">{{t('Allow Origins')}}</span>
 																					<ChipList listType="tag" :placeholder="t('Add')" v-model:list="route.cors.allowOrigins" />
 																				</div>
 																			<!-- 	<div class="flex" style="align-items:center">
@@ -655,7 +652,7 @@ onMounted(() => {
 																			</div>
 																		</span>
 																		<span class="opacity-50 text-sm mt-2" v-else>
-																			<i class="pi pi-link text-primary-500 mr-2 "/> {{t('No Routes.')}}
+																			<i class="pi pi-link text-primary-500 ml-2 "/> {{t('No Routes.')}}
 																		</span>
 																	</div>
 																</div>

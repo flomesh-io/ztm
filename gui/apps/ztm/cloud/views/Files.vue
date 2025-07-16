@@ -615,6 +615,8 @@ onMounted(()=>{
 					<Button class="w-full" :label="t('Apply')" size="small" :disabled="!config.localDir" icon="pi pi-check" @click="saveConfig"></Button>
 				</div>
 			</Popover>
+			<Loading v-if="props.loading"/>
+			<ScrollPanel class="absolute-scroll-panel" v-else>
 			<Card class="nopd" >
 				<template #content>
 					<InputGroup class="search-bar" >
@@ -624,9 +626,7 @@ onMounted(()=>{
 					</InputGroup>
 				</template>
 			</Card>
-			<Loading v-if="props.loading"/>
-			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="filesFilter && filesFilter.length >0">
-			<div class="text-center" >
+			<div class="text-center" v-if="filesFilter && filesFilter.length >0">
 				<TreeTable @sort="searchSort" v-if="layout == 'list'" @node-expand="onNodeExpand" loadingMode="icon" class="w-full file-block pb-8" :value="filesFilter" >
 						<Column sortable field="name" :header="t('Name')" expander style="width: 50%">
 								<template  #body="slotProps">
@@ -696,8 +696,8 @@ onMounted(()=>{
 					@delUser="delUser"
 					/>
 			</div>
-			</ScrollPanel>
 			<Empty v-else :title="emptyMsg"/>
+			</ScrollPanel>
 		</div>
 	</div>
 </template>
