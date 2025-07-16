@@ -67,6 +67,8 @@ const select = () => {
 	if(props.form)
 	emits('update:modelValue',selected.value);
 }
+const findMesh = computed(() => (n) => meshes.value.find((m) => m.name == n) || {})
+
 </script>
 
 <template>
@@ -94,7 +96,7 @@ const select = () => {
 					 <div class="topbar-mesh-select">
 						 <div class="topbar-mesh-select-cell" >
 							 <div class="mb-1" v-if="slotProps.value">
-								<Status style="margin-right: 0 !important;"  :run="slotProps.value.connected" :errors="slotProps.value.errors" />
+								<Status style="margin-right: 0 !important;"  :run="findMesh(slotProps.value.name).connected" :errors="findMesh(slotProps.value.name).errors" />
 							 </div>
 							 <div v-else class="pi pi-arrow-right-arrow-left"></div>
 							 <div v-if="slotProps.value"  v-tooltip.right="decodeURI(slotProps.value.name)">
@@ -147,5 +149,20 @@ const select = () => {
 		display: table-cell;
 		vertical-align: middle;
 		width: 100%;
+	}
+	.transparent {
+		border: none !important;
+		:deep(.p-select-label){
+			color: #ffffff !important;
+		}
+		.topbar-mesh-select-cell{
+			justify-items: center;
+			align-items: center;
+			gap: 10px;
+			display: flex;
+		}
+		:deep(.p-select-dropdown){
+			display: none !important;
+		}
 	}
 </style>

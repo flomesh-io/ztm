@@ -98,6 +98,8 @@ const outboundsInfo = computed(() => (outbounds) => {
 						<Button icon="pi pi-plus"   @click="create"/>
 					</template>
 			</AppHeader>
+			<Loading v-if="props.loading"/>
+			<ScrollPanel class="absolute-scroll-panel" v-else>
 			<Card class="nopd" v-if="!props.error">
 				<template #content>
 					<InputGroup class="search-bar" >
@@ -107,9 +109,7 @@ const outboundsInfo = computed(() => (outbounds) => {
 					</InputGroup>
 				</template>
 			</Card>
-			<Loading v-if="props.loading"/>
-			<ScrollPanel class="absolute-scroll-panel bar" v-else-if="tunnelsFilter && tunnelsFilter.length >0">
-			<div class="text-center">
+			<div class="text-center" v-if="tunnelsFilter && tunnelsFilter.length >0">
 				<DataTable v-if="layout == 'list'" class="nopd-header w-full" :value="tunnelsFilter" dataKey="id" tableStyle="min-width: 50rem">
 						<Column :header="t('Tunnel')">
 							<template #body="slotProps">
@@ -159,8 +159,8 @@ const outboundsInfo = computed(() => (outbounds) => {
 				</div>
 				<Menu ref="actionMenu" :model="actions" :popup="true" />
 			</div>
-			</ScrollPanel>
 			<Empty v-else :title="emptyMsg" :error="props.error"/>
+			</ScrollPanel>
 		</div>
 	</div>
 </template>

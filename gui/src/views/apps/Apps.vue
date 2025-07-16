@@ -190,6 +190,9 @@ watch(()=>manage,()=>{
 	loaddata();
 })
 
+const selectMesh = (selected) => {
+	store.commit('account/setSelectedMesh', selected);
+}
 watch(()=>selectedMesh,()=>{
 	loaddata();
 },{
@@ -208,6 +211,7 @@ watch(()=>selectedMesh,()=>{
 	<div v-else>
 		<AppHeader v-if="props.layout=='absolute_container'" :main="true">
 				<template #center>
+					
 					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
 						<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
 						{{selectedMesh?.name}}
@@ -224,13 +228,18 @@ watch(()=>selectedMesh,()=>{
 					<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
 				</template>
 				<template #center>
-					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;" :class="{'text-white':!props.theme}">
+					<MeshSelector
+						:full="true" 
+						innerClass="transparent"
+						@load="load" 
+						@select="selectMesh"/>
+					<!-- <div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;" :class="{'text-white':!props.theme}">
 						<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
 						{{selectedMesh?.name}}
 					</div>
 					<div v-else class="flex-item text-center" :class="{'text-white-alpha-70':!props.theme}" style="line-height: 30px;">
 						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
-					</div>
+					</div> -->
 				</template>
 				<template #end> 
 					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 

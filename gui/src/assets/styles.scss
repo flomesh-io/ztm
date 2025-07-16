@@ -771,9 +771,6 @@ iframe{
 	top:0px;bottom: 0;
 	margin-top: 35px;
 }
-.absolute-scroll-panel.bar{
-	margin-top: 75px;
-}
 
 .ios{
 	.p-scrollpanel-content{
@@ -1442,13 +1439,10 @@ fieldset{
 	}
 		
 	.absolute-scroll-panel{
-		margin-top: 3.5rem !important;
+		margin-top: calc(3.5rem + env(safe-area-inset-top, 0)) !important;
 	}
 	.main-wrapper .absolute-scroll-panel{
 		bottom: 60px;
-	}
-	.absolute-scroll-panel.bar{
-		margin-top: 6rem !important;
 	}
 	.empty-header{
 		width: 100%;
