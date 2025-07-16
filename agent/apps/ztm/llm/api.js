@@ -327,7 +327,6 @@ export default function ({ app, mesh }) {
   var $serviceQuery
 
   var connectService = pipeline($=>$
-		.dump('>>>')
     .pipe(evt => {
       if (evt instanceof MessageStart) {
         var url = new URL(evt.head.path)
@@ -351,13 +350,11 @@ export default function ({ app, mesh }) {
       '400': $=>$.replaceMessage(new Message({ status: 400 })),
       '404': $=>$.replaceMessage(new Message({ status: 404 })),
     })
-		.dump('<<<')
   )
 
   var $httpURL
 
   var connectHTTP = pipeline($=>$
-		.dump('>>>')
     .pipe(
       evt => {
         if (evt instanceof MessageStart) {
@@ -433,7 +430,6 @@ export default function ({ app, mesh }) {
         ),
       }
     )
-		.dump('<<<')
   )
 
   var mcpSessions = {}
