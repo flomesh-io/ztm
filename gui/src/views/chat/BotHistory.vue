@@ -94,7 +94,7 @@ defineExpose({
 	
 	<AppHeader :back="back" >
 	    <template #center>
-	      <b>{{t('Replay')}}</b>
+	      <b>{{t('History')}}</b>
 	    </template>
 	    <template #end> 
 				<Button v-tooltip="t('Clear History')" :loading="loading" icon="pi pi-trash"  severity="danger" text  @click="clear"/>

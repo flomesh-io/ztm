@@ -240,16 +240,36 @@
     "shell:allow-kill",
     "shell:allow-open",
     "shell:allow-stdin-write",
-    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        "http://*:*/*","https://*:*/*"
+      ]
+    },
     {
       "identifier": "http:allow-fetch",
       "allow": [
         "http://*:*/*","https://*:*/*"
       ]
     },
-    "http:allow-fetch-cancel",
-    "http:allow-fetch-read-body",
-    "http:allow-fetch-send",
+    {
+      "identifier": "http:allow-fetch-cancel",
+      "allow": [
+        "http://*:*/*","https://*:*/*"
+      ]
+    },
+    {
+      "identifier": "http:allow-fetch-read-body",
+      "allow": [
+        "http://*:*/*","https://*:*/*"
+      ]
+    },
+    {
+      "identifier": "http:allow-fetch-send",
+      "allow": [
+        "http://*:*/*","https://*:*/*"
+      ]
+    },
     "os:default",
     "os:allow-arch",
     "os:allow-exe-extension",
