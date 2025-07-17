@@ -768,8 +768,7 @@ iframe{
 .absolute-scroll-panel{
 	width: 100%;
 	position: absolute;
-	top:0px;bottom: 0;
-	margin-top: 35px;
+	top:35px;bottom: 0;
 }
 
 .ios{
@@ -1439,7 +1438,7 @@ fieldset{
 	}
 		
 	.absolute-scroll-panel{
-		margin-top: calc(3.5rem + env(safe-area-inset-top, 0)) !important;
+		top: calc(3.5rem) !important;
 	}
 	.main-wrapper .absolute-scroll-panel{
 		bottom: 60px;
