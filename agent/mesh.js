@@ -1781,6 +1781,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
   }
 
   function syncFile(pathname) {
+    if (!isConnected()) return Promise.resolve(null)
     pathname = os.path.normalize(pathname)
     var st = fs.stat(pathname)
     return findFile(pathname).then(meta => {
@@ -2000,10 +2001,11 @@ export default function (rootDir, listen, config, onConfigUpdate) {
         if (globalPath) {
           fs.write(globalPath, data)
           advertiseFilesystem()
-          return syncFile(globalPath)
+          return syncFile(globalPath).then(data => Boolean(data))
         }
+        return Promise.resolve(false)
       }
-      return Promise.resolve()
+      return Promise.resolve(true)
     }
 
     function unlink(pathname) {
