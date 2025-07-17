@@ -310,7 +310,11 @@ export default function ({ app, mesh }) {
       }
     }, {
       'remote': ($=>$
-        .muxHTTP(() => $route, { version: 2 }).to($=>$
+        // Stay in HTTP/1.x for now due to some incompatibility issues
+        // caused by HTTP/2 compliance check, e.g. pseudo headers (such as "Host")
+        // are not allowed after regular headers in HTTP/2 while it is actually possible
+        // in a message translated from HTTP/1.x
+        .muxHTTP(() => $route, { version: 1 }).to($=>$
           .pipe(() => mesh.connect($route.service.endpoint.id))
         )
       ),
