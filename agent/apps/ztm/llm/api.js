@@ -608,6 +608,7 @@ export default function ({ app, mesh }) {
         agent = new http.Agent(upstream.url.host)
         var headers = {
           'Host': upstream.url.host,
+          'Content-Type': 'application/json',
           'Accept': 'application/json, text/event-stream',
         }
         return agent.request('POST', upstream.url.path, headers, JSON.encode(msg)).then(
