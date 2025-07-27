@@ -616,7 +616,14 @@ export default function ({ app, mesh }) {
             var status = res?.head?.status
             if (200 <= status && status < 300) {
               try {
-                var result = JSON.decode(res.body)
+                if (res.head.headers?.['content-type']?.startsWith?.('text/event-stream')) {
+                  var line = res.body.toString().split('\n').find(line => line.startsWith('data:'))
+                  if (line) {
+                    var result = JSON.parse(line.substring(5))
+                  }
+                } else {
+                  var result = JSON.decode(res.body)
+                }
                 if (result?.jsonrpc === '2.0' && result?.id === msg.id) {
                   upstream.transport = 'streamable'
                   upstream.session = res.head.headers['mcp-session-id']
@@ -632,7 +639,20 @@ export default function ({ app, mesh }) {
                 if (ssePathPOST) {
                   upstream.transport = 'sse'
                   initRequestID = msg.id
-                  agent.request('POST', ssePathPOST, { 'Host': upstream.url.host }, JSON.encode(msg))
+                  agent.request(
+                    'POST', ssePathPOST, {
+                      'Host': upstream.url.host,
+                      'Content-Type': 'application/json',
+                    }, JSON.encode(msg)
+                  ).then(
+                    res => {
+                      var status = res?.head?.status
+                      if (status < 200 || status >= 300) {
+                        initCallback?.(null)
+                        initCallback = null
+                      }
+                    }
+                  )
                   return new Promise(resolve => { initCallback = resolve })
                 } else {
                   return null
@@ -668,8 +688,12 @@ export default function ({ app, mesh }) {
           break
         case 'sse':
           if (ssePathPOST) {
-            var headers = { 'Host': upstream.url.host }
-            agent.request('POST', ssePathPOST, headers, JSON.encode(msg)).then(
+            agent.request(
+              'POST', ssePathPOST, {
+                'Host': upstream.url.host,
+                'Content-Type': 'application/json',
+              }, JSON.encode(msg)
+            ).then(
               res => {
                 var status = res?.head?.status
                 if (status < 200 || status >= 300) {
@@ -780,6 +804,9 @@ export default function ({ app, mesh }) {
       )
     )
 
+    var $sseEvent = ''
+    var $sseData = ''
+
     var readSSE = pipeline($=>$
       .onStart(() => new Message({
         method: 'GET',
@@ -799,30 +826,30 @@ export default function ({ app, mesh }) {
         .muxHTTP().to($=>$
           .connect(() => upstream.url.hostname + ':' + upstream.url.port)
         )
-        .split('\r\n\r\n')
+        .split('\n')
         .handleMessage(msg => {
-          var event, data
-          msg.body.toString().split('\r\n').forEach(line => {
-            if (line.startsWith('event:')) {
-              event = line.substring(6).trim()
-            } else if (line.startsWith('data:')) {
-              data = line.substring(5).trim()
+          var line = msg.body.toString().trim()
+          if (line.length === 0) {
+            switch ($sseEvent) {
+              case 'endpoint':
+                ssePathPOST = $sseData
+                sseStartCallback?.()
+                sseStartCallback = null
+                break
+              case 'message':
+                try {
+                  receive(JSON.parse($sseData))
+                } catch {}
+                break
             }
-          })
-          switch (event) {
-            case 'endpoint':
-              ssePathPOST = data
-              sseStartCallback?.()
-              sseStartCallback = null
-              break
-            case 'message':
-              try {
-                receive(JSON.parse(data))
-              } catch {}
-              break
+            $sseEvent = ''
+            $sseData = ''
+          } else if (line.startsWith('event:')) {
+            $sseEvent = line.substring(6).trim()
+          } else if (line.startsWith('data:')) {
+            $sseData = line.substring(5).trim()
           }
         })
-        .replaceMessage(msg => msg.body)
         .handleStreamEnd(() => {
           sseStartCallback?.()
           sseStartCallback = null
