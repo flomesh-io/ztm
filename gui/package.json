@@ -64,7 +64,7 @@
     "clipboard": "^2.0.11",
     "clipboardy": "^4.0.0",
     "dayjs": "^1.11.10",
-    "deep-chat": "^2.2.1",
+    "deep-chat": "2.2.1",
     "echarts": "5.4.3",
     "export-from-json": "^1.7.4",
     "js-cookie": "^2.2.1",
