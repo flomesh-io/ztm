@@ -301,8 +301,10 @@ export default function ({ app, mesh }) {
         if ($route = localRoutes.findLast(r => path2.startsWith(r.path))) {
           $origin = evt.head.headers.origin
           var service = $route.service
-          var basepath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
-          evt.head.path = os.path.join(basepath, path.substring($route.path.length)) + url.search
+          var basePath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
+          var servicePath = path.substring($route.path.length)
+          evt.head.path = os.path.join(basePath, servicePath) + url.search
+          app.log(`Route to service ${service.name}: ${evt.head.method} ${os.path.join('/', servicePath)}${url.search} ${stringifyHeaders(evt.head.headers)}`)
           return ($route.service.endpoint.id === app.endpoint.id ? 'local' : 'remote')
         } else {
           return '404'
@@ -410,6 +412,9 @@ export default function ({ app, mesh }) {
             ),
             'bypass': $=>$,
           })
+          .handleMessageStart(msg => {
+            app.log(`Forward to service ${$service.target.address}: ${msg.head.method} ${msg.head.path} ${stringifyHeaders(msg.head.headers)}`)
+          })
           .muxHTTP(() => $service).to($=>$
             .pipe(() => $httpURL.protocol, {
               'http:': ($=>$
@@ -424,6 +429,7 @@ export default function ({ app, mesh }) {
           )
           .handleMessageStart(
             msg => {
+              app.log(`Response from service ${$service.target.address}: ${msg.head.status} ${msg.head.statusText} ${stringifyHeaders(msg.head.headers)}`)
               var cors = $route?.cors
               if (cors && cors.allowOrigins?.includes?.($origin)) {
                 msg.head.headers ??= {}
@@ -1044,6 +1050,12 @@ function mergeObjects(a, b) {
     }
   )
   return a
+}
+
+function stringifyHeaders(headers) {
+  return Object.entries(headers).map(
+    ([k, v]) => k + '=' + v
+  ).join(' ')
 }
 
 function isFilePath(str) {
