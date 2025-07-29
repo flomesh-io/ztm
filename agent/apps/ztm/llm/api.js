@@ -299,6 +299,7 @@ export default function ({ app, mesh }) {
         if (path.startsWith('/svc/')) path = path.substring(4)
         var path2 = path.endsWith('/') ? path : path + '/'
         if ($route = localRoutes.findLast(r => path2.startsWith(r.path))) {
+          if (evt.head.method === 'OPTIONS') return 'options'
           $origin = evt.head.headers.origin
           var service = $route.service
           var basePath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
@@ -311,6 +312,18 @@ export default function ({ app, mesh }) {
         }
       }
     }, {
+      'options': ($=>$
+        .replaceData()
+        .replaceMessage(() => {
+          var headers = {}
+          var cors = $route?.cors
+          if (cors) {
+            if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
+            if (cors.allowHeaders) headers['access-control-allow-headers'] = cors.allowHeaders.join(', ')
+          }
+          return new Message({ headers })
+        })
+      ),
       'remote': ($=>$
         // Stay in HTTP/1.x for now due to some incompatibility issues
         // caused by HTTP/2 compliance check, e.g. pseudo headers (such as "Host")
@@ -319,10 +332,23 @@ export default function ({ app, mesh }) {
         .muxHTTP(() => $route, { version: 1 }).to($=>$
           .pipe(() => mesh.connect($route.service.endpoint.id))
         )
+        .pipe(() => cors)
       ),
-      'local': $=>$.pipe(() => connectService),
+      'local': $=>$.pipe(() => connectService).pipe(() => cors),
       '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
     })
+  )
+
+  var cors = pipeline($=>$
+    .handleMessageStart(
+      msg => {
+        var cors = $route?.cors
+        if (cors && cors.allowOrigins?.includes?.($origin)) {
+          msg.head.headers ??= {}
+          msg.head.headers['access-control-allow-origin'] = $origin
+        }
+      }
+    )
   )
 
   var matchApiForwardKindName = new http.Match('/api/forward/{kind}/{name}')
@@ -364,7 +390,6 @@ export default function ({ app, mesh }) {
     .pipe(
       evt => {
         if (evt instanceof MessageStart) {
-          if (evt.head.method === 'OPTIONS') return 'options'
           $httpURL = new URL($service.target.address)
           var path = $servicePath === '' ? $httpURL.pathname : os.path.join($httpURL.pathname, $servicePath)
           if ($serviceQuery) {
@@ -382,18 +407,6 @@ export default function ({ app, mesh }) {
           return 'proxy'
         }
       }, {
-        'options': ($=>$
-          .replaceData()
-          .replaceMessage(() => {
-            var headers = {}
-            var cors = $route?.cors
-            if (cors) {
-              if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
-              if (cors.allowHeaders) headers['access-control-allow-headers'] = cors.allowHeaders.join(', ')
-            }
-            return new Message({ headers })
-          })
-        ),
         'proxy': ($=>$
           .pipe(() => $service.target.body ? 'merge' : 'bypass', {
             'merge': $=>$.replaceMessageBody(
@@ -427,16 +440,9 @@ export default function ({ app, mesh }) {
               ),
             })
           )
-          .handleMessageStart(
-            msg => {
-              app.log(`Response from service ${$service.target.address}: ${msg.head.status} ${msg.head.statusText} ${stringifyHeaders(msg.head.headers)}`)
-              var cors = $route?.cors
-              if (cors && cors.allowOrigins?.includes?.($origin)) {
-                msg.head.headers ??= {}
-                msg.head.headers['access-control-allow-origin'] = $origin
-              }
-            }
-          )
+          .handleMessageStart(msg => {
+            app.log(`Response from service ${$service.target.address}: ${msg.head.status} ${msg.head.statusText} ${stringifyHeaders(msg.head.headers)}`)
+          })
         ),
       }
     )
