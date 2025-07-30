@@ -73,7 +73,7 @@ const addMcp = () => {
 				// allowHeaders: ['content-type','mcp-session-id']
 			}
 		}).then(()=>{
-			localMcps.value.push({...mcp.value, enabled: false});
+			localMcps.value.push({...mcp.value, enabled: true});
 			setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{})
 			setTimeout(()=>{
 				mcp.value = null;
@@ -83,7 +83,7 @@ const addMcp = () => {
 			adding.value = false;
 		})
 	} else {
-		localMcps.value.push({...mcp.value, enabled: false});
+		localMcps.value.push({...mcp.value, enabled: true});
 		setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{})
 		setTimeout(()=>{
 			mcp.value = null;
