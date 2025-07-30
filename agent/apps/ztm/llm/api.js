@@ -316,6 +316,10 @@ export default function ({ app, mesh }) {
         .replaceData()
         .replaceMessage(() => {
           var headers = {}
+          if ($route.service.kind === 'tool') {
+            headers['access-control-allow-methods'] = '*'
+            headers['access-control-allow-headers'] = 'Content-Type, Mcp-Session-Id, Mcp-Protocol-Version'
+          }
           var cors = $route?.cors
           if (cors) {
             if (cors.allowMethods) headers['access-control-allow-methods'] = cors.allowMethods.join(', ')
@@ -347,6 +351,9 @@ export default function ({ app, mesh }) {
         if (cors && cors.allowOrigins?.includes?.($origin)) {
           msg.head.headers ??= {}
           msg.head.headers['access-control-allow-origin'] = $origin
+          if ($route.service.kind === 'tool') {
+            msg.head.headers['access-control-expose-headers'] = 'Mcp-Session-Id'
+          }
         }
       }
     )
@@ -496,31 +503,11 @@ export default function ({ app, mesh }) {
         }
         return '404'
       }, {
-        'options': ($=>$
-          .replaceData()
-          .replaceMessage(() => {
-            var headers = {
-              'access-control-allow-methods': '*',
-              'access-control-allow-headers': 'Content-Type, Mcp-Session-Id, Mcp-Protocol-Version',
-            }
-            return new Message({ headers })
-          })
-        ),
         '204': $=>$.replaceData().replaceMessage(new Message({ status: 204 })),
         '400': $=>$.replaceData().replaceMessage(new Message({ status: 400 })),
         '404': $=>$.replaceData().replaceMessage(new Message({ status: 404 })),
         '405': $=>$.replaceData().replaceMessage(new Message({ status: 405 })),
         'receive': $=>$.swap(() => $mcpStream.output),
-      }
-    )
-    .handleMessageStart(
-      msg => {
-        var cors = $route?.cors
-        if (cors && cors.allowOrigins?.includes?.($origin)) {
-          msg.head.headers ??= {}
-          msg.head.headers['access-control-allow-origin'] = $origin
-          msg.head.headers['access-control-expose-headers'] = 'Mcp-Session-Id'
-        }
       }
     )
   )
