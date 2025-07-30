@@ -299,8 +299,8 @@ export default function ({ app, mesh }) {
         if (path.startsWith('/svc/')) path = path.substring(4)
         var path2 = path.endsWith('/') ? path : path + '/'
         if ($route = localRoutes.findLast(r => path2.startsWith(r.path))) {
-          if (evt.head.method === 'OPTIONS') return 'options'
           $origin = evt.head.headers.origin
+          if (evt.head.method === 'OPTIONS') return 'options'
           var service = $route.service
           var basePath = `/api/forward/${service.kind}/${URL.encodeComponent(service.name)}`
           var servicePath = path.substring($route.path.length)
@@ -323,6 +323,7 @@ export default function ({ app, mesh }) {
           }
           return new Message({ headers })
         })
+        .pipe(() => cors)
       ),
       'remote': ($=>$
         // Stay in HTTP/1.x for now due to some incompatibility issues
