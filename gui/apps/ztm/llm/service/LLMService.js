@@ -57,7 +57,8 @@ export default class LLMService {
 	
 	deleteRoute({ep, path}, callback) {
 		confirm.remove(() => {
-			request(`/api/endpoints/${ep}/routes/${path}`,"DELETE").then((res) => {
+			const _path = path.startsWith("/")?path.substr(1):path
+			request(`/api/endpoints/${ep}/routes/${_path}`,"DELETE").then((res) => {
 				toast.add({ severity: 'success', summary: 'Tips', detail: "Deleted", life: 3000 });
 				if(!!callback)
 				callback(res);
@@ -70,7 +71,8 @@ export default class LLMService {
 	deleteRouteNoConfirm(ep, routes) {
 		const reqs = [];
 		routes.forEach((r)=>{
-			reqs.push(request(`/api/endpoints/${ep}/routes/${r.path}`,"DELETE"))
+			const _path = r.path.startsWith("/")?r.path.substr(1):r.path
+			reqs.push(request(`/api/endpoints/${ep}/routes/${_path}`,"DELETE"))
 		})
 		return merge(reqs)
 	}
