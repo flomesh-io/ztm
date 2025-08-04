@@ -135,26 +135,28 @@ export default class BotService {
 		}
 	}
 	//{"model":"Qwen/QwQ-32B","messages":[{"role":"user","content":"What opportunities and challenges will the Chinese large model industry face in 2025?"}],"stream":false,"max_tokens":512,"enable_thinking":false,"thinking_budget":512,"min_p":0.05,"stop":null,"temperature":0.7,"top_p":0.7,"top_k":50,"frequency_penalty":0.5,"n":1,"response_format":{"type":"text"},"tools":[{"type":"function","function":{"description":"<string>","name":"<string>","parameters":{},"strict":false}}]}
-	async callRunnerBySDK({roomId, historyContext, message, llm, mcps, callback}) {
+	async callRunnerBySDK({roomId, historyContext, message, mcptools, llm, mcps, callback}) {
 		const mesh = this.getMesh();
-		let tools = [];
+		let tools = mcptools || [];
 		const usermessages = [{
 				"role":"user",
 				"content":this.makePrompt("user",message?.text)
 		}]
-		const allmessages = (historyContext || []).concat(usermessages);
+		const allmessages = mcptools ? historyContext : (historyContext || []).concat(usermessages);
 		if(!!mcps && mcps.length>0){
 			const sysmessages = [];
 			// get tools param
 			const allClients = store.getters['mcp/clients'];
-			allClients.forEach((client,idx)=>{
-				let _tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
-				_tools.forEach((tool)=>{
-					tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
-				})
-				tools = tools.concat(_tools);
-				sysmessages.push({"role": "system", "content": this.makePrompt("system")})
-			});
+			if(tools.length==0){
+				allClients.forEach((client,idx)=>{
+					let _tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
+					_tools.forEach((tool)=>{
+						tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
+					})
+					tools = tools.concat(_tools);
+				});
+			}
+			sysmessages.push({"role": "system", "content": this.makePrompt("system")})
 			
 			let tool_calls = [];
 			let merge_tool_calls = [];
@@ -208,7 +210,8 @@ export default class BotService {
 									date: new Date().getTime(),
 								},(res)=>{}, 10);
 								
-								this.chatLLM(roomId, sysmessages, allmessages, tools, llm, callback);
+								this.callRunnerBySDK({roomId, historyContext:allmessages, message, mcptools: tools, llm, mcps, callback})
+								// this.chatLLM(roomId, sysmessages, allmessages, tools, llm, callback);
 							});
 						}
 						if(!!llm?.immediate){
