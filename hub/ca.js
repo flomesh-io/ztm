@@ -14,7 +14,7 @@ function init(url) {
         subject: { CN: 'ca' },
         privateKey: key,
         publicKey: new crypto.PublicKey(key),
-        days: 365,
+        days: 365 * 100,
       })
       db.setCert('ca', cert.toPEM().toString())
       db.setKey('ca', key.toPEM().toString())
