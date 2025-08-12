@@ -68,11 +68,15 @@ function fetchAsStream() {
         signal: controller.signal
       });
 			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+				const _msg = `HTTP error! status: ${response.status}`
+				processMessage(response?.statusText || _msg, true);
+				throw new Error(_msg);
+				return
 			}
 	
 			if (!response.body) {
 				throw new Error('ReadableStream not supported in this browser');
+				return
 			}
 	
 	    const reader = response.body.getReader();

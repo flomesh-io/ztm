@@ -237,7 +237,10 @@ export default {
 			state.logs[key] = [];
 		},
     pushClient(state, client) {
-      state.clients.push(client);
+			const has = state.clients.find((c)=> c?.server?.name == client?.server?.name)
+			if(!has){
+				state.clients.push(client);
+			}
     },
     disconnectClient(state, name) {
       const idx = state.clients.findIndex((client) => client?.name == name);

@@ -286,7 +286,6 @@ export default class MCPService {
 
 
   async callTool (uniqueName, args) {
-
 		const clients = this.getClients();
     const client = clients.find(client => client.tools.includes(uniqueName))
     if (!client) {
