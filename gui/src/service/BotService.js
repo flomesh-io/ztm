@@ -184,7 +184,6 @@ export default class BotService {
 									tool_calls: calls
 								});
 							}
-							
 							this.replayToolcalls(calls).then((allToolsResult)=>{
 								writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] tool called: ${JSON.stringify(allToolsResult)}\n`);
 								// push result msg
@@ -287,7 +286,8 @@ export default class BotService {
 	}
 	callMcpToolBySDK(tool_call) {
 		const uniqueToolName = tool_call[tool_call?.type]?.name;
-		const args = !!tool_call[tool_call?.type]?.arguments?JSON.parse(tool_call[tool_call?.type].arguments):{};
+		const args_str = tool_call[tool_call?.type]?.arguments;
+		const args = !!args_str && args_str != "{}"?JSON.parse(tool_call[tool_call?.type].arguments):{};
 		return this.mcpService.callTool(uniqueToolName, args);
 	}
 /**
