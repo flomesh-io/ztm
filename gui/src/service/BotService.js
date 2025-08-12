@@ -151,7 +151,7 @@ export default class BotService {
 				allClients.forEach((client,idx)=>{
 					let _tools = JSON.parse(JSON.stringify(client.listTools?.tools||[]));
 					_tools.forEach((tool)=>{
-						tool.name = this.mcpService.uniqueName(tool.name, mcps[idx]?.name);
+						tool.name = this.mcpService.uniqueName(tool.name, client?.server?.name);
 					})
 					tools = tools.concat(_tools);
 				});
@@ -163,6 +163,10 @@ export default class BotService {
 			let delta = "";
 			// get tool_calls with llm
 			const resp = await this.chatLLM(roomId, sysmessages, allmessages, tools, llm, (res,ending)=> {
+				if(typeof(res) == 'string'){
+					callback(res, true);
+					return
+				}
 				const finish_reason = res.choices[0]?.finish_reason;
 				const msg = res.choices[0]?.delta || res.choices[0]?.message;
 				delta += msg?.content || msg?.reasoning_content || '';
