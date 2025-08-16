@@ -514,7 +514,7 @@ var getHubStatus = pipeline($=>$
         id: myID,
         since: startTime,
         zone: myZone || null,
-        ports: myNames,
+        ports: getMyNames(classifyIP($ctx.ip)),
         peers: cluster ? cluster.getPeers() : [],
         capacity: {
           agents: maxAgents,
@@ -661,7 +661,7 @@ var getHubs = pipeline($=>$
         if (URL.decodeComponent($params.zone) !== myZone) return response(404)
         return response(200, {
           [myID]: {
-            ports: myNames,
+            ports: getMyNames(classifyIP($ctx.ip)),
             version: {
               ztm: {
                 edition: hubVersion.ztm.edition,
@@ -1023,7 +1023,7 @@ var pingEndpoint = pipeline($=>$
       var timestamp = {
         hub: {
           id: myID,
-          names: myNames,
+          names: getMyNames(classifyIP($ctx.ip)),
         },
         start: Date.now(),
         end: null,
@@ -1450,6 +1450,36 @@ function collectMyNames(addr) {
   if (myNames.indexOf(addr) < 0) {
     myNames.push(addr)
   }
+}
+
+function getMyNames(scope) {
+  return scope ? myNames.filter(
+    name => {
+      try {
+        var addr = new IPEndpoint(name)
+        return classifyIP(addr.ip.toString()) === scope
+      } catch {
+        return true
+      }
+    }
+  ) : [...myNames]
+}
+
+var localhostCIDR = new IPMask('127.0.0.0/8')
+
+var privateCIDRs = [
+  new IPMask('10.0.0.0/8'),
+  new IPMask('100.64.0.0/10'),
+  new IPMask('172.16.0.0/12'),
+  new IPMask('192.0.0.0/24'),
+  new IPMask('192.168.0.0/16'),
+  new IPMask('198.18.0.0/15'),
+]
+
+function classifyIP(ip) {
+  if (localhostCIDR.contains(ip)) return 'localhost'
+  if (privateCIDRs.some(range => range.contains(ip))) return 'private'
+  return 'public'
 }
 
 function makeEndpoint(id) {
