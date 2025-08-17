@@ -2,13 +2,6 @@
 
 ZTM_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
-check_version() {
-  if [ `printf '%s\n%s' $1 $2 | sort -V | head -n1` = $1 ]; then
-    echo $3
-    exit 1
-  fi
-}
-
 cd "$ZTM_DIR"
 git submodule update --init
 if [ $? -ne 0 ]; then
