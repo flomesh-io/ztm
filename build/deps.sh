@@ -9,14 +9,6 @@ check_version() {
   fi
 }
 
-if ! command -v node &> /dev/null
-then
-  echo "Can't find node command, exit..."
-  exit 1
-fi
-
-check_version `node -v` 'v16' 'Require Node.js version 16 or above'
-
 cd "$ZTM_DIR"
 git submodule update --init
 if [ $? -ne 0 ]; then
