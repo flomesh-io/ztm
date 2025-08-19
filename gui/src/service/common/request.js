@@ -67,12 +67,7 @@ function fetchAsStream() {
         body: JSON.stringify(data),
         signal: controller.signal
       });
-			if (!response.ok) {
-				const _msg = `HTTP error! status: ${response.status}`
-				processMessage(response?.statusText || _msg, true);
-				throw new Error(_msg);
-				return
-			}
+			
 	
 			if (!response.body) {
 				throw new Error('ReadableStream not supported in this browser');
@@ -88,10 +83,16 @@ function fetchAsStream() {
 				const { done,value } = await reader.read();
 				if (done) {
 					// 处理缓冲区中剩余的数据
-					if (buffer.trim()) {
-						processBuffer(true)
-					}
 					console.log('Stream complete');
+					if (!response.ok) {
+						const _msg = `HTTP error! status: ${response.status}`
+						throw new Error(buffer || _msg || response);
+						buffer = '';
+					} else {
+						if (buffer.trim()) {
+							processBuffer(true)
+						}
+					}
 					break;
 				}
 				
@@ -128,9 +129,11 @@ function fetchAsStream() {
 				}
 			}
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error?.name === 'AbortError') {
+				processMessage("请求已被取消", true);
         console.log('请求已被取消');
       } else {
+				processMessage(error?.stack || error, true);
         console.error('Fetch error:', error);
       }
     }

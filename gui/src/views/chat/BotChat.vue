@@ -23,6 +23,7 @@ const loading = ref(true);
 const store = useStore();
 const botService = new BotService();
 const mcpService = new MCPService();
+const callbackProxy = ref();
 const props = defineProps(['room']);
 const emits = defineEmits(['back','peer','manager','history','notify','update:room']);
 const selectedMesh = computed(() => {
@@ -82,7 +83,7 @@ const makeToolcall = () => {
 const cancelToolcall = () => {
 	openToolcallEditor.value = false;
 	toolcallTarget.value.status = "cancel"
-	callbackProxy(
+	callbackProxy.value(
 		msgHtml(lastmsg.value, toolcallTarget.value),
 		false,
 		true
@@ -109,7 +110,7 @@ const openToolcall = () => {
 	openToolcallEditor.value = true;
 	loaddata();
 	setTimeout(()=>{
-		callbackProxy(
+		callbackProxy.value(
 			msgHtml(lastmsg.value, toolcallTarget.value),
 			false,
 			false
@@ -251,17 +252,16 @@ const inputStyle = computed(() => {
 })
 const hasMediaDevices = computed(() => true);
 const delta = ref('');
-let callbackProxy = null;
 const workerOnMessage = (msg) => {
 	const toolcall = store.getters["mcp/toolcall"]
 	if(msg?.message){
-		callbackProxy(
+		callbackProxy.value(
 			msgHtml(msg?.message, toolcall),
 			true
 		);
 	} else {
 		setTimeout(()=>{
-			callbackProxy(
+			callbackProxy.value(
 				msgHtml(msg?.delta, toolcall),
 				msg?.ending,
 				!msg?.first
@@ -396,7 +396,7 @@ const request = ref({
 					// writeMobileFile('postMessageHTML.txt',html);
 					chat.value.addMessage({role: 'user',html:html},false);
 				}
-				callbackProxy = (html2,ending)=>{
+				callbackProxy.value = (html2,ending)=>{
 					//body
 					// let html2 = "";
 					// body?.files.forEach((file)=>{
@@ -430,7 +430,7 @@ const request = ref({
 			}else if(body?.messages){
 				
 				if(body?.messages[0]){
-					callbackProxy = (html,ending,overwrite) => {
+					callbackProxy.value = (html,ending,overwrite) => {
 						// loading.value = false;
 						signals.onResponse({files:[],overwrite: true});
 						chat.value.addMessage({html,role: 'ai',overwrite: overwrite},overwrite);
@@ -485,6 +485,12 @@ const openPeer = () => {
 	emits('peer',llm.value?.name);
 }
 
+const streaming = computed(() => !!callbackProxy.value )
+const chatCancel = () => {
+	botService.chatCancel();
+	callbackProxy.value = null;
+	loading.value = false;
+}
 const loadllm = (callback) => {
 	botService.checkLLM(props?.room?.id,(res) => {
 		llm.value = res;
@@ -569,6 +575,7 @@ defineExpose({
 	    <template #end> 
 				<Button icon="pi pi-history" @click="gohistory" severity="secondary" text />
 				<Button icon="pi pi-cog" @click="showManage" severity="secondary" text />
+				<Button v-if="streaming" icon="pi pi-stop-circle" @click="chatCancel()" severity="danger" text />
 			</template>
 	</AppHeader>
 	<div class="w-full flex" style="height: calc(100vh - 37px);flex: 1;margin: 0;flex-direction: column;">

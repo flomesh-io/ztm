@@ -5,7 +5,7 @@
 	<WatchShared v-model:open="open" v-model:paths="paths" />
 </template>
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import { setAuthorization, AUTH_TYPE } from "@/service/common/request";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
@@ -27,14 +27,18 @@ store.commit('account/setUser', {id:''});
 store.commit('notice/setToast', toast);
 store.commit('notice/setConfirm', confirm);
 
-const selectedMesh = computed(() => {
-	return store.getters["account/selectedMesh"]
-});
-
+watch(() => store.getters["account/selectedMesh"], ()=>{
+	store.commit('notice/setErrorLength', 0);
+},{
+	deep:true
+})
+const errorLength = computed(() => store.getters["notice/errorLength"] );
 const open = ref(false);
 const paths = ref()
 const timmer = () => {
-	store.dispatch('notice/rooms');
+	if(errorLength < 10){
+		store.dispatch('notice/rooms');
+	}
 	if(!paths.value && isMobile()){
 		getShared(false, (res)=>{
 			if(res && res.length>0){
