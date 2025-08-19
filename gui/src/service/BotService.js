@@ -11,6 +11,7 @@ import MCPService from '@/service/MCPService';
 export default class BotService {
 	
 	mcpService = null
+	stream = null
 	
 	constructor(){
 		this.mcpService = new MCPService();
@@ -307,6 +308,7 @@ export default class BotService {
 		 }
 	 ]
 */
+  
 	chatLLM(roomId, sysmessages, messages, tools, llm, callback) {
 		const mesh = this.getMesh();
 		let body = { messages: (sysmessages||[]).concat(messages)  };
@@ -317,12 +319,21 @@ export default class BotService {
 		writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] request llm ${url} by ${JSON.stringify(body)}\n`);
 		
 		setItem(STORE_BOT_CONTENT(mesh?.name, roomId), messages, ()=> {
-			const stream = fetchAsStream();
-			stream.post(
+			this.stream = fetchAsStream();
+			this.stream.post(
 				url, 
 				body,
 				callback
 			)
 		},llm?.memoryLength||10)
+	}
+	getStreaming() {
+		return !!this.stream;
+	}
+	chatCancel() {
+		if(!!this.stream){
+			this.stream.cancel();
+			this.stream = null;
+		}
 	}
 }

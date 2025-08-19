@@ -405,7 +405,7 @@ onMounted(()=>{
 					v-if="selectRoom?.bot" 
 					v-model:room="selectRoom" 
 					@back="backList" 
-					@manager="() => manager = 'bot'" 
+					@manager="() => { botHistory = false;manager = 'bot'; }" 
 					@history="() => botHistory = true"
 					@notify="loadBotHistory"
 					/>

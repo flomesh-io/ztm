@@ -110,7 +110,9 @@ export default {
 					callback(res, ending){
 						const choices = res?.choices;
 						const choice = !!choices && choices[0];
-						if(choice?.message){
+						if(typeof(res) == 'string'){
+							commit('pushMessage', {message:res, ending:true});
+						} else if(choice?.message){
 							const message = choice?.message?.reasoning_content||choice?.message?.content||'';
 							commit('pushMessage', {message, ending:true});
 						} else {
