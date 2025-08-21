@@ -561,6 +561,12 @@ onMounted(()=>{
 const gohistory = () => {
 	emits('history',true);
 }
+
+watch(() => selectedMesh, () => {
+	back()
+}, {
+	deep: true
+})
 defineExpose({
   setBot
 })
