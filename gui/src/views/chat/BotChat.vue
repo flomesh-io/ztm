@@ -58,6 +58,7 @@ const msgHtml = (msg, toolcall) => {
 		toolcallTarget.value = toolcall;
 		lastmsg.value = msg;
 		let filterMsg = msg.replace(/```json[^`]*```/,t("Do you want to execute a tool call?")) || t("Do you want to execute a tool call?");
+		
 		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;"><div>${filterMsg}</div></pre>
 		<div style="display: flex;text-align:right;padding:10px">
 			<button class="toolcall-no-button">${t("No")}</button>
@@ -143,7 +144,7 @@ const htmlClassUtilities = () => {
 				}
 			},
 			styles: {
-				default: {cursor: 'pointer',border:'1px solid green',borderRadius:'6px',background: 'transparent'},
+				default: {cursor: 'pointer',border:'1px solid green',borderRadius:'6px',background: 'green',color:'#fff'},
 				hover: {opacity: 0.8},
 				click: {opacity: 0.8}
 			},
@@ -156,7 +157,7 @@ const htmlClassUtilities = () => {
 				}
 			},
 			styles: {
-				default: {cursor: 'pointer',border:'1px solid orange',borderRadius:'6px',marginRight:'10px',background: 'transparent'},
+				default: {cursor: 'pointer',border:'1px solid orange',borderRadius:'6px',marginRight:'10px',background: 'orange',color:'#fff'},
 				hover: {opacity: 0.8}
 			},
 		},
@@ -168,7 +169,7 @@ const htmlClassUtilities = () => {
 				}
 			},
 			styles: {
-				default: {cursor: 'pointer',border:'1px solid #d80000',borderRadius:'6px',marginRight:'10px',background: 'transparent'},
+				default: {cursor: 'pointer',border:'1px solid #d80000',borderRadius:'6px',marginRight:'10px',background: '#d80000',color:'#fff'},
 				hover: {opacity: 0.8}
 				// hover: {backgroundColor: 'yellow'},
 			},

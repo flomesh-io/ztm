@@ -7,7 +7,7 @@ import _ from 'lodash';
 import { openFolder, getKeywordIcon } from '@/utils/file';
 import { isPC } from '@/utils/platform';
 import { useI18n } from 'vue-i18n';
-import { getItem, setItem, STORE_SETTING_LLM, STORE_SETTING_MCP } from "@/utils/localStore";
+import { getItem, setItem, STORE_SETTING_LLM,STORE_BOT_PROMPT, STORE_SETTING_MCP } from "@/utils/localStore";
 const { t, locale } = useI18n();
 const store = useStore();
 const botService = new BotService();
@@ -115,7 +115,7 @@ const save = () => {
 	setItem(STORE_SETTING_MCP(selectedMesh.value?.name,props?.room?.id), localMcps.value, ()=>{});
 	const mcps = localMcps.value.filter((n)=> n.enabled);
 	
-	if(!matchLLM.value.localRoutes?.length){
+	if(!matchLLM.value?.localRoutes?.length){
 		botService.createRoute({
 			ep: selectedMesh.value?.agent?.id,
 			path,
@@ -146,13 +146,39 @@ const save = () => {
 	}
 }
 const mcps = ref([]);
+const openPrompt = ref(false);
+const prompts = ref({
+	system: '',
+	user: '',
+	tool: ''
+})
+const showPrompt = () => {
+	openPrompt.value = true;
+
+}
+const savePrompt = () => {
+	const dftPrompt = botService.getDefaultPrompt();
+	setItem(STORE_BOT_PROMPT(selectedMesh.value?.name,props?.room?.id), [
+		prompts.value.user || dftPrompt.user,
+		prompts.value.system || dftPrompt.system,
+		prompts.value.tool || dftPrompt.tool,
+	], ()=>{
+		openPrompt.value = false;
+	})
+	
+}
 onMounted(()=>{
 	loadllm();
 	loadLocalMcp();
 	botService.getServices().then((res)=>{
 		llms.value = (res?.services||[]).filter((n)=>n.kind == 'llm');
 		mcps.value = (res?.services||[]).filter((n)=>n.kind == 'tool');
-	})
+	});
+	botService.getPrompt(props?.room?.id).then((res)=>{
+		prompts.value = res
+	});
+	
+	
 })
 </script>
 <template>
@@ -203,6 +229,12 @@ onMounted(()=>{
 				<ToggleSwitch class="relative" style="top:5px" v-model="immediate" />
 			</div>
 		</li>
+		<li class="nav-li flex" >
+			<b class="opacity-70">{{t('Prompts')}}</b>
+			<div class="flex-item text-right pr-3">
+			</div>
+			<Button icon="pi pi-pencil" severity="secondary" @click="showPrompt"/>
+		</li>
 		<li class="nav-li flex" v-for="(localMcp,idx) in localMcps">
 			<b class="opacity-70">{{t('MCP Server')}}</b>
 			<div class="flex-item text-right pr-3">
@@ -238,6 +270,42 @@ onMounted(()=>{
 			<Button :disabled="!mcp" :loading="adding" icon="pi pi-plus" severity="secondary" @click="addMcp"/>
 		</li>
 	</ul>
+	
+	<Dialog class="noheader" v-model:visible="openPrompt" modal :style="{ minHeight:'400px',minWidth:'400px'  }">
+		<AppHeader :back="() => openPrompt = false" :main="false">
+				<template #center>
+					<b>{{t('Prompts')}}</b>
+				</template>
+				<template #end> 
+					<Button icon="pi pi-check" @click="savePrompt" />
+				</template>
+		</AppHeader>
+		<div class="px-2 mt-2">
+			<Tag class="mb-2">{{t('User')}}</Tag>
+			<Chip class=" mb-2 align-items-top teatarea-panel w-full"  >
+					<span class="font-medium">
+						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.user" :autoResize="false" rows="5" />
+					</span>
+				</Chip>
+		</div>
+		<div class="px-2">
+			<Tag class="mb-2">{{t('System')}}</Tag>
+				<Chip class="mb-2 align-items-top teatarea-panel w-full"  >
+					<span class="font-medium">
+						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.system" :autoResize="false" rows="11" />
+					</span>
+				</Chip>
+		</div>
+		<div class="px-2">
+			<Tag class="mb-2">{{t('Tool')}}</Tag>
+				<Chip class="mb-2 align-items-top teatarea-panel w-full"  >
+					<span class="font-medium">
+						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.tool" :autoResize="false" rows="4" />
+					</span>
+			</Chip>	
+		</div>
+		
+	</Dialog>
 </template>
 <style scoped>
 	.selector{

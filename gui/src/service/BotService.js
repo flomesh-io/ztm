@@ -1,7 +1,7 @@
 import { mock, request, getBaseUrl, getUrl,merge,fetchAsStream } from './common/request';
 import toast from "@/utils/toast";
 import confirm from "@/utils/confirm";
-import { getItem, setItem, unshiftItem, STORE_SETTING_LLM, STORE_BOT_CONTENT, STORE_BOT_REPLAY } from "@/utils/localStore";
+import { getItem, setItem, unshiftItem, STORE_BOT_PROMPT, STORE_SETTING_LLM, STORE_BOT_CONTENT, STORE_BOT_REPLAY } from "@/utils/localStore";
 import _, { forEach } from 'lodash';
 import store from "@/store";
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
@@ -72,24 +72,43 @@ export default class BotService {
 			}
 		});
 	}
-	makePrompt(role, content){
-		switch (role){
-			case 'user':
-				return `请完成以下请求（如判定为tool_calls请求，**必须立即返回tool_calls**并遵守system_prompt。如果判断为非tool_calls请求，请用自然语言回答。）
-请求：${content}`;
-			case 'system':
-				return `你是一个工具调用助手，必须严格遵循以下规则：
+	prompts = {
+		user: `请完成以下请求（如判定为tool_calls请求，**必须立即返回tool_calls**并遵守system_prompt。如果判断为非tool_calls请求，请用自然语言回答。）
+请求如下`,
+		system: `你是一个工具调用助手，必须严格遵循以下规则：
 1. 判定为tool_calls请求时，你的**finish_reason**必须是**tool_calls**，不能是**stop**
 2. 任务需要多条tool_calls完成时，一次性返回多条tool_calls
 3. 自然语言（content字段）中禁止包含tool_calls结构，相关结构只应出现在**tool_calls字段**中。
-4. 当工具调用返回结果，只能自然语言总结回复**描述性列表**
-`;
+4. 当工具调用返回结果，只能自然语言总结回复**描述性列表**`,
+		tool: `以下是工具调用结果，请整理为**描述性列表**再回复，禁止回复**tool▁calls▁begin**`
+	}
+	getDefaultPrompt() {
+		return this.prompts
+	}
+	getPrompt(roomId) {
+		const mesh = this.getMesh();
+		return new Promise((resolve, reject) => {
+			getItem(STORE_BOT_PROMPT(mesh?.name, roomId), (res) => {
+				resolve({
+					user: res[0] || this.prompts['user'],
+					system: res[1] || this.prompts['system'],
+					tool: res[2] || this.prompts['tool'],
+				})
+			})
+		});
+	}
+	makePrompt(roomId, role, _prompt, content){
+		switch (role){
+			case 'user':
+				return `${_prompt}：${content}`;
+			case 'system':
+				return _prompt;
 			case 'tool':
 				let _content = content?.text;
 				if(content?.type!='text') {
 					_content = JSON.stringify(content)
 				}
-				return `以下是工具调用结果，请整理为**描述性列表**再回复，禁止回复**tool▁calls▁begin**：${_content}`;
+				return `${_prompt}：${_content}`;
 			default:
 				return text;
 		}
@@ -139,9 +158,10 @@ export default class BotService {
 	async callRunnerBySDK({roomId, historyContext, message, mcptools, llm, mcps, callback}) {
 		const mesh = this.getMesh();
 		let tools = mcptools || [];
+		const _prompts = await this.getPrompt(roomId);
 		const usermessages = [{
 				"role":"user",
-				"content":this.makePrompt("user",message?.text)
+				"content": this.makePrompt(roomId, "user", _prompts.user, message?.text)
 		}]
 		const allmessages = mcptools ? historyContext : (historyContext || []).concat(usermessages);
 		if(!!mcps && mcps.length>0){
@@ -157,7 +177,7 @@ export default class BotService {
 					tools = tools.concat(_tools);
 				});
 			}
-			sysmessages.push({"role": "system", "content": this.makePrompt("system")})
+			sysmessages.push({"role": "system", "content": this.makePrompt(roomId, "system", _prompts.system)})
 			
 			let tool_calls = [];
 			let merge_tool_calls = [];
@@ -197,12 +217,12 @@ export default class BotService {
 									if(toolResult){
 										if(toolResult?.result?.content){
 											toolResult?.result?.content.forEach((toolResultContent)=>{
-												allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
+												allmessages.push({"role": "tool", "content": this.makePrompt(roomId, 'tool',_prompts.tool,toolResultContent), "tool_call_id": res.tool_call?.id})
 											})
 										}
 										if(toolResult?.content){
 											toolResult?.content.forEach((toolResultContent)=>{
-												allmessages.push({"role": "tool", "content": this.makePrompt('tool',toolResultContent), "tool_call_id": res.tool_call?.id})
+												allmessages.push({"role": "tool", "content": this.makePrompt(roomId, 'tool',_prompts.tool,toolResultContent), "tool_call_id": res.tool_call?.id})
 											})
 										}
 									}
@@ -315,6 +335,7 @@ export default class BotService {
 		if(tools && tools.length>0){
 			body.tools = this.makeLLMToolsFormat(tools);
 		}
+		console.log('[llm body]',body)
 		let url = this.getSvcUrl(`/svc/${llm.kind}/${llm.name}/chat/completions`);
 		writeLogFile('ztm-llm.log', `[${new Date().toISOString()}] request llm ${url} by ${JSON.stringify(body)}\n`);
 		
