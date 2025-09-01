@@ -133,7 +133,7 @@ function fetchAsStream() {
 				processMessage("请求已被取消", true);
         console.log('请求已被取消');
       } else {
-				processMessage(error?.stack || error, true);
+				processMessage(error?.message || error?.stack || error, true);
         console.error('Fetch error:', error);
       }
     }

@@ -49,6 +49,7 @@ export const deleteItem = (key, index, callback) => {
 		setItem(key,ary,callback);
 	});
 }
+
 export const STORE_SETTING_LLM = (mesh, id) => {
 	return `llm-${mesh}`+ (!!id?`-${id}`:'');
 }
@@ -63,6 +64,9 @@ export const STORE_BOT_REPLAY = (mesh, id) => {
 }
 export const STORE_BOT_HISTORY = (mesh, id) => {
 	return `bot-history-${mesh}`+ (!!id?`-${id}`:'');
+}
+export const STORE_BOT_PROMPT = (mesh, id) => {
+	return `bot-prompt-${mesh}`+ (!!id?`-${id}`:'');
 }
 export const STORE_BOT_ROOMS = (mesh) => {
 	return `bot-rooms-${mesh}`;
