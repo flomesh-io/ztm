@@ -90,9 +90,9 @@ export default class BotService {
 		return new Promise((resolve, reject) => {
 			getItem(STORE_BOT_PROMPT(mesh?.name, roomId), (res) => {
 				resolve({
-					user: res[0] || this.prompts['user'],
-					system: res[1] || this.prompts['system'],
-					tool: res[2] || this.prompts['tool'],
+					user: (res && res[0]) || this.prompts['user'],
+					system: (res && res[1]) || this.prompts['system'],
+					tool: (res && res[2]) || this.prompts['tool'],
 				})
 			})
 		});

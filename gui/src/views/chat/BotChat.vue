@@ -13,7 +13,8 @@ import 'deep-chat';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { generateList } from "@/utils/svgAvatar";
-import ToolCallCard from "./ToolCallCard.vue"
+import ToolCallCard from "./ToolCallCard.vue";
+import { openWebview } from '@/utils/webview';
 
 const { t } = useI18n();
 
@@ -72,7 +73,15 @@ const msgHtml = (msg, toolcall) => {
 		let filterMsg = msg.replace(/```json[^`]*```/,t("Task aborted.")) || t("Task aborted.");
 		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;"><div>${filterMsg}</div></pre>`
 	} else {
-		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${msg}</pre>`;
+		const sptMsg = msg.split(/\s(http|https):/);
+		let rplMsg = msg;
+		sptMsg.forEach((n)=>{
+			rplMsg = rplMsg.replace(/(.*)\s((http|https):[^\s]*)(.*)/g,'$1 <a class="toolcall-link" href="$2" target="_blank">$2</a> $4')
+			rplMsg = rplMsg.replace(/(.*)`((http|https):[^`]*)(.*)/g,'$1 <a class="toolcall-link" href="$2" target="_blank">$2</a> $4')
+			rplMsg = rplMsg.replace(/(.*)\[((http|https):[^\]]*)(.*)/g,'$1 <a class="toolcall-link" href="$2" target="_blank">$2</a> $4')
+		})
+		
+		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${rplMsg}</pre>`;
 	} 
 }
 const openToolcallEditor = ref(false);
@@ -174,6 +183,33 @@ const htmlClassUtilities = () => {
 				// hover: {backgroundColor: 'yellow'},
 			},
 		},
+		
+		['toolcall-link']: {
+			events: {
+				click: (event) => {
+					if(!window.__TAURI_INTERNALS__){
+						return;
+					}
+					const href = (event.currentTarget || event.target).href
+					const webviewOptions = {
+						url: href,
+						name: href.replace(/.*\/\//,"").replaceAll("/","_").replaceAll(".","_").replaceAll("-","_"),
+						width:1280,
+						height:860,
+						proxy:''
+					}
+					console.log(webviewOptions)
+					openWebview(webviewOptions);
+				}
+			},
+			styles: {
+				default: {cursor: 'pointer',borderRadius:'2px',paddingLeft:'6px',paddingRight:'6px',background: '#ffffdd',color:'blue'},
+				hover: {opacity: 0.8}
+				// hover: {backgroundColor: 'yellow'},
+			},
+		},
+		
+		
 		['download-button']: {
 			events: {
 				click: (event) => (
