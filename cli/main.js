@@ -170,30 +170,30 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
-          -d, --data            <dir>           Specify the location of ZTM storage (default: ~/.ztm)
-                                                Only applicable to hubs and agents
-          -l, --listen          <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
-                                                Only applicable to hubs and agents
-          -n, --names           <host:port ...> Specify one or more hub addresses (host:port) that are accessible to agents
-                                                Only applicable to hubs
-              --ca              <url>           Specify the location of an external CA service if any
-                                                Only applicable to hubs
+          -d, --data              <dir>           Specify the location of ZTM storage (default: ~/.ztm)
+                                                  Only applicable to hubs and agents
+          -l, --listen            <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+                                                  Only applicable to hubs and agents
+          -n, --names             <host:port ...> Specify one or more hub addresses (host:port) that are accessible to agents
+                                                  Only applicable to hubs
+              --ca                <url>           Specify the location of an external CA service if any
+                                                  Only applicable to hubs
 
-              --max-agents      <number>        Specify the maximum number of agents the hub can handle
-                                                Only applicable to hubs
-              --max-sessions    <number>        Specify the maximum number of forwarding sessions the hub can handle
-                                                Only applicable to hubs
-          -p, --permit          <pathname>      Specify an optional output filename for the root user's permit
-                                                Only applicable to hubs
+              --max-agents        <number>        Specify the maximum number of agents the hub can handle
+                                                  Only applicable to hubs
+              --max-sessions      <number>        Specify the maximum number of forwarding sessions the hub can handle
+                                                  Only applicable to hubs
+          -p, --permit            <pathname>      Specify an optional output filename for the root user's permit
+                                                  Only applicable to hubs
 
-            --pqc-key-exchange  <algorithm>     Specify the PQC key exchange algorithm such as 'ML-KEM-512'
-            --pqc-signature     <algorithm>     Specify the PQC signature algorithm such as 'ML-DSA-44'
+              --pqc-key-exchange  <algorithm>     Specify the PQC key exchange algorithm such as 'ML-KEM-512'
+              --pqc-signature     <algorithm>     Specify the PQC signature algorithm such as 'ML-DSA-44'
 
         ` + (ztmVersion.edition === 'Enterprise' ? `
-              --bootstrap       <host:port ...> Specify the bootstrap addresses of the hub cluster
-                                                Only applicable to hubs
-              --zone            <zone>          Specify the zone that the hub is deployed in
-                                                Only applicable to hubs
+              --bootstrap       <host:port ...>   Specify the bootstrap addresses of the hub cluster
+                                                  Only applicable to hubs
+              --zone            <zone>            Specify the zone that the hub is deployed in
+                                                  Only applicable to hubs
         ` : ''),
         notes: `Available object types include: hub, agent, app`,
         action: (args) => {
