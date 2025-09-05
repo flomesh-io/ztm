@@ -9,11 +9,13 @@ try {
     commands: [{
       title: 'ZTM Agent',
       options: `
-        -d, --data    <dir>         Specify the location of ZTM storage (default: ~/.ztm)
-        -l, --listen  <[ip:]port>   Specify the agent's listening port (default: 127.0.0.1:7777)
-            --join    <mesh>        If specified, join a mesh with the given name
-            --join-as <endpoint>    When joining a mesh, give the current endpoint a name
-        -p, --permit  <filename>    When joining a mesh, use the provided permit file
+        -d, --data              <dir>         Specify the location of ZTM storage (default: ~/.ztm)
+        -l, --listen            <[ip:]port>   Specify the agent's listening port (default: 127.0.0.1:7777)
+            --join              <mesh>        If specified, join a mesh with the given name
+            --join-as           <endpoint>    When joining a mesh, give the current endpoint a name
+        -p, --permit            <filename>    When joining a mesh, use the provided permit file
+            --pqc-key-exchange  <algorithm>   Specify the PQC key exchange algorithm such as 'ML-KEM-512'
+            --pqc-signature     <algorithm>   Specify the PQC signature algorithm such as 'ML-DSA-44'
       `,
       action: (args) => {
         var listen = args['--listen'] || '127.0.0.1:7777'
@@ -25,6 +27,16 @@ try {
         var dbPath = args['--data'] || '~/.ztm'
         if (dbPath.startsWith('~/')) {
           dbPath = os.home() + dbPath.substring(1)
+        }
+
+        var pqc = null
+        var pqcKeyEx = args['--pqc-key-exchange']
+        var pqcSignature = args['--pqc-signature']
+
+        if (pqcKeyEx || pqcSignature) {
+          pqc = {}
+          if (pqcKeyEx) pqc.keyExchange = pqcKeyEx
+          if (pqcSignature) pqc.signature = pqcSignature
         }
 
         if ('--join' in args) {
@@ -53,7 +65,7 @@ try {
         }
 
         db.open(os.path.join(dbPath, 'ztm.db'))
-        api.init(dbPath, listen)
+        api.init(dbPath, listen, pqc)
 
         if (joinMesh) {
           api.setMesh(joinMesh, {

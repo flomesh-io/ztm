@@ -4,12 +4,12 @@ var caCert
 var caKey
 var caURL
 
-function init(url) {
+function init(url, pqcSigAlg) {
   if (url) {
     caURL = new URL(url)
   } else {
     if (!db.getCert('ca') || !db.getKey('ca')) {
-      var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+      var key = new crypto.PrivateKey({ type: pqcSigAlg || 'rsa', bits: 2048 })
       var cert = new crypto.Certificate({
         subject: { CN: 'ca' },
         privateKey: key,

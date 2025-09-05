@@ -13,7 +13,7 @@ var agentVersion = {
   pipy: { ...pipy.version },
 }
 
-export default function (rootDir, listen, config, onConfigUpdate) {
+export default function (rootDir, listen, pqc, config, onConfigUpdate) {
   var meshName = config.name
   var username
   var caCert
@@ -97,6 +97,7 @@ export default function (rootDir, listen, config, onConfigUpdate) {
       cert: agentCert,
       key: agentKey,
     } : null,
+    pqc,
     trusted: caCert ? [caCert] : null,
   }
 
