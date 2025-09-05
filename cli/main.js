@@ -132,15 +132,17 @@ function doCommand(meshName, epName, argv, program) {
         title: `Generate a permit for the root user`,
         usage: 'root',
         options: `
-          -d, --data  <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-          -n, --names <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
-              --ca    <url>             Specify the location of an external CA service if any
+          -d, --data          <dir>           Specify the location of ZTM storage (default: ~/.ztm)
+          -n, --names         <host:port ...> Specify one or more hub addresses (host:port) that are accessible to agents
+              --ca            <url>           Specify the location of an external CA service if any
+              --pqc-signature <algorithm>     Specify the PQC signature algorithm such as 'ML-DSA-44'
         `,
         action: (args) => {
           var dataDir = args['--data']
+          var pqcSigAlg = args['--pqc-signature']
           var names = args['--names']
           var caURL = args['--ca']
-          return root(dataDir, caURL, names)
+          return root(dataDir, pqcSigAlg, caURL, names)
         }
       },
 
@@ -168,25 +170,29 @@ function doCommand(meshName, epName, argv, program) {
         title: `Start running a hub, agent or app as background service`,
         usage: 'start <object type> [app name]',
         options: `
-          -d, --data          <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+          -d, --data            <dir>           Specify the location of ZTM storage (default: ~/.ztm)
                                                 Only applicable to hubs and agents
-          -l, --listen        <[ip:]port>       Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
+          -l, --listen          <[ip:]port>     Specify the service listening port (default: 0.0.0.0:8888 for hubs, 127.0.0.1:7777 for agents)
                                                 Only applicable to hubs and agents
-          -n, --names         <host:port ...>   Specify one or more hub addresses (host:port) that are accessible to agents
+          -n, --names           <host:port ...> Specify one or more hub addresses (host:port) that are accessible to agents
                                                 Only applicable to hubs
-              --ca            <url>             Specify the location of an external CA service if any
+              --ca              <url>           Specify the location of an external CA service if any
                                                 Only applicable to hubs
 
-              --max-agents    <number>          Specify the maximum number of agents the hub can handle
+              --max-agents      <number>        Specify the maximum number of agents the hub can handle
                                                 Only applicable to hubs
-              --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
+              --max-sessions    <number>        Specify the maximum number of forwarding sessions the hub can handle
                                                 Only applicable to hubs
-          -p, --permit        <pathname>        Specify an optional output filename for the root user's permit
+          -p, --permit          <pathname>      Specify an optional output filename for the root user's permit
                                                 Only applicable to hubs
+
+            --pqc-key-exchange  <algorithm>     Specify the PQC key exchange algorithm such as 'ML-KEM-512'
+            --pqc-signature     <algorithm>     Specify the PQC signature algorithm such as 'ML-DSA-44'
+
         ` + (ztmVersion.edition === 'Enterprise' ? `
-              --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
+              --bootstrap       <host:port ...> Specify the bootstrap addresses of the hub cluster
                                                 Only applicable to hubs
-              --zone          <zone>            Specify the zone that the hub is deployed in
+              --zone            <zone>          Specify the zone that the hub is deployed in
                                                 Only applicable to hubs
         ` : ''),
         notes: `Available object types include: hub, agent, app`,
@@ -635,12 +641,12 @@ function exportCA(dataDir, crtPath, keyPath) {
 // Command: root
 //
 
-function root(dataDir, caURL, names) {
+function root(dataDir, pqcSigAlg, caURL, names) {
   if (!names || names.length === 0) {
     throw 'at least one hub address (host:port) is required (with option --names)'
   }
 
-  return generateRootPermit(dataDir, caURL, names).then(
+  return generateRootPermit(dataDir, pqcSigAlg, caURL, names).then(
     permit => println(permit)
   )
 }
@@ -695,23 +701,24 @@ function startHub(args) {
   var opts = {
     '--data': args['--data'] || '~/.ztm',
     '--listen': args['--listen'] || '0.0.0.0:8888',
-  }
-  if ('--names' in args) opts['--names'] = args['--names']
-  if ('--ca' in args) opts['--ca'] = args['--ca']
-  if ('--bootstrap' in args) opts['--bootstrap'] = args['--bootstrap']
-  if ('--zone' in args) opts['--zone'] = args['--zone']
-  if ('--max-agents' in args) opts['--max-agents'] = args['--max-agents']
-  if ('--max-sessions' in args) opts['--max-sessions'] = args['--max-sessions']
-  var optsChanged = (
-    ('--data' in args) ||
-    ('--listen' in args) ||
-    ('--names' in args) ||
-    ('--ca' in args) ||
-    ('--bootstrap' in args) ||
-    ('--zone' in args) ||
-    ('--max-agents' in args) ||
-    ('--max-sessions' in args)
-  )
+  };
+  var COPY = [
+    '--names',
+    '--ca',
+    '--bootstrap',
+    '--zone',
+    '--max-agents',
+    '--max-sessions',
+    '--pqc-key-exchange',
+    '--pqc-signature',
+  ]
+  var SAVE = ['--data', '--listen', ...COPY]
+  COPY.forEach(opt => {
+    if (opt in args) {
+      opts[opt] = args[opt]
+    }
+  })
+  var optsChanged = SAVE.some(opt => opt in args)
   if (optsChanged || !hasService('hub')) {
     return initHub(args).then(
       () => {
@@ -728,10 +735,17 @@ function startAgent(args) {
     '--data': args['--data'] || '~/.ztm',
     '--listen': args['--listen'] || '127.0.0.1:7777',
   }
-  var optsChanged = (
-    ('--data' in args) ||
-    ('--listen' in args)
-  )
+  var COPY = [
+    '--pqc-key-exchange',
+    '--pqc-signature',
+  ]
+  var SAVE = ['--data', '--listen', ...COPY]
+  COPY.forEach(opt => {
+    if (opt in args) {
+      opts[opt] = args[opt]
+    }
+  })
+  var optsChanged = SAVE.some(opt => opt in args)
   startService('agent', opts, optsChanged)
 }
 
@@ -781,7 +795,7 @@ function initHub(args) {
     throw 'at least one hub address (host:port) is required (with option --names)'
   }
 
-  return generateRootPermit(args['--data'], args['--ca'], names).then(
+  return generateRootPermit(args['--data'], args['--pqc-signature'], args['--ca'], names).then(
     permit => {
       if (args['--permit']) {
         var filename = os.path.resolve(args['--permit'])
@@ -825,13 +839,13 @@ function initHub(args) {
   )
 }
 
-function generateRootPermit(dataDir, caURL, bootstraps) {
+function generateRootPermit(dataDir, pqcSigAlg, caURL, bootstraps) {
   initHubDB(dataDir)
 
-  var key = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+  var key = new crypto.PrivateKey({ type: pqcSigAlg || 'rsa', bits: 2048 })
   var pkey = new crypto.PublicKey(key)
 
-  return ca.init(caURL).then(
+  return ca.init(caURL, pqcSigAlg).then(
     () => Promise.all([
       ca.getCertificate('ca'),
       ca.signCertificate('root', pkey),
@@ -1012,25 +1026,27 @@ function stopService(name) {
 function runHub(args, program) {
   return initHub(args).then(
     () => {
-      var command = [program,
+      var cmd = [program,
         '--pipy', 'repo://ztm/hub',
         '--args',
         '--data', args['--data'] || '~/.ztm',
         '--listen', args['--listen'] || '0.0.0.0:8888',
       ]
       if ('--names' in args) {
-        command.push('--names')
-        args['--names'].forEach(name => command.push(name))
+        cmd.push('--names')
+        args['--names'].forEach(name => cmd.push(name))
       }
       if ('--bootstrap' in args) {
-        command.push('--bootstrap')
-        args['--bootstrap'].forEach(name => command.push(name))
+        cmd.push('--bootstrap')
+        args['--bootstrap'].forEach(name => cmd.push(name))
       }
-      if ('--ca' in args) command.push('--ca', args['--ca'])
-      if ('--zone' in args) command.push('--zone', args['--zone'])
-      if ('--max-agents' in args) command.push('--max-agents', args['--max-agents'])
-      if ('--max-sessions' in args) command.push('--max-sessions', args['--max-sessions'])
-      return exec(command)
+      if ('--ca' in args) cmd.push('--ca', args['--ca'])
+      if ('--zone' in args) cmd.push('--zone', args['--zone'])
+      if ('--max-agents' in args) cmd.push('--max-agents', args['--max-agents'])
+      if ('--max-sessions' in args) cmd.push('--max-sessions', args['--max-sessions'])
+      if ('--pqc-key-exchange' in args) cmd.push('--pqc-key-exchange', args['--pqc-key-exchange'])
+      if ('--pqc-signature' in args) cmd.push('--pqc-signature', args['--pqc-signature'])
+      return exec(cmd)
     }
   )
 }
@@ -1046,6 +1062,8 @@ function runAgent(args, program) {
   if ('--join' in args) cmd.push('--join', args['--join'])
   if ('--join-as' in args) cmd.push('--join-as', args['--join-as'])
   if ('--permit' in args) cmd.push('--permit', args['--permit'])
+  if ('--pqc-key-exchange' in args) cmd.push('--pqc-key-exchange', args['--pqc-key-exchange'])
+  if ('--pqc-signature' in args) cmd.push('--pqc-signature', args['--pqc-signature'])
   return exec(cmd)
 }
 

@@ -3,6 +3,7 @@ import Mesh from './mesh.js'
 
 var rootDir = ''
 var agentListen = ''
+var pqcSettings = null
 var meshes = {}
 
 function findMesh(name) {
@@ -11,15 +12,18 @@ function findMesh(name) {
   throw `Mesh not found: ${name}`
 }
 
-function init(dirname, listen) {
+function init(dirname, listen, pqc) {
   rootDir = os.path.resolve(dirname)
   agentListen = listen
+  pqcSettings = pqc
   db.allMeshes().forEach(
     function (mesh) {
       var name = mesh.name
       meshes[name] = Mesh(
         os.path.join(rootDir, 'meshes', name),
-        agentListen, mesh,
+        agentListen,
+        pqcSettings,
+        mesh,
         function (newMesh) {
           db.setMesh(name, newMesh)
         }
@@ -38,7 +42,7 @@ function setIdentity(pem) {
 
 function getIdentity() {
   var keyData = db.getKey('agent')
-  var key = keyData ? new crypto.PrivateKey(keyData) : new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+  var key = keyData ? new crypto.PrivateKey(keyData) : new crypto.PrivateKey({ type: pqcSettings?.signature || 'rsa', bits: 2048 })
   if (!keyData) db.setKey('agent', key.toPEM().toString())
   return new crypto.PublicKey(key).toPEM().toString()
 }
@@ -72,7 +76,9 @@ function setMesh(name, mesh) {
   mesh.agent.listen = agentListen
   meshes[name] = Mesh(
     os.path.join(rootDir, 'meshes', mesh.name),
-    agentListen, mesh,
+    agentListen,
+    pqcSettings,
+    mesh,
     function (newMesh) {
       db.setMesh(name, newMesh)
     }

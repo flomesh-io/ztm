@@ -226,6 +226,12 @@ var maxForwardings = 0
 var numForwardings = 0
 
 //
+// PQC settings
+//
+
+var pqcSettings = null
+
+//
 // CLI
 //
 
@@ -234,15 +240,17 @@ function main() {
     commands: [{
       title: 'ZTM Hub Service',
       options: `
-        -d, --data          <dir>             Specify the location of ZTM storage (default: ~/.ztm)
-        -l, --listen        <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
-        -n, --names         <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
-            --ca            <url>             Specify the location of an external CA service if any
-            --max-agents    <number>          Specify the maximum number of agents the hub can handle
-            --max-sessions  <number>          Specify the maximum number of forwarding sessions the hub can handle
+        -d, --data                <dir>             Specify the location of ZTM storage (default: ~/.ztm)
+        -l, --listen              <ip:port>         Specify the service listening port (default: 0.0.0.0:8888)
+        -n, --names               <host:port ...>   Specify one or more hub names (host:port) that are accessible to agents
+            --ca                  <url>             Specify the location of an external CA service if any
+            --max-agents          <number>          Specify the maximum number of agents the hub can handle
+            --max-sessions        <number>          Specify the maximum number of forwarding sessions the hub can handle
+            --pqc-key-exchange    <algorithm>       Specify the PQC key exchange algorithm such as 'ML-KEM-512'
+            --pqc-signature       <algorithm>       Specify the PQC signature algorithm such as 'ML-DSA-44'
       ` + (cluster ? `
-            --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
-            --zone          <zone>            Specify the zone that the hub is deployed in
+            --bootstrap           <host:port ...>   Specify the bootstrap addresses of the hub cluster
+            --zone                <zone>            Specify the zone that the hub is deployed in
       ` : ''),
       action: (args) => {
         myZone = args['--zone'] || 'default'
@@ -260,6 +268,14 @@ function main() {
         var dbPath = args['--data'] || '~/.ztm'
         if (dbPath.startsWith('~/')) {
           dbPath = os.home() + dbPath.substring(1)
+        }
+
+        var pqcKeyEx = args['--pqc-key-exchange']
+        var pqcSignature = args['--pqc-signature']
+        if (pqcKeyEx || pqcSignature) {
+          pqcSettings = {}
+          if (pqcKeyEx) pqcSettings.keyExchange = pqcKeyEx
+          if (pqcSignature) pqcSettings.signature = pqcSignature
         }
 
         try {
@@ -290,8 +306,8 @@ function main() {
 
         myNames = args['--names'] || []
 
-        return ca.init(args['--ca']).then(() => {
-          myKey = new crypto.PrivateKey({ type: 'rsa', bits: 2048 })
+        return ca.init(args['--ca'], pqcSettings?.signature).then(() => {
+          myKey = new crypto.PrivateKey({ type: pqcSignature || 'rsa', bits: 2048 })
           var pkey = new crypto.PublicKey(myKey)
           var name = 'hub/' + myID
           db.setKey(name, pkey.toPEM().toString())
@@ -408,6 +424,7 @@ function start(listen, bootstrap) {
         cert: myCert,
         key: myKey,
       },
+      pqc: pqcSettings,
       get: {
         endpoints: (id, name, user, keyword, limit, offset) => listEndpoints(id, name, user, keyword, limit, offset),
         files: () => dumpFileSystem(),
@@ -445,6 +462,7 @@ function start(listen, bootstrap) {
         cert: myCert,
         key: myKey,
       },
+      pqc: pqcSettings,
       trusted: [caCert],
       verify: (ok, cert) => {
         if (!ok) return false
