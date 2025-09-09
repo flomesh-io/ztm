@@ -109,6 +109,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
     target => new http.Agent(target, {
       tls: tlsOptions,
       connectTimeout: 10,
+      idleTimeout: 60,
     })
   )
 
@@ -606,7 +607,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
             timestamp.error = 'Response timeout'
             return [timestamp]
           }),
-          httpAgents.get(hub).request(
+          hubClients.get(hub).request(
             'GET', `/api/ping/endpoints/${ep}?timeout=${timeout}`
           ).then(
             function (res) {
@@ -929,11 +930,6 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
         .replaceData(new StreamEnd)
       ),
     })
-  )
-
-  // HTTP agents for ad-hoc agent-to-hub sessions
-  var httpAgents = new algo.Cache(
-    target => new http.Agent(target, { tls: tlsOptions })
   )
 
   // Start communication with the mesh
@@ -1324,7 +1320,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       }
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'GET', `/api/forward/${ep}/apps/${provider}/${app}`
         ).then(
           res => {
@@ -1464,7 +1460,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       })
     } else if (ep) {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'GET', `/api/forward/${ep}/apps`
         ).then(res => {
           if (res.head?.status === 200) {
@@ -1505,7 +1501,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       })
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({ isPublished: true })
         )
@@ -1523,7 +1519,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       return Promise.resolve()
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({ isPublished: false })
         )
@@ -1545,7 +1541,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       })
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({})
         ).then(
@@ -1570,7 +1566,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       return unpublishApp(ep, provider, app)
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'DELETE', `/api/forward/${ep}/apps/${provider}/${app}`,
         ).then(
           res => {
@@ -1611,7 +1607,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       })
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({ isRunning: true })
         ).then(
@@ -1637,7 +1633,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       return Promise.resolve()
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({ isRunning: false })
         ).then(
@@ -1661,7 +1657,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       })
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({ isDisabled: true })
         ).then(
@@ -1684,7 +1680,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       return Promise.resolve()
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'POST', `/api/forward/${ep}/apps/${provider}/${app}`,
           {}, JSON.encode({ isDisabled: false })
         ).then(
@@ -1710,7 +1706,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       return Promise.resolve(apps.log(provider, app))
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'GET', `/api/forward/${ep}/apps/${provider}/${app}/log`
         ).then(res => {
           if (res.head?.status === 200) {
@@ -1752,7 +1748,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
 
   function downloadFile(ep, hash) {
     return selectHubWithThrow(ep).then(
-      (hub) => httpAgents.get(hub).request(
+      (hub) => hubClients.get(hub).request(
         'GET', `/api/endpoints/${ep}/file-data/${hash}`
       ).then(
         res => {
@@ -2107,7 +2103,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
 
   function remoteQueryLog(ep) {
     return selectHubWithThrow(ep).then(
-      (hub) => httpAgents.get(hub).request(
+      (hub) => hubClients.get(hub).request(
         'GET', `/api/forward/${ep}/log`
       ).then(
         res => {
@@ -2131,7 +2127,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       return hubActive[0].getEndpointStats()
     } else {
       return selectHubWithThrow(ep).then(
-        (hub) => httpAgents.get(hub).request(
+        (hub) => hubClients.get(hub).request(
           'GET', `/api/stats/endpoints/${ep}`
         ).then(
           res => {
@@ -2207,7 +2203,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
 
   function remoteGetLabels(ep) {
     return selectHubWithThrow(ep).then(
-      (hub) => httpAgents.get(hub).request(
+      (hub) => hubClients.get(hub).request(
         'GET', `/api/forward/${ep}/labels`
       ).then(
         res => {
@@ -2220,7 +2216,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
 
   function remoteSetLabels(ep, labels) {
     return selectHubWithThrow(ep).then(
-      (hub) => httpAgents.get(hub).request(
+      (hub) => hubClients.get(hub).request(
         'POST', `/api/forward/${ep}/labels`,
         null, JSON.encode(labels)
       ).then(
