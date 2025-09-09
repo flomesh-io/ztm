@@ -1533,7 +1533,7 @@ function findCurrentEndpointSession() {
 function listEndpoints(id, name, user, keyword, limit, offset) {
   limit = limit || 100
   offset = offset || 0
-  return endpointList.filter(
+  var filtered = endpointList.filter(
     ep => {
       if (id || name) {
         if (ep.id !== id && ep.name !== name) {
@@ -1552,7 +1552,8 @@ function listEndpoints(id, name, user, keyword, limit, offset) {
     }
   ).filter(
     (_, i) => offset <= i && i < offset + limit
-  ).map(
+  )
+  var list = filtered.map(
     ep => ({
       id: ep.id,
       name: ep.name,
@@ -1562,7 +1563,8 @@ function listEndpoints(id, name, user, keyword, limit, offset) {
           ztm: {
             edition: ep.version?.ztm?.edition,
             tag: ep.version?.ztm?.tag,
-          }},
+          }
+        },
         labels: ep.labels || [],
       },
       username: ep.username,
@@ -1577,6 +1579,10 @@ function listEndpoints(id, name, user, keyword, limit, offset) {
       }
     })
   )
+  if (list.length === 1) {
+    list[0].agent.version = filtered[0].version
+  }
+  return list
 }
 
 function updateEviction(username, time, expiration) {
