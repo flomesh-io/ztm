@@ -595,35 +595,41 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
         end: null,
         error: null,
       }
-      return Promise.race([
-        new Timeout(timeout).wait().then(() => {
-          timestamp.end = Date.now()
-          timestamp.error = 'Response timeout'
+      return selectHub(ep).then(hub => {
+        if (!hub) {
+          timestamp.error = `No hub found`
           return [timestamp]
-        }),
-        requestHub.spawn(
-          new Message({ method: 'GET', path: `/api/ping/endpoints/${ep}?timeout=${timeout}`})
-        ).then(
-          function (res) {
+        }
+        return Promise.race([
+          new Timeout(timeout).wait().then(() => {
             timestamp.end = Date.now()
-            var status = res?.head?.status
-            if (status === 200) {
-              try {
-                var payload = JSON.decode(res.body)
-                if (payload instanceof Array) {
-                  return [timestamp, ...payload]
-                }
-              } catch {}
-            }
-            if (res.body) {
-              timestamp.error = `Invalid response (status ${status}): ${res.body.shift(100).toString()}`
-            } else {
-              timestamp.error = `Invalid response (status ${status})`
-            }
+            timestamp.error = 'Response timeout'
             return [timestamp]
-          }
-        )
-      ])
+          }),
+          httpAgents.get(hub).request(
+            'GET', `/api/ping/endpoints/${ep}?timeout=${timeout}`
+          ).then(
+            function (res) {
+              timestamp.end = Date.now()
+              var status = res?.head?.status
+              if (status === 200) {
+                try {
+                  var payload = JSON.decode(res.body)
+                  if (payload instanceof Array) {
+                    return [timestamp, ...payload]
+                  }
+                } catch {}
+              }
+              if (res.body) {
+                timestamp.error = `Invalid response (status ${status}): ${res.body.shift(100).toString()}`
+              } else {
+                timestamp.error = `Invalid response (status ${status})`
+              }
+              return [timestamp]
+            }
+          )
+        ])
+      })
     }
 
     function leave() {
@@ -2120,8 +2126,21 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
   }
 
   function getEndpointStats(ep) {
-    checkConnectivity()
-    return hubActive[0].getEndpointStats(ep)
+    if (!ep) {
+      checkConnectivity()
+      return hubActive[0].getEndpointStats()
+    } else {
+      return selectHubWithThrow(ep).then(
+        (hub) => httpAgents.get(hub).request(
+          'GET', `/api/stats/endpoints/${ep}`
+        ).then(
+          res => {
+            remoteCheckResponse(res, 200)
+            return JSON.decode(res.body)
+          }
+        )
+      )
+    }
   }
 
   function pingEndpoint(ep) {
