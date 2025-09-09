@@ -7,9 +7,17 @@ function open(pathname) {
     CREATE TABLE IF NOT EXISTS hubs (
       id TEXT PRIMARY KEY,
       zone TEXT NOT NULL,
-      info TEXT NOT NULL
+      info TEXT NOT NULL,
+      updated_at REAL NOT NULL
     )
   `)
+
+  try {
+    db.exec(`
+      ALTER TABLE hubs
+      ADD COLUMN updated_at REAL NOT NULL DEFAULT 0
+    `)
+  } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS meshes (
@@ -50,29 +58,33 @@ function open(pathname) {
 }
 
 function allZones() {
+  var t = Date.now() - 30 * 24 * 60 * 60 * 1000
   return (
-    db.sql('SELECT DISTINCT zone FROM hubs')
+    db.sql('SELECT DISTINCT zone FROM hubs WHERE updated_at >= ?')
+      .bind(1, t)
       .exec()
       .map(r => r.zone)
   )
 }
 
 function setZones(zones) {
-  allZones().forEach(
-    zone => {
-      if (!zones.includes(zone)) {
-        db.sql('DELETE FROM hubs WHERE zone = ?')
-          .bind(1, zone)
-          .exec()
-      }
-    }
-  )
+  // allZones().forEach(
+  //   zone => {
+  //     if (!zones.includes(zone)) {
+  //       db.sql('DELETE FROM hubs WHERE zone = ?')
+  //         .bind(1, zone)
+  //         .exec()
+  //     }
+  //   }
+  // )
 }
 
 function allHubs(zone) {
+  var t = Date.now() - 30 * 24 * 60 * 60 * 1000
   var all = {}
-  db.sql('SELECT id, info FROM hubs WHERE zone = ?')
+  db.sql('SELECT id, info FROM hubs WHERE zone = ? AND updated_at >= ?')
     .bind(1, zone)
+    .bind(2, t)
     .exec()
     .forEach(r => {
       try {
@@ -83,6 +95,7 @@ function allHubs(zone) {
 }
 
 function setHubs(zone, hubs) {
+  var t = Date.now()
   var old = {}
   db.sql('SELECT id FROM hubs WHERE zone = ?')
     .bind(1, zone)
@@ -92,28 +105,30 @@ function setHubs(zone, hubs) {
     ([id, hub]) => {
       var info = JSON.stringify({ ports: hub.ports, version: hub.version })
       if (id in old) {
-        db.sql('UPDATE hubs SET info = ? WHERE id = ?')
+        db.sql('UPDATE hubs SET info = ?, updated_at = ? WHERE id = ?')
           .bind(1, info)
-          .bind(2, id)
+          .bind(2, t)
+          .bind(3, id)
           .exec()
       } else {
-        db.sql('INSERT INTO hubs(id, zone, info) VALUES(?, ?, ?)')
+        db.sql('INSERT INTO hubs(id, zone, info, updated_at) VALUES(?, ?, ?, ?)')
           .bind(1, id)
           .bind(2, zone)
           .bind(3, info)
+          .bind(4, t)
           .exec()
       }
     }
   )
-  Object.keys(old).forEach(
-    id => {
-      if (!(id in hubs)) {
-        db.sql('DELETE FROM hubs WHERE id = ?')
-          .bind(1, id)
-          .exec()
-      }
-    }
-  )
+  // Object.keys(old).forEach(
+  //   id => {
+  //     if (!(id in hubs)) {
+  //       db.sql('DELETE FROM hubs WHERE id = ?')
+  //         .bind(1, id)
+  //         .exec()
+  //     }
+  //   }
+  // )
 }
 
 function getHub(id) {
@@ -133,6 +148,7 @@ function getHub(id) {
 }
 
 function setHub(id, hub) {
+  var t = Date.now()
   var old = getHub(id)
   if (old) {
     var zone = hub.zone || old.zone
@@ -140,10 +156,11 @@ function setHub(id, hub) {
       ports: hub.ports || old.ports,
       version: hub.version || old.version,
     }
-    db.sql('UPDATE hubs SET zone = ?, info = ? WHERE id = ?')
+    db.sql('UPDATE hubs SET zone = ?, info = ?, updated_at = ? WHERE id = ?')
       .bind(1, zone)
       .bind(2, JSON.stringify(info))
-      .bind(3, id)
+      .bind(3, t)
+      .bind(4, id)
       .exec()
   } else {
     var zone = hub.zone
@@ -151,10 +168,11 @@ function setHub(id, hub) {
       ports: hub.ports,
       version: hub.version,
     }
-    db.sql('INSERT INTO hubs(id, zone, info) VALUES(?, ?, ?)')
+    db.sql('INSERT INTO hubs(id, zone, info, updated_at) VALUES(?, ?, ?, ?)')
       .bind(1, id)
       .bind(2, zone)
       .bind(3, JSON.stringify(info))
+      .bind(4, t)
       .exec()
   }
 }
