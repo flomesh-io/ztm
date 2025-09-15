@@ -227,7 +227,7 @@ const goApp = (item) => {
 									<div class="text-sm" >{{ t(item.label) }}</div>
 							</a>
 					</router-link>
-					<a class="flex flex-column" v-else-if="!!item.url" v-ripple :href="item.url" :target="item.target" v-bind="props.action">
+					<a class="flex flex-column" v-else-if="!!item.url && item.target" v-ripple :href="item.url" :target="item.target" v-bind="props.action">
 							<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
 								<use :xlink:href="item.svg"></use>
 							</svg>
