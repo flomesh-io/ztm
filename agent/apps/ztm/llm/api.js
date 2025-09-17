@@ -434,7 +434,10 @@ export default function ({ app, mesh }) {
             'bypass': $=>$,
           })
           .handleMessageStart(msg => {
-            app.log(`Forward to service ${$service.target.address}: ${msg.head.method} ${msg.head.path} ${stringifyHeaders(msg.head.headers)} ${msg.body?.toString?.()}`)
+            app.log(`Forward to service ${$service.target.address}: ${msg.head.method} ${msg.head.path} ${stringifyHeaders(msg.head.headers)}`)
+          })
+          .handleMessageBody(data => {
+            app.log(data.toString())
           })
           .muxHTTP(() => $service).to($=>$
             .pipe(() => $httpURL.protocol, {
