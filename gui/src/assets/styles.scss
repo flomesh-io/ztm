@@ -1502,3 +1502,17 @@ fieldset{
 .text-uppercase{
 	text-transform: uppercase;
 }
+.p-toolbar-center{
+	overflow: hidden;
+	white-space: break-spaces;
+	word-break: break-all;
+	justify-content: center;
+	flex: 1;
+}
+.p-toolbar-center b{
+	overflow: hidden;
+	white-space: nowrap;
+	text-align: center;
+	max-width: 50%;
+	text-overflow: ellipsis;
+}
