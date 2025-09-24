@@ -3,11 +3,9 @@ export default function ({ app, mesh }) {
     return mesh.discover()
   }
 
-  var scripts = {}
-
   var $ctx
   var $ep
-  var $hash
+  var $filename
   var $command
 
   var executeScriptRemote = pipeline($=>$
@@ -33,12 +31,11 @@ export default function ({ app, mesh }) {
           var argv = JSON.parse(URL.decodeComponent(url.searchParams.get('argv') || '[]'))
           var exe = app.executable
           var program = exe.endsWith('pipy') || exe.endsWith('pipy.exe') ? [exe] : [exe, '--pipy']
-          $hash = addScript(req.body)
+          $filename = addScript(req.body)
           $command = [
             ...program,
-            '--no-reload',
             '--log-level=error',
-            `${app.url}/api/scripts/${$hash}`,
+            $filename,
             '--args', ...argv
           ]
           return new Data
@@ -46,7 +43,7 @@ export default function ({ app, mesh }) {
         .exec(() => $command, { stderr: true })
         .replaceStreamStart(evt => [new MessageStart, evt])
         .replaceStreamEnd(() => {
-          delete scripts[$hash]
+          os.unlink($filename)
           return new MessageEnd
         })
       ),
@@ -60,17 +57,15 @@ export default function ({ app, mesh }) {
     h.update(script)
     h.update(script.size.toString())
     var hash = h.digest().toString('hex')
-    scripts[hash] = script
-    return hash
-  }
-
-  function getScript(hash) {
-    return scripts[hash]
+    var filename = os.path.join(app.dataDir, 'tmp/scripts', hash + '.js')
+    println(filename)
+    os.mkdir(os.path.dirname(filename), { recursive: true })
+    os.write(filename, script)
+    return filename
   }
 
   return {
     allEndpoints,
-    getScript,
     executeScriptLocal,
     executeScriptRemote,
   }

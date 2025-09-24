@@ -32,13 +32,6 @@ export default function ({ app, mesh, utils }) {
       ))
     },
 
-    '/api/scripts/{hash}': {
-      'GET': responder(({ hash }) => {
-        var script = api.getScript(hash)
-        return Promise.resolve(script ? response(200, script) : response(404))
-      })
-    },
-
     '/api/endpoints/{ep}/script': {
       'POST': pipeline($=>$
         .onStart(params => void ($ep = params.ep))
