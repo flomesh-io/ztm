@@ -38,6 +38,7 @@ export default function ({ app, mesh }) {
             $filename,
             '--args', ...argv
           ]
+          app.log(`Execute command: ${$command.map(s => JSON.stringify(s)).join(' ')}`)
           return new Data
         })
         .exec(() => $command, { stderr: true })
@@ -58,7 +59,7 @@ export default function ({ app, mesh }) {
     h.update(script.size.toString())
     var hash = h.digest().toString('hex')
     var filename = os.path.join(app.dataDir, 'tmp/scripts', hash + '.js')
-    println(filename)
+    app.log(`Saved script to file: ${filename}`)
     os.mkdir(os.path.dirname(filename), { recursive: true })
     os.write(filename, script)
     return filename
