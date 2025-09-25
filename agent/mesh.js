@@ -939,14 +939,21 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
 
       heartbeat()
       advertiseFilesystem()
+      startAllApps()
 
-      db.allApps(meshName).forEach(app => {
-        if (app.state === 'running' && app.username === username) {
-          var appname = app.name
-          if (app.tag) appname += '@' + app.tag
-          startApp(config.agent.id, app.provider, appname)
+      function startAllApps() {
+        if (isConnected()) {
+          db.allApps(meshName).forEach(app => {
+            if (app.state === 'running' && app.username === username) {
+              var appname = app.name
+              if (app.tag) appname += '@' + app.tag
+              startApp(config.agent.id, app.provider, appname)
+            }
+          })
+        } else {
+          new Timeout(1).wait().then(startAllApps)
         }
-      })
+      }
 
       var hubLabel = hub.zone ? `${hub.port} in ${hub.zone}` : hub.port
       logInfo(`Joined ${meshName} as ${config.agent.name} (uuid = ${config.agent.id}) via hub ${hubLabel}`)
@@ -1304,7 +1311,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
     if (ep === config.agent.id) {
       var isBuiltin = apps.isBuiltin(provider, app)
       var isDownloaded = apps.isDownloaded(provider, app)
-      var isPublished = Boolean(fs.stat(`/shared/${provider}/pkg/${app}`))
+      var isPublished = fs.exists(`/shared/${provider}/pkg/${app}`)
       if (isPublished || isDownloaded || isBuiltin) {
         return Promise.resolve({
           ...getAppNameTag(app),
@@ -1395,7 +1402,9 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
         })
       })
       var match = new http.Match('/shared/{provider}/pkg/{name}')
-      fs.list('/shared/').forEach(pathname => {
+      fs.list('/shared/').filter(
+        pathname => fs.exists(pathname)
+      ).forEach(pathname => {
         var app = match(pathname)
         if (!app) return
         var provider = app.provider
@@ -1414,8 +1423,8 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
             isBuiltin: false,
             isDownloaded: false,
             isPublished: true,
-            isDisabled: isAppDisabled(provider, app),
-            isRunning: apps.isRunning(provider, app),
+            isDisabled: isAppDisabled(provider, appname),
+            isRunning: apps.isRunning(provider, appname),
           })
         }
       })
@@ -1494,7 +1503,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
   function publishApp(ep, provider, app) {
     if (ep === config.agent.id) {
       var packagePathname = `/shared/${provider}/pkg/${app}`
-      if (fs.stat(packagePathname)) return Promise.resolve()
+      if (fs.exists(packagePathname)) return Promise.resolve()
       return apps.pack(provider, app).then(data => {
         fs.write(packagePathname, data)
         advertiseFilesystem()
@@ -1512,8 +1521,8 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
   function unpublishApp(ep, provider, app) {
     if (ep === config.agent.id) {
       var packagePathname = `/shared/${provider}/pkg/${app}`
-      if (fs.stat(packagePathname)) {
-        fs.remove(packagePathname)
+      if (fs.exists(packagePathname)) {
+        fs.tombstone(packagePathname)
         advertiseFilesystem()
       }
       return Promise.resolve()
@@ -1563,7 +1572,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
       stopApp(ep, provider, app)
       apps.remove(provider, app)
       logInfo(`App ${provider}/${app} uninstalled locally`)
-      return unpublishApp(ep, provider, app)
+      return Promise.resolve()
     } else {
       return selectHubWithThrow(ep).then(
         (hub) => hubClients.get(hub).request(
@@ -1590,7 +1599,8 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
         : installApp(ep, provider, app)
       ).then(() => {
         var nt = getAppNameTag(app)
-        db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
+        // Do not disable the app at startup failure
+        // db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
         try {
           apps.start(provider, app, username)
           return new Timeout(1).wait().then(() => {
@@ -1598,7 +1608,8 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
             logInfo(`App ${provider}/${app} started locally`)
           })
         } catch (e) {
-          db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
+          // Do not disable the app at startup failure
+          // db.setApp(meshName, provider, nt.name, nt.tag, { state: 'disabled' })
           var msg = e?.message || e?.toString?.() || 'undefined'
           if (e?.stack) msg += ', stack: ' + e.stack.toString()
           logError(`App ${provider}/${app} failed to start due to exception: ${msg}`)

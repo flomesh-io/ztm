@@ -67,6 +67,10 @@ export default function(storeDir) {
     return Object.keys(pathMap).filter(p => p.startsWith(prefix)).sort()
   }
 
+  function exists(filename) {
+    return stat(filename)?.size >= 0
+  }
+
   function stat(filename) {
     var path = os.path.normalize(filename)
     var meta = pathMap[path]
@@ -142,6 +146,7 @@ export default function(storeDir) {
 
   return {
     list,
+    exists,
     stat,
     read,
     write,
