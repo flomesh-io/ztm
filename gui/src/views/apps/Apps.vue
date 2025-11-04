@@ -228,6 +228,7 @@ watch(()=>selectedMesh,()=>{
 					<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
 				</template>
 				<template #center>
+					<div class="center">
 					<MeshSelector
 						:full="true" 
 						innerClass="transparent"
@@ -239,7 +240,8 @@ watch(()=>selectedMesh,()=>{
 					</div>
 					<div v-else class="flex-item text-center" :class="{'text-white-alpha-70':!props.theme}" style="line-height: 30px;">
 						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> No mesh selected
-					</div> -->
+					-->
+					</div> 
 				</template>
 				<template #end> 
 					<ToggleButton  v-if="!current"  class="transparent" v-model="manage"  onIcon="pi pi-chevron-left" 
