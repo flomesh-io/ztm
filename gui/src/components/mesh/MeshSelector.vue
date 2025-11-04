@@ -100,7 +100,7 @@ const findMesh = computed(() => (n) => meshes.value.find((m) => m.name == n) || 
 							 </div>
 							 <div v-else class="pi pi-arrow-right-arrow-left"></div>
 							 <div v-if="slotProps.value"  v-tooltip.right="decodeURI(slotProps.value.name)">
-								<b class="text-ellipsis w-4rem text-sm">{{ decodeURI(slotProps.value.name) }}</b>
+								<b class="text-ellipsis text-sm" style="max-width: none;">{{ decodeURI(slotProps.value.name) }}</b>
 							 </div>
 							 <div v-else>
 									{{ slotProps.placeholder }}
