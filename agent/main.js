@@ -14,6 +14,7 @@ try {
             --join              <mesh>        If specified, join a mesh with the given name
             --join-as           <endpoint>    When joining a mesh, give the current endpoint a name
         -p, --permit            <filename>    When joining a mesh, use the provided permit file
+            --proxy             <url>         Specify the forward proxy in form of [http|socks]://<host>:<port>
             --pqc-key-exchange  <algorithm>   Specify the PQC key exchange algorithm such as 'ML-KEM-512'
             --pqc-signature     <algorithm>   Specify the PQC signature algorithm such as 'ML-DSA-44'
       `,
@@ -65,7 +66,7 @@ try {
         }
 
         db.open(os.path.join(dbPath, 'ztm.db'))
-        api.init(dbPath, listen, pqc)
+        api.init(dbPath, listen, args['--proxy'], pqc)
 
         if (joinMesh) {
           api.setMesh(joinMesh, {

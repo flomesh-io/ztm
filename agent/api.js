@@ -3,6 +3,7 @@ import Mesh from './mesh.js'
 
 var rootDir = ''
 var agentListen = ''
+var proxyAddress = ''
 var pqcSettings = null
 var meshes = {}
 
@@ -12,9 +13,10 @@ function findMesh(name) {
   throw `Mesh not found: ${name}`
 }
 
-function init(dirname, listen, pqc) {
+function init(dirname, listen, proxy, pqc) {
   rootDir = os.path.resolve(dirname)
   agentListen = listen
+  proxyAddress = proxy
   pqcSettings = pqc
   db.allMeshes().forEach(
     function (mesh) {
@@ -22,6 +24,7 @@ function init(dirname, listen, pqc) {
       meshes[name] = Mesh(
         os.path.join(rootDir, 'meshes', name),
         agentListen,
+        proxyAddress,
         pqcSettings,
         mesh,
         function (newMesh) {
@@ -77,6 +80,7 @@ function setMesh(name, mesh) {
   meshes[name] = Mesh(
     os.path.join(rootDir, 'meshes', mesh.name),
     agentListen,
+    proxyAddress,
     pqcSettings,
     mesh,
     function (newMesh) {
