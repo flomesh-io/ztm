@@ -185,6 +185,8 @@ function doCommand(meshName, epName, argv, program) {
                                                   Only applicable to hubs
           -p, --permit            <pathname>      Specify an optional output filename for the root user's permit
                                                   Only applicable to hubs
+              --proxy             <url>           Specify the forward proxy in form of [http|socks]://<host>:<port>
+                                                  Only applicable to agents
 
               --pqc-key-exchange  <algorithm>     Specify the PQC key exchange algorithm such as 'ML-KEM-512'
               --pqc-signature     <algorithm>     Specify the PQC signature algorithm such as 'ML-DSA-44'
@@ -243,6 +245,8 @@ function doCommand(meshName, epName, argv, program) {
               --join          <mesh>            If specified, join a mesh with the given name
                                                 Only applicable to agents
               --join-as       <endpoint>        When joining a mesh, give the current endpoint a name
+                                                Only applicable to agents
+              --proxy         <url>             Specify the forward proxy in form of [http|socks]://<host>:<port>
                                                 Only applicable to agents
         ` + (ztmVersion.edition === 'Enterprise' ? `
               --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
@@ -736,6 +740,7 @@ function startAgent(args) {
     '--listen': args['--listen'] || '127.0.0.1:7777',
   }
   var COPY = [
+    '--proxy',
     '--pqc-key-exchange',
     '--pqc-signature',
   ]
@@ -1062,6 +1067,7 @@ function runAgent(args, program) {
   if ('--join' in args) cmd.push('--join', args['--join'])
   if ('--join-as' in args) cmd.push('--join-as', args['--join-as'])
   if ('--permit' in args) cmd.push('--permit', args['--permit'])
+  if ('--proxy' in args) cmd.push('--proxy', args['--proxy'])
   if ('--pqc-key-exchange' in args) cmd.push('--pqc-key-exchange', args['--pqc-key-exchange'])
   if ('--pqc-signature' in args) cmd.push('--pqc-signature', args['--pqc-signature'])
   return exec(cmd)

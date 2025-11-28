@@ -13,7 +13,7 @@ var agentVersion = {
   pipy: { ...pipy.version },
 }
 
-export default function (rootDir, listen, pqc, config, onConfigUpdate) {
+export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
   var meshName = config.name
   var username
   var caCert
@@ -113,6 +113,39 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
     })
   )
 
+  if (!proxy) {
+    var connectProxy = (address, options) => pipeline(
+      $=>$.connect(address, options)
+    )
+  } else if (proxy.startsWith('http://')) {
+    proxy = proxy.substring(7)
+    var connectProxy = (address, options) => {
+      var makeInitRequest = () => {
+        var target = (typeof address === 'function' ? address() : address)
+        return new Message({ method: 'CONNECT', path: target })
+      }
+      return pipeline(
+        $=>$.connectHTTPTunnel(makeInitRequest).to(
+          $=>$.muxHTTP().to(
+            $=>$.connect(proxy, options)
+          )
+        )
+      )
+    }
+  } else if (proxy.startsWith('socks://')) {
+    proxy = proxy.substring(8)
+    var connectProxy = (address, options) => {
+      var makeTarget = () =>(typeof address === 'function' ? address() : address)
+      return pipeline(
+        $=>$.connectSOCKS(makeTarget).to(
+          $=>$.connect(proxy, options)
+        )
+      )
+    }
+  } else {
+    meshError('Invalid proxy address')
+  }
+
   //
   // Class Hub
   // Management of the interaction with a single hub instance
@@ -150,7 +183,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
           }
         }).to($=>$
           .onStart(() => { meshErrors.length = 0 })
-          .connect(address, {
+          .pipe(connectProxy(address, {
             idleTimeout: 30,
             onState: function (conn) {
               if (conn.state === 'connected') {
@@ -165,7 +198,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
                 connections.delete(conn)
               }
             }
-          })
+          }))
           .handleStreamEnd(
             (eos) => {
               meshError(`Connection to hub ${address} closed, error = ${eos.error}`)
@@ -253,7 +286,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              .connect(address, { idleTimeout: 30 })
+              .pipe(connectProxy(address, { idleTimeout: 30 }))
             )
           )
         )
@@ -920,7 +953,7 @@ export default function (rootDir, listen, pqc, config, onConfigUpdate) {
             ping: () => new Timeout(10).wait().then(new Data),
           }).to($=>$
             .connectTLS(tlsOptions).to($=>$
-              .connect(() => $selectedHub, { ...connectOptions, idleTimeout: 30 })
+              .pipe(connectProxy(() => $selectedHub, { ...connectOptions, idleTimeout: 30 }))
             )
           )
         )
