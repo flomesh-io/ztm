@@ -37,7 +37,7 @@ else
   export ANDROID_NDK_ROOT=$NDK
 
 #### Build OpenSSL
-  cd $PIPY_DIR/deps/openssl-3.2.0
+  cd $PIPY_DIR/deps/openssl-3.5.2
 
   mkdir -p android && cd android
 
