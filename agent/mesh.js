@@ -92,27 +92,6 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
     meshError(e.toString())
   }
 
-  var tlsOptions = {
-    certificate: agentCert && agentKey ? {
-      cert: agentCert,
-      key: agentKey,
-    } : null,
-    pqc,
-    trusted: caCert ? [caCert] : null,
-  }
-
-  var hubActive = []
-  var hubCache = new algo.Cache({ ttl: 60 })
-  var hubUnreachable = new Set
-
-  var hubClients = new algo.Cache(
-    target => new http.Agent(target, {
-      tls: tlsOptions,
-      connectTimeout: 10,
-      idleTimeout: 60,
-    })
-  )
-
   if (!proxy) {
     var connectProxy = (address, options) => pipeline(
       $=>$.connect(address, options)
@@ -145,6 +124,61 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
   } else {
     meshError('Invalid proxy address')
   }
+
+  function HTTPAgent(target, options) {
+    var connect = connectProxy(target, options)
+    var tls = options.tls
+    if (tls) {
+      delete options.tls
+      connect = pipeline($=>$
+        .connectTLS(tls).to($=>$
+          .pipe(connect)
+        )
+      )
+    }
+
+    var $response
+    var p = pipeline($=>$
+      .onStart(req => req)
+      .muxHTTP().to($=>$
+        .pipe(connect)
+      )
+      .replaceMessage(
+        r => {
+          $response = r
+          return new StreamEnd
+        }
+      )
+      .onEnd(() => $response)
+    )
+
+    function request(method, path, headers, body) {
+      return p.spawn(new Message({ method, path, headers }, body))
+    }
+
+    return { request }
+  }
+
+  var tlsOptions = {
+    certificate: agentCert && agentKey ? {
+      cert: agentCert,
+      key: agentKey,
+    } : null,
+    pqc,
+    trusted: caCert ? [caCert] : null,
+  }
+
+  var hubActive = []
+  var hubCache = new algo.Cache({ ttl: 60 })
+  var hubUnreachable = new Set
+
+  var hubClients = new algo.Cache(
+    target => HTTPAgent(target, {
+      tls: tlsOptions,
+      connectTimeout: 10,
+      idleTimeout: 60,
+    })
+  )
 
   //
   // Class Hub
