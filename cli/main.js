@@ -195,7 +195,7 @@ function doCommand(meshName, epName, argv, program) {
                                                   Only applicable to agents
               --p2p-port          <port>          Specify the P2P listening port (default: 17778)
                                                   Only applicable to agents
-              --disable-p2p                       Disable P2P connections and use hub relay only
+              --enable-p2p                        Enable P2P direct connections (disabled by default)
                                                   Only applicable to agents
 
         ` + (ztmVersion.edition === 'Enterprise' ? `
@@ -259,7 +259,7 @@ function doCommand(meshName, epName, argv, program) {
                                                 Only applicable to agents
               --p2p-port      <port>            Specify the P2P listening port (default: 17778)
                                                 Only applicable to agents
-              --disable-p2p                     Disable P2P connections and use hub relay only
+              --enable-p2p                      Enable P2P direct connections (disabled by default)
                                                 Only applicable to agents
         ` + (ztmVersion.edition === 'Enterprise' ? `
               --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
@@ -758,7 +758,7 @@ function startAgent(args) {
     '--pqc-signature',
     '--stun-server',
     '--p2p-port',
-    '--disable-p2p',
+    '--enable-p2p',
   ]
   var SAVE = ['--data', '--listen', ...COPY]
   COPY.forEach(opt => {
@@ -1088,7 +1088,7 @@ function runAgent(args, program) {
   if ('--pqc-signature' in args) cmd.push('--pqc-signature', args['--pqc-signature'])
   if ('--stun-server' in args) cmd.push('--stun-server', args['--stun-server'])
   if ('--p2p-port' in args) cmd.push('--p2p-port', args['--p2p-port'])
-  if ('--disable-p2p' in args) cmd.push('--disable-p2p')
+  if ('--enable-p2p' in args) cmd.push('--enable-p2p')
   return exec(cmd)
 }
 
