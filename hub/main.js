@@ -114,6 +114,14 @@ var routes = Object.entries({
     'DELETE': () => forwardRequest,
   },
 
+  '/api/p2p/connection-info': {
+    'POST': () => findCurrentEndpointSession() ? postP2PConnectionInfo : noSession,
+  },
+
+  '/api/p2p/request-connection/{ep}': {
+    'GET': () => getP2PConnectionInfo,
+  },
+
 }).map(
   function ([path, methods]) {
     var match = new http.Match(path)
@@ -158,6 +166,18 @@ var endpoints = {}
 var endpointList = []
 var sessions = {}
 var passiveSessions = {}
+
+//
+// p2pConnectionInfo[uuid] = {
+//   publicIp: 'x.x.x.x',
+//   publicPort: 12345,
+//   privateIp: 'y.y.y.y',
+//   privatePort: 12345,
+//   updated: timestamp
+// }
+//
+
+var p2pConnectionInfo = {}
 
 //
 // connections[username] = new Set({
@@ -1292,6 +1312,62 @@ var forwardRequest = pipeline($=>$
         req.head.path = `/api/${path}${url.search}`
         return toAgent
       }
+    }
+  )
+)
+
+//
+// P2P Connection Info Exchange
+//
+
+var postP2PConnectionInfo = pipeline($=>$
+  .replaceMessage(
+    function (req) {
+      var info = JSON.decode(req.body)
+      var epId = $endpoint.id
+
+      p2pConnectionInfo[epId] = {
+        publicIp: info.publicIp,
+        publicPort: info.publicPort,
+        privateIp: info.privateIp,
+        privatePort: info.privatePort,
+        updated: Date.now()
+      }
+
+      logInfo(`Stored P2P connection info for ${endpointName(epId)}: ${info.publicIp}:${info.publicPort}`)
+      return new Message({ status: 201 })
+    }
+  )
+)
+
+var getP2PConnectionInfo = pipeline($=>$
+  .replaceData()
+  .replaceMessage(
+    function () {
+      var targetEpId = $params.ep
+      var targetEp = endpoints[targetEpId]
+
+      if (!targetEp) return response(404, 'Endpoint not found')
+
+      var targetInfo = p2pConnectionInfo[targetEpId]
+      if (!targetInfo) return response(404, 'P2P connection info not available')
+
+      // Check if info is recent (within 10 minutes)
+      if (Date.now() - targetInfo.updated > 10 * 60 * 1000) {
+        delete p2pConnectionInfo[targetEpId]
+        return response(404, 'P2P connection info expired')
+      }
+
+      logInfo(`Providing P2P connection info for ${endpointName(targetEpId)} to ${$ctx.username}`)
+
+      return response(200, {
+        id: targetEpId,
+        name: targetEp.name,
+        publicIp: targetInfo.publicIp,
+        publicPort: targetInfo.publicPort,
+        privateIp: targetInfo.privateIp,
+        privatePort: targetInfo.privatePort
+      })
     }
   )
 )

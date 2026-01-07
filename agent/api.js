@@ -5,6 +5,7 @@ var rootDir = ''
 var agentListen = ''
 var proxyAddress = ''
 var pqcSettings = null
+var p2pConfig = null
 var meshes = {}
 
 function findMesh(name) {
@@ -13,11 +14,12 @@ function findMesh(name) {
   throw `Mesh not found: ${name}`
 }
 
-function init(dirname, listen, proxy, pqc) {
+function init(dirname, listen, proxy, pqc, p2pCfg) {
   rootDir = os.path.resolve(dirname)
   agentListen = listen
   proxyAddress = proxy
   pqcSettings = pqc
+  p2pConfig = p2pCfg || {}
   db.allMeshes().forEach(
     function (mesh) {
       var name = mesh.name
@@ -26,6 +28,7 @@ function init(dirname, listen, proxy, pqc) {
         agentListen,
         proxyAddress,
         pqcSettings,
+        p2pConfig,
         mesh,
         function (newMesh) {
           db.setMesh(name, newMesh)
@@ -82,6 +85,7 @@ function setMesh(name, mesh) {
     agentListen,
     proxyAddress,
     pqcSettings,
+    p2pConfig,
     mesh,
     function (newMesh) {
       db.setMesh(name, newMesh)
