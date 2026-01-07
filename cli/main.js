@@ -191,6 +191,13 @@ function doCommand(meshName, epName, argv, program) {
               --pqc-key-exchange  <algorithm>     Specify the PQC key exchange algorithm such as 'ML-KEM-512'
               --pqc-signature     <algorithm>     Specify the PQC signature algorithm such as 'ML-DSA-44'
 
+              --stun-server       <host[:port] ...> Specify one or more STUN servers for P2P NAT traversal (default: stun.l.google.com, stun1.l.google.com, stun2.l.google.com)
+                                                  Only applicable to agents
+              --p2p-port          <port>          Specify the P2P listening port (default: 17778)
+                                                  Only applicable to agents
+              --disable-p2p                       Disable P2P connections and use hub relay only
+                                                  Only applicable to agents
+
         ` + (ztmVersion.edition === 'Enterprise' ? `
               --bootstrap       <host:port ...>   Specify the bootstrap addresses of the hub cluster
                                                   Only applicable to hubs
@@ -247,6 +254,12 @@ function doCommand(meshName, epName, argv, program) {
               --join-as       <endpoint>        When joining a mesh, give the current endpoint a name
                                                 Only applicable to agents
               --proxy         <url>             Specify the forward proxy in form of [http|socks]://<host>:<port>
+                                                Only applicable to agents
+              --stun-server   <host[:port] ...> Specify one or more STUN servers for P2P NAT traversal (default: stun.l.google.com, stun1.l.google.com, stun2.l.google.com)
+                                                Only applicable to agents
+              --p2p-port      <port>            Specify the P2P listening port (default: 17778)
+                                                Only applicable to agents
+              --disable-p2p                     Disable P2P connections and use hub relay only
                                                 Only applicable to agents
         ` + (ztmVersion.edition === 'Enterprise' ? `
               --bootstrap     <host:port ...>   Specify the bootstrap addresses of the hub cluster
@@ -743,6 +756,9 @@ function startAgent(args) {
     '--proxy',
     '--pqc-key-exchange',
     '--pqc-signature',
+    '--stun-server',
+    '--p2p-port',
+    '--disable-p2p',
   ]
   var SAVE = ['--data', '--listen', ...COPY]
   COPY.forEach(opt => {
@@ -1070,6 +1086,9 @@ function runAgent(args, program) {
   if ('--proxy' in args) cmd.push('--proxy', args['--proxy'])
   if ('--pqc-key-exchange' in args) cmd.push('--pqc-key-exchange', args['--pqc-key-exchange'])
   if ('--pqc-signature' in args) cmd.push('--pqc-signature', args['--pqc-signature'])
+  if ('--stun-server' in args) cmd.push('--stun-server', args['--stun-server'])
+  if ('--p2p-port' in args) cmd.push('--p2p-port', args['--p2p-port'])
+  if ('--disable-p2p' in args) cmd.push('--disable-p2p')
   return exec(cmd)
 }
 

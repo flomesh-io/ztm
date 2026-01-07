@@ -1,6 +1,7 @@
 import db from './db.js'
 import initFilesystem from './fs.js'
 import initApps from './apps.js'
+import initP2P from './p2p.js'
 
 try {
   var ztmVersion = JSON.decode(pipy.load('version.json'))
@@ -13,7 +14,7 @@ var agentVersion = {
   pipy: { ...pipy.version },
 }
 
-export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
+export default function (rootDir, listen, proxy, pqc, p2pCfg, config, onConfigUpdate) {
   var meshName = config.name
   var username
   var caCert
@@ -125,6 +126,10 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
     meshError('Invalid proxy address')
   }
 
+  var connectP2P = (address, options) => pipeline(
+    $=>$.connect(address, options)
+  )
+
   function HTTPAgent(target, options) {
     var connect = connectProxy(target, options)
     var tls = options.tls
@@ -180,6 +185,25 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
     })
   )
 
+  // Initialize P2P if enabled
+  var p2pEnabled = !(p2pCfg?.disableP2P)
+  var p2p = null
+  
+  if (p2pEnabled) {
+    try {
+      p2p = initP2P(
+        config,
+        tlsOptions,
+        logInfo,
+        logError,
+        p2pCfg?.stunServers,
+        p2pCfg?.p2pPort
+      )
+    } catch (e) {
+      meshError(`P2P initialization failed: ${e.toString()}`)
+    }
+  }
+
   //
   // Class Hub
   // Management of the interaction with a single hub instance
@@ -225,6 +249,12 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
                 numFailures = 0
                 meshErrors.length = 0
                 connections.add(conn)
+                
+                // Detect local IP from hub connection for P2P
+                if (p2p && conn.localAddress) {
+                  p2p.setLocalIP(conn.localAddress)
+                }
+                
                 advertiseFilesystem(filesystemLatest)
                 advertiseACL(aclLatest)
               } else if (conn.state === 'closed') {
@@ -733,6 +763,7 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
       getEndpointStats,
       pingEndpoint,
       leave,
+      requestHub,
     }
 
   } // End of class Hub
@@ -963,17 +994,59 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
   //   Local App -----)----> Agent ----(-----> Hub ----> Remote Agent ----> Remote App
   //   Local App ----/                  \----> Hub ----> Remote Agent ----> Remote App
   //
+  //   OR (P2P):
+  //   Local App -----> Agent -----> Remote Agent (direct) -----> Remote App
+  //
 
   var toRemoteApp = (ep, provider, app, connectOptions) => pipeline($=>$
     .onStart(() => {
       $selectedEp = ep
-      return selectHub(ep).then(hub => {
-        $selectedHub = hub
-        return new Data
+      $directConnection = null
+      $selectedHub = null
+
+      // Try P2P connection first
+      return tryP2PConnection(ep).then(p2pConn => {
+        if (p2pConn) {
+          // P2P connection successful
+          $directConnection = p2pConn
+          logInfo(`Using P2P connection to ${ep}`)
+          logInfo(`P2P connection address: ${p2pConn.address}, isDirect: ${p2pConn.isDirect}`)
+          return new Data
+        } else {
+          // P2P failed or disabled, fallback to hub relay
+          logInfo(`P2P connection to ${ep} failed, falling back to hub relay`)
+          return selectHub(ep).then(hub => {
+            $selectedHub = hub
+            if (hub) {
+              logInfo(`Using hub relay ${hub} for ${ep}`)
+            }
+            return new Data
+          })
+        }
       })
     })
-    .pipe(() => $selectedHub ? 'proxy' : 'deny', {
-      'proxy': ($=>$
+    .pipe(() => $directConnection ? 'p2p' : ($selectedHub ? 'relay' : 'deny'), {
+      'p2p': ($ => $
+        .connectHTTPTunnel(() => {
+          logInfo(`P2P: Creating HTTP CONNECT tunnel to ${provider}/${app}`)
+          var q = `?src=${config.agent.id}&username=${URL.encodeComponent(username)}&ip=${listen.split(':')[0]}&port=${listen.split(':')[1]}`
+          return new Message({
+            method: 'CONNECT',
+            path: provider ? `/api/apps/${provider}/${app}${q}` : `/api/apps/${app}${q}`,
+          })
+        }).to($ => $
+          .muxHTTP({
+            version: 2,
+            maxIdle: 0,
+            ping: () => new Timeout(10).wait().then(new Data),
+          }).to($ => $
+            .connectTLS(tlsOptions).to($ => $
+              .pipe(connectP2P(() => $directConnection.address, { ...connectOptions, idleTimeout: 30 }))
+            )
+          )
+        )
+      ),
+      'relay': ($ => $
         .connectHTTPTunnel(() => {
           var q = `?src=${config.agent.id}`
           return new Message({
@@ -999,6 +1072,120 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
     })
   )
 
+  // P2P Connection Management
+
+  function startP2PServices() {
+    // Skip P2P if disabled
+    if (!p2pEnabled || !p2p) {
+      logInfo('P2P is disabled, using hub relay only')
+      return
+    }
+
+    // Start P2P listener
+    p2p.startP2PListener(serveP2PConnection)
+
+    // Register our connection info with hub
+    registerP2PConnectionInfo().catch(err => {
+      logError(`Initial P2P registration failed: ${err}`)
+    })
+
+    // Periodically refresh connection info
+    function refreshConnectionInfo() {
+      registerP2PConnectionInfo().then(() => {
+        new Timeout(60).wait().then(refreshConnectionInfo)
+      }).catch(err => {
+        logError(`P2P refresh failed: ${err}`)
+        new Timeout(60).wait().then(refreshConnectionInfo)
+      })
+    }
+    new Timeout(60).wait().then(refreshConnectionInfo)
+  }
+
+  function registerP2PConnectionInfo() {
+    if (!hubActive[0]) {
+      logError('Cannot register P2P info: no active hub')
+      return Promise.resolve()
+    }
+    
+    return p2p.getConnectionInfo().then(info => {
+      logInfo(`Got P2P connection info, encoding: ${JSON.stringify(info)}`)
+      var encoded
+      try {
+        encoded = JSON.encode(info)
+        logInfo(`Encoded P2P info successfully`)
+      } catch (e) {
+        logError(`Failed to encode P2P info: ${e}, ${e.message}, ${e.stack}`)
+        return Promise.reject(e)
+      }
+      
+      return hubActive[0].requestHub.spawn(
+        new Message(
+          { method: 'POST', path: '/api/p2p/connection-info' },
+          encoded
+        )
+      ).then(() => {
+        logInfo(`Registered P2P connection info: ${info.publicIp}:${info.publicPort}`)
+      }).catch(err => {
+        logError(`Failed to register P2P connection info: ${err}`)
+      })
+    }).catch(err => {
+      logError(`Failed to get P2P connection info: ${err}, ${err?.message}, ${err?.stack}`)
+    })
+  }
+
+  function tryP2PConnection(ep) {
+    // Skip P2P if disabled
+    if (!p2pEnabled || !p2p) {
+      return Promise.resolve(null)
+    }
+
+    // Check if we already have a P2P connection
+    var existing = p2p.getP2PConnection(ep)
+    if (existing) {
+      return Promise.resolve(existing)
+    }
+
+    // Request peer's connection info from hub
+    return hubActive[0].requestHub.spawn(
+      new Message({ method: 'GET', path: `/api/p2p/request-connection/${ep}` })
+    ).then(res => {
+      if (res?.head?.status !== 200) {
+        return null
+      }
+
+      var peerInfo = JSON.decode(res.body)
+
+      // Attempt P2P connection
+      return p2p.tryP2PConnection(peerInfo).catch(err => {
+        logError(`P2P connection attempt failed: ${err}`)
+        return null
+      })
+    }).catch(err => {
+      logError(`Failed to get peer connection info: ${err}`)
+      return null
+    })
+  }
+
+  var serveP2PConnection = pipeline($=>$
+    .handleStreamStart(() => logInfo(`P2P: Incoming connection received`))
+    .pipe(
+      function (evt) {
+        if (evt instanceof MessageStart) {
+          logInfo(`P2P: Received request: ${evt.head.method} ${evt.head.path}`)
+          if (evt.head.method === 'CONNECT') {
+            var path = evt.head.path
+            if (matchProviderApp(path) || matchApp(path)) {
+              logInfo(`P2P: Routing to toLocalApp`)
+              return toLocalApp
+            }
+          }
+          logError(`P2P: Invalid request`)
+          return pipeline($=>$.replaceMessage(new Message({ status: 404 })))
+        }
+      }
+    )
+  )
+
   // Start communication with the mesh
   function start() {
     searchHub().then(hub => {
@@ -1007,6 +1194,9 @@ export default function (rootDir, listen, proxy, pqc, config, onConfigUpdate) {
       heartbeat()
       advertiseFilesystem()
       startAllApps()
+
+      // Start P2P listener and register our connection info
+      startP2PServices()
 
       function startAllApps() {
         if (isConnected()) {
