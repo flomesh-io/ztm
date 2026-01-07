@@ -186,7 +186,7 @@ export default function (rootDir, listen, proxy, pqc, p2pCfg, config, onConfigUp
   )
 
   // Initialize P2P if enabled
-  var p2pEnabled = !(p2pCfg?.disableP2P)
+  var p2pEnabled = p2pCfg?.enableP2P || false
   var p2p = null
   
   if (p2pEnabled) {

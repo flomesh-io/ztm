@@ -17,7 +17,7 @@ try {
             --proxy             <url>         Specify the forward proxy in form of [http|socks]://<host>:<port>
             --stun-server       <host ...>    Specify STUN server(s) for P2P NAT traversal (format: host or host:port, default port: 3478)
             --p2p-port          <port>        Specify P2P listening port (default: 17778)
-            --disable-p2p                     Disable P2P direct connections, use hub relay only
+            --enable-p2p                      Enable P2P direct connections (disabled by default)
             --pqc-key-exchange  <algorithm>   Specify the PQC key exchange algorithm such as 'ML-KEM-512'
             --pqc-signature     <algorithm>   Specify the PQC signature algorithm such as 'ML-DSA-44'
       `,
@@ -47,7 +47,7 @@ try {
         var p2pConfig = {
           stunServers: args['--stun-server'] || null,
           p2pPort: args['--p2p-port'] ? Number.parseInt(args['--p2p-port']) : 17778,
-          disableP2P: args['--disable-p2p'] || false,
+          enableP2P: args['--enable-p2p'] || false,
         }
 
         if ('--join' in args) {
