@@ -1,0 +1,51 @@
+# bash completion for ztm
+_ztm_completion()
+{
+  local cur prev
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  local main_commands="version completion config ca root identity label start stop run invite evict join leave enable disable attach get describe download erase publish unpublish log stats ping help"
+  local apps="chat cloud file llm port proxy script terminal tunnel users"
+  local commands="${main_commands} ${apps}"
+  local first="${COMP_WORDS[1]}"
+
+  if [[ ${COMP_CWORD} -eq 1 ]]; then
+    COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+    return 0
+  fi
+
+  if [[ "${first}" == "tunnel" ]]; then
+    if [[ ${COMP_CWORD} -eq 2 ]]; then
+      COMPREPLY=( $(compgen -W "get describe open close help" -- "${cur}") )
+      return 0
+    fi
+    case "${COMP_WORDS[2]}" in
+      get|describe|open|close)
+        COMPREPLY=()
+        return 0
+        ;;
+    esac
+  fi
+
+  case "${prev}" in
+    completion)
+      COMPREPLY=( $(compgen -W "bash zsh" -- "${cur}") )
+      return 0
+      ;;
+    ca)
+      COMPREPLY=( $(compgen -W "import export" -- "${cur}") )
+      return 0
+      ;;
+    start|stop|run|enable|disable|log|stats|ping|get|describe|download|erase|publish|unpublish)
+      COMPREPLY=( $(compgen -W "mesh hub agent app file endpoint ep" -- "${cur}") )
+      return 0
+      ;;
+  esac
+
+  return 0
+}
+
+complete -F _ztm_completion ztm
+complete -F _ztm_completion bin/ztm
