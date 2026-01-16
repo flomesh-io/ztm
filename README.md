@@ -70,6 +70,25 @@ The easiest way to get started is download the latest binary release of ZTM from
 >
 > In this guide, we'll be only utilizing the CLI for setting up a simple mesh. For more guides, including the usage of the desktop app, please check out our [Wiki](https://github.com/flomesh-io/ztm/wiki).
 
+### CLI Completion
+
+To enable shell completion, run:
+
+```sh
+mkdir -p ~/.local/share/ztm/completions
+ztm completion bash > ~/.local/share/ztm/completions/ztm.bash
+source ~/.local/share/ztm/completions/ztm.bash
+```
+
+For zsh users:
+
+```sh
+mkdir -p ~/.local/share/ztm/completions
+ztm completion zsh > ~/.local/share/ztm/completions/_ztm
+fpath=(~/.local/share/ztm/completions $fpath)
+autoload -U compinit && compinit
+```
+
 ### Setup
 
 A common setup consists of 3 nodes: 1 node running the *Hub*, the other 2 nodes running two *Agents* who wish to communicate with each other.

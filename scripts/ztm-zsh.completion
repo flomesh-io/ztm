@@ -1,0 +1,90 @@
+#compdef ztm bin/ztm
+
+_ztm_completion() {
+  local -a main_commands
+  main_commands=(
+    'version:Print ZTM version information'
+    'completion:Generate shell completion script'
+    'config:View or set CLI configuration'
+    'ca:Export or import the CA certificate'
+    'root:Generate a permit for the root user'
+    'identity:Print the identity of the current running agent'
+    'label:View or change labels of an endpoint'
+    'start:Start running a hub, agent or app as background service'
+    'stop:Stop running a hub, agent or app as background service'
+    'run:Start running a hub or agent in foreground mode'
+    'invite:Issue a permit to a user for joining the mesh'
+    'evict:Revoke a permit and block the user from joining the mesh'
+    'join:Join a mesh'
+    'leave:Leave a mesh'
+    'enable:Enable a mesh or app'
+    'disable:Disable a mesh or app'
+    'attach:Attach to a specified hub'
+    'get:List objects of a certain type'
+    'describe:View detailed information about an object'
+    'download:Download an app or file from the mesh'
+    'erase:Erase a downloaded app or file'
+    'publish:Publish an app or file to the mesh'
+    'unpublish:Unpublish an app or file from the mesh'
+    'log:View logs from an app or endpoint'
+    'stats:View stats of endpoints'
+    'ping:Send a ping to an endpoint'
+    'help:Display help information'
+  )
+
+  local -a apps
+  apps=(
+    'chat:Messaging between mesh endpoints'
+    'cloud:Manage mesh cloud storage'
+    'file:Interact with distributed files'
+    'llm:Access mesh LLM services'
+    'port:Manage port mappings'
+    'proxy:Configure proxying rules'
+    'script:Run remote scripts'
+    'terminal:Open remote terminal sessions'
+    'tunnel:Configure mesh tunnels'
+    'users:Manage mesh users'
+  )
+
+  local -a commands
+  commands=( $main_commands $apps )
+
+  local context state state_descr line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1:command:->command' \
+    '2::argument:->args'
+
+  case $state in
+    command)
+      _describe -t commands 'ztm commands' commands
+      ;;
+    args)
+      case $words[2] in
+        completion)
+          _values 'shell' bash zsh
+          ;;
+        ca)
+          _values 'operation' import export
+          ;;
+        tunnel)
+          case $words[3] in
+            get|describe|open|close)
+              ;; # no additional static completions
+            *)
+              _values 'tunnel command' get describe open close help
+              ;;
+          esac
+          ;;
+        start|stop|run|enable|disable|log|stats|ping|get|describe|download|erase|publish|unpublish)
+          _values 'object type' mesh hub agent app file endpoint ep
+          ;;
+      esac
+      ;;
+  esac
+}
+
+if [[ -n ${ZSH_VERSION-} ]]; then
+  compdef _ztm_completion ztm bin/ztm
+fi
