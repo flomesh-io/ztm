@@ -54,14 +54,15 @@ _ztm_completion() {
 
   _arguments -C \
     '1:command:->command' \
-    '2::argument:->args'
+    '*::argument:->args'
 
   case $state in
     command)
       _describe -t commands 'ztm commands' commands
       ;;
     args)
-      case $words[2] in
+      local cmd="${words[1]}"
+      case "$cmd" in
         completion)
           _values 'shell' bash zsh
           ;;
@@ -69,16 +70,25 @@ _ztm_completion() {
           _values 'operation' import export
           ;;
         tunnel)
-          case $words[3] in
-            get|describe|open|close)
-              ;; # no additional static completions
-            *)
-              _values 'tunnel command' get describe open close help
-              ;;
-          esac
+          if (( CURRENT == 2 )); then
+            _values 'tunnel command' get describe open close help
+          elif (( CURRENT == 3 )); then
+            case "${words[2]}" in
+              get|describe|open|close)
+                 _values 'tunnel object' tunnel inbound outbound
+                 ;;
+            esac
+          fi
           ;;
-        start|stop|run|enable|disable|log|stats|ping|get|describe|download|erase|publish|unpublish)
-          _values 'object type' mesh hub agent app file endpoint ep
+        get)
+          if (( CURRENT == 2 )); then
+            _values 'object type' mesh hub app file ep
+          fi
+          ;;
+        start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+          if (( CURRENT == 2 )); then
+            _values 'object type' mesh hub agent app file endpoint ep
+          fi
           ;;
       esac
       ;;
