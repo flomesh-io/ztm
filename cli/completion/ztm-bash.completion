@@ -23,6 +23,10 @@ _ztm_completion()
     fi
     case "${COMP_WORDS[2]}" in
       get|describe|open|close)
+        if [[ ${COMP_CWORD} -eq 3 ]]; then
+          COMPREPLY=( $(compgen -W "tunnel inbound outbound" -- "${cur}") )
+          return 0
+        fi
         COMPREPLY=()
         return 0
         ;;
@@ -38,7 +42,11 @@ _ztm_completion()
       COMPREPLY=( $(compgen -W "import export" -- "${cur}") )
       return 0
       ;;
-    start|stop|run|enable|disable|log|stats|ping|get|describe|download|erase|publish|unpublish)
+    get)
+      COMPREPLY=( $(compgen -W "mesh hub app file ep" -- "${cur}") )
+      return 0
+      ;;
+    start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
       COMPREPLY=( $(compgen -W "mesh hub agent app file endpoint ep" -- "${cur}") )
       return 0
       ;;
