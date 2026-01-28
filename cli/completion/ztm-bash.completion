@@ -6,10 +6,128 @@ _ztm_completion()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  local main_commands="version completion config ca root identity label start stop run invite evict join leave enable disable attach get describe download erase publish unpublish log stats ping help"
+  local main_commands="mesh ep version completion config ca root identity label start stop run invite evict join leave enable disable attach get describe download erase publish unpublish log stats ping help"
   local apps="chat cloud file llm port proxy script terminal tunnel users"
   local commands="${main_commands} ${apps}"
   local first="${COMP_WORDS[1]}"
+
+  # Handle mesh context
+  if [[ "${first}" == "mesh" ]]; then
+    if [[ ${COMP_CWORD} -eq 2 ]]; then
+      local meshes=$(ztm get mesh | awk 'NR>1 {print $1}')
+      COMPREPLY=( $(compgen -W "${meshes}" -- "${cur}") )
+      return 0
+    fi
+    # Shift context for subsequent completions
+    if [[ ${COMP_CWORD} -ge 3 ]]; then
+        # We need to treat the 3rd word as the "first" command
+        # Re-assign 'first' and continue logic, but COMP_CWORD needs adjustment
+        # Bash completion is tricky with shifting.
+        # Instead, we just check relative position.
+        local sub_cmd="${COMP_WORDS[3]}"
+        local rel_cword=$((COMP_CWORD - 2))
+        
+        # If we are at the command position (ztm mesh name <TAB>)
+        if [[ ${rel_cword} -eq 1 ]]; then
+             COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+             return 0
+        fi
+
+        # Duplicate logic for sub-commands based on rel_cword
+        if [[ "${sub_cmd}" == "tunnel" ]]; then
+            if [[ ${rel_cword} -eq 2 ]]; then
+              COMPREPLY=( $(compgen -W "get describe open close help" -- "${cur}") )
+              return 0
+            fi
+            case "${COMP_WORDS[4]}" in # 4 is the action (get/describe...)
+              open)
+                if [[ ${rel_cword} -eq 3 ]]; then
+                  COMPREPLY=( $(compgen -W "inbound outbound" -- "${cur}") )
+                  return 0
+                fi
+                ;;
+              get|describe|close)
+                if [[ ${rel_cword} -eq 3 ]]; then
+                  COMPREPLY=( $(compgen -W "tunnel inbound outbound" -- "${cur}") )
+                  return 0
+                fi
+                ;;
+            esac
+        fi
+
+        case "${sub_cmd}" in
+            get)
+              if [[ ${rel_cword} -eq 2 ]]; then
+                 COMPREPLY=( $(compgen -W "mesh hub app file ep" -- "${cur}") )
+                 return 0
+              fi
+              ;;
+             start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+              if [[ ${rel_cword} -eq 2 ]]; then
+                 COMPREPLY=( $(compgen -W "mesh hub agent app file endpoint ep" -- "${cur}") )
+                 return 0
+              fi
+              ;;
+        esac
+        return 0
+    fi
+  fi
+
+  # Handle ep context
+  if [[ "${first}" == "ep" || "${first}" == "endpoint" ]]; then
+    if [[ ${COMP_CWORD} -eq 2 ]]; then
+      local eps=$(ztm get ep | awk 'NR>1 {print $1}')
+      COMPREPLY=( $(compgen -W "${eps}" -- "${cur}") )
+      return 0
+    fi
+     if [[ ${COMP_CWORD} -ge 3 ]]; then
+        local sub_cmd="${COMP_WORDS[3]}"
+        local rel_cword=$((COMP_CWORD - 2))
+        
+        if [[ ${rel_cword} -eq 1 ]]; then
+             COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
+             return 0
+        fi
+        
+        # Duplicate logic (same as above)
+        if [[ "${sub_cmd}" == "tunnel" ]]; then
+            if [[ ${rel_cword} -eq 2 ]]; then
+              COMPREPLY=( $(compgen -W "get describe open close help" -- "${cur}") )
+              return 0
+            fi
+            case "${COMP_WORDS[4]}" in
+              open)
+                if [[ ${rel_cword} -eq 3 ]]; then
+                  COMPREPLY=( $(compgen -W "inbound outbound" -- "${cur}") )
+                  return 0
+                fi
+                ;;
+              get|describe|close)
+                if [[ ${rel_cword} -eq 3 ]]; then
+                  COMPREPLY=( $(compgen -W "tunnel inbound outbound" -- "${cur}") )
+                  return 0
+                fi
+                ;;
+            esac
+        fi
+
+        case "${sub_cmd}" in
+            get)
+              if [[ ${rel_cword} -eq 2 ]]; then
+                 COMPREPLY=( $(compgen -W "mesh hub app file ep" -- "${cur}") )
+                 return 0
+              fi
+              ;;
+             start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+              if [[ ${rel_cword} -eq 2 ]]; then
+                 COMPREPLY=( $(compgen -W "mesh hub agent app file endpoint ep" -- "${cur}") )
+                 return 0
+              fi
+              ;;
+        esac
+        return 0
+    fi
+  fi
 
   if [[ ${COMP_CWORD} -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "${commands}" -- "${cur}") )
@@ -22,7 +140,15 @@ _ztm_completion()
       return 0
     fi
     case "${COMP_WORDS[2]}" in
-      get|describe|open|close)
+      open)
+        if [[ ${COMP_CWORD} -eq 3 ]]; then
+          COMPREPLY=( $(compgen -W "inbound outbound" -- "${cur}") )
+          return 0
+        fi
+        COMPREPLY=()
+        return 0
+        ;;
+      get|describe|close)
         if [[ ${COMP_CWORD} -eq 3 ]]; then
           COMPREPLY=( $(compgen -W "tunnel inbound outbound" -- "${cur}") )
           return 0

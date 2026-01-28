@@ -1,8 +1,30 @@
 #compdef ztm bin/ztm
 
+_ztm_meshes() {
+  local -a meshes
+  meshes=($(ztm get mesh | awk 'NR>1 {print $1}'))
+  _describe -t meshes 'meshes' meshes
+}
+
+_ztm_eps() {
+  local -a eps
+  local mesh_ctx=""
+  
+  # Check if we are in a mesh context
+  if [[ "${words[1]}" == "mesh" && -n "${words[2]}" ]]; then
+     mesh_ctx="mesh ${words[2]}"
+  fi
+
+  # We use 'eval' to properly expand mesh_ctx if it's set
+  eps=($(eval "ztm $mesh_ctx get ep" | awk 'NR>1 {print $1}'))
+  _describe -t endpoints 'endpoints' eps
+}
+
 _ztm_completion() {
   local -a main_commands
   main_commands=(
+    'mesh:Execute command in specific mesh'
+    'ep:Execute command on specific endpoint'
     'version:Print ZTM version information'
     'completion:Generate shell completion script'
     'config:View or set CLI configuration'
@@ -62,6 +84,98 @@ _ztm_completion() {
       ;;
     args)
       local cmd="${words[1]}"
+      
+      # Handle 'mesh' context
+      if [[ "$cmd" == "mesh" ]]; then
+         if (( CURRENT == 2 )); then
+            _ztm_meshes
+            return
+         elif (( CURRENT == 3 )); then
+            _describe -t commands 'ztm commands' commands
+            return
+         else
+            # Shift context: words[3] is the real command
+            cmd="${words[3]}"
+            # Adjust words array to simulate normal command
+            # This is tricky in Zsh _arguments state machine
+            # We will manually dispatch based on 'cmd'
+            # Note: CURRENT index is still relative to full line
+            # We need to map relative position
+            local relative_current=$(( CURRENT - 2 ))
+            
+            # Re-implement dispatch logic for sub-commands
+            case "$cmd" in
+              get)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub app file ep
+                 fi
+                 ;;
+              tunnel)
+                 if (( relative_current == 2 )); then
+                   _values 'tunnel command' get describe open close help
+                 elif (( relative_current == 3 )); then
+                   case "${words[4]}" in
+                     open)
+                        _values 'tunnel object' inbound outbound
+                        ;;
+                     get|describe|close)
+                        _values 'tunnel object' tunnel inbound outbound
+                        ;;
+                   esac
+                 fi
+                 ;;
+              # ... other commands ...
+              start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub agent app file endpoint ep
+                 fi
+                 ;;
+            esac
+            return
+         fi
+      fi
+
+      # Handle 'ep' context
+      if [[ "$cmd" == "ep" || "$cmd" == "endpoint" ]]; then
+         if (( CURRENT == 2 )); then
+            _ztm_eps
+            return
+         elif (( CURRENT == 3 )); then
+            _describe -t commands 'ztm commands' commands
+            return
+         else
+            cmd="${words[3]}"
+            local relative_current=$(( CURRENT - 2 ))
+            case "$cmd" in
+              get)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub app file ep
+                 fi
+                 ;;
+              tunnel)
+                 if (( relative_current == 2 )); then
+                   _values 'tunnel command' get describe open close help
+                 elif (( relative_current == 3 )); then
+                   case "${words[4]}" in
+                     open)
+                        _values 'tunnel object' inbound outbound
+                        ;;
+                     get|describe|close)
+                        _values 'tunnel object' tunnel inbound outbound
+                        ;;
+                   esac
+                 fi
+                 ;;
+              start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub agent app file endpoint ep
+                 fi
+                 ;;
+            esac
+            return
+         fi
+      fi
+
       case "$cmd" in
         completion)
           _values 'shell' bash zsh
@@ -74,7 +188,10 @@ _ztm_completion() {
             _values 'tunnel command' get describe open close help
           elif (( CURRENT == 3 )); then
             case "${words[2]}" in
-              get|describe|open|close)
+              open)
+                 _values 'tunnel object' inbound outbound
+                 ;;
+              get|describe|close)
                  _values 'tunnel object' tunnel inbound outbound
                  ;;
             esac
