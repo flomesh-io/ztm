@@ -91,17 +91,59 @@ _ztm_completion() {
             _ztm_meshes
             return
          elif (( CURRENT == 3 )); then
-            _describe -t commands 'ztm commands' commands
-            return
+            if [[ "${words[2]}" == "ep" || "${words[2]}" == "endpoint" ]]; then
+               # ztm mesh <name> ep <tab>
+               # The user has typed 'ep' and is hitting tab.
+               # In Zsh completion, if they've fully typed 'ep', words[3] is 'ep'.
+               # We want to show endpoints? No, wait.
+               # If they typed 'ep', they might want to execute 'ep' command.
+               # But if they typed 'ep', they are SELECTING the 'ep' command.
+               # The user intent "ztm mesh <name> ep <tab>" means "show me endpoints for this mesh" 
+               # ONLY IF 'ep' is treated as an argument to 'get'? 
+               # NO, the user input says: "ztm mesh <name> ep <TAB> # 应列出该 mesh 下的 endpoint 列表"
+               # This implies 'ep' is acting as a context selector and we need the ID next.
+               # So we are at CURRENT=4.
+               
+               # Wait, if CURRENT==3, the cursor is ON 'ep'. 
+               # If the user has typed 'ep ', then CURRENT==4.
+               # If the user typed 'ztm mesh mymesh ep', words[3] is 'ep'.
+               
+               # Let's look at the else block: _describe commands.
+               # That handles completing the COMMAND 'ep'.
+               
+               # If the user has ALREADY typed 'ep', and hits tab...
+               # If they typed 'ep ' (space), CURRENT is 4.
+               
+               # The user says: "ztm mesh <name> ep <TAB>" -> list endpoints.
+               # This means we are at the position AFTER 'ep'. 
+               # So CURRENT should be 4.
+               :
+            else
+               _describe -t commands 'ztm commands' commands
+               return
+            fi
+         elif (( CURRENT == 4 )); then
+             # ztm mesh <name> ep <TAB>
+             if [[ "${words[3]}" == "ep" || "${words[3]}" == "endpoint" ]]; then
+                _ztm_eps
+                return
+             fi
          else
             # Shift context: words[3] is the real command
-            cmd="${words[3]}"
-            # Adjust words array to simulate normal command
-            # This is tricky in Zsh _arguments state machine
-            # We will manually dispatch based on 'cmd'
-            # Note: CURRENT index is still relative to full line
-            # We need to map relative position
-            local relative_current=$(( CURRENT - 2 ))
+            # But if the second word was 'ep'/'endpoint', the real command is words[4]
+            local cmd_index=3
+            if [[ "${words[3]}" == "ep" || "${words[3]}" == "endpoint" ]]; then
+               cmd_index=5
+            fi
+            
+            # If we are completing the command after 'ep'
+            if (( CURRENT == cmd_index )); then
+               _describe -t commands 'ztm commands' commands
+               return
+            fi
+
+            cmd="${words[$cmd_index]}"
+            local relative_current=$(( CURRENT - cmd_index + 1 ))
             
             # Re-implement dispatch logic for sub-commands
             case "$cmd" in
@@ -114,7 +156,7 @@ _ztm_completion() {
                  if (( relative_current == 2 )); then
                    _values 'tunnel command' get describe open close help
                  elif (( relative_current == 3 )); then
-                   case "${words[4]}" in
+                   case "${words[$((cmd_index + 1))]}" in
                      open)
                         _values 'tunnel object' inbound outbound
                         ;;
