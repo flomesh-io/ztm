@@ -130,7 +130,7 @@ onMounted(() => {
 			<div class="text-center p-2">
 				<div class="grid text-left p-0 m-0" >
 						<div class="p-2" :class="(!visibleEditor)?'col-12 md:col-6 lg:col-3':'col-12'" v-for="(mesh,hid) in meshes" :key="hid">
-							 <div :class="selectedMesh?.name == mesh.name?'surface-card-selected':''" class="surface-card surface-card-hover shadow-2 p-3 border-round relative" @click="select(mesh)">
+							 <div :class="selectedMesh?.name == mesh.name?'surface-card-selected':''" class="surface-card surface-card-hover shadow-2 p-3 border-round relative" @click="select(mesh)" style="overflow: hidden;">
 									 <div class="flex justify-content-between mb-3">
 											 <div>
 													<span class="block text-tip font-medium mb-3">
@@ -161,7 +161,7 @@ onMounted(() => {
 									 </div>
 										<span class="text-tip">Hubs: </span>
 										<span class="text-green-500"><Badge v-tooltip="mesh.bootstraps.join('\n')" class="relative" style="top:-2px" :value="mesh.bootstraps.length"></Badge></span>
-										<i v-if="selectedMesh?.name == mesh.name" class="iconfont icon-check text-primary-500 text-4xl absolute" style="right: 10px;bottom: 10px;"/>
+										<i v-if="selectedMesh?.name == mesh.name" class="iconfont icon-check text-green-500 absolute" style="right: -30px;bottom: -30px;opacity: 0.5;font-size: 100px;"/>
 							 </div>
 					 </div>
 				</div>
