@@ -1,0 +1,259 @@
+#compdef ztm bin/ztm
+
+_ztm_meshes() {
+  local -a meshes
+  meshes=($(ztm get mesh | awk 'NR>1 {print $1}'))
+  _describe -t meshes 'meshes' meshes
+}
+
+_ztm_eps() {
+  local -a eps
+  local mesh_ctx=""
+  
+  # Check if we are in a mesh context
+  if [[ "${words[1]}" == "mesh" && -n "${words[2]}" ]]; then
+     mesh_ctx="mesh ${words[2]}"
+  fi
+
+  # We use 'eval' to properly expand mesh_ctx if it's set
+  eps=($(eval "ztm $mesh_ctx get ep" | awk 'NR>1 {print $1}'))
+  _describe -t endpoints 'endpoints' eps
+}
+
+_ztm_completion() {
+  local -a main_commands
+  main_commands=(
+    'mesh:Execute command in specific mesh'
+    'ep:Execute command on specific endpoint'
+    'version:Print ZTM version information'
+    'completion:Generate shell completion script'
+    'config:View or set CLI configuration'
+    'ca:Export or import the CA certificate'
+    'root:Generate a permit for the root user'
+    'identity:Print the identity of the current running agent'
+    'label:View or change labels of an endpoint'
+    'start:Start running a hub, agent or app as background service'
+    'stop:Stop running a hub, agent or app as background service'
+    'run:Start running a hub or agent in foreground mode'
+    'invite:Issue a permit to a user for joining the mesh'
+    'evict:Revoke a permit and block the user from joining the mesh'
+    'join:Join a mesh'
+    'leave:Leave a mesh'
+    'enable:Enable a mesh or app'
+    'disable:Disable a mesh or app'
+    'attach:Attach to a specified hub'
+    'get:List objects of a certain type'
+    'describe:View detailed information about an object'
+    'download:Download an app or file from the mesh'
+    'erase:Erase a downloaded app or file'
+    'publish:Publish an app or file to the mesh'
+    'unpublish:Unpublish an app or file from the mesh'
+    'log:View logs from an app or endpoint'
+    'stats:View stats of endpoints'
+    'ping:Send a ping to an endpoint'
+    'help:Display help information'
+  )
+
+  local -a apps
+  apps=(
+    'chat:Messaging between mesh endpoints'
+    'cloud:Manage mesh cloud storage'
+    'file:Interact with distributed files'
+    'llm:Access mesh LLM services'
+    'port:Manage port mappings'
+    'proxy:Configure proxying rules'
+    'script:Run remote scripts'
+    'terminal:Open remote terminal sessions'
+    'tunnel:Configure mesh tunnels'
+    'users:Manage mesh users'
+  )
+
+  local -a commands
+  commands=( $main_commands $apps )
+
+  local context state state_descr line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1:command:->command' \
+    '*::argument:->args'
+
+  case $state in
+    command)
+      _describe -t commands 'ztm commands' commands
+      ;;
+    args)
+      local cmd="${words[1]}"
+      
+      # Handle 'mesh' context
+      if [[ "$cmd" == "mesh" ]]; then
+         if (( CURRENT == 2 )); then
+            _ztm_meshes
+            return
+         elif (( CURRENT == 3 )); then
+            if [[ "${words[2]}" == "ep" || "${words[2]}" == "endpoint" ]]; then
+               # ztm mesh <name> ep <tab>
+               # The user has typed 'ep' and is hitting tab.
+               # In Zsh completion, if they've fully typed 'ep', words[3] is 'ep'.
+               # We want to show endpoints? No, wait.
+               # If they typed 'ep', they might want to execute 'ep' command.
+               # But if they typed 'ep', they are SELECTING the 'ep' command.
+               # The user intent "ztm mesh <name> ep <tab>" means "show me endpoints for this mesh" 
+               # ONLY IF 'ep' is treated as an argument to 'get'? 
+               # NO, the user input says: "ztm mesh <name> ep <TAB> # 应列出该 mesh 下的 endpoint 列表"
+               # This implies 'ep' is acting as a context selector and we need the ID next.
+               # So we are at CURRENT=4.
+               
+               # Wait, if CURRENT==3, the cursor is ON 'ep'. 
+               # If the user has typed 'ep ', then CURRENT==4.
+               # If the user typed 'ztm mesh mymesh ep', words[3] is 'ep'.
+               
+               # Let's look at the else block: _describe commands.
+               # That handles completing the COMMAND 'ep'.
+               
+               # If the user has ALREADY typed 'ep', and hits tab...
+               # If they typed 'ep ' (space), CURRENT is 4.
+               
+               # The user says: "ztm mesh <name> ep <TAB>" -> list endpoints.
+               # This means we are at the position AFTER 'ep'. 
+               # So CURRENT should be 4.
+               :
+            else
+               _describe -t commands 'ztm commands' commands
+               return
+            fi
+         elif (( CURRENT == 4 )); then
+             # ztm mesh <name> ep <TAB>
+             if [[ "${words[3]}" == "ep" || "${words[3]}" == "endpoint" ]]; then
+                _ztm_eps
+                return
+             fi
+         else
+            # Shift context: words[3] is the real command
+            # But if the second word was 'ep'/'endpoint', the real command is words[4]
+            local cmd_index=3
+            if [[ "${words[3]}" == "ep" || "${words[3]}" == "endpoint" ]]; then
+               cmd_index=5
+            fi
+            
+            # If we are completing the command after 'ep'
+            if (( CURRENT == cmd_index )); then
+               _describe -t commands 'ztm commands' commands
+               return
+            fi
+
+            cmd="${words[$cmd_index]}"
+            local relative_current=$(( CURRENT - cmd_index + 1 ))
+            
+            # Re-implement dispatch logic for sub-commands
+            case "$cmd" in
+              get)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub app file ep
+                 fi
+                 ;;
+              tunnel)
+                 if (( relative_current == 2 )); then
+                   _values 'tunnel command' get describe open close help
+                 elif (( relative_current == 3 )); then
+                   case "${words[$((cmd_index + 1))]}" in
+                     open)
+                        _values 'tunnel object' inbound outbound
+                        ;;
+                     get|describe|close)
+                        _values 'tunnel object' tunnel inbound outbound
+                        ;;
+                   esac
+                 fi
+                 ;;
+              # ... other commands ...
+              start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub agent app file endpoint ep
+                 fi
+                 ;;
+            esac
+            return
+         fi
+      fi
+
+      # Handle 'ep' context
+      if [[ "$cmd" == "ep" || "$cmd" == "endpoint" ]]; then
+         if (( CURRENT == 2 )); then
+            _ztm_eps
+            return
+         elif (( CURRENT == 3 )); then
+            _describe -t commands 'ztm commands' commands
+            return
+         else
+            cmd="${words[3]}"
+            local relative_current=$(( CURRENT - 2 ))
+            case "$cmd" in
+              get)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub app file ep
+                 fi
+                 ;;
+              tunnel)
+                 if (( relative_current == 2 )); then
+                   _values 'tunnel command' get describe open close help
+                 elif (( relative_current == 3 )); then
+                   case "${words[4]}" in
+                     open)
+                        _values 'tunnel object' inbound outbound
+                        ;;
+                     get|describe|close)
+                        _values 'tunnel object' tunnel inbound outbound
+                        ;;
+                   esac
+                 fi
+                 ;;
+              start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+                 if (( relative_current == 2 )); then
+                   _values 'object type' mesh hub agent app file endpoint ep
+                 fi
+                 ;;
+            esac
+            return
+         fi
+      fi
+
+      case "$cmd" in
+        completion)
+          _values 'shell' bash zsh
+          ;;
+        ca)
+          _values 'operation' import export
+          ;;
+        tunnel)
+          if (( CURRENT == 2 )); then
+            _values 'tunnel command' get describe open close help
+          elif (( CURRENT == 3 )); then
+            case "${words[2]}" in
+              open)
+                 _values 'tunnel object' inbound outbound
+                 ;;
+              get|describe|close)
+                 _values 'tunnel object' tunnel inbound outbound
+                 ;;
+            esac
+          fi
+          ;;
+        get)
+          if (( CURRENT == 2 )); then
+            _values 'object type' mesh hub app file ep
+          fi
+          ;;
+        start|stop|run|enable|disable|log|stats|ping|describe|download|erase|publish|unpublish)
+          if (( CURRENT == 2 )); then
+            _values 'object type' mesh hub agent app file endpoint ep
+          fi
+          ;;
+      esac
+      ;;
+  esac
+}
+
+if [[ -n ${ZSH_VERSION-} ]]; then
+  compdef _ztm_completion ztm bin/ztm
+fi
