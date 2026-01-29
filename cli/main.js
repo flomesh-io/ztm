@@ -93,6 +93,17 @@ function doCommand(meshName, epName, argv, program) {
       },
 
       {
+        title: `Generate shell completion script`,
+        usage: 'completion <shell>',
+        notes: `
+          Supported shells include:
+            bash
+            zsh
+        `,
+        action: (args) => completion(args['<shell>']),
+      },
+
+      {
         title: `View or set the configuration of ZTM command line tool`,
         usage: 'config',
         options: `
@@ -571,6 +582,36 @@ function doCommand(meshName, epName, argv, program) {
 //
 // Command: version
 //
+
+function completion(shell) {
+  if (!shell) {
+    throw `missing shell name`
+  }
+  shell = shell.toString().toLowerCase()
+  if (shell !== 'bash' && shell !== 'zsh') {
+    throw `unsupported shell '${shell}'. Supported shells: bash, zsh`
+  }
+  var scriptPaths = [
+    `completion/ztm-${shell}.completion`,
+    `scripts/ztm-${shell}.completion`,
+    `cli/completion/ztm-${shell}.completion`,
+  ]
+  if (shell === 'zsh') {
+    scriptPaths.unshift(`completion/_ztm`)
+    scriptPaths.push(`scripts/_ztm`)
+  }
+  var data
+  for (var i = 0; i < scriptPaths.length; i++) {
+    try {
+      data = pipy.load(scriptPaths[i])
+      break
+    } catch {}
+  }
+  if (!data) {
+    throw `completion script not found. Try rebuilding the CLI or reinstalling.`
+  }
+  print(data.toString())
+}
 
 function version(args) {
   var info = {
