@@ -62,7 +62,7 @@ else
     -DCMAKE_ANDROID_STL_TYPE=c++_static \
     -DCMAKE_MAKE_PROGRAM=ninja \
     -DANDROID_ALLOW_UNDEFINED_SYMBOLS=TRUE \
-    -DPIPY_OPENSSL=${ZTM_DIR}/pipy/deps/openssl-3.2.0/android/arm64-v8a \
+    -DPIPY_OPENSSL=${ZTM_DIR}/pipy/deps/openssl-3.5.2/android/arm64-v8a \
     -DPIPY_USE_SYSTEM_ZLIB=ON \
     -DZLIB_LIBRARY=/usr/lib/x86_64-linux-gnu/libz.a -DZLIB_INCLUDE_DIR=/usr/lib/x86_64-linux-gnu \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
