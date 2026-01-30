@@ -1,4 +1,5 @@
-import { Command, Child, open } from '@tauri-apps/plugin-shell';
+import { Command, Child } from '@tauri-apps/plugin-shell';
+import { open } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { resourceDir, appLogDir, appDataDir, appLocalDataDir, documentDir } from '@tauri-apps/api/path';
 import { platform } from '@/utils/platform';
@@ -12,12 +13,23 @@ const VITE_APP_HUB_LISTEN = import.meta.env.VITE_APP_HUB_LISTEN;
 const ztmService = new ZtmService();
 export default class ShellService {
 	async getDB () {
+		const dbpath = localStorage.getItem("DB_PATH");
+		if(dbpath){
+			return dbpath
+		}
 		const appDataDirPath = await documentDir();
 		return `${appDataDirPath}/ztmdb`
 	}
-	async openFinder() {
+	async openFinder(call) {
 		const appDataDirPath = await documentDir();
-		open(appDataDirPath)
+		const options = {
+			directory: true,
+			multiple: false,
+		}
+		options.defaultPath = appDataDirPath;
+		open(options).then((selected)=>{
+			call(selected);
+		})
 	}
 	async loadLog() {
 		const pm = platform();
@@ -252,6 +264,7 @@ export default class ShellService {
 			// 	"--pipy-options",
 			// 	`--log-file=${resourceDirPath}/ztm.log`,
 			// ];
+			let dbPath = await this.getDB();
 			const args = [
 				"--pipy",
 				"repo://ztm/agent",
@@ -259,7 +272,7 @@ export default class ShellService {
 				`--listen`,
 				`${port}`,
 				`--data`,
-				`${resourceDirPath}/ztmdb`,
+				dbPath,
 				"--pipy-options",
 				`--log-file=${resourceDirPath}/ztm.log`,
 			];
