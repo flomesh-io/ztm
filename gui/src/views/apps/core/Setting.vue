@@ -20,7 +20,9 @@ const isRunning = ref(false);
 const shellService = new ShellService();
 const ztmService = new ZtmService();
 const openFinder = () => {
-	shellService.openFinder();
+	shellService.openFinder((selected)=>{
+		db.value = selected;
+	});
 }
 const db = ref('');
 
@@ -28,6 +30,7 @@ const defaultLang = ref(locale.value=='en');
 const changeLang = () => {
 	locale.value = defaultLang.value?'en':'zh';
 	localStorage.setItem('lang',locale.value);
+	loaddata();
 }
 const loaddata = async () => {
 	db.value = await shellService.getDB();
@@ -39,6 +42,7 @@ const save = () => {
 	setPort(port.value);
 	setHubNames(hubNames.value);
 	setHubListen(hubListen.value);
+	localStorage.setItem("DB_PATH",db.value);
 	toast.add({ severity: 'success', summary: 'Tips', detail: "Saved, Restart to activate.", life: 3000 });
 }
 const close = () => {
