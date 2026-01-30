@@ -184,5 +184,7 @@ const customUploader = async (event) => {
 		top: 50px;
 		right: 30%;
 	}
-	
+	:deep(.p-fileupload-basic-content){
+		justify-content: center;
+	}
 </style>
