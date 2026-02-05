@@ -151,12 +151,12 @@ const customUploader = async (event) => {
 	</FileUpload>
 	<Toast  position="bottom-center" group="bc" @close="onClose">
 			<template #message="slotProps">
-					<div class="flex flex-column align-items-start" style="flex: 1">
+					<div class="flex flex-column align-items-start flex-1">
 							<div class="flex align-items-center gap-2">
 								<i v-if="!uploading" class="iconfont icon-check text-green-500 text-2xl" />
 								<span class="font-bold">{{uploading?'Importing':'Import successful'}}</span>
 							</div>
-							<ProgressBar v-if="uploading" class="w-full mt-1" mode="indeterminate" style="height: 6px; "></ProgressBar>
+							<ProgressBar v-if="uploading" class="w-full mt-1 progressbar-thin" mode="indeterminate"></ProgressBar>
 					</div>
 			</template>
 	</Toast>

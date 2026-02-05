@@ -107,8 +107,8 @@ defineExpose({
 					<Fieldset :collapsed="true" :toggleable="true">
 						<template #legend="{ toggleCallback }">
 							<div class="text-sm p-3 flex pointer"  @click="toggleCallback">
-								<div><i class="pi pi-code relative mr-2 text-primary" style="top:2px;"/> {{item.message}}</div>
-								<i class="pi pi-angle-double-down relative" style="top:2px;"/>
+								<div><i class="pi pi-code relative mr-2 text-primary relative-top-2"/> {{item.message}}</div>
+								<i class="pi pi-angle-double-down relative relative-top-2"/>
 							</div>
 						</template>
 						<ToolCallCard v-model:toolcalls="item.toolcalls" :isHistory="true"/>

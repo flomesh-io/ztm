@@ -126,7 +126,7 @@ const openEdit = (idx,tag) => {
 		
 		<Tag v-if="!props.readonly" severity="secondary" class="pl-0 pr-3 my-1">
 				<span class="ml-2  font-medium">
-					<InputText @click.stop="()=>{}" @keyup.enter="addTag(newTag)" :placeholder="placeholder" class="add-tag-input" style="width:100px" :unstyled="true" v-model="newTag"  type="text" />
+					<InputText @click.stop="()=>{}" @keyup.enter="addTag(newTag)" :placeholder="placeholder" class="add-tag-input add-tag-input-w" :unstyled="true" v-model="newTag" type="text" />
 					<i class="pi pi-arrow-down-left" />
 				</span>
 		</Tag>

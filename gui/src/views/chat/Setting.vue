@@ -102,21 +102,21 @@ watch(() => props.room, () => {
 			</template>
 	</AppHeader>
 	<ul class="nav-ul">
-		<li class="nav-li" style="padding: 0;line-height: 30px;">
+		<li class="nav-li nav-li-compact">
 			<div class="grid text-center py-4 m-0" v-if="props.room.members">
 					<div  
 						v-for="(member) in props.room.members"
 						class="py-2 relative text-center col-3" >
-						<Avatar v-longtap="() => exitGroupUsers(member)" icon="pi pi-user" size="large" style="margin: auto;" />
-						<div class="mt-1" v-tooltip="member" style="line-height: 16px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">
-							<b  style="">
+						<Avatar v-longtap="() => exitGroupUsers(member)" icon="pi pi-user" size="large" class="avatar-center" />
+						<div class="mt-1 line-height-16" v-tooltip="member">
+							<b>
 								{{ member}}
 							</b>
 						</div>
 					</div>
 					<div
 						class="py-2 relative text-center col-3" >
-						<Avatar @click="invite" class="pointer" icon="pi pi-plus" size="large" style="margin: auto;" />
+						<Avatar @click="invite" class="pointer avatar-center" icon="pi pi-plus" size="large" />
 					</div>
 			</div>
 		</li>
@@ -132,7 +132,7 @@ watch(() => props.room, () => {
 		<li class="nav-li flex" v-else-if="props.room.peer">
 			<b class="opacity-70">{{t('Peer')}}</b>
 			<div class="flex-item text-right pr-3">
-				<img :src="userSvg" width="18px" height="18px" class="relative mr-1" style="top:4px"/> {{props.room.peer}}
+				<img :src="userSvg" width="18px" height="18px" class="relative mr-1 relative-top-4"/> {{props.room.peer}}
 			</div>
 		</li>
 		<li class="nav-li flex" @click="history">
@@ -158,7 +158,7 @@ watch(() => props.room, () => {
 	<Dialog class="noheader" v-model:visible="visibleUserSelector" modal header="Invite" :style="{ width: '25rem' }">
 			<AppHeader :back="() => visibleUserSelector = false" :main="false">
 					<template #center>
-						<b>{{t('Invite')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
+						<b>{{t('Invite')}} <Badge class="ml-2 relative relative-top-n2" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
 					</template>
 			
 					<template #end> 

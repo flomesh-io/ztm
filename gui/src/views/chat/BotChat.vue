@@ -621,7 +621,7 @@ defineExpose({
 				<Button v-if="streaming" icon="pi pi-stop-circle" @click="chatCancel()" severity="danger" text />
 			</template>
 	</AppHeader>
-	<div class="w-full flex" style="height: calc(100vh - 37px);flex: 1;margin: 0;flex-direction: column;">
+	<div class="w-full flex botchat-layout">
 		<deep-chat
 			:textToSpeech='{"volume": 2}'
 			ref="chat"
@@ -654,7 +654,7 @@ defineExpose({
 	<Dialog class="noheader" v-model:visible="openToolcallEditor" modal :style="{ minHeight:'400px',minWidth:'400px'  }">
 		<AppHeader :back="() => openToolcallEditor = false" :main="false">
 				<template #center>
-					<b>{{t('Modify Toolcalls')}} <Badge class="ml-2 relative" style="top:-2px" v-if="toolcallTarget.tool_calls.length>0" :value="toolcallTarget.tool_calls.length"/></b>
+					<b>{{t('Modify Toolcalls')}} <Badge class="ml-2 relative relative-top-n2" v-if="toolcallTarget.tool_calls.length>0" :value="toolcallTarget.tool_calls.length"/></b>
 				</template>
 		
 				<template #end> 

@@ -165,7 +165,7 @@ onMounted(()=>{
 		:filter="true" 
 		:placeholder="t('Users')"
 	  :selectedItemsLabel="`${selectUsers.length} ${t('Users')}`" 
-		style="max-width: 200px;" >
+		class="select-max-w-200">
 		<template #footer v-if="!usersFilterPlus && !!filter.keyword">
 			<div class="text-center pb-2 px-3">
 					<Button severity="secondary" class="w-full" size="small" icon="pi pi-plus" :label="t('Add')" @click.stop="addUser" />

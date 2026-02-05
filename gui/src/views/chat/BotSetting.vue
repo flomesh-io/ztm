@@ -197,7 +197,7 @@ onMounted(()=>{
 				<Select v-model="llm" :options="llms" optionLabel="name" optionValue="name" :placeholder="t('Select a LLM')" class="selector" >
 					<template #value="slotProps">
 						<div v-if="slotProps.value" class="flex items-center">
-							<img :src="getKeywordIcon(slotProps.value, 'llm')" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
+							<img :src="getKeywordIcon(slotProps.value, 'llm')" width="18px" height="18px" class="relative mr-1 relative-top-4"/>
 							<div>{{ slotProps.value }}</div>
 						</div>
 						<span v-else>
@@ -226,7 +226,7 @@ onMounted(()=>{
 				<span>{{immediate?t('Immediate'):t('Every Time Confirm')}}</span>
 			</div>
 			<div class="px-2">
-				<ToggleSwitch class="relative" style="top:5px" v-model="immediate" />
+				<ToggleSwitch class="relative relative-top-5" v-model="immediate" />
 			</div>
 		</li>
 		<li class="nav-li flex" >
@@ -238,11 +238,11 @@ onMounted(()=>{
 		<li class="nav-li flex" v-for="(localMcp,idx) in localMcps">
 			<b class="opacity-70">{{t('MCP Server')}}</b>
 			<div class="flex-item text-right pr-3">
-				<img :src="getKeywordIcon(localMcp.name, 'mcp')" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
+				<img :src="getKeywordIcon(localMcp.name, 'mcp')" width="18px" height="18px" class="relative mr-1 relative-top-4"/>
 				<span>{{ localMcp.name }}</span>
 			</div>
 			<div class="px-2">
-				<ToggleSwitch class="relative" style="top:5px" v-model="localMcp.enabled" />
+				<ToggleSwitch class="relative relative-top-5" v-model="localMcp.enabled" />
 			</div>
 			<Button icon="pi pi-trash" severity="secondary" @click="remMcp(idx)"/>
 		</li>
@@ -252,7 +252,7 @@ onMounted(()=>{
 				<Select v-model="mcp" :options="mcps" optionLabel="name" :placeholder="t('Select a tool')" class="selector" >
 					<template #value="slotProps">
 						<div v-if="slotProps.value" class="flex items-center">
-							<img :src="getKeywordIcon(slotProps.value.name, 'mcp')" width="18px" height="18px" class="relative mr-1" style="top:4px"/>
+							<img :src="getKeywordIcon(slotProps.value.name, 'mcp')" width="18px" height="18px" class="relative mr-1 relative-top-4"/>
 							<div>{{ slotProps.value.name }}</div>
 						</div>
 						<span v-else>
@@ -261,7 +261,7 @@ onMounted(()=>{
 					</template>
 					<template #option="slotProps">
 						<div class="flex items-center">
-							<img :src="getKeywordIcon(slotProps.option.name, 'mcp')" width="18px" height="18px" class="relative mr-1" style=""/>
+							<img :src="getKeywordIcon(slotProps.option.name, 'mcp')" width="18px" height="18px" class="relative mr-1"/>
 							<div>{{ slotProps.option.name }}</div>
 						</div>
 					</template>

@@ -98,9 +98,9 @@ const hideSender = () => {
 
 <template>
 	
-	<Button :loading="fileLoading || sending" @click="openSender" class="absolute" v-if="!!hasFile && !visible" icon="pi pi-send" aria-label="Send" style="right:10px; bottom: 70px;" />
-	<Drawer class="relative" @hide="hideSender" v-model:visible="visible" header="Forward" position="bottom" style="height: 80%;">
-		<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top': (`${45}px`)}">
+	<Button :loading="fileLoading || sending" @click="openSender" class="absolute" v-if="!!hasFile && !visible" icon="pi pi-send" aria-label="Send" class="btn-send-fixed" />
+	<Drawer class="relative" @hide="hideSender" v-model:visible="visible" header="Forward" position="bottom" class="drawer-h-80">
+		<ScrollPanel class="w-full absolute scroll-panel-bottom" :style="{'top': (`${45}px`)}">
 		<div class="flex message-item pointer" :key="index">
 			<div v-for="(file,index) in files" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 				<div class="md:w-40 relative">
@@ -117,7 +117,7 @@ const hideSender = () => {
 							{{bitUnit(file?.size *1)}}
 						</div>
 						<div v-if="file?.mime" class="text-right text-tip opacity-60" >
-							<Tag class="text-ellipsis px-1 text-left" severity="secondary" style="max-width: 140px;">{{file?.mime}}</Tag>
+							<Tag class="text-ellipsis px-1 text-left tag-max-w-140" severity="secondary">{{file?.mime}}</Tag>
 						</div>
 					</div>
 				</div>

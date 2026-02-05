@@ -71,7 +71,7 @@ watch(() => props.map, () =>{
 </script>
 
 <template>
-	<span class="flex flex-column" style="gap: 5px;">
+	<span class="flex flex-column flex-gap-5">
 		<div v-if="list.length > 0" v-for="(tag,tagidx) in list">
 		<!-- 	<Chip v-if="tagidx<list.length - 1" class="pl-0 custom-chip">
 				<span class="bg-primary border-circle flex align-items-center justify-content-center">

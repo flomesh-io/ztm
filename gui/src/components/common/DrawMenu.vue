@@ -19,7 +19,7 @@ const hide = () => {
 
 <template>
 	
-	<Drawer class="relative" @hide="hide" v-model:visible="visible" :header="title" position="bottom" style="height: 50%;">
+	<Drawer class="relative" @hide="hide" v-model:visible="visible" :header="title" position="bottom" class="drawer-h-50">
 		<div class="grid text-center px-4" >
 				<div  
 					v-for="(menu) in menus"

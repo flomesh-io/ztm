@@ -90,7 +90,7 @@ onMounted(()=>{
 		:filter="true" 
 		:placeholder="t('Endpoints')"
 	  :selectedItemsLabel="`${selectEndpoints.length} ${t('Endpoints')}`" 
-		style="max-width: 200px;" >
+		class="ep-selector-max-w" >
 		<template #option="slotProps">
 			<i class="pi pi-mobile mr-1"/>
 			{{ slotProps.option?.name }}

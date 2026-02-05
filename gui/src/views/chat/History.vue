@@ -83,8 +83,8 @@ watch(() => today.value, () => {
 			</template>
 	</AppHeader>
 	<!-- props.room.members -->
-	<ul class="nav-ul shadow relative" style="z-index:2">
-		<li class="nav-li" style="padding: 0;line-height: 30px;">
+	<ul class="nav-ul shadow relative nav-ul-z2">
+		<li class="nav-li nav-li-compact">
 			<DatePicker v-model="today" inline class="w-full" />
 		</li>
 	</ul>
@@ -101,7 +101,7 @@ watch(() => today.value, () => {
 									{{timeago(item?.time)}}
 								</div>
 							</div>
-							<div class="flex" style="word-break: break-all;" >
+							<div class="flex word-break-all">
 								<span v-if="item?.message?.text">{{item?.message?.text}}</span>
 								<span v-if="item?.message?.files?.length>0" v-for="(file,idx) in item?.message?.files">
 									<img v-if="chatFileType(file.contentType) == 'image'" :src="getUrl(file, item?.sender)"></img>
@@ -110,7 +110,7 @@ watch(() => today.value, () => {
 									<accept-file v-else :src="getUrl(file, item?.sender)" :size="file?.size" :contentType="file.contentType" :fileName="file.name">
 										<img slot="icon" :src="extIcon(file.contentType)" width="40px" height="40px"/>
 										<div slot="title">{{file.name}}</div>
-										<div style="font-size:8pt;opacity:0.7" slot="attrs">
+										<div class="file-attrs" slot="attrs">
 											{{bitUnit(file.size)}}
 										</div>
 									</accept-file>

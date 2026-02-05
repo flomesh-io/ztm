@@ -302,7 +302,7 @@ onMounted(()=>{
 				
 				<AppHeader :back="() => visibleUserSelector = false" :main="false">
 						<template #center>
-							<b>{{t('New Chat')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
+							<b>{{t('New Chat')}} <Badge class="ml-2 relative relative-top-n2" v-if="Object.keys(selectedNewChatUsers).length>0" :value="Object.keys(selectedNewChatUsers).length"/></b>
 						</template>
 				
 						<template #end> 
@@ -322,7 +322,7 @@ onMounted(()=>{
 				
 				<AppHeader :back="() => visibleBotSelector = false" :main="false">
 						<template #center>
-							<b>{{t('Bots')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedNewBots).length>0" :value="Object.keys(selectedNewBots).length"/></b>
+							<b>{{t('Bots')}} <Badge class="ml-2 relative relative-top-n2" v-if="Object.keys(selectedNewBots).length>0" :value="Object.keys(selectedNewBots).length"/></b>
 						</template>
 				
 						<template #end> 
@@ -352,13 +352,13 @@ onMounted(()=>{
 			</AppHeader>
 			
 			
-			<ScrollPanel class="w-full absolute" style="bottom: 0;" :style="{'top': (isMobile && !selectRoom?'50px':'35px')}" >
+			<ScrollPanel class="w-full absolute scroll-panel-bottom" :style="{'top': (isMobile && !selectRoom?'50px':'35px')}" >
 			<DataView class="message-list" :value="uniRooms">
 					<template #list="slotProps">
 							<div @click="openChat(item)" class="flex flex-col message-item pointer" v-for="(item, index) in slotProps.items" :key="index">
 								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 										<div class="md:w-40 relative">
-											<Badge v-if="item.updated" :value="item.updated" severity="danger" class="absolute" style="right: -10px;top:-10px"/>
+											<Badge v-if="item.updated" :value="item.updated" severity="danger" class="absolute badge-room-updated"/>
 											<img v-if="item.isAi" :src="gptSvg" width="42" height="42" />
 											<Avatar shape="circle"  v-if="item.bot" icon="pi pi-prime" size="large"  />
 											<Avatar shape="circle"  v-else-if="!!item.group" icon="pi pi-users" size="large"  />
@@ -370,13 +370,13 @@ onMounted(()=>{
 													<div class="flex-item" >
 														<b>{{item?.peer}}</b>
 													</div>
-													<Status :run="true" style="top: 7px;margin-right: 0;right: -10px;"/>
+													<Status :run="true" class="status-room"/>
 												</div>
 												<div class="flex relative" v-else>
 													<div class="flex-item" >
 														<b>{{item.name}}</b>
 													</div>
-													<Button class="absolute pointer" style="right:-12px;top: -12px;opacity: 0.6;" v-if="item.id != 'default'" severity="secondary" text size="small" icon="pi pi-times" v-tooltip.right="t('Remove Room')" @click.stop="deleteRoom(item.id)" />
+													<Button class="absolute pointer btn-remove-room" v-if="item.id != 'default'" severity="secondary" text size="small" icon="pi pi-times" v-tooltip.right="t('Remove Room')" @click.stop="deleteRoom(item.id)" />
 													
 												</div>
 												<div class="flex mt-1">
@@ -398,8 +398,8 @@ onMounted(()=>{
 				</DataView>
 			</ScrollPanel>
 		</div>
-		<div v-if="selectRoom" class="flex-item min-h-screen" style="flex: 3;">
-			<div class="shadow mobile-fixed min-h-screen relative" style="z-index:2">
+		<div v-if="selectRoom" class="flex-item min-h-screen flex-3">
+			<div class="shadow mobile-fixed min-h-screen relative z-index-2">
 				<BotChat 
 					ref="botchat" 
 					v-if="selectRoom?.bot" 
@@ -412,22 +412,22 @@ onMounted(()=>{
 				<Chat v-else v-model:room="selectRoom" @back="backList" @manager="() => manager = 'peer'"/>
 			</div>
 		</div>
-		<div v-if="manager == 'peer' && history" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-if="manager == 'peer' && history" class="flex-item min-h-screen flex-2">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<History v-model:room="selectRoom" @back="backhistory" />
 			</div>
 		</div>
-		<div v-else-if="manager == 'peer' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-else-if="manager == 'peer' && selectRoom" class="flex-item min-h-screen flex-2">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<Setting v-model:room="selectRoom" @back="backmanage" @history="() => history = true"/>
 			</div>
 		</div>
-		<div v-else-if="botHistory" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-else-if="botHistory" class="flex-item min-h-screen flex-2">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<BotHistory v-model:room="selectRoom" ref="botHistoryRef" @clear="botClear" @back="backmanage" />
 			</div>
 		</div>
-		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen " style="flex: 2;">
+		<div v-else-if="manager == 'bot' && selectRoom" class="flex-item min-h-screen flex-2">
 			<div class="shadow mobile-fixed min-h-screen surface-html" >
 				<BotSetting v-model:room="selectRoom" @saved="changeBot" @back="backmanage" />
 			</div>

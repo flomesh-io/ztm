@@ -318,7 +318,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 					<template #center>
 						<IconField>
 							<InputIcon class="pi pi-search" />
-							<InputText style="background-color: transparent;" v-model="filter.keyword" :placeholder="t('Search')" @input="searchUsers"/>
+							<InputText class="input-bg-transparent" v-model="filter.keyword" :placeholder="t('Search')" @input="searchUsers"/>
 						</IconField>
 					</template>
 			
@@ -345,16 +345,16 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 													<div class="flex-item flex gap-2">
 														<UserAvatar :size="28" :username="user.name"/>
 														<b class="line-height-4">{{ user.name }} </b>
-														<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+														<Avatar class="ml-2 avatar-endpoint" icon="pi pi-mobile" size="small" />
 														<b class="line-height-4">{{user.endpoints?.instances[0].name || user.endpoints?.instances[0].id}}</b>
-														<span v-if="user.endpoints?.instances[0]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
-														<ChipList @change="changeLabels(user.endpoints?.instances[0])" class="ml-2 relative" style="top: 4px;" :readonly="user.endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="user.endpoints.instances[0].labels"/>
+														<span v-if="user.endpoints?.instances[0]?.isLocal && !selectEp" class="ml-2 relative relative-top-2"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+														<ChipList @change="changeLabels(user.endpoints?.instances[0])" class="ml-2 relative relative-top-4" :readonly="user.endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="user.endpoints.instances[0].labels"/>
 													</div>
 													<div class="flex" v-if="!selectEp">
 														
 														<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↑{{bitUnit(stats[user.endpoints?.instances[0].id]?.send)}}</span>
 														<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[user.endpoints?.instances[0].id]">↓{{bitUnit(stats[user.endpoints?.instances[0].id]?.receive)}}</span>
-														<Status :run="user.endpoints?.instances[0]?.online" :tip="timeago(user.endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+														<Status :run="user.endpoints?.instances[0]?.online" :tip="timeago(user.endpoints?.instances[0]?.heartbeat)"  class="status-inline"/>
 														
 														<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(user.name)"  v-if="!selectEp && manage"/>
 														<Button severity="secondary" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
@@ -367,7 +367,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 															<div class="flex-item flex gap-2" @click="loadepByUser(user.name)">
 																<UserAvatar :size="28" :username="user.name"/>
 																<b class="line-height-4">{{ user.name }}</b>
-																<OverlayBadge :value="user.endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
+																<OverlayBadge :value="user.endpoints?.count" size="small"><Avatar class="ml-2 avatar-endpoint" icon="pi pi-mobile" size="small" /></OverlayBadge>
 															</div>
 															<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(user.name)"  v-if="!selectEp && manage"/>
 															<Button severity="secondary" class="mr-2" icon="pi pi-times" text @click.stop="removeUser(user.name)"  v-if="!selectEp && manage"/>
@@ -376,15 +376,15 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 															<div class="flex flex-col message-item pointer" v-for="(ep, index) in (usersMap[user.name]?.endpoints?.instances||[])" :key="index" >
 																<div class="flex flex-col py-3 pr-3 pl-2 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(ep)">
 																	<div class="flex-item flex gap-2">
-																		<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+																		<Avatar class="ml-2 avatar-endpoint" icon="pi pi-mobile" size="small" />
 																		<b class="line-height-4">{{ep.name || ep.id}}</b>
-																		<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
-																		<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != user.name" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="ep.labels"/>
+																		<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative relative-top-2"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+																		<ChipList @change="changeLabels(ep)" class="ml-2 relative relative-top-4" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != user.name" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="ep.labels"/>
 																	</div>
 																	<div class="flex" v-if="!selectEp">
 																		<span class="py-1 px-2 opacity-70" v-if="!selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
 																		<span class="py-1 px-2 opacity-70 mr-4" v-if="!selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
-																		<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+																		<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  class="status-inline"/>
 																	</div>
 																</div>
 															</div>
@@ -395,8 +395,8 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 									</template>
 							</DataView>
 							<div v-if="more.default" class="message-item pointer text-center py-3 opacity-50" @click="nextUsers" >
-								<i v-if="!loading" class="pi pi-arrow-down mr-1 relative" style="top: 1px;"/> 
-								<i v-else class="pi pi-spin pi-spinner relative" style="top: 2px;margin: 0;width:16px;height: 16px;font-size: 16px;"></i>
+								<i v-if="!loading" class="pi pi-arrow-down mr-1 relative relative-top-1"/> 
+								<i v-else class="pi pi-spin pi-spinner relative spinner-inline"></i>
 								{{t('More')}}
 							</div>
 							
@@ -420,15 +420,15 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 														<div class="flex-item flex gap-2">
 															<UserAvatar :size="28" :username="key"/>
 															<b class="line-height-4">{{ key }} </b>
-															<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+															<Avatar class="ml-2 avatar-endpoint" icon="pi pi-mobile" size="small" />
 															<b class="line-height-4">{{usersMap[key].endpoints?.instances[0].name || usersMap[key].endpoints?.instances[0].id}}</b>
-															<span v-if="usersMap[key].endpoints?.instances[0]?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
-															<ChipList @change="changeLabels(usersMap[key].endpoints?.instances[0])" class="ml-2 relative" style="top: 4px;" :readonly="usersMap[key].endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp && usersMap[key]?.endpoints?.instances[0]?.labels" v-model:list="usersMap[key].endpoints.instances[0].labels"/>
+															<span v-if="usersMap[key].endpoints?.instances[0]?.isLocal && !selectEp" class="ml-2 relative relative-top-2"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+															<ChipList @change="changeLabels(usersMap[key].endpoints?.instances[0])" class="ml-2 relative relative-top-4" :readonly="usersMap[key].endpoints?.instances[0]?.id != selectedMesh?.agent?.id" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp && usersMap[key]?.endpoints?.instances[0]?.labels" v-model:list="usersMap[key].endpoints.instances[0].labels"/>
 														</div>
 														<div class="flex" v-if="!selectEp">
 															<span class="py-1 px-2 opacity-70" v-if="!isMobile && !selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↑{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.send)}}</span>
 															<span class="py-1 px-2 opacity-70 mr-4" v-if="!isMobile && !selectEp && stats[usersMap[key].endpoints?.instances[0].id]">↓{{bitUnit(stats[usersMap[key].endpoints?.instances[0].id]?.receive)}}</span>
-															<Status :run="usersMap[key].endpoints?.instances[0]?.online" :tip="timeago(usersMap[key].endpoints?.instances[0]?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+															<Status :run="usersMap[key].endpoints?.instances[0]?.online" :tip="timeago(usersMap[key].endpoints?.instances[0]?.heartbeat)"  class="status-inline"/>
 															
 															<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(key)"  v-if="!selectEp && manage"/>
 															<Button severity="secondary" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
@@ -441,7 +441,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																<div class="flex-item flex gap-2" @click="loadepByUser(key)">
 																	<UserAvatar :size="28" :username="key"/>
 																	<b class="line-height-4">{{ key }}</b>
-																	<OverlayBadge :value="usersMap[key].endpoints?.count" size="small"><Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" /></OverlayBadge>
+																	<OverlayBadge :value="usersMap[key].endpoints?.count" size="small"><Avatar class="ml-2 avatar-endpoint" icon="pi pi-mobile" size="small" /></OverlayBadge>
 																</div>
 																<Button severity="secondary" icon="iconfont icon-add-chat" text @click.stop="chatUser(key)"  v-if="!selectEp && manage"/>
 																<Button severity="secondary" class="mr-2" size="small" icon="pi pi-times" text @click.stop="removeGroupUser(group?.id,key)"  v-if="!selectEp && manage"/>
@@ -450,15 +450,15 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 																<div class="flex flex-col message-item pointer" v-for="(ep, index) in usersMap[key].endpoints?.instances" :key="index" >
 																	<div class="flex flex-col py-3 pr-3 pl-2 gap-4 w-full" :class="{ ' border-surface-200 dark:border-surface-700': index !== 0 }" @click="select(ep)">
 																		<div class="flex-item flex gap-2">
-																			<Avatar class="ml-2" icon="pi pi-mobile" size="small" style="background-color: #ece9fc; color: #2a1261" />
+																			<Avatar class="ml-2 avatar-endpoint" icon="pi pi-mobile" size="small" />
 																			<b class="line-height-4">{{ep.name || ep.id}}</b>
-																			<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative" style="top: 2px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
-																			<ChipList @change="changeLabels(ep)" class="ml-2 relative" style="top: 4px;" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != key" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="ep.labels"/>
+																			<span v-if="ep?.isLocal && !selectEp" class="ml-2 relative relative-top-2"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+																			<ChipList @change="changeLabels(ep)" class="ml-2 relative relative-top-4" :readonly="ep.id != selectedMesh?.agent?.id && selectedMesh?.agent?.username != key" :placeholder="t('Label')" listType="tag" v-if="!isMobile && !selectEp" v-model:list="ep.labels"/>
 																		</div>
 																		<div class="flex" v-if="!selectEp">
 																			<span class="py-1 px-2 opacity-70" v-if="!isMobile && !selectEp && stats[ep.id]">↑{{bitUnit(stats[ep.id]?.send)}}</span>
 																			<span class="py-1 px-2 opacity-70 mr-4" v-if="!isMobile && !selectEp && stats[ep.id]">↓{{bitUnit(stats[ep.id]?.receive)}}</span>
-																			<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  style="top: 9px;margin-right: 0;"/>
+																			<Status :run="ep?.online" :tip="timeago(ep?.heartbeat)"  class="status-inline"/>
 																		</div>
 																	</div>
 																</div>
@@ -489,7 +489,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 		<Dialog class="noheader" v-model:visible="visibleUserSelector" modal :style="{ width: '25rem' }">
 				<AppHeader :back="() => visibleUserSelector = false" :main="false">
 						<template #center>
-							<b>{{t('Append Users')}} <Badge class="ml-2 relative" style="top:-2px" v-if="Object.keys(selectedUsers).length>0" :value="Object.keys(selectedUsers).length"/></b>
+							<b>{{t('Append Users')}} <Badge class="ml-2 relative relative-top-n2" v-if="Object.keys(selectedUsers).length>0" :value="Object.keys(selectedUsers).length"/></b>
 						</template>
 				
 						<template #end> 
@@ -517,7 +517,7 @@ const manage = computed(()=> selectedMesh.value?.agent?.username == 'root')
 				</div>
 			</div>
 			<div class="p-2" v-else>
-				<Textarea disabled style="background-color: transparent !important;" class="w-full" rows="8" cols="40" :value="permitStr"/>
+				<Textarea disabled class="textarea-bg-transparent w-full" rows="8" cols="40" :value="permitStr"/>
 				<div class="flex mt-1">
 					<Button size="small"  :label="t('Copy')" class="flex-item mr-1"  @click="copy"></Button>
 					<Button size="small"  :label="t('Download')" class="flex-item"  @click="download"></Button>

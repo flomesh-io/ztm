@@ -57,7 +57,7 @@ onMounted(()=>{
 </script>
 
 <template>
-	<div class="col-12 min-h-screen pl-0 pr-0 pt-0" style="background: rgba(56, 4, 40, 0.9);">
+	<div class="col-12 min-h-screen pl-0 pr-0 pt-0 setting-page-bg">
 		<AppHeader>
 				<template #start>
 					<Button @click="close" icon="pi pi-angle-left" severity="secondary" text />
@@ -77,21 +77,21 @@ onMounted(()=>{
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap">
 						<div class="font-medium font-bold w-3 text-white">Agent {{t('Port')}}</div>
-						<InputGroup class="search-bar" style="border-radius: 8px;" >
+						<InputGroup class="search-bar search-bar-input-group">
 							<InputNumber :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" :min="0" :max="65535" placeholder="0-65535" v-model="port" />
 							<Button size="small" icon="pi pi-sort" />
 						</InputGroup>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap text-white">
 						<div class="font-medium font-bold w-3">Hub {{t('Names')}}</div>
-						<InputGroup class="search-bar" style="border-radius: 8px;" >
+						<InputGroup class="search-bar search-bar-input-group">
 							<InputText :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" placeholder="host:port" v-model="hubNames" />
 							<Button size="small" icon="pi pi-hashtag" />
 						</InputGroup>
 				</li>
 				<li class="flex align-items-center py-3 px-2  surface-border flex-wrap ">
 						<div class="font-medium font-bold w-3 text-white">Hub {{t('Listen')}}</div>
-						<InputGroup class="search-bar" style="border-radius: 8px;" >
+						<InputGroup class="search-bar search-bar-input-group">
 							<InputText :useGrouping="false" class="drak-input bg-gray-900 text-white flex-1" placeholder="host:port" v-model="hubListen" />
 							<Button size="small" icon="pi pi-send" />
 						</InputGroup>

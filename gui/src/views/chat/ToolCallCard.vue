@@ -25,20 +25,20 @@ const args_key = computed(() => (tc) => {
 })
 </script>
 <template>
-	<ul v-if="props.isHistory" class="px-4" style="list-style: none;">
+	<ul v-if="props.isHistory" class="px-4 list-style-none">
 		<li class="mb-2" v-for="(tc,idx) in props.toolcalls" :key="idx">
 			<div v-if="tc?.tool_call">
 				<Fieldset class="innerset" :collapsed="true" :toggleable="true">
 						<template #legend="{ toggleCallback }">
 							<div class="flex items-center p-2 pointer" @click="toggleCallback">
 								<div>
-									<Badge style="padding:0 !important" size="small"  :value="tc.tool_call?.index+1"/>
+									<Badge class="badge-padding-0" size="small" :value="tc.tool_call?.index+1"/>
 								</div>
-								<div class="flex-item relative pl-2" style="top:-2px">
-									<img :src="getKeywordIcon(tc.tool_call[tc.tool_call?.type]?.name.split('___')[1], 'mcp')" width="20px" height="20px" class="relative mr-1" style="top:4px"/>
+								<div class="flex-item relative pl-2 relative-top-n2">
+									<img :src="getKeywordIcon(tc.tool_call[tc.tool_call?.type]?.name.split('___')[1], 'mcp')" width="20px" height="20px" class="relative mr-1 relative-top-4"/>
 									<b class="pr-2 " >{{tc.tool_call[tc.tool_call?.type]?.name.split('___')[0]}} ( {{args_key(tc).length}} {{t('Args')}} )</b>
 								</div>
-								<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
+								<i class="pi pi-angle-down relative relative-top-4-right5"/>
 							</div>
 						</template>
 						<p class="mt-2 mx-0 mb-0 argList">
@@ -49,27 +49,27 @@ const args_key = computed(() => (tc) => {
 				</Fieldset>
 			</div>
 			<div class="mt-2 mb-4" v-if="tc?.data">
-				<Message v-tooltip="msg?.text" style="word-break: break-all;" v-for="(msg) in tc?.data?.content||[]" severity="success" icon="pi pi-check">
+				<Message v-tooltip="msg?.text" class="word-break-all" v-for="(msg) in tc?.data?.content||[]" severity="success" icon="pi pi-check">
 					{{msg?.text.length>150?(msg?.text?.substr(0,150)+'...'):msg?.text}}
 				</Message>
 			</div>
-			<ProgressBar v-else-if="props.isHistory" mode="indeterminate" style="height: 6px"></ProgressBar>
+			<ProgressBar v-else-if="props.isHistory" mode="indeterminate" class="progressbar-thin"></ProgressBar>
 		
 		</li>
 	</ul>
-	<ul v-else class="px-4" style="list-style: none;">
+	<ul v-else class="px-4 list-style-none">
 		<li class="mb-2" v-for="(tool_call,idx) in props.toolcalls" :key="idx">
 			<Fieldset class="innerset" :collapsed="true" :toggleable="true">
 					<template #legend="{ toggleCallback }">
 						<div class="flex items-center p-2 pointer" @click="toggleCallback">
 							<div>
-								<Badge style="padding:0 !important" size="small"  :value="tool_call?.index+1"/>
+								<Badge class="badge-padding-0" size="small" :value="tool_call?.index+1"/>
 							</div>
-							<div class="flex-item relative pl-2" style="top:-2px">
-								<img :src="getKeywordIcon(tool_call[tool_call?.type]?.name.split('___')[1], 'mcp')" width="20px" height="20px" class="relative mr-1" style="top:4px"/>
+							<div class="flex-item relative pl-2 relative-top-n2">
+								<img :src="getKeywordIcon(tool_call[tool_call?.type]?.name.split('___')[1], 'mcp')" width="20px" height="20px" class="relative mr-1 relative-top-4"/>
 								<b class="pr-2 " >{{tool_call[tool_call?.type]?.name.split('___')[0]}} ( {{args_key({tool_call}).length}} {{t('Args')}} )</b>
 							</div>
-							<i class="pi pi-angle-down relative" style="top:4px;right:5px"/>
+							<i class="pi pi-angle-down relative relative-top-4-right5"/>
 						</div>
 					</template>
 					<p class="mt-2 mx-0 mb-0 argList">

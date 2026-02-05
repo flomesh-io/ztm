@@ -10,8 +10,7 @@
     <div
       v-else
       :size="space"
-      class="w-full flex"
-      style="flex-direction: column;gap: 0.5rem;"
+      class="w-full flex input-list-col"
     >
       <div
         v-for="(item, index) in d"
@@ -27,8 +26,7 @@
 						:listIndex="index"
 					/>
           <div
-            class="font-left pl-1"
-						style="width: 73px;"
+            class="font-left pl-1 input-list-w-73"
             v-if="!readonly"
           >
             <Button

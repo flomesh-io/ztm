@@ -78,7 +78,7 @@ watch(()=>visibleTry.value,()=>{
 				<Button :loading="props.loading" size="small" :disabled="!username || username == 'root'" :label="t('Join')" class="ml-2"  @click="tryMesh"></Button>
 			</div>
 			<div class="pt-2 opacity-70 text-sm">
-				<i class="pi pi-info-circle relative" style="top: 1px;"/> {{t('Join our sample mesh for a first experience of ZTM')}}
+				<i class="pi pi-info-circle relative relative-top-1"/> {{t('Join our sample mesh for a first experience of ZTM')}}
 			</div>
 		</div>
 	</Dialog>

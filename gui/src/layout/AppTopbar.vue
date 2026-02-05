@@ -214,12 +214,12 @@ const goApp = (item) => {
 <template>
 	<Menubar class="app-top-bar mobile-hidden" :model="model" breakpoint="0px">
 			<template #start>
-				<img @click.stop="toggleLeft" class="logo mt-3 mb-1" style="cursor: pointer;" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="XeyeSvg" height="50"/>
+				<img @click.stop="toggleLeft" class="logo mt-3 mb-1 cursor-pointer" @mouseleave="logoHover = false" @mouseover="logoHover = true" :src="XeyeSvg" height="50"/>
 			</template>
 			<template #item="{ item, props, hasSubmenu, root }">
 					<router-link v-if="item.route && !item.cond" v-slot="{ href, navigate }" :to="item.route" custom>
 							<a class="flex flex-column" :class="{'actived':focusMenu == item.route}" v-ripple :href="href" v-bind="props.action"  @click="() => { focusMenu = item.route;return navigate}">
-									<Badge v-if="item.label == 'Chat' && unread>0" :value="unread" severity="danger" class="absolute" style="right: 2px;top:2px"/>
+									<Badge v-if="item.label == 'Chat' && unread>0" :value="unread" severity="danger" class="absolute badge-top-right"/>
 									<svg v-if="item.svg" class="svg w-2rem h-2rem" aria-hidden="true">
 										<use :xlink:href="item.svg"></use>
 									</svg>
@@ -248,7 +248,7 @@ const goApp = (item) => {
 					<div class="flex align-items-center flex-column w-full">
 						
 							<div @click="toggleUsermenu" class="w-full flex flex-column justify-content-center align-items-center py-3">
-									<Avatar  icon="pi pi-user" class="mb-2" style="background-color: #9855f7;" shape="circle" />
+									<Avatar icon="pi pi-user" class="mb-2 avatar-purple" shape="circle" />
 									<div class="text-ellipsis w-full text-sm px-2 text-center"><b>{{selectedMesh?.agent?.name||selectedMesh?.agent?.username||'Agent'}}</b></div>
 									<!-- <Tag >{{selectedMesh?.agent?.username||'User'}}</Tag> -->
 							</div>

@@ -1,0 +1,488 @@
+.setting-page-bg {
+	background: rgba(56, 4, 40, 0.9);
+}
+
+.search-bar-input-group {
+	border-radius: 8px;
+}
+
+.input-bg-transparent {
+	background-color: transparent;
+}
+
+.textarea-bg-transparent {
+	background-color: transparent !important;
+}
+
+.avatar-endpoint {
+	background-color: #ece9fc;
+	color: #2a1261;
+}
+
+.relative-top-1 {
+	top: 1px;
+}
+
+.relative-top-2 {
+	top: 2px;
+}
+
+.relative-top-3 {
+	top: 3px;
+}
+
+.relative-top-4 {
+	top: 4px;
+}
+
+.relative-top-5 {
+	top: 5px;
+}
+
+.relative-top-n1 {
+	top: -1px;
+}
+
+.relative-top-n2 {
+	top: -2px;
+}
+
+.status-inline {
+	top: 9px;
+	margin-right: 0;
+}
+
+.status-no-margin {
+	margin-right: 0 !important;
+}
+
+.status-room {
+	top: 7px;
+	margin-right: 0;
+	right: -10px;
+}
+
+.spinner-inline {
+	top: 2px;
+	margin: 0;
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.flex-1 {
+	flex: 1;
+}
+
+.flex-2 {
+	flex: 2;
+}
+
+.flex-3 {
+	flex: 3;
+}
+
+.progressbar-thin {
+	height: 6px;
+}
+
+.avatar-header {
+	background-color: rgba(255, 255, 255, 0.5);
+	top: -1px;
+}
+
+.signout-link {
+	font-size: 8pt;
+	color: #fff;
+	opacity: 0.7;
+	text-decoration: underline;
+}
+
+.mesh-star-icon {
+	color: orange;
+}
+
+.overflow-hidden {
+	overflow: hidden;
+}
+
+.mesh-check-icon {
+	right: -30px;
+	bottom: -30px;
+	opacity: 0.5;
+	font-size: 100px;
+}
+
+.max-width-none {
+	max-width: none;
+}
+
+.z-index-2 {
+	z-index: 2;
+}
+
+.z-index-3 {
+	z-index: 3;
+}
+
+.line-height-30 {
+	line-height: 30px;
+}
+
+.line-height-30-mt {
+	line-height: 30px;
+	margin-top: 20%;
+}
+
+.app-btn-back {
+	color: #fff;
+	background-color: transparent !important;
+}
+
+.app-icon-img {
+	border-radius: 4px;
+	overflow: hidden;
+	margin: auto;
+}
+
+.badge-app-icon {
+	margin-left: -10px;
+	margin-top: -10px;
+}
+
+.badge-room-updated {
+	right: -10px;
+	top: -10px;
+}
+
+.spinner-overlay {
+	width: 30px;
+	height: 30px;
+	margin-left: -35px;
+	margin-top: 5px;
+}
+
+.cursor-pointer {
+	cursor: pointer;
+}
+
+.badge-top-right {
+	right: 2px;
+	top: 2px;
+}
+
+.badge-bottombar {
+	margin-left: 24px;
+	top: 3px;
+}
+
+.avatar-purple {
+	background-color: #9855f7;
+}
+
+.ep-selector-max-w {
+	max-width: 200px;
+}
+
+.column-width-100 {
+	width: 100px;
+}
+
+.select-filter-min-w {
+	min-width: 12rem;
+}
+
+.scroll-panel-fill {
+	top: 0;
+	bottom: 0;
+}
+
+.scroll-panel-bottom {
+	bottom: 0;
+}
+
+.botchat-layout {
+	height: calc(100vh - 37px);
+	flex: 1;
+	margin: 0;
+	flex-direction: column;
+}
+
+.btn-remove-room {
+	right: -12px;
+	top: -12px;
+	opacity: 0.6;
+}
+
+.relative-top-6 {
+	top: 6px;
+}
+
+.relative-top-4-right5 {
+	top: 4px;
+	right: 5px;
+}
+
+.list-style-none {
+	list-style: none;
+}
+
+.badge-padding-0 {
+	padding: 0 !important;
+}
+
+.word-break-all {
+	word-break: break-all;
+}
+
+.add-tag-input-w {
+	width: 100px;
+}
+
+.nav-li-compact {
+	padding: 0;
+	line-height: 30px;
+}
+
+.line-height-16 {
+	line-height: 16px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.line-height-40 {
+	line-height: 40px;
+}
+
+.avatar-center {
+	margin: auto;
+}
+
+.tag-input-border {
+	background-color: transparent;
+	border-style: none none solid none;
+	border-width: 1px;
+	border-color: #aaa;
+	outline: none;
+}
+
+.file-block-pt {
+	padding-top: 120px;
+}
+
+.drawer-h-50 {
+	height: 50%;
+}
+
+.drawer-h-80 {
+	height: 80%;
+}
+
+.flex-gap-5 {
+	gap: 5px;
+}
+
+.input-group-addon-btn-radius-0 {
+	border-radius: 0;
+}
+
+.nav-ul-z2 {
+	z-index: 2;
+}
+
+.select-max-w-200 {
+	max-width: 200px;
+}
+
+.toolcall-badge-pos {
+	top: -2px;
+}
+
+.tag-max-w-140 {
+	max-width: 140px;
+}
+
+.line-height-25 {
+	line-height: 25px;
+}
+
+.btn-send-fixed {
+	right: 10px;
+	bottom: 70px;
+}
+
+.rdp-input-search {
+	margin-top: 50px;
+}
+
+.input-list-col {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.input-list-w-73 {
+	width: 73px;
+}
+
+.empty-img-center {
+	margin: auto;
+}
+
+.empty-img-max-w {
+	margin: auto;
+	max-width: 400px;
+}
+
+.file-attrs {
+	font-size: 8pt;
+	opacity: 0.7;
+}
+
+.login-overflow-hidden {
+	overflow: hidden;
+}
+
+.svg-opacity-07 {
+	opacity: 0.7;
+}
+
+.login-form-wrapper {
+	position: relative;
+	border-radius: 0;
+	z-index: 1000;
+}
+
+.login-input-padding {
+	padding: 1rem;
+}
+
+.login-label {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.login-title {
+	color: rgba(255, 255, 255, 1);
+}
+
+.login-subtitle {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.browser-padding {
+	padding: 5px 10px 5px 0;
+}
+
+.browser-btn-left {
+	left: 5px;
+}
+
+.toggle-left {
+	left: -5px;
+}
+
+.browser-history-hidden {
+	display: none;
+}
+
+.shortcut-btn-h {
+	height: 30px;
+}
+
+.browser-dropzone {
+	font-size: 30px;
+	width: 60px;
+	height: 60px;
+	line-height: 56px;
+	border: 3px dashed rgba(255, 255, 255, 0.6);
+	border-radius: 10px;
+	margin: auto;
+}
+
+.browser-empty-msg {
+	border-radius: 15px;
+	font-size: 20px;
+	margin-top: 30%;
+}
+
+.drawer-h-30 {
+	height: 30px;
+}
+
+.progressbar-center {
+	height: 6px;
+	margin: auto;
+}
+
+.term-fullscreen-bg {
+	top: 0;
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: rgba(50, 4, 40, 1);
+}
+
+.term-height-full {
+	height: 100%;
+}
+
+.notfound-outer {
+	border-radius: 56px;
+	padding: 0.3rem;
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 10%, rgba(255, 255, 255, 0.4) 30%);
+}
+
+.notfound-card {
+	border-radius: 53px;
+}
+
+.notfound-icon-box {
+	height: 3.5rem;
+	width: 3.5rem;
+}
+
+.backends-node-pad {
+	padding-left: 10px;
+}
+
+.backends-node-pad-35 {
+	padding-left: 35px;
+}
+
+.backends-node-pad-40 {
+	padding-left: 40px;
+}
+
+.backends-label-w {
+	width: 180px;
+	word-wrap: break-word;
+}
+
+.btn-save-backend {
+	position: fixed;
+	right: 30px;
+	bottom: 120px;
+}
+
+.error-outer {
+	border-radius: 56px;
+	padding: 0.3rem;
+	background: linear-gradient(180deg, rgba(233, 30, 99, 0.4) 10%, rgba(33, 150, 243, 0) 30%);
+}
+
+.access-outer {
+	border-radius: 56px;
+	padding: 0.3rem;
+	background: linear-gradient(180deg, rgba(247, 149, 48, 0.4) 10%, rgba(247, 149, 48, 0) 30%);
+}
+
+.error-icon-box {
+	height: 3.2rem;
+	width: 3.2rem;
+}
+
+.link-white {
+	color: #fff;
+}

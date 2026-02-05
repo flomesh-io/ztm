@@ -82,14 +82,14 @@ onMounted(()=>{
 	<div class="min-h-screen surface-ground relative">
 	<AppHeader :back="back">
 			<template #center>
-				<Status v-if="!!props.ep" :run="props.ep.online" :tip="timeago(props.ep.heartbeat)"  style=""/>
+				<Status v-if="!!props.ep" :run="props.ep.online" :tip="timeago(props.ep.heartbeat)" />
 				<b v-if="!!props.ep">{{ props.ep.name|| 'Unknow EP' }} <span v-if="!!props.ep.username">({{props.ep.username}})</span></b>
 				<span v-else>Loading...</span>
 				
 			</template>
 	
 			<template #end> 
-				<span v-if="!!props.ep && props.ep.isLocal" class="mr-2 relative" style="top: -1px;"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
+				<span v-if="!!props.ep && props.ep.isLocal" class="mr-2 relative relative-top-n1"><Tag severity="contrast" >{{t('Local')}}</Tag></span>
 				<Button v-if="selectedMesh?.agent?.username == 'root' && props.ep.username != 'root'" icon="pi pi-trash" severity="danger"  @click="removeEp"/>
 			</template>
 	</AppHeader>
