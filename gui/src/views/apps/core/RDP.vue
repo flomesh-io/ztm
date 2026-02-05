@@ -146,7 +146,7 @@ onMounted(()=>{
 						<b class="mr-2">RDP | </b>
 						<IconField>
 							<InputIcon class="pi pi-search" />
-							<InputText style="background-color: transparent;" v-model="filter.keyword" :placeholder="t('Search')" @input="searchEps"/>
+							<InputText class="input-bg-transparent" v-model="filter.keyword" :placeholder="t('Search')" @input="searchEps"/>
 						</IconField>
 					</template>
 			
@@ -156,12 +156,12 @@ onMounted(()=>{
 			</AppHeader>
 			<Loading v-if="loading && filter.offset==0"/>
 			<ScrollPanel v-else-if="endpoints && endpoints.length >0">
-			<DataView class="message-list" style="margin-top: 50px;" :value="endpoints">
+			<DataView class="message-list rdp-input-search" :value="endpoints">
 					<template #list="slotProps">
 							<div class="flex flex-col message-item pointer" v-for="(node, index) in slotProps.items" :key="index">
 								<div class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
 										<div class="w-40 relative">
-											<Avatar icon="pi pi-user" size="small" style="background-color: #ece9fc; color: #2a1261" />
+											<Avatar icon="pi pi-user" size="small" class="avatar-endpoint" />
 										</div>
 										<div >
 												<div class="flex">
@@ -183,8 +183,8 @@ onMounted(()=>{
 							</div>
 							
 							<div v-if="more" class="message-item pointer text-center py-3 opacity-50" @click="nextEndpoints" >
-								<i v-if="!loading" class="pi pi-arrow-down mr-1 relative" style="top: 1px;"/> 
-								<i v-else class="pi pi-spin pi-spinner relative" style="top: 2px;margin: 0;width:16px;height: 16px;font-size: 16px;"></i>
+								<i v-if="!loading" class="pi pi-arrow-down mr-1 relative relative-top-1"/> 
+								<i v-else class="pi pi-spin pi-spinner relative spinner-inline"></i>
 								{{t('More')}}
 							</div>
 					</template>

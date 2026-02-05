@@ -474,7 +474,7 @@ onBeforeUnmount(()=>{
 				<Button v-else icon="pi pi-ellipsis-h" @click="showManage" severity="secondary" text />
 			</template>
 	</AppHeader>
-	<div class="w-full flex" style="height: calc(100vh - 37px);flex: 1;margin: 0;flex-direction: column;">
+	<div class="w-full flex botchat-layout">
 		<deep-chat
 			:textToSpeech='{"volume": 0.9}'
 			ref="chat"

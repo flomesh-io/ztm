@@ -242,7 +242,7 @@ const pay = () => {
 				</template>
 		</AppHeader>
 		<div class="md:m-3 relative h-full min-h-screen">
-			<ScrollPanel class="w-full absolute" style="top:0px;bottom: 0;">
+			<ScrollPanel class="w-full absolute scroll-panel-fill">
 			<BlockViewer containerClass="surface-section px-3 md:px-4 md:pb-7 lg:px-5 pt-4" >
 			<Loading v-if="loading" />
 			<div class="grid" v-else>
@@ -287,12 +287,12 @@ const pay = () => {
 							</li>
 						</ul>
 						<div class="pl-2" v-if="!permit">
-							<i class="pi pi-info-circle relative" style="top: 1px;"/>
+							<i class="pi pi-info-circle relative relative-top-1"/>
 							{{t('For non-root users, get your')}} <Button @click="toggleUsermenu" class="p-0" label="<Identity>" link /> {{t("and send it to 'root' user to acquire a permit")}}
 						</div>
 						
 						<div class="pl-2 mt-3" v-if="!permit && platform() == 'ios' && false">
-							<div><i class="pi pi-cart-arrow-down relative" style="top: 1px;"/> {{t('Or, you can')}} <Button @click="pay" class="p-0" :label="t('<Buy>')" link /> {{t('an AWS hub and received a root permit')}}</div>
+							<div><i class="pi pi-cart-arrow-down relative relative-top-1"/> {{t('Or, you can')}} <Button @click="pay" class="p-0" :label="t('<Buy>')" link /> {{t('an AWS hub and received a root permit')}}</div>
 						</div>
 					</div>
 				</div>

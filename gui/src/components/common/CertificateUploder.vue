@@ -183,19 +183,19 @@ const typeOk = () => {
 										<Chip v-if="isLiveSample" severity="success" >
 											<i class="pi pi-verified text-green-600 text-xl mr-2" />{{t('Live Mesh')}}
 											<span v-tooltip="t('Clear')" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
-												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
+												<i class="pi pi-times-circle relative text-tip relative-top-1" />
 											</span>
 										</Chip>
                     <Chip v-else-if="isValid" severity="success" >
 											<i class="pi pi-verified text-green-600 text-xl mr-2" />{{t('Configured')}}
 											<span v-tooltip="t('Clear')" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
-												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
+												<i class="pi pi-times-circle relative text-tip relative-top-1" />
 											</span>
 										</Chip>
                     <Chip v-else severity="error" >
 											<i class="pi pi-exclamation-circle text-red-600 text-xl mr-2" />{{t('Format error')}}
 											<span v-tooltip="t('Clear')" class="ml-2 font-medium pointer" @click="customRemoveUploadedFile({files,removeFileCallback})">
-												<i class="pi pi-times-circle relative text-tip" style="top: 1px;" />
+												<i class="pi pi-times-circle relative text-tip relative-top-1" />
 											</span>
 										</Chip>
                 </div>

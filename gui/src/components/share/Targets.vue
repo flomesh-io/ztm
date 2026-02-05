@@ -56,12 +56,12 @@ watch(()=>selectedMesh,()=>{
 									<Avatar v-else icon="pi pi-user" size="small"  />
 									
 								</div>
-								<div class="flex-item" style="line-height: 25px;">
+								<div class="flex-item line-height-25">
 										<div class="flex" v-if="!!item?.peer">
 											<div class="flex-item" >
 												<b>{{item?.peer}}</b>
 											</div>
-											<Status :run="true" style="top: 7px;margin-right: 0;right: -10px;"/>
+											<Status :run="true" class="status-room"/>
 										</div>
 										<div class="flex" v-else>
 											<div class="flex-item" >

@@ -130,7 +130,7 @@ const saveBackend = () => {
 	<div :style="{height: height, overflow: 'hidden'}">
 	<OrganizationChart :style="{marginTop: mt}"  class="vertical-organization" :value="data" collapsible>
 		 <template #server="slotProps">
-					<div class="vertical-node" style="padding-left:10px;">
+					<div class="vertical-node backends-node-pad">
 						<div class="item">
 							<InputGroup>
 								<InputGroupAddon>LISTEN</InputGroupAddon>
@@ -148,10 +148,10 @@ const saveBackend = () => {
 		 </template>
 		 <template #desktop="slotProps">
 					<div class="flex align-items-center vertical-node">
-						<div class="mr-2" style="padding-left:35px;">
+						<div class="mr-2 backends-node-pad-35">
 							 <Avatar :icon="`pi pi-${slotProps.node.type}`" class="right-icon " />
 						</div>
-						<div class="font-medium text" style="width: 180px;word-wrap:break-word">{{ slotProps.node.label }}</div>
+						<div class="font-medium text backends-label-w">{{ slotProps.node.label }}</div>
 					</div>
 					<div class="actions">
 						<Button class="mini-btn mb-2"  v-if="slotProps.node.children.length>0" rounded :label="slotProps.node.children.length"/>
@@ -160,7 +160,7 @@ const saveBackend = () => {
 		 </template>
 		 <template #globe="slotProps">
 					<div class="flex align-items-center vertical-node">
-						<div class="mr-2" style="padding-left:40px;">
+						<div class="mr-2 backends-node-pad-40">
 							 <Avatar :icon="`pi pi-${slotProps.node.type}`" class="right-icon " />
 						</div>
 						<div class="font-medium text-lg">{{ slotProps.node.label }}</div>
@@ -174,5 +174,5 @@ const saveBackend = () => {
 		 </template>
 	</OrganizationChart>
 	</div>
-	<Button @click="saveBackend" :disabled="data.children.length==0" icon="pi pi-check" rounded aria-label="Filter" style="position: fixed;right: 30px;bottom:120px"/>
+	<Button @click="saveBackend" :disabled="data.children.length==0" icon="pi pi-check" rounded aria-label="Filter" class="btn-save-backend"/>
 </template>

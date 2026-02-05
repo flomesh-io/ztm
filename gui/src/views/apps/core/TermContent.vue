@@ -1,7 +1,7 @@
 <template>
-	<div style="top: 0;position: fixed;bottom: 0;left: 0;right: 0;background: rgba(50, 4, 40, 1);">
+	<div class="term-fullscreen-bg">
 		<Terminal
-			style="height: 100%;"
+			class="term-height-full"
 			welcomeMessage="Welcome to ztmctl"
 			prompt="ztm $"
 			aria-label="ztmctl"

@@ -96,11 +96,11 @@ const findMesh = computed(() => (n) => meshes.value.find((m) => m.name == n) || 
 					 <div class="topbar-mesh-select">
 						 <div class="topbar-mesh-select-cell" >
 							 <div class="mb-1" v-if="slotProps.value">
-								<Status style="margin-right: 0 !important;"  :run="findMesh(slotProps.value.name).connected" :errors="findMesh(slotProps.value.name).errors" />
+								<Status class="status-no-margin"  :run="findMesh(slotProps.value.name).connected" :errors="findMesh(slotProps.value.name).errors" />
 							 </div>
 							 <div v-else class="pi pi-arrow-right-arrow-left"></div>
 							 <div v-if="slotProps.value"  v-tooltip.right="decodeURI(slotProps.value.name)">
-								<b class="text-ellipsis text-sm" style="max-width: none;">{{ decodeURI(slotProps.value.name) }}</b>
+								<b class="text-ellipsis text-sm max-width-none">{{ decodeURI(slotProps.value.name) }}</b>
 							 </div>
 							 <div v-else>
 									{{ slotProps.placeholder }}

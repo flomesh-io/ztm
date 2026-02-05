@@ -202,17 +202,17 @@ watch(()=>selectedMesh,()=>{
 </script>
 
 <template>
-	<div class="relative" style="z-index:3" v-if="!!app?.component">
+	<div class="relative z-index-3" v-if="!!app?.component">
 		<component :is="app.component" :app="selectApp.options" @close="close"/>
 	</div>
-	<div class="relative" style="z-index:3" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
+	<div class="relative z-index-3" v-else-if="!!mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component">
 		<component :is="mapping[`${selectApp?.provider||''}/${selectApp?.name}`]?.component" :app="selectApp.options" @close="close"/>
 	</div>
 	<div v-else>
 		<AppHeader v-if="props.layout=='absolute_container'" :main="true">
 				<template #center>
 					
-					<div v-if="!!selectedMesh" class="flex-item text-center" style="line-height: 30px;">
+					<div v-if="!!selectedMesh" class="flex-item text-center line-height-30">
 						<Status :run="selectedMesh.connected" :errors="selectedMesh.errors" />
 						{{selectedMesh?.name}}
 					</div>
@@ -225,7 +225,7 @@ watch(()=>selectedMesh,()=>{
 		</AppHeader>
 		<AppHeader class="transparent-header" v-else :main="true">
 				<template #start> 
-					<Button style="color: #fff;background-color: transparent !important;" icon="pi pi-chevron-left" class="app-btn"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
+					<Button class="app-btn-back app-btn" icon="pi pi-chevron-left"  v-if="!current" v-tooltip.left="t('Back')"  variant="text" severity="help" text @click="hide" ></Button>
 				</template>
 				<template #center>
 					<div class="center">
@@ -250,8 +250,8 @@ watch(()=>selectedMesh,()=>{
 		</AppHeader>
 		<ScrollPanel class="container_pannel" :class="props.layout" >
 				<div class="terminal_body px-4 pt-8"  v-if="!manage">
-					<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px;margin-top: 20%;">
-						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
+					<div v-if="props.layout=='absolute_container' && !selectedMesh && !!props.noInners" class="flex-item text-center text-3xl line-height-30-mt" :class="{'text-white-alpha-60':!props.theme}">
+						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-4xl relative relative-top-3" /> {{t('No mesh selected')}}
 					</div>
 					<div class="grid text-center" >
 							<div  
@@ -259,9 +259,9 @@ watch(()=>selectedMesh,()=>{
 								:class="{'opacity-80':appLoading[app.name],'opacity-60':!appLoading[app.name] && app.uninstall}" 
 								@click="routeApp(app)" 
 								class="py-4 relative text-center col-3 md:col-2" >
-								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="40" height="40" style="border-radius: 4px; overflow: hidden;margin: auto;"/>
-								<Badge class="absolute opacity-90" v-if="`${app?.provider||''}/${app.name}` == 'ztm/chat' && unread>0" style="margin-left: -10px;margin-top: -10px;" :value="unread" severity="danger"/>
-								<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60" style="width: 30px; height: 30px;margin-left: -35px;margin-top: 5px;" strokeWidth="10" fill="#000"
+								<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer app-icon-img" width="40" height="40"/>
+								<Badge class="absolute opacity-90 badge-app-icon" v-if="`${app?.provider||''}/${app.name}` == 'ztm/chat' && unread>0" :value="unread" severity="danger"/>
+								<ProgressSpinner v-if="appLoading[app.name]" class="absolute opacity-60 spinner-overlay" strokeWidth="10" fill="#000"
 										animationDuration="2s" aria-label="Progress" />
 								<div class="mt-1" v-tooltip="`${app.provider||'local'}/${app.name}`">
 									<b class="white-space-nowrap" :class="{'text-white-alpha-80':!props.theme}">
@@ -271,8 +271,8 @@ watch(()=>selectedMesh,()=>{
 								</div>
 							</div>
 					</div>
-					<div v-if="props.layout=='absolute_container' && !selectedMesh && !props.noInners" class="flex-item text-center text-xl" :class="{'text-white-alpha-60':!props.theme}" style="line-height: 30px">
-						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative" style="top: 3px;" /> {{t('No mesh selected')}}
+					<div v-if="props.layout=='absolute_container' && !selectedMesh && !props.noInners" class="flex-item text-center text-xl line-height-30" :class="{'text-white-alpha-60':!props.theme}">
+						<i class="iconfont icon-warn text-yellow-500 opacity-90 text-2xl relative relative-top-3" /> {{t('No mesh selected')}}
 					</div>
 				</div>
 				<div class="terminal_body px-4 pt-8" v-else>

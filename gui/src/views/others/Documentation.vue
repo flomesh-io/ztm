@@ -3,7 +3,7 @@
 	<div class="card">
 			<h3>一、启动 xeye 服务  </h3>
 			<p class="bg-primary border-round p-3">
-				需要在运行服务的机器上先安装 <a style="color: #fff;" href="https://github.com/flomesh-io/pipy/releases" class="font-medium hover:underline">pipy</a>、openssl(3.0以上版本）这2个可执行程序，另外，9090、6060 这2个端口需要可用。
+				需要在运行服务的机器上先安装 <a class="link-white" href="https://github.com/flomesh-io/pipy/releases" class="font-medium hover:underline">pipy</a>、openssl(3.0以上版本）这2个可执行程序，另外，9090、6060 这2个端口需要可用。
 			</p>
 
 			<h5>1. 下载工程</h5>

@@ -448,10 +448,10 @@ onMounted(() => {
 	  <div class="wave"></div>
 		<PipyVersion class="left-fixed" :playing="playing"/>
 		<div class="userinfo" >
-			<Avatar @click="toggleUsermenu" icon="pi pi-user" class="relative text-white" style="background-color: rgba(255, 255, 2555, 0.5);top:-1px" shape="circle" />
+			<Avatar @click="toggleUsermenu" icon="pi pi-user" class="relative text-white avatar-header" shape="circle" />
 			<span class="ml-1" @click="toggleUsermenu">{{auth?.username || user?.id}}</span>
 			<span v-if="isLogined">, </span>
-			<a v-if="isLogined" @click="logout" href="javascript:void(0)" class="ml-2" style=" font-size:8pt;color:#fff;opacity:0.7;text-decoration: underline;">{{t('Sign Out')}}</a>
+			<a v-if="isLogined" @click="logout" href="javascript:void(0)" class="ml-2 signout-link">{{t('Sign Out')}}</a>
 		</div>
 		<Menu ref="usermenu" id="user_menu" :model="usermenuitems" :popup="true" />
 		<div class="infotop">

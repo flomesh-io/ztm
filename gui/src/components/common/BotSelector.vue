@@ -106,7 +106,7 @@ onMounted(()=>{
 		<InputGroup >
 			<InputGroupAddon><i class="pi pi-pencil"/></InputGroupAddon>
 			<InputText  v-model="filter.keyword" :placeholder="t('New Bot')" @input="()=>{}"/>
-			<InputGroupAddon><Button icon="pi pi-plus" style="border-radius: 0;" :disabled="treeFilterPlus || !filter.keyword"  @click="addBot" /></InputGroupAddon>
+			<InputGroupAddon><Button icon="pi pi-plus" class="input-group-addon-btn-radius-0" :disabled="treeFilterPlus || !filter.keyword"  @click="addBot" /></InputGroupAddon>
 		</InputGroup>
 	</div>
 	<Tree 
@@ -145,7 +145,7 @@ onMounted(()=>{
 		:filter="true" 
 		:placeholder="t('Bots')"
 	  :selectedItemsLabel="`${selectBots.length} ${t('Bots')}`" 
-		style="max-width: 200px;" >
+		class="select-max-w-200">
 		<template #footer v-if="!botsFilterPlus && !!filter.keyword">
 			<div class="text-center pb-2 px-3">
 					<Button severity="secondary" class="w-full" size="small" icon="pi pi-plus" :label="t('Add')" @click.stop="addBot" />

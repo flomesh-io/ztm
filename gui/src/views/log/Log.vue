@@ -52,18 +52,18 @@ const isMobile = computed(isMobileWidth);
 
 <template>
 		<DataTable scrollable :size="isMobile?'small':''" v-model:filters="filters" filterDisplay="menu" :globalFilterFields="['type', 'message']" removableSort class="w-full" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]"  :value="logs" tableStyle="min-width: 50rem">
-			<Column frozen style="width: 100px;" :header="t('Time')" sortable field="time">
+			<Column frozen class="column-width-100" :header="t('Time')" sortable field="time">
 				<template #body="slotProps">
 					{{timeago(slotProps.data.time)}}
 				</template>
 			</Column>
-			<Column style="width: 100px;" :header="t('Type')" field="type" :showFilterMenu="true" :showFilterMatchModes="false" >
+			<Column class="column-width-100" :header="t('Type')" field="type" :showFilterMenu="true" :showFilterMatchModes="false" >
 				<template #body="slotProps">
 					<Tag :severity="severityMap(slotProps.data.type)">{{slotProps.data.type}}</Tag>
 				</template>
 				
 				<template #filter="{ filterModel, filterCallback }">
-						<Select v-model="filterModel.value" @change="filterCallback()" :options="statuses" :placeholder="t('Select')" class="p-column-filter" style="min-width: 12rem" :showClear="true">
+						<Select v-model="filterModel.value" @change="filterCallback()" :options="statuses" :placeholder="t('Select')" class="p-column-filter select-filter-min-w" :showClear="true">
 								<template #option="slotProps">
 										<Tag :value="slotProps.option" :severity="getSeverity(slotProps.option)" />
 								</template>
