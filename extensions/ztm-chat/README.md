@@ -1,0 +1,524 @@
+# ZTM Chat Channel Plugin for OpenClaw
+
+This plugin integrates OpenClaw with ZTM (Zero Trust Mesh) Chat, enabling decentralized P2P messaging through the ZTM network.
+
+## Features
+
+- **Peer-to-Peer Messaging**: Send and receive messages with other ZTM users
+- **Remote Connection**: Connect to ZTM Agent from anywhere via HTTP API
+- **Secure**: Supports mTLS authentication with ZTM certificates
+- **Decentralized**: Messages flow through the ZTM P2P network
+- **Multi-Account**: Support for multiple ZTM bot accounts with isolated state
+- **User Discovery**: Browse and discover other users in your ZTM mesh
+- **Real-Time Updates**: Watch mechanism with polling fallback
+- **Message Deduplication**: Prevents duplicate message processing
+- **Structured Logging**: Context-aware logger with sensitive data filtering
+- **Interactive Wizard**: CLI-guided configuration setup
+
+## Quick Start
+
+### Option 1: Use the Wizard (Recommended)
+
+```bash
+# Run the interactive setup wizard
+npx ztm-chat-wizard
+
+# Follow the on-screen prompts to configure:
+# 1. ZTM Agent URL
+# 2. Mesh name
+# 3. Bot username
+# 4. mTLS configuration (optional)
+# 5. Security settings
+```
+
+### Option 2: Manual Setup
+
+```bash
+# 1. Create bot account on ZTM
+ztm user add openclaw-bot
+
+# 2. Install the plugin
+openclaw plugins install -l ./extensions/ztm-chat
+
+# 3. Create config file
+cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
+{
+  "agentUrl": "https://your-ztm-agent.example.com:7777",
+  "meshName": "your-mesh-name",
+  "username": "openclaw-bot",
+  "certificate": "${ZTM_CERTIFICATE}",
+  "privateKey": "${ZTM_PRIVATE_KEY}",
+  "enableGroups": false,
+  "autoReply": true,
+  "messagePath": "/shared"
+}
+EOF
+
+# 4. Restart OpenClaw
+openclaw restart
+```
+
+## Prerequisites
+
+1. ZTM Agent running with Chat app installed (`ztm/app install chat`)
+2. A dedicated ZTM user account for the bot
+3. OpenClaw gateway installed (version 2026.1+ recommended)
+
+## Interactive Wizard Guide
+
+### Running the Wizard
+
+```bash
+# From plugin directory
+cd extensions/ztm-chat
+npx ztm-chat-wizard
+
+# Or install globally
+npm install -g @ztm/openclaw-ztm-chat
+ztm-chat-wizard
+```
+
+### Wizard Steps
+
+The wizard guides you through 5 configuration steps:
+
+| Step | Description | Options |
+|------|-------------|---------|
+| 1 | ZTM Agent URL | Default: `https://localhost:7777` |
+| 2 | Mesh Name | Required, alphanumeric + `-_` |
+| 3 | Bot Username | Default: `openclaw-bot` |
+| 4 | mTLS Authentication | Y/N, loads cert/key from files |
+| 5 | Security Settings | DM policy, allowFrom list |
+
+### Example Session
+
+```
+🤖 ZTM Chat Setup Wizard
+========================================
+
+Step 1: ZTM Agent Connection
+----------------------------
+ZTM Agent URL [https://localhost:7777]: https://my-ztm-agent.company.com:7777
+
+Testing connection...
+✓ Connected to https://my-ztm-agent.company.com:7777
+
+Step 2: Mesh Selection
+----------------------
+Mesh name: production-mesh
+
+Step 3: Bot Username
+-------------------
+Bot username [openclaw-bot]: my-bot
+
+Step 4: mTLS Authentication
+----------------------------
+Use mTLS authentication? (y/N): y
+Certificate file path [~/ztm/cert.pem]: ~/ztm/bot-cert.pem
+Private key file path [~/ztm/key.pem]: ~/ztm/bot-key.pem
+
+✓ mTLS certificates loaded successfully
+
+Step 5: Security Settings
+------------------------
+Direct Message Policy:
+  [1] Allow messages from all users
+  [2] Deny messages from all users
+  [3] Require explicit pairing
+Select: 1
+
+Allow messages from (comma-separated, * for all) [*]: alice, bob, dev-team
+
+Configuration Summary
+--------------------
+  Agent URL: https://my-ztm-agent.company.com:7777
+  Mesh Name: production-mesh
+  Username: my-bot
+  mTLS: Enabled
+  Auto Reply: true
+
+Save this configuration? (Y/n):
+Save to file [/home/user/.openclaw/channels/ztm-chat.json]:
+
+✓ Configuration saved to /home/user/.openclaw/channels/ztm-chat.json
+✓ ZTM Chat channel configured successfully!
+
+Next steps:
+  1. Restart OpenClaw: openclaw restart
+  2. Check status: openclaw channels status ztm-chat
+```
+
+### Auto-Discovery
+
+Discover existing ZTM configuration without running the wizard:
+
+```bash
+npx ztm-chat-discover
+
+# Output:
+📡 Discovered ZTM Configuration:
+   Agent URL: https://ztm-agent.example.com:7777
+   Mesh: production-mesh
+   Username: my-bot
+
+💡 To use this configuration, run: npx ztm-chat-wizard
+```
+
+### First-Run Detection
+
+When you first install and register the plugin with OpenClaw, you'll see:
+
+```
+══════════════════════════════════════════════════════════════
+  🤖 ZTM Chat - First Time Setup
+══════════════════════════════════════════════════════════════
+
+  To configure ZTM Chat, you have two options:
+
+  1️⃣  Interactive Wizard (recommended)
+     Run: npx ztm-chat-wizard
+
+  2️⃣  Manual Configuration
+     Edit: ~/.openclaw/channels/ztm-chat.json
+
+  💡 Tip: Set CI=true to skip this message in CI/CD pipelines
+══════════════════════════════════════════════════════════════
+```
+
+### Silent Mode (CI/CD)
+
+Skip the first-run banner in automated environments:
+
+```bash
+# Skip banner during registration
+CI=true openclaw restart
+
+# Or set environment variable
+export CI=true
+openclaw restart
+```
+
+This is useful for Docker containers, CI/CD pipelines, and headless servers.
+
+## CLI Commands
+
+### Plugin Commands
+
+```bash
+# Setup wizard
+npx ztm-chat-wizard
+npx ztm-wizard  # Short alias
+
+# Auto-discover existing configuration
+npx ztm-chat-discover
+npx ztm-discover  # Short alias
+```
+
+### OpenClaw Commands
+
+```bash
+# Check channel status
+openclaw channels status ztm-chat
+
+# List connected peers
+openclaw channels directory ztm-chat peers
+
+# View configuration
+openclaw channels describe ztm-chat
+
+# Probe connection
+openclaw channels status ztm-chat --probe
+
+# Enable/disable channel
+openclaw channels disable ztm-chat
+openclaw channels enable ztm-chat
+```
+
+## Configuration Options
+
+### Required Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `agentUrl` | string | ZTM Agent API URL (e.g., `https://ztm-agent.example.com:7777`) |
+| `meshName` | string | Name of your ZTM mesh (alphanumeric + `-_`) |
+| `username` | string | Bot's ZTM username (alphanumeric + `-_`) |
+
+### Optional Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `certificate` | string | - | ZTM certificate (PEM format) for mTLS |
+| `privateKey` | string | - | ZTM private key (PEM format) for mTLS |
+| `enableGroups` | boolean | `false` | Enable group chat support |
+| `autoReply` | boolean | `true` | Automatically reply to messages via AI agent |
+| `messagePath` | string | `/shared` | Custom message path prefix |
+
+### Security Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `dmPolicy` | string | `"allow"` | DM policy: `"allow"`, `"deny"`, `"pairing"` |
+| `allowFrom` | string[] | `[]` | List of allowed sender usernames |
+
+### Advanced Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `pollingInterval` | number | `2000` | Polling interval in ms (fallback mode) |
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ZTM_CHAT_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` |
+| `ZTM_CERTIFICATE` | ZTM agent certificate (PEM format) |
+| `ZTM_PRIVATE_KEY` | ZTM private key (PEM format) |
+| `CI` | Set to `true` to skip first-run wizard banner |
+
+## Configuration File Location
+
+The wizard saves configuration to:
+```
+~/.openclaw/channels/ztm-chat.json
+```
+
+Example configuration:
+```json
+{
+  "agentUrl": "https://ztm-agent.example.com:7777",
+  "meshName": "production-mesh",
+  "username": "my-bot",
+  "certificate": "-----BEGIN CERTIFICATE-----...",
+  "privateKey": "-----BEGIN PRIVATE KEY-----...",
+  "enableGroups": false,
+  "autoReply": true,
+  "messagePath": "/shared",
+  "allowFrom": ["alice", "bob", "dev-team"]
+}
+```
+
+## Usage
+
+### Sending a Message
+
+From any ZTM user, send a message to your bot:
+
+```
+Hello! Can you help me with something?
+```
+
+The bot will respond through OpenClaw's AI agent.
+
+### Checking Status
+
+```bash
+# Basic status
+openclaw channels status ztm-chat
+
+# Detailed probe
+openclaw channels status ztm-chat --probe
+
+# View logs
+openclaw logs --level debug --channel ztm-chat
+```
+
+### Directory Operations
+
+```bash
+# List all peers
+openclaw channels directory ztm-chat peers
+
+# List groups (if enabled)
+openclaw channels directory ztm-chat groups
+```
+
+## Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  ZTM User A     │────▶│   ZTM Network   │────▶│  OpenClaw Bot   │
+│  (Chat App)     │     │   (P2P Mesh)   │     │  (ztm-chat)    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+                                               ┌─────────────────┐
+                                               │  OpenClaw AI    │
+                                               │  Agent          │
+                                               └─────────────────┘
+```
+
+## Message Flow
+
+1. User sends message via ZTM Chat
+2. Message stored to mesh storage
+3. Plugin detects via Watch mechanism (or polling fallback)
+4. Message routed to OpenClaw agent
+5. AI generates response
+6. Response sent via Chat API to recipient
+7. Recipient receives message in ZTM Chat
+
+## API Endpoints
+
+The plugin uses these ZTM Agent API endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/meshes/{meshName}` | Get mesh connection status |
+| GET | `/api/meshes` | List all meshes |
+| GET | `/apps/ztm/chat/api/users` | Discover ZTM users |
+| GET | `/apps/ztm/chat/api/chats` | Get all chats |
+| GET | `/apps/ztm/chat/api/peers/{peer}/messages` | Get messages from peer |
+| POST | `/apps/ztm/chat/api/peers/{peer}/messages` | Send message to peer |
+| GET | `/api/watch{prefix}` | Watch for path changes |
+
+### Query Parameters
+
+Messages endpoint supports filtering:
+
+```
+GET /apps/ztm/chat/api/peers/{peer}/messages?since={timestamp}&before={timestamp}
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `since` | Only return messages after this timestamp |
+| `before` | Only return messages before this timestamp |
+
+## Troubleshooting
+
+### Connection Failed
+
+1. Verify ZTM Agent is running:
+   ```bash
+   curl https://your-ztm-agent.example.com:7777/api/meshes
+   ```
+
+2. Check mesh name matches:
+   ```bash
+   ztm get mesh
+   ```
+
+3. Verify credentials:
+   ```bash
+   echo "$ZTM_CERTIFICATE" | head -1
+   ```
+
+4. Check plugin logs:
+   ```bash
+   openclaw logs --level debug --channel ztm-chat
+   ```
+
+### No Messages Received
+
+1. Check bot username is correct in configuration
+2. Verify ZTM Chat app is running on the agent:
+   ```bash
+   ztm get app
+   ```
+
+3. Check mesh connectivity:
+   ```bash
+   openclaw channels status ztm-chat --probe
+   ```
+
+4. Verify your mesh has other endpoints:
+   ```bash
+   curl https://your-ztm-agent:7777/api/meshes/your-mesh
+   ```
+
+### Certificate Errors (mTLS)
+
+1. Verify certificate is not expired:
+   ```bash
+   openssl x509 -in <(echo "$ZTM_CERTIFICATE") -noout -dates
+   ```
+
+2. Check certificate matches the private key:
+   ```bash
+   openssl x509 -noout -modulus -in <(echo "$ZTM_CERTIFICATE") | openssl md5
+   openssl rsa -noout -modulus -in <(echo "$ZTM_PRIVATE_KEY") | openssl md5
+   ```
+
+## Security Best Practices
+
+1. **Use mTLS in production**: Configure `certificate` and `privateKey` for production deployments
+2. **Restrict allowFrom**: Limit which ZTM users can trigger the bot
+3. **Use environment variables**: Never commit credentials to version control
+4. **Regular certificate rotation**: Rotate certificates periodically
+
+### Known Limitation: Message Signature Verification
+
+**Status**: ⚠️ Not Implemented
+
+ZTM is a peer-to-peer network where messages may pass through multiple relay nodes:
+
+```
+Alice → [Node A] → [Node B] → [Node C] → Bot
+```
+
+The plugin does **not** currently verify message signatures at the application layer.
+
+**Current Mitigations**:
+- ZTM transport-layer authentication
+- `allowFrom` whitelist
+- `dmPolicy: "pairing"` mode
+
+**Risk Assessment**: **Low** for typical internal/network deployments.
+
+## Development
+
+### Running Tests
+
+```bash
+cd extensions/ztm-chat
+npm install
+npm test          # Run all tests (133 tests)
+npm test:watch    # Watch mode for development
+```
+
+### Testing Infrastructure
+
+The plugin includes a mock ZTM Agent server for testing:
+
+```typescript
+import { MockZTMClient, createMockConfig } from "./mocks/ztm-client.js";
+
+const client = new MockZTMClient(createMockConfig());
+await client.start();
+
+// Simulate API calls
+const messages = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages`);
+
+await client.stop();
+```
+
+### Debug Logging
+
+```bash
+ZTM_CHAT_LOG_LEVEL=debug openclaw restart
+```
+
+### Project Structure
+
+```
+ztm-chat/
+├── index.ts              # Plugin entry point with CLI commands (135 lines)
+├── index.test.ts         # Index.ts tests (16 tests)
+├── package.json          # NPM package config
+├── README.md             # This file
+└── src/
+    ├── channel.ts        # Main channel adapter (917 lines)
+    ├── config.ts         # Configuration schema & validation (TypeBox)
+    ├── ztm-api.ts       # ZTM Agent API client (345 lines)
+    ├── logger.ts        # Structured logging
+    ├── runtime.ts       # Runtime management
+    ├── wizard.ts        # Interactive setup wizard (520 lines)
+    ├── mocks/
+    │   └── ztm-client.ts # Mock ZTM Agent for testing (282 lines)
+    ├── *.test.ts        # Unit & integration tests (133 tests total)
+```
+
+## License
+
+MIT
