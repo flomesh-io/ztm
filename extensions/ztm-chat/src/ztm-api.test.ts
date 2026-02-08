@@ -339,7 +339,7 @@ describe("ZTM API Client", () => {
 
       // Simulate API call
       const response = await fetch(`${client.url}/api/meshes/${config.meshName}`);
-      const data = await response.json();
+      const data = await response.json() as { name: string; connected: boolean };
 
       expect(response.ok).toBe(true);
       expect(data.name).toBe(config.meshName);
@@ -350,7 +350,7 @@ describe("ZTM API Client", () => {
       const { client } = mockAgent;
 
       const response = await fetch(`${client.url}/apps/ztm/chat/api/users`);
-      const users = await response.json();
+      const users = await response.json() as Array<{ username: string }>;
 
       expect(response.ok).toBe(true);
       expect(Array.isArray(users)).toBe(true);
@@ -363,7 +363,7 @@ describe("ZTM API Client", () => {
       const { client } = mockAgent;
 
       const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages`);
-      const messages = await response.json();
+      const messages = await response.json() as Array<{ sender: string; message: string }>;
 
       expect(response.ok).toBe(true);
       expect(Array.isArray(messages)).toBe(true);
@@ -388,7 +388,7 @@ describe("ZTM API Client", () => {
       });
 
       expect(response.ok).toBe(true);
-      const result = await response.json();
+      const result = await response.json() as { success: boolean; id: string };
       expect(result.success).toBe(true);
       expect(result.id).toBeDefined();
       expect(result.id).toMatch(/^msg-\d+$/);
@@ -410,7 +410,7 @@ describe("ZTM API Client", () => {
       const now = Date.now();
 
       const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages?since=${now - 40000}`);
-      const messages = await response.json();
+      const messages = await response.json() as Array<{ message: string }>;
 
       expect(response.ok).toBe(true);
       expect(Array.isArray(messages)).toBe(true);
@@ -429,7 +429,7 @@ describe("ZTM API Client", () => {
       });
 
       const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/charlie/messages`);
-      const messages = await response.json();
+      const messages = await response.json() as Array<{ message: string }>;
 
       expect(response.ok).toBe(true);
       expect(messages.length).toBe(1);
@@ -442,7 +442,7 @@ describe("ZTM API Client", () => {
       const response = await fetch(`${client.url}/api/meshes/unknown-mesh`);
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const data = await response.json() as { error: string };
       expect(data.error).toBe("Mesh not found");
     });
   });
