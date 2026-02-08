@@ -2,7 +2,8 @@
 // Simulates the ZTM Chat API endpoints
 
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import type { ZTMChatConfig, ZTMMessage } from "../config.js";
+import type { ZTMChatConfig } from "../config.js";
+import type { ZTMMessage } from "../ztm-api.js";
 import type { ZTMChat, ZTMPeer, ZTMUserInfo } from "../ztm-api.js";
 
 // Test configuration
@@ -253,8 +254,8 @@ export function createMockConfig(): MockZTMConfig {
     meshName: "test-mesh",
     username: "test-bot",
     users: [
-      { username: "alice", displayName: "Alice", online: true },
-      { username: "bob", displayName: "Bob", online: false },
+      { username: "alice" },
+      { username: "bob" },
     ],
     peers: [
       { username: "alice", endpoint: "alice@192.168.1.10:7777" },
@@ -265,8 +266,9 @@ export function createMockConfig(): MockZTMConfig {
         creator: "alice",
         group: "test-group",
         members: ["alice", "test-bot"],
-        lastActive: now,
-        unreadCount: 0,
+        time: now,
+        updated: now,
+        latest: { time: now, message: "", sender: "alice" },
       },
     ],
     messages: new Map([

@@ -1,7 +1,7 @@
 // ZTM Chat Configuration Schema
 // Uses TypeBox for schema definition (compatible with OpenClaw SDK)
 
-import { Type, type TSchema } from "@sinclair/typebox";
+import { Type, type TSchema, type Static } from "@sinclair/typebox";
 
 // DM Policy type
 export type DMPolicy = "allow" | "deny" | "pairing";
@@ -79,7 +79,7 @@ export const ZTMChatConfigSchema = Type.Object({
   }))),
 });
 
-export type ZTMChatConfig = Type.TypeOf<typeof ZTMChatConfigSchema>;
+export type ZTMChatConfig = Static<typeof ZTMChatConfigSchema>;
 
 // Extended config with allowFrom (for wizard output)
 export interface ExtendedZTMChatConfig extends ZTMChatConfig {

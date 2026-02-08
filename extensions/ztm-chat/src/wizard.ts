@@ -22,13 +22,15 @@ interface WizardConfig extends Partial<ZTMChatConfig> {
 export interface WizardPrompts {
   ask(question: string, defaultValue?: string): Promise<string>;
   confirm(question: string, defaultYes?: boolean): Promise<boolean>;
-  select<T>(question: string, options: T[], labels: string[]): Promise<T>;
+  select<T>(question: string, options: readonly T[], labels: string[]): Promise<T>;
   password(question: string): Promise<string>;
   separator(): void;
   heading(text: string): void;
   success(text: string): void;
+  info(text: string): void;
   warning(text: string): void;
   error(text: string): void;
+  close(): void;
 }
 
 /**
@@ -78,7 +80,7 @@ export class ConsolePrompts implements WizardPrompts {
     return answer.toLowerCase().startsWith("y");
   }
 
-  async select<T>(question: string, options: T[], labels: string[]): Promise<T> {
+  async select<T>(question: string, options: readonly T[], labels: string[]): Promise<T> {
     this.separator();
     this.heading(question);
 
@@ -118,6 +120,10 @@ export class ConsolePrompts implements WizardPrompts {
 
   error(text: string): void {
     console.log(`\x1b[31m✗\x1b[0m ${text}`);
+  }
+
+  info(text: string): void {
+    console.log(`\x1b[36mℹ\x1b[0m ${text}`);
   }
 }
 
@@ -352,7 +358,7 @@ export class ZTMChatWizard {
       "Require explicit pairing (approval needed)",
     ];
 
-    const policy = await this.prompts.select(
+    const policy = await this.prompts.select<DMPolicy>(
       "Direct Message Policy",
       policies,
       policyLabels
