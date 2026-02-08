@@ -1,5 +1,5 @@
 {
-  "name": "@ztm/openclaw-ztm-chat",
+  "name": "ztm-chat",
   "version": "2026.2.8",
   "description": "ZTM Chat channel plugin for OpenClaw",
   "type": "module",
