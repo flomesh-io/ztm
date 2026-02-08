@@ -47,13 +47,24 @@ This approach provides full functionality via storage APIs, suitable for headles
 
 ## Quick Start
 
-### Option 1: Use the Wizard (Recommended)
+### Step 1: Install the Plugin
 
 ```bash
-# Run the interactive setup wizard
+# Install from local source (development)
+openclaw plugins install -l ./extensions/ztm-chat
+
+# Or install from npm (when published)
+# npm install -g @ztm/openclaw-ztm-chat
+# openclaw plugins install @ztm/openclaw-ztm-chat
+```
+
+### Step 2: Run the Wizard (Recommended)
+
+```bash
+# After plugin is installed, run the wizard
 npx ztm-chat-wizard
 
-# Follow the on-screen prompts to configure:
+# Follow the on-screen prompts:
 # 1. ZTM Agent URL
 # 2. Mesh name
 # 3. Bot username
@@ -61,16 +72,13 @@ npx ztm-chat-wizard
 # 5. Security settings
 ```
 
-### Option 2: Manual Setup
+### Alternative: Manual Configuration
 
 ```bash
 # 1. Create bot account on ZTM
 ztm user add openclaw-bot
 
-# 2. Install the plugin
-openclaw plugins install -l ./extensions/ztm-chat
-
-# 3. Create config file
+# 2. Create config file
 cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
 {
   "agentUrl": "https://your-ztm-agent.example.com:7777",
@@ -84,9 +92,11 @@ cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
 }
 EOF
 
-# 4. Restart OpenClaw
+# 3. Restart OpenClaw
 openclaw restart
 ```
+
+> **Note**: The wizard command `npx ztm-chat-wizard` only works after the plugin is installed.
 
 ## Prerequisites
 
@@ -98,15 +108,19 @@ openclaw restart
 
 ### Running the Wizard
 
+The wizard is available after the plugin is installed:
+
 ```bash
-# From plugin directory
-cd extensions/ztm-chat
+# From OpenClaw's plugin directory
+cd ~/.openclaw/plugins/ztm-chat
 npx ztm-chat-wizard
 
-# Or install globally
+# Or install globally (when published to npm)
 npm install -g @ztm/openclaw-ztm-chat
 ztm-chat-wizard
 ```
+
+> **Note**: The wizard command requires the plugin to be installed first.
 
 ### Wizard Steps
 
@@ -232,10 +246,12 @@ This is useful for Docker containers, CI/CD pipelines, and headless servers.
 
 ## CLI Commands
 
+> **Note**: These commands require the plugin to be installed first.
+
 ### Plugin Commands
 
 ```bash
-# Setup wizard
+# Setup wizard (after plugin is installed)
 npx ztm-chat-wizard
 npx ztm-wizard  # Short alias
 
