@@ -185,6 +185,5 @@ const plugin: ChannelPlugin = {
 // - openclaw channels deny ztm-chat <username>
 // - openclaw channels pairings ztm-chat
 // These are handled by OpenClaw core, not this plugin.
-};
 
 export default plugin;
