@@ -128,7 +128,7 @@ const plugin: ChannelPlugin = {
             console.log("\n💡 Pairing Mode:");
             console.log("   Your bot is in pairing mode. Users must send a message");
             console.log("   to initiate pairing. Approve them with:");
-            console.log("   openclaw ztm-chat-approve <username>");
+            console.log("   openclaw channels approve ztm-chat <username>");
           }
         }).catch((err) => {
           console.error("\n❌ Wizard error:", err.message);
@@ -177,89 +177,14 @@ const plugin: ChannelPlugin = {
         }
       },
     },
-    {
-      name: "ztm-chat-approve",
-      description: "Approve a user to send messages (for pairing mode)",
-      alias: "ztm-approve",
-      action: async ({ args }) => {
-        const username = args[0];
-        if (!username) {
-          console.error("\n❌ Usage: openclaw ztm-chat-approve <username>");
-          console.log("   Example: openclaw ztm-chat-approve alice");
-          return;
-        }
-
-        const config = readConfig();
-        const allowFrom = config.allowFrom as string[] || [];
-        const normalizedUsername = username.trim().toLowerCase();
-
-        if (allowFrom.includes(normalizedUsername)) {
-          console.log(`\n⚠️  User "${username}" is already approved.`);
-          return;
-        }
-
-        allowFrom.push(normalizedUsername);
-        config.allowFrom = allowFrom;
-
-        if (writeConfig(config)) {
-          console.log(`\n✅ Approved user "${username}"`);
-          console.log("   Messages from this user will now be accepted.");
-          console.log("\n💡 Restart OpenClaw to apply changes: openclaw restart");
-        } else {
-          console.error(`\n❌ Failed to approve user "${username}"`);
-        }
-      },
-    },
-    {
-      name: "ztm-chat-deny",
-      description: "Deny a pending pairing request",
-      alias: "ztm-deny",
-      action: async ({ args }) => {
-        const username = args[0];
-        if (!username) {
-          console.error("\n❌ Usage: openclaw ztm-chat-deny <username>");
-          console.log("   Example: openclaw ztm-chat-deny alice");
-          return;
-        }
-
-        const normalizedUsername = username.trim().toLowerCase();
-        console.log(`\n🚫 Denied pairing request from "${username}"`);
-        console.log("   This user will not be able to send messages.");
-
-        // Note: The pending pairing state is in-memory and will expire on restart
-        // For persistent denial, add to a deny list (future enhancement)
-      },
-    },
-    {
-      name: "ztm-chat-pairings",
-      description: "List pending pairing requests",
-      alias: "ztm-pairings",
-      action: async () => {
-        // Import from channel module to get runtime state
-        try {
-          const { getZTMChatRuntime } = await import("./src/runtime.js");
-          const runtime = getZTMChatRuntime();
-          if (runtime && runtime.pendingPairings) {
-            const pairings = Array.from(runtime.pendingPairings.entries());
-            if (pairings.length === 0) {
-              console.log("\n📋 No pending pairing requests.");
-            } else {
-              console.log("\n📋 Pending Pairing Requests:");
-              console.log("─".repeat(40));
-              for (const [user, time] of pairings) {
-                console.log(`   • ${user} (requested at ${time.toISOString()})`);
-              }
-              console.log("─".repeat(40));
-            }
-          } else {
-            console.log("\n📋 No pending pairing requests.");
-          }
-        } catch {
-          console.log("\n📋 No pending pairing requests.");
-        }
-      },
-    },
   ],
+};
+
+// Note: The following commands are registered via OpenClaw's channels subcommand:
+// - openclaw channels approve ztm-chat <username>
+// - openclaw channels deny ztm-chat <username>
+// - openclaw channels pairings ztm-chat
+// These are handled by OpenClaw core, not this plugin.
 };
 
 export default plugin;
