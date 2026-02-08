@@ -8,10 +8,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@sinclair/typebox": "^0.34.48"
+    "@sinclair/typebox": "^0.34.48",
+    "openclaw": "^2026.2.6-3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "typescript": "^5.9.3",
     "vitest": "^2.0.0"
   },
   "openclaw": {

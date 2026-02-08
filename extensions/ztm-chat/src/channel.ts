@@ -6,8 +6,6 @@ import {
   type ChannelPlugin,
   type ChannelStatusIssue,
   type OpenClawConfig,
-  type ResolvedZTMChatAccount,
-  type DMPolicy,
 } from "openclaw/plugin-sdk";
 import { getZTMRuntime } from "./runtime.js";
 import {
@@ -16,6 +14,7 @@ import {
   ZTMChatConfigSchema,
   type ZTMChatConfig,
   isConfigMinimallyValid,
+  type DMPolicy,
 } from "./config.js";
 import {
   createZTMApiClient,
@@ -28,6 +27,14 @@ import {
 
 // Import logger
 import { logger } from "./logger.js";
+
+// Local type for resolved ZTM chat account
+export interface ResolvedZTMChatAccount {
+  accountId: string;
+  username: string;
+  enabled: boolean;
+  config: ZTMChatConfig;
+}
 
 // Local type definition for ZTM chat messages (normalized)
 interface ZTMChatMessage {
