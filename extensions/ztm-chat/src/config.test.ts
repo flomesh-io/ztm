@@ -295,6 +295,7 @@ describe("getDefaultConfig", () => {
     expect(result.enableGroups).toBe(false);
     expect(result.autoReply).toBe(true);
     expect(result.messagePath).toBe("/shared");
+    expect(result.dmPolicy).toBe("pairing");
   });
 });
 
@@ -412,6 +413,139 @@ describe("Message Path Helpers", () => {
       const result = parseMessagePath(path);
 
       expect(result).toBeNull();
+    });
+  });
+});
+
+describe("DMPolicy Configuration", () => {
+  describe("dmPolicy validation", () => {
+    it("should accept 'allow' policy", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "https://ztm-agent.example.com:7777",
+        meshName: "my-mesh",
+        username: "test-bot",
+        dmPolicy: "allow",
+      });
+      expect(result.valid).toBe(true);
+      expect(result.config?.dmPolicy).toBe("allow");
+    });
+
+    it("should accept 'deny' policy", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "https://ztm-agent.example.com:7777",
+        meshName: "my-mesh",
+        username: "test-bot",
+        dmPolicy: "deny",
+      });
+      expect(result.valid).toBe(true);
+      expect(result.config?.dmPolicy).toBe("deny");
+    });
+
+    it("should accept 'pairing' policy", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "https://ztm-agent.example.com:7777",
+        meshName: "my-mesh",
+        username: "test-bot",
+        dmPolicy: "pairing",
+      });
+      expect(result.valid).toBe(true);
+      expect(result.config?.dmPolicy).toBe("pairing");
+    });
+
+    it("should default to 'pairing' when not specified", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "https://ztm-agent.example.com:7777",
+        meshName: "my-mesh",
+        username: "test-bot",
+      });
+      expect(result.valid).toBe(true);
+      expect(result.config?.dmPolicy).toBe("pairing");
+    });
+  });
+
+  describe("resolveZTMChatConfig with dmPolicy", () => {
+    it("should default dmPolicy to pairing", () => {
+      const result = resolveZTMChatConfig({
+        agentUrl: "https://example.com",
+        meshName: "my-mesh",
+        username: "bot",
+      });
+      expect(result.dmPolicy).toBe("pairing");
+    });
+
+    it("should preserve dmPolicy value", () => {
+      const result = resolveZTMChatConfig({
+        agentUrl: "https://example.com",
+        meshName: "my-mesh",
+        username: "bot",
+        dmPolicy: "allow",
+      });
+      expect(result.dmPolicy).toBe("allow");
+    });
+
+    it("should handle dmPolicy case insensitivity", () => {
+      const result = resolveZTMChatConfig({
+        agentUrl: "https://example.com",
+        meshName: "my-mesh",
+        username: "bot",
+        dmPolicy: "PAIRING" as any,
+      });
+      // Invalid policy values default to pairing
+      expect(result.dmPolicy).toBe("pairing");
+    });
+  });
+
+  describe("createProbeConfig with dmPolicy", () => {
+    it("should use dmPolicy from config", () => {
+      const result = createProbeConfig({
+        agentUrl: "https://example.com",
+        dmPolicy: "deny",
+      });
+      expect(result.dmPolicy).toBe("deny");
+    });
+
+    it("should default dmPolicy to pairing", () => {
+      const result = createProbeConfig({
+        agentUrl: "https://example.com",
+      });
+      expect(result.dmPolicy).toBe("pairing");
+    });
+  });
+
+  describe("allowFrom configuration", () => {
+    it("should default allowFrom to undefined", () => {
+      const result = resolveZTMChatConfig({});
+      expect(result.allowFrom).toBeUndefined();
+    });
+
+    it("should preserve allowFrom array", () => {
+      const result = resolveZTMChatConfig({
+        agentUrl: "https://example.com",
+        meshName: "my-mesh",
+        username: "bot",
+        allowFrom: ["alice", "bob"],
+      });
+      expect(result.allowFrom).toEqual(["alice", "bob"]);
+    });
+
+    it("should normalize allowFrom entries", () => {
+      const result = resolveZTMChatConfig({
+        agentUrl: "https://example.com",
+        meshName: "my-mesh",
+        username: "bot",
+        allowFrom: ["  Alice  ", "BOB", "  charlie  "],
+      });
+      expect(result.allowFrom).toEqual(["Alice", "BOB", "charlie"]);
+    });
+
+    it("should filter empty allowFrom entries", () => {
+      const result = resolveZTMChatConfig({
+        agentUrl: "https://example.com",
+        meshName: "my-mesh",
+        username: "bot",
+        allowFrom: ["alice", "", "  ", "bob"],
+      });
+      expect(result.allowFrom).toEqual(["alice", "bob"]);
     });
   });
 });
