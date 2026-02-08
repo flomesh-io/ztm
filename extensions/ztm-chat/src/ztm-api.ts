@@ -181,7 +181,7 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     // Handle different response types
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("application/json")) {
-      return response.json();
+      return (await response.json()) as T;
     }
 
     // For non-JSON responses

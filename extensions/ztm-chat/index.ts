@@ -99,52 +99,24 @@ function shouldRunWizard(): boolean {
   return true;
 }
 
-const plugin: ChannelPlugin = {
-  id: "ztm-chat",
-  name: "ZTM Chat",
-  description: "ZTM (Zero Trust Mesh) Chat channel plugin - Connect OpenClaw to the ZTM P2P network",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    // Set runtime for the plugin
-    setZTMRuntime(api.runtime);
+// Plugin registration function
+async function registerPlugin(api: OpenClawPluginApi): Promise<void> {
+  // Set runtime for the plugin
+  setZTMRuntime(api.runtime);
 
-    // Register the channel
-    api.registerChannel({ plugin: ztmChatPlugin });
+  // Register the channel
+  api.registerChannel({ plugin: ztmChatPlugin });
 
-    // Check for first-time installation and run wizard
-    if (shouldRunWizard()) {
-      // Import and run wizard asynchronously
-      import("./src/wizard.js").then(({ runWizard }) => {
-        runWizard().then((result) => {
-          if (result) {
-            console.log("\n✅ Configuration complete!");
-            console.log(`📁 Saved to: ${result.savePath || "memory only"}`);
-            console.log("\nNext steps:");
-            console.log("  1. Restart OpenClaw: openclaw restart");
-            console.log("  2. Check status: openclaw channels status ztm-chat");
-            console.log("\n💡 Pairing Mode:");
-            console.log("   Your bot is in pairing mode. Users must send a message");
-            console.log("   to initiate pairing. Approve them with:");
-            console.log("   openclaw channels approve ztm-chat <username>");
-          }
-        }).catch((err) => {
-          console.error("\n❌ Wizard error:", err.message);
-          console.log("   Run 'npx ztm-chat-wizard' to retry");
-        });
-      }).catch((err) => {
-        console.error("Failed to load wizard:", err.message);
-      });
-    }
-  },
+  // Register CLI commands
+  api.registerCli(async ({ program, config }) => {
+    const { runWizard } = await import("./src/wizard.js");
+    const { discoverConfig } = await import("./src/wizard.js");
 
-  // CLI commands exposed by this plugin
-  commands: [
-    {
-      name: "ztm-chat-wizard",
-      description: "Run the ZTM Chat interactive setup wizard",
-      alias: "ztm-wizard",
-      action: async () => {
-        const { runWizard } = await import("./src/wizard.js");
+    program
+      .command("ztm-chat-wizard")
+      .alias("ztm-wizard")
+      .description("Run the ZTM Chat interactive setup wizard")
+      .action(async () => {
         const result = await runWizard();
         if (result) {
           console.log("\n✅ Configuration complete!");
@@ -153,14 +125,13 @@ const plugin: ChannelPlugin = {
           console.log("  1. Restart OpenClaw: openclaw restart");
           console.log("  2. Check status: openclaw channels status ztm-chat");
         }
-      },
-    },
-    {
-      name: "ztm-chat-discover",
-      description: "Auto-discover ZTM configuration from existing setup",
-      alias: "ztm-discover",
-      action: async () => {
-        const { discoverConfig } = await import("./src/wizard.js");
+      });
+
+    program
+      .command("ztm-chat-discover")
+      .alias("ztm-discover")
+      .description("Auto-discover ZTM configuration from existing setup")
+      .action(async () => {
         const discovered = await discoverConfig();
         if (discovered) {
           console.log("\n📡 Discovered ZTM Configuration:");
@@ -172,9 +143,41 @@ const plugin: ChannelPlugin = {
           console.log("\n⚠️  No existing ZTM configuration found.");
           console.log("   Run 'npx ztm-chat-wizard' to set up.");
         }
-      },
-    },
-  ],
+      });
+  });
+
+  // Check for first-time installation and run wizard
+  if (shouldRunWizard()) {
+    // Import and run wizard asynchronously
+    import("./src/wizard.js").then(({ runWizard }) => {
+      runWizard().then((result) => {
+        if (result) {
+          console.log("\n✅ Configuration complete!");
+          console.log(`📁 Saved to: ${result.savePath || "memory only"}`);
+          console.log("\nNext steps:");
+          console.log("  1. Restart OpenClaw: openclaw restart");
+          console.log("  2. Check status: openclaw channels status ztm-chat");
+          console.log("\n💡 Pairing Mode:");
+          console.log("   Your bot is in pairing mode. Users must send a message");
+          console.log("   to initiate pairing. Approve them with:");
+          console.log("   openclaw channels approve ztm-chat <username>");
+        }
+      }).catch((err) => {
+        console.error("\n❌ Wizard error:", err.message);
+        console.log("   Run 'npx ztm-chat-wizard' to retry");
+      });
+    }).catch((err) => {
+      console.error("Failed to load wizard:", err.message);
+    });
+  }
+}
+
+// Export plugin as default (ES module format)
+const plugin: any = {
+  id: "ztm-chat",
+  name: "ZTM Chat",
+  description: "ZTM (Zero Trust Mesh) Chat channel plugin - Connect OpenClaw to the ZTM P2P network",
+  register: registerPlugin,
 };
 
 // Note: The following commands are registered via OpenClaw's channels subcommand:
