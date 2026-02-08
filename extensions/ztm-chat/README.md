@@ -466,6 +466,42 @@ The plugin does **not** currently verify message signatures at the application l
 
 **Risk Assessment**: **Low** for typical internal/network deployments.
 
+## Feature Status
+
+### Completed Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Peer-to-Peer Messaging | ✅ Done | Send/receive messages with ZTM users |
+| Remote Connection | ✅ Done | HTTP API connection to ZTM Agent |
+| mTLS Authentication | ✅ Done | Certificate-based mutual TLS auth |
+| Interactive Wizard | ✅ Done | CLI-guided 5-step configuration |
+| Message Deduplication | ✅ Done | Automatic duplicate prevention |
+| Structured Logging | ✅ Done | Context-aware logging with redaction |
+| Real-Time Updates | ✅ Done | Watch mechanism with polling fallback |
+| First-Run Detection | ✅ Done | Auto-show welcome banner on install |
+| CI/CD Silent Mode | ✅ Done | Skip banner with `CI=true` |
+| Mock ZTM Agent | ✅ Done | Test infrastructure for development |
+| Configuration Discovery | ✅ Done | Auto-detect existing ZTM setup |
+| User Discovery | ✅ Done | Browse mesh users via API |
+
+### Planned Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Group Chat Support | 🔜 Planned | Enable `enableGroups` for group messages |
+| Message Signatures | ⚠️ Planned | Application-layer signature verification |
+| DM Policy Enforcement | 🔜 Planned | Full `dmPolicy` implementation |
+| Webhook Integration | 🔜 Planned | HTTP callbacks for events |
+| Rich Media Messages | 🔜 Planned | Support images, files, etc. |
+| Message Encryption | ⚠️ Planned | End-to-end encrypted messages |
+
+### Legend
+
+- ✅ **Done**: Fully implemented and tested
+- 🔜 **Planned**: On the roadmap, partial or coming soon
+- ⚠️ **Known Limitation**: Identified but not yet implemented
+
 ## Development
 
 ### Running Tests
