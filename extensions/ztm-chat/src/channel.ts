@@ -7,6 +7,7 @@ import {
   type ChannelStatusIssue,
   type OpenClawConfig,
   type ResolvedZTMChatAccount,
+  type DMPolicy,
 } from "openclaw/plugin-sdk";
 import { getZTMRuntime } from "./runtime.js";
 import {
@@ -55,6 +56,8 @@ interface AccountRuntimeState {
   messageCallbacks: Set<(message: ZTMChatMessage) => void>;
   watchInterval: ReturnType<typeof setInterval> | null;
   watchErrorCount: number;
+  // Pairing state for dmPolicy="pairing"
+  pendingPairings: Map<string, Date>;
 }
 
 // Multi-account state management
@@ -172,6 +175,7 @@ function getOrCreateAccountState(accountId: string): AccountRuntimeState {
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
+      pendingPairings: new Map(),
     };
     accountStates.set(accountId, state);
   }
@@ -308,12 +312,72 @@ function resolveZTMChatAccount({
   };
 }
 
+// Message processing result
+interface MessageCheckResult {
+  allowed: boolean;
+  reason?: "allowed" | "denied" | "pending" | "whitelisted";
+  action?: "process" | "ignore" | "request_pairing";
+}
+
+// Check if a sender is allowed to send messages
+function checkDmPolicy(
+  sender: string,
+  config: ZTMChatConfig,
+  pendingPairings: Map<string, Date>
+): MessageCheckResult {
+  const normalizedSender = sender.trim().toLowerCase();
+  const allowFrom = config.allowFrom ?? [];
+  const isWhitelisted = allowFrom.length === 0 ||
+    allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
+
+  // If sender is whitelisted, always allow
+  if (isWhitelisted) {
+    return { allowed: true, reason: "whitelisted", action: "process" };
+  }
+
+  const policy = config.dmPolicy ?? "allow";
+
+  switch (policy) {
+    case "allow":
+      return { allowed: true, reason: "allowed", action: "process" };
+
+    case "deny":
+      return { allowed: false, reason: "denied", action: "ignore" };
+
+    case "pairing":
+      // Check if already pending
+      if (pendingPairings.has(normalizedSender)) {
+        return { allowed: false, reason: "pending", action: "ignore" };
+      }
+      // Request pairing
+      return { allowed: false, reason: "pending", action: "request_pairing" };
+
+    default:
+      // Default to allow for unknown policy
+      return { allowed: true, reason: "allowed", action: "process" };
+  }
+}
+
 // Message processing
 function processIncomingMessage(
-  msg: { time: number; message: string; sender: string }
+  msg: { time: number; message: string; sender: string },
+  config: ZTMChatConfig,
+  pendingPairings: Map<string, Date>
 ): ZTMChatMessage | null {
   if (messageDeduplicator.isDuplicate(msg.sender, msg.time, msg.message)) {
     logger.debug(`Skipping duplicate message from ${msg.sender}`);
+    return null;
+  }
+
+  const check = checkDmPolicy(msg.sender, config, pendingPairings);
+
+  if (!check.allowed) {
+    if (check.action === "request_pairing") {
+      logger.info(`[DM Policy] Pairing request from ${msg.sender}`);
+      // Will be handled by the watcher
+    } else if (check.action === "ignore") {
+      logger.debug(`[DM Policy] Ignoring message from ${msg.sender} (${check.reason})`);
+    }
     return null;
   }
 
@@ -325,6 +389,35 @@ function processIncomingMessage(
     timestamp: new Date(msg.time),
     peer: msg.sender,
   };
+}
+
+// Handle pairing request - send a pairing request message to the peer
+async function handlePairingRequest(
+  state: AccountRuntimeState,
+  peer: string,
+  context: string
+): Promise<void> {
+  const { config, apiClient } = state;
+  if (!apiClient) return;
+
+  const normalizedPeer = peer.trim().toLowerCase();
+
+  // Add to pending pairings
+  state.pendingPairings.set(normalizedPeer, new Date());
+
+  // Send pairing request message
+  const pairingMessage: ZTMMessage = {
+    time: Date.now(),
+    message: `[PAIRING REQUEST] User "${peer}" wants to chat with you on OpenClaw ZTM Chat.\n\nTo approve, run: openclaw channels approve ztm-chat ${peer}\nTo deny, run: openclaw channels deny ztm-chat ${peer}`,
+    sender: config.username,
+  };
+
+  try {
+    await apiClient.sendPeerMessage(peer, pairingMessage);
+    logger.info(`[${state.accountId}] Sent pairing request to ${peer}`);
+  } catch (error) {
+    logger.warn(`[${state.accountId}] Failed to send pairing request to ${peer}: ${error}`);
+  }
 }
 
 // Start message watcher with Watch mechanism
@@ -341,11 +434,15 @@ async function startMessageWatcher(
     const chats = await apiClient.getChats();
     for (const chat of chats) {
       if (chat.peer && chat.latest) {
-        const normalized = processIncomingMessage({
-          time: chat.latest.time,
-          message: chat.latest.message,
-          sender: chat.peer,
-        });
+        const normalized = processIncomingMessage(
+          {
+            time: chat.latest.time,
+            message: chat.latest.message,
+            sender: chat.peer,
+          },
+          config,
+          state.pendingPairings
+        );
         if (normalized) {
           notifyMessageCallbacks(state, normalized);
         }
@@ -354,6 +451,16 @@ async function startMessageWatcher(
     logger.info(`[${state.accountId}] Initial sync: ${chats.length} chats`);
   } catch (error) {
     logger.warn(`[${state.accountId}] Initial read failed: ${error}`);
+  }
+
+  // Handle pairing requests for initial chats
+  for (const chat of (await apiClient.getChats()) || []) {
+    if (chat.peer) {
+      const check = checkDmPolicy(chat.peer, config, state.pendingPairings);
+      if (check.action === "request_pairing") {
+        await handlePairingRequest(state, chat.peer, "Initial chat request");
+      }
+    }
   }
 
   // Start watching for changes
@@ -378,11 +485,21 @@ async function startMessageWatcher(
             const messages = await state.apiClient!.getPeerMessages(peer);
             if (messages) {
               for (const msg of messages) {
-                const normalized = processIncomingMessage(msg);
+                const normalized = processIncomingMessage(
+                  msg,
+                  state.config,
+                  state.pendingPairings
+                );
                 if (normalized) {
                   notifyMessageCallbacks(state, normalized);
                 }
               }
+            }
+
+            // Check if this is a pairing request message
+            const check = checkDmPolicy(peer, state.config, state.pendingPairings);
+            if (check.action === "request_pairing") {
+              await handlePairingRequest(state, peer, "New message");
             }
           } catch (error) {
             logger.warn(`[${state.accountId}] Failed to read messages from ${peer}: ${error}`);
@@ -431,13 +548,23 @@ async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
       const chats = await state.apiClient.getChats();
       for (const chat of chats) {
         if (chat.peer && chat.latest) {
-          const normalized = processIncomingMessage({
-            time: chat.latest.time,
-            message: chat.latest.message,
-            sender: chat.peer,
-          });
+          const normalized = processIncomingMessage(
+            {
+              time: chat.latest.time,
+              message: chat.latest.message,
+              sender: chat.peer,
+            },
+            config,
+            state.pendingPairings
+          );
           if (normalized) {
             notifyMessageCallbacks(state, normalized);
+          }
+
+          // Check for pairing requests
+          const check = checkDmPolicy(chat.peer, config, state.pendingPairings);
+          if (check.action === "request_pairing") {
+            await handlePairingRequest(state, chat.peer, "Polling check");
           }
         }
       }

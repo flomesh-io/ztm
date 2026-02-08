@@ -3,6 +3,9 @@
 
 import { Type, type TSchema } from "@sinclair/typebox";
 
+// DM Policy type
+export type DMPolicy = "allow" | "deny" | "pairing";
+
 // Helper validators
 const isValidUrl = (value: string): boolean => {
   try {
@@ -65,6 +68,11 @@ export const ZTMChatConfigSchema = Type.Object({
   messagePath: Type.Optional(Type.String({
     description: "Custom message path prefix",
     default: "/shared",
+  })),
+  dmPolicy: Type.Optional(Type.String({
+    description: "Direct message policy: allow, deny, or pairing",
+    enum: ["allow", "deny", "pairing"],
+    default: "allow",
   })),
   allowFrom: Type.Optional(Type.Array(Type.String({
     description: "List of allowed sender usernames",
@@ -181,6 +189,9 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
       typeof config.messagePath === "string" && config.messagePath.trim()
         ? config.messagePath.trim()
         : "/shared",
+    dmPolicy: ["allow", "deny", "pairing"].includes(config.dmPolicy as string)
+      ? (config.dmPolicy as DMPolicy)
+      : "pairing",
     allowFrom: Array.isArray(config.allowFrom)
       ? config.allowFrom.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)
       : undefined,
@@ -198,6 +209,7 @@ export function getDefaultConfig(): ZTMChatConfig {
     enableGroups: false,
     autoReply: true,
     messagePath: "/shared",
+    dmPolicy: "pairing",
     allowFrom: undefined,
   };
 }
@@ -227,6 +239,7 @@ export function createProbeConfig(
     enableGroups: config.enableGroups ?? false,
     autoReply: config.autoReply ?? true,
     messagePath: config.messagePath ?? "/shared",
+    dmPolicy: config.dmPolicy ?? "pairing",
     allowFrom: config.allowFrom,
   };
 }
