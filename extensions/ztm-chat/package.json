@@ -1,0 +1,22 @@
+{
+  "name": "@ztm/openclaw-ztm-chat",
+  "version": "2026.2.8",
+  "description": "ZTM Chat channel plugin for OpenClaw",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "vitest": "^2.0.0"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
