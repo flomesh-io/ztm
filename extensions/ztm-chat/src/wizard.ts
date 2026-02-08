@@ -5,7 +5,7 @@ import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
 import { createZTMApiClient, type ZTMApiClient, type ZTMUserInfo } from "./ztm-api.js";
-import type { ZTMChatConfig } from "./config.js";
+import type { ZTMChatConfig, DMPolicy } from "./config.js";
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -13,6 +13,7 @@ interface WizardConfig extends Partial<ZTMChatConfig> {
   enableGroups?: boolean;
   autoReply?: boolean;
   allowFrom?: string[];
+  dmPolicy?: DMPolicy;
 }
 
 /**
@@ -143,6 +144,7 @@ export class ZTMChatWizard {
       enableGroups: false,
       autoReply: true,
       allowFrom: undefined,
+      dmPolicy: "pairing",
     };
   }
 
@@ -347,7 +349,7 @@ export class ZTMChatWizard {
     const policyLabels = [
       "Allow messages from all users",
       "Deny messages from all users",
-      "Require explicit pairing",
+      "Require explicit pairing (approval needed)",
     ];
 
     const policy = await this.prompts.select(
@@ -356,17 +358,12 @@ export class ZTMChatWizard {
       policyLabels
     );
 
-    // Note: This would be stored in a separate security config
-    // For now, we just document it
-    this.prompts.separator();
-    this.prompts.heading("Note:");
-    this.prompts.warning(
-      `DM Policy set to: ${policy}. (Full policy support coming soon)`
-    );
+    this.config.dmPolicy = policy;
+    this.prompts.success(`DM Policy set to: ${policy}`);
 
-    // Allow list (for future use)
+    // Allow list (only used if policy is deny or pairing, or for whitelisting)
     const allowFrom = await this.prompts.ask(
-      "Allow messages from (comma-separated, * for all)",
+      "Allow messages from (comma-separated usernames, * for all users)",
       "*"
     );
 
@@ -395,6 +392,8 @@ export class ZTMChatWizard {
     );
     console.log("  Message Path:", this.config.messagePath);
     console.log("  Auto Reply:", this.config.autoReply);
+    console.log("  DM Policy:", this.config.dmPolicy);
+    console.log("  Allow From:", this.config.allowFrom?.join(", ") || "* (all users)");
 
     this.prompts.separator();
 
@@ -450,6 +449,7 @@ export class ZTMChatWizard {
       enableGroups: this.config.enableGroups ?? false,
       autoReply: this.config.autoReply ?? true,
       messagePath: this.config.messagePath || "/shared",
+      dmPolicy: this.config.dmPolicy ?? "allow",
       allowFrom: this.config.allowFrom,
     };
   }
