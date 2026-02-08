@@ -665,24 +665,17 @@ ZTM_CHAT_LOG_LEVEL=debug openclaw restart
 
 ```
 ztm-chat/
-├── index.ts              # Plugin entry point with CLI commands (190 lines)
-├── index.test.ts         # Index.ts tests (16 tests)
+├── index.ts              # Plugin entry point (190 lines)
+├── index.test.ts         # Plugin tests (16 tests)
 ├── package.json          # NPM package config
-├── README.md             # This file
+├── openclaw.plugin.json  # OpenClaw plugin manifest
 └── src/
-    ├── channel.ts        # Main channel adapter (917 lines)
-    ├── config.ts         # Configuration schema & validation (TypeBox)
-    ├── ztm-api.ts       # ZTM Agent API client (481 lines)
+    ├── channel.ts        # Channel adapter (917 lines)
+    ├── config.ts         # Config schema (TypeBox)
+    ├── ztm-api.ts       # API client (481 lines)
     ├── logger.ts         # Structured logging
     ├── runtime.ts        # Runtime management
-    ├── wizard.ts         # Interactive setup wizard (520 lines)
-    ├── mocks/
-    │   └── ztm-client.ts # Mock ZTM Agent for testing (282 lines)
-    └── *.test.ts         # Unit & integration tests (182 tests total)
+    ├── wizard.ts         # Setup wizard (520 lines)
+    └── mocks/
+        └── ztm-client.ts # Mock agent (282 lines)
 ```
-                index.test.ts
-```
-
-## License
-
-MIT
