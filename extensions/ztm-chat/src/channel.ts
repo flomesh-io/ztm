@@ -402,13 +402,32 @@ async function handlePairingRequest(
 
   const normalizedPeer = peer.trim().toLowerCase();
 
+  // Check if already pending or approved
+  if (state.pendingPairings.has(normalizedPeer)) {
+    logger.debug(`[${state.accountId}] Pairing request already pending for ${peer}`);
+    return;
+  }
+
+  const allowFrom = config.allowFrom ?? [];
+  if (allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedPeer)) {
+    logger.debug(`[${state.accountId}] ${peer} is already approved`);
+    return;
+  }
+
   // Add to pending pairings
   state.pendingPairings.set(normalizedPeer, new Date());
 
   // Send pairing request message
   const pairingMessage: ZTMMessage = {
     time: Date.now(),
-    message: `[PAIRING REQUEST] User "${peer}" wants to chat with you on OpenClaw ZTM Chat.\n\nTo approve, run: openclaw channels approve ztm-chat ${peer}\nTo deny, run: openclaw channels deny ztm-chat ${peer}`,
+    message: `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `To approve this user, run:\n` +
+      `  openclaw ztm-chat-approve ${peer}\n\n` +
+      `To deny this request, run:\n` +
+      `  openclaw ztm-chat-deny ${peer}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Note: Your bot is in "pairing" mode, which requires explicit approval for new users.`,
     sender: config.username,
   };
 
@@ -1010,6 +1029,22 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       ctx.log?.info(
         `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`
       );
+
+      // Show pairing mode status
+      if (config.dmPolicy === "pairing") {
+        const allowFrom = config.allowFrom ?? [];
+        if (allowFrom.length === 0) {
+          ctx.log?.info(
+            `[${account.accountId}] Pairing mode active - no approved users. ` +
+            `Users must send a message to initiate pairing. ` +
+            `Approve users with: openclaw ztm-chat-approve <username>`
+          );
+        } else {
+          ctx.log?.info(
+            `[${account.accountId}] Pairing mode active - ${allowFrom.length} approved user(s)`
+          );
+        }
+      }
 
       // Add message callback
       const messageCallback = (msg: ZTMChatMessage) => {

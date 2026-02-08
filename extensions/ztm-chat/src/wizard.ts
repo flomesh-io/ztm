@@ -424,6 +424,18 @@ export class ZTMChatWizard {
         }
         fs.writeFileSync(savePath, JSON.stringify(config, null, 2));
         this.prompts.success(`Configuration saved to ${savePath}`);
+
+        // Show pairing mode info
+        if (this.config.dmPolicy === "pairing") {
+          this.prompts.separator();
+          this.prompts.heading("🔒 Pairing Mode Enabled");
+          this.prompts.warning("Your bot is in pairing mode.");
+          this.prompts.info("To allow users to message you:");
+          console.log("   1. Users send a message to your bot");
+          this.prompts.info("   2. The bot will send them a pairing request");
+          console.log("   3. You approve them: openclaw ztm-chat-approve <username>");
+          this.prompts.info("   4. After approval, their messages will be accepted");
+        }
       } catch (error) {
         this.prompts.error(`Failed to save: ${error}`);
       }
