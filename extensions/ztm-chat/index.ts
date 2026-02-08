@@ -15,6 +15,9 @@ export {
   type WizardPrompts,
 } from "./src/wizard.js";
 
+// Plugin exports
+export { showFirstTimeBanner };
+
 // Plugin configuration path
 function getConfigPath(): string {
   return path.join(process.env.HOME || "", ".openclaw", "channels", "ztm-chat.json");
