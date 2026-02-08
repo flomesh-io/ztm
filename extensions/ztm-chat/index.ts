@@ -125,6 +125,10 @@ const plugin: ChannelPlugin = {
             console.log("\nNext steps:");
             console.log("  1. Restart OpenClaw: openclaw restart");
             console.log("  2. Check status: openclaw channels status ztm-chat");
+            console.log("\n💡 Pairing Mode:");
+            console.log("   Your bot is in pairing mode. Users must send a message");
+            console.log("   to initiate pairing. Approve them with:");
+            console.log("   openclaw ztm-chat-approve <username>");
           }
         }).catch((err) => {
           console.error("\n❌ Wizard error:", err.message);
