@@ -2,7 +2,37 @@
 
 This plugin integrates OpenClaw with ZTM (Zero Trust Mesh) Chat, enabling decentralized P2P messaging through the ZTM network.
 
-## Features
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph ZTM["ZTM Network"]
+        User["ZTM User"]
+        Mesh["P2P Mesh"]
+    end
+
+    subgraph OpenClaw["OpenClaw Gateway"]
+        Plugin["ztm-chat Plugin"]
+        Agent["AI Agent"]
+    end
+
+    User -->|"Message"| Mesh
+    Mesh -->|"Storage API"| Plugin
+    Plugin -->|"Route"| Agent
+```
+
+### Direct Storage Access (MVP)
+
+This plugin uses **direct ZTM Mesh storage access** for messaging:
+
+| Feature | Implementation |
+|---------|---------------|
+| Send Messages | `POST /api/setFileData/shared/{bot}/publish/peers/{peer}/messages/{id}` |
+| Receive Messages | `GET /api/allFiles/shared/{peer}/publish/peers/{bot}/messages/` |
+| User Discovery | `GET /api/allFiles/shared/*/publish/` |
+| Real-Time Updates | Polling with configurable interval |
+
+This approach provides full functionality via storage APIs, suitable for headless Gateway deployments.
 
 - **Peer-to-Peer Messaging**: Send and receive messages with other ZTM users
 - **Remote Connection**: Connect to ZTM Agent from anywhere via HTTP API
@@ -60,7 +90,7 @@ openclaw restart
 
 ## Prerequisites
 
-1. ZTM Agent running with Chat app installed (`ztm/app install chat`)
+1. ZTM Agent running (`ztm agent start`)
 2. A dedicated ZTM user account for the bot
 3. OpenClaw gateway installed (version 2026.1+ recommended)
 
@@ -380,52 +410,60 @@ openclaw channels directory ztm-chat peers
 openclaw channels directory ztm-chat groups
 ```
 
-## Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  ZTM User A     │────▶│   ZTM Network   │────▶│  OpenClaw Bot   │
-│  (Chat App)     │     │   (P2P Mesh)   │     │  (ztm-chat)    │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                        │
-                                                        ▼
-                                               ┌─────────────────┐
-                                               │  OpenClaw AI    │
-                                               │  Agent          │
-                                               └─────────────────┘
-```
-
 ## Message Flow
 
-1. User sends message via ZTM Chat
-2. Message stored to mesh storage
-3. Plugin detects via Watch mechanism (or polling fallback)
+```mermaid
+sequenceDiagram
+    participant U as ZTM User
+    participant M as ZTM Mesh
+    participant P as Plugin
+    participant A as AI Agent
+
+    U->>M: 1. Send message
+    M->>M: 2. Store to /shared/{peer}/publish/...
+    P->>M: 3. Poll/watch for new messages
+    M->>P: Return new messages
+    P->>A: 4. Route message
+    A->>P: 5. Generate response
+    P->>M: 6. Store response to /shared/{bot}/publish/...
+    M->>U: 7. Deliver to recipient
+```
+
+## API Endpoints
+
+1. User sends message via ZTM
+2. Message stored to mesh storage (`/shared/{peer}/publish/peers/{bot}/...`)
+3. Plugin polls/watches for new messages via storage API
 4. Message routed to OpenClaw agent
 5. AI generates response
-6. Response sent via Chat API to recipient
-7. Recipient receives message in ZTM Chat
+6. Response stored via storage API (`/shared/{bot}/publish/peers/{peer}/...`)
+7. Recipient receives message via ZTM
 
 ## API Endpoints
 
 The plugin uses these ZTM Agent API endpoints:
 
+### Storage API (Direct Access)
+
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/meshes/{meshName}` | Get mesh connection status |
-| GET | `/api/meshes` | List all meshes |
-| GET | `/apps/ztm/chat/api/users` | Discover ZTM users |
-| GET | `/apps/ztm/chat/api/chats` | Get all chats |
-| GET | `/apps/ztm/chat/api/peers/{peer}/messages` | Get messages from peer |
-| POST | `/apps/ztm/chat/api/peers/{peer}/messages` | Send message to peer |
+| GET | `/api/allFiles{path}` | List files in a directory |
+| POST | `/api/setFileData{path}` | Write data to a file |
+| GET | `/api/getFileData{path}` | Read file contents |
 | GET | `/api/watch{prefix}` | Watch for path changes |
 
-### Query Parameters
+### Message Paths
 
-Messages endpoint supports filtering:
+| Direction | Path Pattern | Description |
+|-----------|-------------|-------------|
+| Send | `/shared/{bot}/publish/peers/{peer}/messages/{time}-{sender}.json` | Bot publishes to peer |
+| Receive | `/shared/{peer}/publish/peers/{bot}/messages/*.json` | Peers publish to bot |
+| Discovery | `/shared/*/publish/` | Scan for active users |
 
-```
-GET /apps/ztm/chat/api/peers/{peer}/messages?since={timestamp}&before={timestamp}
-```
+### Filtering
+
+When receiving messages, filtering is applied client-side:
 
 | Parameter | Description |
 |-----------|-------------|
@@ -459,9 +497,9 @@ GET /apps/ztm/chat/api/peers/{peer}/messages?since={timestamp}&before={timestamp
 ### No Messages Received
 
 1. Check bot username is correct in configuration
-2. Verify ZTM Chat app is running on the agent:
+2. Verify ZTM Agent is running and connected to the mesh:
    ```bash
-   ztm get app
+   curl https://your-ztm-agent:7777/api/meshes
    ```
 
 3. Check mesh connectivity:
@@ -494,6 +532,19 @@ GET /apps/ztm/chat/api/peers/{peer}/messages?since={timestamp}&before={timestamp
 3. **Use environment variables**: Never commit credentials to version control
 4. **Regular certificate rotation**: Rotate certificates periodically
 
+### Storage Access Model
+
+The plugin uses ZTM's shared storage (`/shared/*`) for messaging:
+
+- `/shared/*` paths are **open by default** to all mesh members
+- The plugin does **not** set ACLs on messages
+- This is a trade-off: enables operation without additional apps, but means any mesh member could potentially access these paths
+
+**Current Mitigations**:
+- ZTM transport-layer authentication (mTLS)
+- `allowFrom` whitelist in plugin configuration
+- `dmPolicy: "pairing"` mode for explicit user approval
+
 ### Known Limitation: Message Signature Verification
 
 **Status**: ⚠️ Not Implemented
@@ -506,12 +557,7 @@ Alice → [Node A] → [Node B] → [Node C] → Bot
 
 The plugin does **not** currently verify message signatures at the application layer.
 
-**Current Mitigations**:
-- ZTM transport-layer authentication
-- `allowFrom` whitelist
-- `dmPolicy: "pairing"` mode
-
-**Risk Assessment**: **Low** for typical internal/network deployments.
+**Risk Assessment**: **Low** for typical internal/network deployments (assuming trusted mesh members).
 
 ## Feature Status
 
@@ -531,6 +577,7 @@ The plugin does **not** currently verify message signatures at the application l
 | Mock ZTM Agent | ✅ Done | Test infrastructure for development |
 | Configuration Discovery | ✅ Done | Auto-detect existing ZTM setup |
 | User Discovery | ✅ Done | Browse mesh users via API |
+| Direct Storage Access | ✅ Done | Uses `/api/allFiles` and `/api/setFileData` for messaging |
 
 ### Planned Features
 
@@ -556,7 +603,7 @@ The plugin does **not** currently verify message signatures at the application l
 ```bash
 cd extensions/ztm-chat
 npm install
-npm test          # Run all tests (133 tests)
+npm test          # Run all tests (182 tests)
 npm test:watch    # Watch mode for development
 ```
 
@@ -570,10 +617,26 @@ import { MockZTMClient, createMockConfig } from "./mocks/ztm-client.js";
 const client = new MockZTMClient(createMockConfig());
 await client.start();
 
-// Simulate API calls
-const messages = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages`);
+// Simulate storage API calls
+const messages = await fetch(`${client.url}/api/allFiles/shared/alice/publish/peers/bot/messages/`);
 
 await client.stop();
+```
+
+### Test Coverage
+
+```
+Test Files  7 passed (7)
+      Tests  182 passed (182)
+
+覆盖率:
+- ZTM API Client: 40 tests
+- Configuration: 56 tests
+- Channel Plugin: 23 tests
+- Wizard: 15 tests
+- Logger: 15 tests
+- Runtime: 17 tests
+- Index: 16 tests
 ```
 
 ### Debug Logging
@@ -586,20 +649,22 @@ ZTM_CHAT_LOG_LEVEL=debug openclaw restart
 
 ```
 ztm-chat/
-├── index.ts              # Plugin entry point with CLI commands (135 lines)
+├── index.ts              # Plugin entry point with CLI commands (190 lines)
 ├── index.test.ts         # Index.ts tests (16 tests)
 ├── package.json          # NPM package config
 ├── README.md             # This file
 └── src/
     ├── channel.ts        # Main channel adapter (917 lines)
     ├── config.ts         # Configuration schema & validation (TypeBox)
-    ├── ztm-api.ts       # ZTM Agent API client (345 lines)
-    ├── logger.ts        # Structured logging
-    ├── runtime.ts       # Runtime management
-    ├── wizard.ts        # Interactive setup wizard (520 lines)
+    ├── ztm-api.ts       # ZTM Agent API client (481 lines)
+    ├── logger.ts         # Structured logging
+    ├── runtime.ts        # Runtime management
+    ├── wizard.ts         # Interactive setup wizard (520 lines)
     ├── mocks/
     │   └── ztm-client.ts # Mock ZTM Agent for testing (282 lines)
-    ├── *.test.ts        # Unit & integration tests (133 tests total)
+    └── *.test.ts         # Unit & integration tests (182 tests total)
+```
+                index.test.ts
 ```
 
 ## License
