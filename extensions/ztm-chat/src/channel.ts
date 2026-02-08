@@ -742,7 +742,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       );
     },
     formatAllowFrom: ({ allowFrom }) =>
-      allowFrom
+      (allowFrom ?? [])
         .map((entry) => String(entry).trim())
         .filter(Boolean)
         .map((entry) => entry.toLowerCase()),
