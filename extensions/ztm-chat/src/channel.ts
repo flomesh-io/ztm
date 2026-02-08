@@ -281,8 +281,8 @@ function buildChannelConfigSchemaWithHints(
 }
 
 // Account ID resolution helpers
-function listZTMChatAccountIds(cfg: OpenClawConfig): string[] {
-  const accounts = cfg.channels?.["ztm-chat"]?.accounts;
+function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
+  const accounts = cfg?.channels?.["ztm-chat"]?.accounts;
   if (!accounts) return [];
   return Object.keys(accounts);
 }
@@ -291,10 +291,10 @@ function resolveZTMChatAccount({
   cfg,
   accountId,
 }: {
-  cfg: OpenClawConfig;
+  cfg?: OpenClawConfig;
   accountId?: string;
 }): ResolvedZTMChatAccount {
-  const channelConfig = cfg.channels?.["ztm-chat"];
+  const channelConfig = cfg?.channels?.["ztm-chat"];
   const accountKey = accountId ?? "default";
 
   if (!channelConfig) {
