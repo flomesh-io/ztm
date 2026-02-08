@@ -27,7 +27,7 @@ function isFirstInstall(): boolean {
 }
 
 // Show first-time setup banner
-function showFirstTimeBanner(): void {
+export function showFirstTimeBanner(): void {
   console.log("");
   console.log("═".repeat(60));
   console.log("  🤖 ZTM Chat - First Time Setup");
@@ -81,13 +81,25 @@ const plugin: ChannelPlugin = {
     // Register the channel
     api.registerChannel({ plugin: ztmChatPlugin });
 
-    // Check for first-time installation
+    // Check for first-time installation and run wizard
     if (shouldRunWizard()) {
-      showFirstTimeBanner();
-
-      // Suggest running the wizard
-      api.logger?.info("ZTM Chat first-time setup detected");
-      api.logger?.info("Run 'npx ztm-chat-wizard' to configure");
+      // Import and run wizard asynchronously
+      import("./src/wizard.js").then(({ runWizard }) => {
+        runWizard().then((result) => {
+          if (result) {
+            console.log("\n✅ Configuration complete!");
+            console.log(`📁 Saved to: ${result.savePath || "memory only"}`);
+            console.log("\nNext steps:");
+            console.log("  1. Restart OpenClaw: openclaw restart");
+            console.log("  2. Check status: openclaw channels status ztm-chat");
+          }
+        }).catch((err) => {
+          console.error("\n❌ Wizard error:", err.message);
+          console.log("   Run 'npx ztm-chat-wizard' to retry");
+        });
+      }).catch((err) => {
+        console.error("Failed to load wizard:", err.message);
+      });
     }
   },
 
