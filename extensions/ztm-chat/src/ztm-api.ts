@@ -3,27 +3,20 @@
 // Supports both direct storage API access and Chat App HTTP endpoints
 
 import type { ZTMChatConfig } from "./config.js";
+import { logger as ztmLogger } from "./logger.js";
 
 // Use actual logger if available, fallback to console
-let logger: {
+const logger: {
   debug?: (...args: unknown[]) => void;
   info?: (...args: unknown[]) => void;
   warn?: (...args: unknown[]) => void;
   error?: (...args: unknown[]) => void;
+} = ztmLogger || {
+  debug: (...args: unknown[]) => console.debug("[ZTM API]", ...args),
+  info: (...args: unknown[]) => console.info("[ZTM API]", ...args),
+  warn: (...args: unknown[]) => console.warn("[ZTM API]", ...args),
+  error: (...args: unknown[]) => console.error("[ZTM API]", ...args),
 };
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const loggerModule = await import("./logger.js");
-  logger = loggerModule.logger || console;
-} catch {
-  logger = {
-    debug: (...args: unknown[]) => console.debug("[ZTM API]", ...args),
-    info: (...args: unknown[]) => console.info("[ZTM API]", ...args),
-    warn: (...args: unknown[]) => console.warn("[ZTM API]", ...args),
-    error: (...args: unknown[]) => console.error("[ZTM API]", ...args),
-  };
-}
 
 // ZTM Message interface - matches ZTM Agent API format
 export interface ZTMMessage {
