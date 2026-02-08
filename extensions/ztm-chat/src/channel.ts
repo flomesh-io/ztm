@@ -33,7 +33,7 @@ export interface ResolvedZTMChatAccount {
   accountId: string;
   username: string;
   enabled: boolean;
-  config: ZTMChatConfig;
+  config: Partial<ZTMChatConfig>;
 }
 
 // Local type definition for ZTM chat messages (normalized)
