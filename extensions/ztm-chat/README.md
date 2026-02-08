@@ -232,6 +232,10 @@ openclaw channels status ztm-chat --probe
 # Enable/disable channel
 openclaw channels disable ztm-chat
 openclaw channels enable ztm-chat
+
+# Pairing mode commands (when dmPolicy is "pairing")
+openclaw channels approve ztm-chat <username>   # Approve a user
+openclaw channels deny ztm-chat <username>     # Deny a pairing request
 ```
 
 ## Configuration Options
@@ -258,8 +262,8 @@ openclaw channels enable ztm-chat
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `dmPolicy` | string | `"allow"` | DM policy: `"allow"`, `"deny"`, `"pairing"` |
-| `allowFrom` | string[] | `[]` | List of allowed sender usernames |
+| `dmPolicy` | string | `"pairing"` | DM policy: `"allow"`, `"deny"`, `"pairing"` |
+| `allowFrom` | string[] | `[]` | List of approved usernames (whitelist) |
 
 ### Advanced Options
 
@@ -294,7 +298,8 @@ Example configuration:
   "enableGroups": false,
   "autoReply": true,
   "messagePath": "/shared",
-  "allowFrom": ["alice", "bob", "dev-team"]
+  "dmPolicy": "pairing",
+  "allowFrom": ["alice", "trusted-team"]
 }
 ```
 
@@ -310,7 +315,32 @@ Hello! Can you help me with something?
 
 The bot will respond through OpenClaw's AI agent.
 
-### Checking Status
+### Pairing Mode
+
+By default, the bot uses **pairing mode** (`dmPolicy: "pairing"`). This means:
+
+1. **New users** must be approved before they can send messages
+2. When an unapproved user sends a message, the bot sends them a pairing request
+3. You approve users using the OpenClaw CLI
+
+#### Approve a User
+
+```bash
+# Approve a specific user
+openclaw channels approve ztm-chat alice
+
+# After approval, restart to apply
+openclaw restart
+```
+
+#### Deny a Pairing Request
+
+```bash
+# Deny a pairing request
+openclaw channels deny ztm-chat bob
+```
+
+#### Check Status
 
 ```bash
 # Basic status
@@ -321,6 +351,23 @@ openclaw channels status ztm-chat --probe
 
 # View logs
 openclaw logs --level debug --channel ztm-chat
+```
+
+#### Pairing Mode Policies
+
+| Policy | Behavior |
+|--------|----------|
+| `allow` | Accept messages from all users (no approval needed) |
+| `deny` | Reject messages from all users (except allowFrom list) |
+| `pairing` | Require explicit approval for new users (recommended) |
+
+To change the policy, edit `~/.openclaw/channels/ztm-chat.json`:
+
+```json
+{
+  "dmPolicy": "pairing",
+  "allowFrom": ["alice", "trusted-team"]
+}
 ```
 
 ### Directory Operations
