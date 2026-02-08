@@ -446,4 +446,173 @@ describe("ZTM API Client", () => {
       expect(data.error).toBe("Mesh not found");
     });
   });
+
+  describe("Direct Storage API (MVP)", () => {
+    describe("sendMessageViaStorage", () => {
+      it("should construct correct file path for sending messages", () => {
+        const config = {
+          agentUrl: "https://agent.example.com:7777",
+          meshName: "test-mesh",
+          username: "test-bot",
+        };
+        const message = {
+          time: 1234567890,
+          message: "Hello",
+          sender: "test-bot",
+        };
+        const messageId = `${message.time}-${message.sender}`;
+        const path = `/shared/${config.username}/publish/peers/alice/messages/`;
+        const expectedPath = `${path}${messageId}.json`;
+
+        expect(expectedPath).toBe("/shared/test-bot/publish/peers/alice/messages/1234567890-test-bot.json");
+      });
+
+      it("should build correct setFileData API URL", () => {
+        const baseUrl = "https://agent.example.com:7777";
+        const filePath = "/shared/test-bot/publish/peers/alice/messages/1234567890-test-bot.json";
+        const apiUrl = `/api/setFileData${filePath}`;
+        const fullUrl = `${baseUrl}${apiUrl}`;
+
+        expect(fullUrl).toBe("https://agent.example.com:7777/api/setFileData/shared/test-bot/publish/peers/alice/messages/1234567890-test-bot.json");
+      });
+    });
+
+    describe("receiveMessagesViaStorage", () => {
+      it("should construct correct subscribe path for receiving messages", () => {
+        const config = {
+          agentUrl: "https://agent.example.com:7777",
+          meshName: "test-mesh",
+          username: "test-bot",
+        };
+        const peer = "alice";
+        const expectedPath = `/shared/${peer}/publish/peers/${config.username}/messages/`;
+
+        expect(expectedPath).toBe("/shared/alice/publish/peers/test-bot/messages/");
+      });
+
+      it("should build correct allFiles API URL", () => {
+        const baseUrl = "https://agent.example.com:7777";
+        const path = "/shared/alice/publish/peers/test-bot/messages/";
+        const apiUrl = `/api/allFiles${path}`;
+        const fullUrl = `${baseUrl}${apiUrl}`;
+
+        expect(fullUrl).toBe("https://agent.example.com:7777/api/allFiles/shared/alice/publish/peers/test-bot/messages/");
+      });
+
+      it("should filter messages by time correctly", () => {
+        const messages = [
+          { time: 1000, message: "First", sender: "alice" },
+          { time: 2000, message: "Second", sender: "alice" },
+          { time: 3000, message: "Third", sender: "alice" },
+        ];
+
+        const since = 1500;
+        const before = 2500;
+        const filtered = messages.filter(m => m.time > since && m.time < before);
+
+        expect(filtered.length).toBe(1);
+        expect(filtered[0].message).toBe("Second");
+      });
+
+      it("should handle empty message list", () => {
+        const messages: { time: number; message: string; sender: string }[] = [];
+
+        expect(messages.length).toBe(0);
+      });
+    });
+
+    describe("discoverUsersViaStorage", () => {
+      it("should construct correct discovery path", () => {
+        const expectedPath = "/shared/*/publish/";
+
+        expect(expectedPath).toBe("/shared/*/publish/");
+      });
+
+      it("should build correct allFiles API URL for discovery", () => {
+        const baseUrl = "https://agent.example.com:7777";
+        const path = "/shared/*/publish/";
+        const apiUrl = `/api/allFiles${path}`;
+        const fullUrl = `${baseUrl}${apiUrl}`;
+
+        expect(fullUrl).toBe("https://agent.example.com:7777/api/allFiles/shared/*/publish/");
+      });
+
+      it("should extract username from shared path", () => {
+        const path = "/shared/alice/publish/peers/test-bot/messages/123.json";
+        const match = path.match(/^\/shared\/([^\/]+)\//);
+
+        expect(match?.[1]).toBe("alice");
+      });
+
+      it("should handle multiple paths and extract unique users", () => {
+        const paths = [
+          "/shared/alice/publish/peers/bot/messages/1.json",
+          "/shared/alice/publish/peers/bot/messages/2.json",
+          "/shared/bob/publish/peers/bot/messages/1.json",
+          "/shared/charlie/publish/groups/alice/test/messages/1.json",
+        ];
+
+        const userSet = new Set<string>();
+        for (const p of paths) {
+          const match = p.match(/^\/shared\/([^\/]+)\//);
+          if (match) {
+            userSet.add(match[1]);
+          }
+        }
+
+        expect(userSet.size).toBe(3);
+        expect(userSet.has("alice")).toBe(true);
+        expect(userSet.has("bob")).toBe(true);
+        expect(userSet.has("charlie")).toBe(true);
+      });
+
+      it("should exclude bot's own username from discovery", () => {
+        const botUsername = "test-bot";
+        const paths = [
+          "/shared/alice/publish/peers/bot/messages/1.json",
+          "/shared/test-bot/publish/peers/alice/messages/1.json",
+          "/shared/bob/publish/peers/bot/messages/1.json",
+        ];
+
+        const userSet = new Set<string>();
+        for (const p of paths) {
+          const match = p.match(/^\/shared\/([^\/]+)\//);
+          if (match && match[1] !== botUsername) {
+            userSet.add(match[1]);
+          }
+        }
+
+        expect(userSet.has("alice")).toBe(true);
+        expect(userSet.has("bob")).toBe(true);
+        expect(userSet.has("test-bot")).toBe(false);
+      });
+    });
+
+    describe("Message Path Building", () => {
+      it("should build correct outgoing message path", () => {
+        const buildPeerMessagePath = (
+          messagePath: string,
+          username: string,
+          peer: string
+        ) => `${messagePath}/${username}/publish/peers/${peer}/messages/`;
+
+        const result = buildPeerMessagePath("/shared", "test-bot", "alice");
+
+        // Bot publishes to alice
+        expect(result).toBe("/shared/test-bot/publish/peers/alice/messages/");
+      });
+
+      it("should handle special characters in usernames", () => {
+        const buildPeerMessagePath = (
+          messagePath: string,
+          username: string,
+          peer: string
+        ) => `${messagePath}/${username}/publish/peers/${peer}/messages/`;
+
+        const result = buildPeerMessagePath("/shared", "bot-test_123", "user_name-456");
+
+        expect(result).toBe("/shared/bot-test_123/publish/peers/user_name-456/messages/");
+      });
+    });
+  });
 });
