@@ -433,7 +433,7 @@ export class ZTMChatWizard {
           this.prompts.info("To allow users to message you:");
           console.log("   1. Users send a message to your bot");
           this.prompts.info("   2. The bot will send them a pairing request");
-          console.log("   3. You approve them: openclaw ztm-chat-approve <username>");
+          console.log("   3. You approve them: openclaw channels approve ztm-chat <username>");
           this.prompts.info("   4. After approval, their messages will be accepted");
         }
       } catch (error) {
