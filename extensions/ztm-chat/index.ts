@@ -50,7 +50,7 @@ function writeConfig(config: Record<string, unknown>): boolean {
 }
 
 // Plugin registration function
-async function registerPlugin(api: OpenClawPluginApi): Promise<void> {
+function registerPlugin(api: OpenClawPluginApi): void {
   // Set runtime for the plugin
   setZTMRuntime(api.runtime);
 
