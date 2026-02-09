@@ -31,6 +31,7 @@ import {
   ZTMChatConfigSchema,
   type ZTMChatConfig,
   isConfigMinimallyValid,
+  getDefaultConfig,
   type DMPolicy,
 } from "./config.js";
 import {
@@ -300,7 +301,7 @@ function resolveZTMChatAccount({
       accountId: accountKey,
       username: "",
       enabled: false,
-      config: {},
+      config: getDefaultConfig(),
     };
   }
 
@@ -309,11 +310,14 @@ function resolveZTMChatAccount({
 
   const resolved = account ?? defaultAccount ?? {};
 
+  // Apply defaults to config
+  const config = resolveZTMChatConfig(resolved);
+
   return {
     accountId: accountKey,
     username: resolved.username ?? accountKey,
     enabled: resolved.enabled ?? channelConfig.enabled ?? true,
-    config: resolved,
+    config,
   };
 }
 
@@ -1025,7 +1029,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
           accountId: accountId || "default",
           kind: "config",
           level: "error",
-          message: "Missing required configuration (agentUrl, meshName, or username)",
+          message: "Missing required configuration (agentUrl or username)",
         });
         return issues;
       }
