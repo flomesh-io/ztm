@@ -356,7 +356,7 @@ function checkDmPolicy(
     return { allowed: true, reason: "whitelisted", action: "process" };
   }
 
-  const policy = config.dmPolicy ?? "allow";
+  const policy = config.dmPolicy ?? "pairing";
 
   switch (policy) {
     case "allow":
@@ -779,7 +779,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         : "channels.ztm-chat.";
 
       return {
-        policy: config?.dmPolicy ?? "allow",
+        policy: config?.dmPolicy ?? "pairing",
         allowFrom: config?.allowFrom ?? [],
         policyPath: `${basePath}dmPolicy`,
         allowFromPath: `${basePath}allowFrom`,
