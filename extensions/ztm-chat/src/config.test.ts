@@ -346,16 +346,6 @@ describe("isConfigMinimallyValid", () => {
     expect(isConfigMinimallyValid(config)).toBe(false);
   });
 
-  it("should return false for missing meshName", () => {
-    const config = {
-      agentUrl: "https://example.com",
-      meshName: "",
-      username: "test-bot",
-    } as Partial<ZTMChatConfig>;
-
-    expect(isConfigMinimallyValid(config)).toBe(false);
-  });
-
   it("should return false for missing username", () => {
     const config = {
       agentUrl: "https://example.com",

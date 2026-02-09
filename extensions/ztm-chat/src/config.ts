@@ -189,8 +189,6 @@ export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean 
   return Boolean(
     config.agentUrl &&
       config.agentUrl.trim() &&
-      config.meshName &&
-      config.meshName.trim() &&
       config.username &&
       config.username.trim()
   );
