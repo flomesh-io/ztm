@@ -842,6 +842,7 @@ async function joinMesh(
 }
 
 // Initialize runtime for an account
+// Retries mesh connectivity check after join (ztm join causes brief disconnect)
 async function initializeRuntime(
   config: ZTMChatConfig,
   accountId: string
@@ -851,23 +852,37 @@ async function initializeRuntime(
 
   try {
     const apiClient = createZTMApiClient(config);
-    const meshInfo = await apiClient.getMeshInfo();
+
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY_MS = 2000;
+    let meshInfo: ZTMMeshInfo | null = null;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      meshInfo = await apiClient.getMeshInfo();
+      if (meshInfo.connected) break;
+      if (attempt < MAX_RETRIES) {
+        logger.info(
+          `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+    }
 
     state.apiClient = apiClient;
     state.connected = true;
-    state.meshConnected = meshInfo.connected;
-    state.peerCount = meshInfo.endpoints;
-    state.lastError = meshInfo.connected ? null : "Not connected to ZTM mesh";
+    state.meshConnected = meshInfo!.connected;
+    state.peerCount = meshInfo!.endpoints;
+    state.lastError = meshInfo!.connected ? null : "Not connected to ZTM mesh";
 
     logger.info(
-      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
+      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo!.endpoints}`
     );
 
-    if (meshInfo.connected) {
+    if (meshInfo!.connected) {
       await startMessageWatcher(state);
     }
 
-    return meshInfo.connected;
+    return meshInfo!.connected;
   } catch (error) {
     state.lastError = error instanceof Error ? error.message : String(error);
     state.connected = false;
@@ -1247,11 +1262,24 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         }
       }
 
-      // Step 6: Join mesh
-      ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName}...`);
-      const joinSuccess = await joinMesh(config.meshName, endpointName, permitPath);
-      if (!joinSuccess) {
-        throw new Error("Failed to join mesh");
+      // Step 6: Join mesh (skip if already connected)
+      const preCheckClient = createZTMApiClient(config);
+      let alreadyConnected = false;
+      try {
+        const preCheck = await preCheckClient.getMeshInfo();
+        alreadyConnected = preCheck.connected;
+      } catch {
+        // Agent reachable but mesh not joined yet
+      }
+
+      if (alreadyConnected) {
+        ctx.log?.info(`Already connected to mesh ${config.meshName}, skipping join`);
+      } else {
+        ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName}...`);
+        const joinSuccess = await joinMesh(config.meshName, endpointName, permitPath);
+        if (!joinSuccess) {
+          throw new Error("Failed to join mesh");
+        }
       }
 
       // Step 7: Initialize runtime (original flow)
