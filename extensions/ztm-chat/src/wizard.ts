@@ -385,7 +385,7 @@ export class ZTMChatWizard {
     return {
       agentUrl: this.config.agentUrl || "http://localhost:7777",
       permitUrl: this.config.permitUrl || "https://ztm-portal.flomesh.io:7779/permit",
-      meshName: this.config.meshName || "",
+      meshName: this.config.meshName || "openclaw-mesh",
       username: this.config.username || "openclaw-bot",
       enableGroups: this.config.enableGroups ?? false,
       autoReply: this.config.autoReply ?? true,
