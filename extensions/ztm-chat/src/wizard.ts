@@ -467,7 +467,7 @@ export class ZTMChatWizard {
       enableGroups: this.config.enableGroups ?? false,
       autoReply: this.config.autoReply ?? true,
       messagePath: this.config.messagePath || "/shared",
-      dmPolicy: this.config.dmPolicy ?? "allow",
+      dmPolicy: this.config.dmPolicy ?? "pairing",
       allowFrom: this.config.allowFrom,
     };
   }
