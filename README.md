@@ -349,11 +349,9 @@ openclaw channels status ztm-chat --probe
 ```sh
 # Setup wizard
 npx ztm-chat-wizard
-npx ztm-wizard  # Short alias
 
 # Auto-discover existing ZTM configuration
 npx ztm-chat-discover
-npx ztm-discover  # Short alias
 
 # Check channel status
 openclaw channels status ztm-chat
