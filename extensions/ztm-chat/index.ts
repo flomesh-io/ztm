@@ -84,10 +84,10 @@ async function registerPlugin(api: OpenClawPluginApi): Promise<void> {
             console.log(`   Agent URL: ${discovered.agentUrl}`);
             console.log(`   Mesh: ${discovered.meshName}`);
             console.log(`   Username: ${discovered.username}`);
-            console.log("\n💡 To use this configuration, run: npx ztm-chat-wizard");
+            console.log("\n💡 To use this configuration, run: openclaw ztm-chat-wizard");
           } else {
             console.log("\n⚠️  No existing ZTM configuration found.");
-            console.log("   Run 'npx ztm-chat-wizard' to set up.");
+            console.log("   Run 'openclaw ztm-chat-wizard' to set up.");
           }
         });
     },

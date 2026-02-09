@@ -298,7 +298,7 @@ Choose one of these methods:
 
 ```sh
 # Run the setup wizard
-npx ztm-chat-wizard
+openclaw ztm-chat-wizard
 
 # The wizard will guide you through:
 # 1. ZTM Agent URL (default: https://localhost:7777)
@@ -307,6 +307,8 @@ npx ztm-chat-wizard
 # 4. mTLS authentication (optional)
 # 5. Security settings
 ```
+
+> **Note**: Use `openclaw ztm-chat-wizard` when running from the ZTM source repository (before npm publication). Use `npx ztm-chat-wizard` only after the package is published to npm.
 
 **Option B: Manual Configuration**
 
@@ -348,10 +350,10 @@ openclaw channels status ztm-chat --probe
 
 ```sh
 # Setup wizard
-npx ztm-chat-wizard
+openclaw ztm-chat-wizard
 
 # Auto-discover existing ZTM configuration
-npx ztm-chat-discover
+openclaw ztm-chat-discover
 
 # Check channel status
 openclaw channels status ztm-chat
@@ -366,6 +368,8 @@ openclaw channels directory ztm-chat peers
 openclaw channels disable ztm-chat
 openclaw channels enable ztm-chat
 ```
+
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard` and `openclaw ztm-chat-discover`. Use `npx` only after the package is published to npm.
 
 ---
 

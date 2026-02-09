@@ -60,7 +60,7 @@ openclaw plugins install -l ./extensions/ztm-chat
 
 ```bash
 # After plugin is installed, run the wizard
-npx ztm-chat-wizard
+openclaw ztm-chat-wizard
 
 # Follow the on-screen prompts:
 # 1. ZTM Agent URL
@@ -69,6 +69,8 @@ npx ztm-chat-wizard
 # 4. mTLS configuration (optional)
 # 5. Security settings
 ```
+
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. Use `npx ztm-chat-wizard` only after the package is published to npm.
 
 ### Alternative: Manual Configuration
 
@@ -94,7 +96,7 @@ EOF
 openclaw restart
 ```
 
-> **Note**: The wizard command `npx ztm-chat-wizard` only works after the plugin is installed.
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. The wizard command requires the plugin to be installed first. Use `npx ztm-chat-wizard` only after the package is published to npm.
 
 ## Prerequisites
 
@@ -109,16 +111,16 @@ openclaw restart
 The wizard is available after the plugin is installed:
 
 ```bash
-# From OpenClaw's plugin directory
+# From OpenClaw's plugin directory (when using ZTM source repository)
 cd ~/.openclaw/plugins/ztm-chat
-npx ztm-chat-wizard
+openclaw ztm-chat-wizard
 
 # Or install globally (when published to npm)
 npm install -g @ztm/openclaw-ztm-chat
 ztm-chat-wizard
 ```
 
-> **Note**: The wizard command requires the plugin to be installed first.
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. Use `npx ztm-chat-wizard` or `ztm-chat-wizard` only after the package is published to npm.
 
 ### Wizard Steps
 
@@ -195,7 +197,7 @@ Next steps:
 Discover existing ZTM configuration without running the wizard:
 
 ```bash
-npx ztm-chat-discover
+openclaw ztm-chat-discover
 
 # Output:
 📡 Discovered ZTM Configuration:
@@ -203,8 +205,10 @@ npx ztm-chat-discover
    Mesh: production-mesh
    Username: my-bot
 
-💡 To use this configuration, run: npx ztm-chat-wizard
+💡 To use this configuration, run: openclaw ztm-chat-wizard
 ```
+
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-discover`. Use `npx ztm-chat-discover` only after the package is published to npm.
 
 ## CLI Commands
 
@@ -214,11 +218,13 @@ npx ztm-chat-discover
 
 ```bash
 # Setup wizard (after plugin is installed)
-npx ztm-chat-wizard
+openclaw ztm-chat-wizard
 
 # Auto-discover existing configuration
-npx ztm-chat-discover
+openclaw ztm-chat-discover
 ```
+
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard` and `openclaw ztm-chat-discover`. Use `npx` only after the package is published to npm.
 
 ### OpenClaw Commands
 

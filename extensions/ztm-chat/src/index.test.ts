@@ -177,7 +177,7 @@ describe("CLI Banner Output", () => {
   it("should show first time banner content", () => {
     const logs: string[] = [];
 
-    // Simulate the banner content that would be output
+    // Simulate banner content that would be output
     const bannerLines = [
       "",
       "═══════════════════════════════════════════════════════════════════════",
@@ -187,7 +187,7 @@ describe("CLI Banner Output", () => {
       "  To configure ZTM Chat, you have two options:",
       "",
       "  1️⃣  Interactive Wizard (recommended)",
-      "     Run: npx ztm-chat-wizard",
+      "     Run: openclaw ztm-chat-wizard",
       "",
       "  2️⃣  Manual Configuration",
       "     Edit: ~/.openclaw/channels/ztm-chat.json",
@@ -202,21 +202,21 @@ describe("CLI Banner Output", () => {
     ];
 
     expect(bannerLines.some((l) => l.includes("ZTM Chat - First Time Setup"))).toBe(true);
-    expect(bannerLines.some((l) => l.includes("npx ztm-chat-wizard"))).toBe(true);
+    expect(bannerLines.some((l) => l.includes("openclaw ztm-chat-wizard"))).toBe(true);
     expect(bannerLines.some((l) => l.includes("CI=true"))).toBe(true);
   });
 
   it("should show wizard options in banner", () => {
     const bannerLines = [
       "  1️⃣  Interactive Wizard (recommended)",
-      "     Run: npx ztm-chat-wizard",
+      "     Run: openclaw ztm-chat-wizard",
       "",
       "  2️⃣  Manual Configuration",
       "     Edit: ~/.openclaw/channels/ztm-chat.json",
     ];
 
     expect(bannerLines.some((l) => l.includes("Interactive Wizard"))).toBe(true);
-    expect(bannerLines.some((l) => l.includes("npx ztm-chat-wizard"))).toBe(true);
+    expect(bannerLines.some((l) => l.includes("openclaw ztm-chat-wizard"))).toBe(true);
     expect(bannerLines.some((l) => l.includes("Manual Configuration"))).toBe(true);
   });
 });
