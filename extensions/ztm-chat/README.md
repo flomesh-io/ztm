@@ -237,8 +237,8 @@ openclaw channels disable ztm-chat
 openclaw channels enable ztm-chat
 
 # Pairing mode commands (when dmPolicy is "pairing")
-openclaw channels approve ztm-chat <username>   # Approve a user
-openclaw channels deny ztm-chat <username>     # Deny a pairing request
+openclaw pairing list --channel ztm-chat             # List pending pairing requests
+openclaw pairing approve --channel ztm-chat <code>   # Approve a pairing request
 ```
 
 ## Configuration Options
@@ -318,24 +318,21 @@ The bot will respond through OpenClaw's AI agent.
 By default, the bot uses **pairing mode** (`dmPolicy: "pairing"`). This means:
 
 1. **New users** must be approved before they can send messages
-2. When an unapproved user sends a message, the bot sends them a pairing request
-3. You approve users using the OpenClaw CLI
+2. When an unapproved user sends a message, the bot sends them a pairing code
+3. You approve users using the OpenClaw CLI with their pairing code
 
-#### Approve a User
+#### List Pending Requests
 
 ```bash
-# Approve a specific user
-openclaw channels approve ztm-chat alice
-
-# After approval, restart to apply
-openclaw restart
+# List pending pairing requests
+openclaw pairing list --channel ztm-chat
 ```
 
-#### Deny a Pairing Request
+#### Approve a Pairing Request
 
 ```bash
-# Deny a pairing request
-openclaw channels deny ztm-chat bob
+# Approve using the pairing code shown in the list
+openclaw pairing approve --channel ztm-chat <code>
 ```
 
 #### Check Status

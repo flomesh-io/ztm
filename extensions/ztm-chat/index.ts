@@ -103,10 +103,8 @@ const plugin: any = {
   register: registerPlugin,
 };
 
-// Note: The following commands are registered via OpenClaw's channels subcommand:
-// - openclaw channels approve ztm-chat <username>
-// - openclaw channels deny ztm-chat <username>
-// - openclaw channels pairings ztm-chat
-// These are handled by OpenClaw core, not this plugin.
+// Pairing commands are handled by OpenClaw core:
+// - openclaw pairing list --channel ztm-chat
+// - openclaw pairing approve --channel ztm-chat <code>
 
 export default plugin;

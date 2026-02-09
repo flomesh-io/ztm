@@ -279,11 +279,45 @@ function buildChannelConfigSchemaWithHints(
   };
 }
 
+// Read channel config from external file (~/.openclaw/channels/ztm-chat.json)
+function readExternalChannelConfig(): Record<string, unknown> | null {
+  try {
+    const configPath = path.join(
+      process.env.HOME || "",
+      ".openclaw",
+      "channels",
+      "ztm-chat.json",
+    );
+    if (fs.existsSync(configPath)) {
+      const content = fs.readFileSync(configPath, "utf-8");
+      return JSON.parse(content);
+    }
+  } catch {
+    // Ignore read/parse errors
+  }
+  return null;
+}
+
+// Get effective channel config: cfg.channels["ztm-chat"] or external file fallback
+function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, unknown> | null {
+  const inlineConfig = (cfg?.channels?.["ztm-chat"] as any);
+  if (inlineConfig && typeof inlineConfig === "object" && Object.keys(inlineConfig).length > 0) {
+    return inlineConfig;
+  }
+  return readExternalChannelConfig();
+}
+
 // Account ID resolution helpers
 function listZTMChatAccountIds(cfg?: OpenClawConfig): string[] {
-  const accounts = (cfg?.channels?.["ztm-chat"] as any)?.accounts;
-  if (!accounts) return [];
-  return Object.keys(accounts);
+  const channelConfig = getEffectiveChannelConfig(cfg);
+  const accounts = channelConfig?.accounts as Record<string, unknown> | undefined;
+  if (accounts && typeof accounts === "object") {
+    const ids = Object.keys(accounts);
+    if (ids.length > 0) return ids;
+  }
+  // Fallback: return ["default"] so the channel appears in channels status
+  // This matches the pattern used by the Telegram SDK
+  return ["default"];
 }
 
 function resolveZTMChatAccount({
@@ -293,7 +327,7 @@ function resolveZTMChatAccount({
   cfg?: OpenClawConfig;
   accountId?: string;
 }): ResolvedZTMChatAccount {
-  const channelConfig = cfg?.channels?.["ztm-chat"] as any;
+  const channelConfig = getEffectiveChannelConfig(cfg);
   const accountKey = accountId ?? "default";
 
   if (!channelConfig) {
@@ -305,18 +339,19 @@ function resolveZTMChatAccount({
     };
   }
 
-  const account = channelConfig.accounts?.[accountKey];
-  const defaultAccount = channelConfig.accounts?.default;
+  const accounts = channelConfig.accounts as Record<string, unknown> | undefined;
+  const account = (accounts?.[accountKey] ?? accounts?.default ?? {}) as Record<string, unknown>;
 
-  const resolved = account ?? defaultAccount ?? {};
+  // Merge top-level config with account-level overrides (account takes precedence)
+  const { accounts: _ignored, ...baseConfig } = channelConfig;
+  const merged = { ...baseConfig, ...account };
 
-  // Apply defaults to config
-  const config = resolveZTMChatConfig(resolved);
+  const config = resolveZTMChatConfig(merged);
 
   return {
     accountId: accountKey,
-    username: resolved.username ?? accountKey,
-    enabled: resolved.enabled ?? channelConfig.enabled ?? true,
+    username: (merged.username as string) ?? accountKey,
+    enabled: (merged.enabled as boolean) ?? (channelConfig.enabled as boolean) ?? true,
     config,
   };
 }
@@ -872,6 +907,21 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     blurb: meta.blurb,
     aliases: [...meta.aliases], // Convert readonly array to mutable
     quickstartAllowFrom: true,
+  },
+  pairing: {
+    idLabel: "username",
+    normalizeAllowEntry: (entry) => entry.trim().toLowerCase(),
+    notifyApproval: async ({ cfg, id }) => {
+      const account = resolveZTMChatAccount({ cfg });
+      const config = account.config as ZTMChatConfig;
+      const apiClient = createZTMApiClient(config);
+      const message: ZTMMessage = {
+        time: Date.now(),
+        message: `✅ Pairing approved! You can now send messages to this bot.`,
+        sender: config.username,
+      };
+      await apiClient.sendPeerMessage(id, message);
+    },
   },
   capabilities: {
     chatTypes: ["direct"],
