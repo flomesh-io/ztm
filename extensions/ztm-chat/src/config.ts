@@ -149,7 +149,7 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
     meshName:
       typeof config.meshName === "string" && config.meshName.trim()
         ? config.meshName.trim()
-        : "",
+        : "openclaw-mesh",
     username:
       typeof config.username === "string" && config.username.trim()
         ? config.username.trim()
@@ -174,7 +174,7 @@ export function getDefaultConfig(): ZTMChatConfig {
   return {
     agentUrl: "http://localhost:7777",
     permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-    meshName: "",
+    meshName: "openclaw-mesh",
     username: "openclaw-bot",
     enableGroups: false,
     autoReply: true,
@@ -203,7 +203,7 @@ export function createProbeConfig(
   return {
     agentUrl: config.agentUrl ?? "http://localhost:7777",
     permitUrl: config.permitUrl ?? "https://ztm-portal.flomesh.io:7779/permit",
-    meshName: config.meshName ?? "",
+    meshName: config.meshName ?? "openclaw-mesh",
     username: config.username ?? "probe",
     enableGroups: config.enableGroups ?? false,
     autoReply: config.autoReply ?? true,
