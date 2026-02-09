@@ -49,8 +49,6 @@ This approach provides full functionality via storage APIs, suitable for headles
 
 ### Step 1: Install the Plugin
 
-```bash
-# Install from local source (development)
 openclaw plugins install -l ./extensions/ztm-chat
 
 # Or install from npm (when published)
@@ -208,42 +206,6 @@ npx ztm-chat-discover
 💡 To use this configuration, run: npx ztm-chat-wizard
 ```
 
-### First-Run Detection
-
-When you first install and register the plugin with OpenClaw, you'll see:
-
-```
-══════════════════════════════════════════════════════════════
-  🤖 ZTM Chat - First Time Setup
-══════════════════════════════════════════════════════════════
-
-  To configure ZTM Chat, you have two options:
-
-  1️⃣  Interactive Wizard (recommended)
-     Run: npx ztm-chat-wizard
-
-  2️⃣  Manual Configuration
-     Edit: ~/.openclaw/channels/ztm-chat.json
-
-  💡 Tip: Set CI=true to skip this message in CI/CD pipelines
-══════════════════════════════════════════════════════════════
-```
-
-### Silent Mode (CI/CD)
-
-Skip the first-run banner in automated environments:
-
-```bash
-# Skip banner during registration
-CI=true openclaw restart
-
-# Or set environment variable
-export CI=true
-openclaw restart
-```
-
-This is useful for Docker containers, CI/CD pipelines, and headless servers.
-
 ## CLI Commands
 
 > **Note**: These commands require the plugin to be installed first.
@@ -253,11 +215,9 @@ This is useful for Docker containers, CI/CD pipelines, and headless servers.
 ```bash
 # Setup wizard (after plugin is installed)
 npx ztm-chat-wizard
-npx ztm-wizard  # Short alias
 
 # Auto-discover existing configuration
 npx ztm-chat-discover
-npx ztm-discover  # Short alias
 ```
 
 ### OpenClaw Commands
@@ -324,7 +284,6 @@ openclaw channels deny ztm-chat <username>     # Deny a pairing request
 | `ZTM_CHAT_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` |
 | `ZTM_CERTIFICATE` | ZTM agent certificate (PEM format) |
 | `ZTM_PRIVATE_KEY` | ZTM private key (PEM format) |
-| `CI` | Set to `true` to skip first-run wizard banner |
 
 ## Configuration File Location
 
@@ -588,8 +547,6 @@ The plugin does **not** currently verify message signatures at the application l
 | Message Deduplication | ✅ Done | Automatic duplicate prevention |
 | Structured Logging | ✅ Done | Context-aware logging with redaction |
 | Real-Time Updates | ✅ Done | Watch mechanism with polling fallback |
-| First-Run Detection | ✅ Done | Auto-show welcome banner on install |
-| CI/CD Silent Mode | ✅ Done | Skip banner with `CI=true` |
 | Mock ZTM Agent | ✅ Done | Test infrastructure for development |
 | Configuration Discovery | ✅ Done | Auto-detect existing ZTM setup |
 | User Discovery | ✅ Done | Browse mesh users via API |

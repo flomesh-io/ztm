@@ -227,13 +227,11 @@ describe("CLI Commands Structure", () => {
       {
         name: "ztm-chat-wizard",
         description: "Run the ZTM Chat interactive setup wizard",
-        alias: "ztm-wizard",
       },
     ];
 
     const wizardCmd = commands.find((c) => c.name === "ztm-chat-wizard");
     expect(wizardCmd).toBeDefined();
-    expect(wizardCmd?.alias).toBe("ztm-wizard");
     expect(wizardCmd?.description).toContain("wizard");
   });
 
@@ -242,13 +240,11 @@ describe("CLI Commands Structure", () => {
       {
         name: "ztm-chat-discover",
         description: "Auto-discover ZTM configuration from existing setup",
-        alias: "ztm-discover",
       },
     ];
 
     const discoverCmd = commands.find((c) => c.name === "ztm-chat-discover");
     expect(discoverCmd).toBeDefined();
-    expect(discoverCmd?.alias).toBe("ztm-discover");
     expect(discoverCmd?.description).toContain("discover");
   });
 });
