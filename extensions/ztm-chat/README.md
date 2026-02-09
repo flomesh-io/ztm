@@ -49,6 +49,7 @@ This approach provides full functionality via storage APIs, suitable for headles
 
 ### Step 1: Install the Plugin
 
+```bash
 openclaw plugins install -l ./extensions/ztm-chat
 
 # Or install from npm (when published)
