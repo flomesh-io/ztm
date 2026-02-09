@@ -4,7 +4,7 @@
 import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
-import { createZTMApiClient, type ZTMApiClient, type ZTMUserInfo } from "./ztm-api.js";
+import * as net from "net";
 import type { ZTMChatConfig, DMPolicy } from "./config.js";
 
 // Extended config with wizard-specific fields
@@ -212,20 +212,61 @@ export class ZTMChatWizard {
     this.prompts.heading("Testing connection...");
 
     try {
-      const apiClient = createZTMApiClient({
-        agentUrl,
-        meshName: "",
-        username: "",
-      });
+      // Validate URL format
+      const url = new URL(agentUrl);
+    } catch {
+      this.prompts.error(`Invalid URL format: ${agentUrl}`);
+      throw new Error("Invalid URL format");
+    }
 
-      // Just verify the URL is valid
-      new URL(agentUrl);
-      this.config.agentUrl = agentUrl;
-      this.prompts.success(`Connected to ${agentUrl}`);
+    try {
+      // Check if port is open using TCP connection
+      const urlObj = new URL(agentUrl);
+      const hostname = urlObj.hostname;
+      const port = urlObj.port || (urlObj.protocol === "https:" ? 443 : 80);
+
+      const connected = await this.checkPortOpen(hostname, port);
+      if (connected) {
+        this.config.agentUrl = agentUrl;
+        this.prompts.success(`Connected to ${agentUrl}`);
+      } else {
+        this.prompts.error(`Cannot connect to ${hostname}:${port}`);
+        throw new Error("Port not reachable");
+      }
     } catch (error) {
-      this.prompts.error(`Invalid URL or connection failed: ${error}`);
+      if (error instanceof Error && error.message === "Port not reachable") {
+        throw error;
+      }
+      this.prompts.error(`Connection failed: ${error}`);
       throw error;
     }
+  }
+
+  /**
+   * Check if a TCP port is open
+   */
+  private async checkPortOpen(hostname: string, port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(5000);
+
+      socket.on("connect", () => {
+        socket.destroy();
+        resolve(true);
+      });
+
+      socket.on("timeout", () => {
+        socket.destroy();
+        resolve(false);
+      });
+
+      socket.on("error", () => {
+        socket.destroy();
+        resolve(false);
+      });
+
+      socket.connect(port, hostname);
+    });
   }
 
   /**
