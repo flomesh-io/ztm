@@ -179,8 +179,8 @@ Save to file [/home/user/.openclaw/channels/ztm-chat.json]:
 ✓ ZTM Chat channel configured successfully!
 
 Next steps:
-  1. Restart OpenClaw: openclaw restart
-  2. Check status: openclaw channels status ztm-chat
+  1. Restart OpenClaw: openclaw gateway restart
+  2. Check status: openclaw channels status
 ```
 
 ### Auto-Discovery

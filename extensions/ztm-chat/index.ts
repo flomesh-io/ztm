@@ -69,8 +69,8 @@ function registerPlugin(api: OpenClawPluginApi): void {
             console.log("\n✅ Configuration complete!");
             console.log(`📁 Saved to: ${result.savePath || "memory only"}`);
             console.log("\nNext steps:");
-            console.log("  1. Restart OpenClaw: openclaw restart");
-            console.log("  2. Check status: openclaw channels status ztm-chat");
+            console.log("  1. Restart OpenClaw: openclaw gateway restart");
+            console.log("  2. Check status: openclaw channels status");
           }
         });
 
