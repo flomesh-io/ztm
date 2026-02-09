@@ -364,36 +364,25 @@ describe("ZTM Chat Channel Plugin", () => {
   });
 
   describe("CLI Command Support", () => {
-    it("should support approve command format", () => {
-      const command = "openclaw channels approve ztm-chat alice";
+    it("should support pairing list command format", () => {
+      const command = "openclaw pairing list ztm-chat";
       const parts = command.split(" ");
 
       expect(parts[0]).toBe("openclaw");
-      expect(parts[1]).toBe("channels");
+      expect(parts[1]).toBe("pairing");
+      expect(parts[2]).toBe("list");
+      expect(parts[3]).toBe("ztm-chat");
+    });
+
+    it("should support pairing approve command format", () => {
+      const command = "openclaw pairing approve ztm-chat ABC12345";
+      const parts = command.split(" ");
+
+      expect(parts[0]).toBe("openclaw");
+      expect(parts[1]).toBe("pairing");
       expect(parts[2]).toBe("approve");
       expect(parts[3]).toBe("ztm-chat");
-      expect(parts[4]).toBe("alice");
-    });
-
-    it("should support deny command format", () => {
-      const command = "openclaw channels deny ztm-chat bob";
-      const parts = command.split(" ");
-
-      expect(parts[0]).toBe("openclaw");
-      expect(parts[1]).toBe("channels");
-      expect(parts[2]).toBe("deny");
-      expect(parts[3]).toBe("ztm-chat");
-      expect(parts[4]).toBe("bob");
-    });
-
-    it("should support pairings command format", () => {
-      const command = "openclaw channels pairings ztm-chat";
-      const parts = command.split(" ");
-
-      expect(parts[0]).toBe("openclaw");
-      expect(parts[1]).toBe("channels");
-      expect(parts[2]).toBe("pairings");
-      expect(parts[3]).toBe("ztm-chat");
+      expect(parts[4]).toBe("ABC12345");
     });
   });
 });

@@ -358,12 +358,12 @@ export class ZTMChatWizard {
         // Show pairing mode info
         if (this.config.dmPolicy === "pairing") {
           this.prompts.separator();
-          this.prompts.heading("🔒 Pairing Mode Enabled");
+          this.prompts.heading("Pairing Mode Enabled");
           this.prompts.warning("Your bot is in pairing mode.");
           this.prompts.info("To allow users to message you:");
           console.log("   1. Users send a message to your bot");
           this.prompts.info("   2. The bot will send them a pairing request");
-          console.log("   3. You approve them: openclaw channels approve ztm-chat <username>");
+          console.log("   3. Approve them: openclaw pairing approve ztm-chat <code>");
           this.prompts.info("   4. After approval, their messages will be accepted");
         }
       } catch (error) {

@@ -237,8 +237,8 @@ openclaw channels disable ztm-chat
 openclaw channels enable ztm-chat
 
 # Pairing mode commands (when dmPolicy is "pairing")
-openclaw pairing list --channel ztm-chat             # List pending pairing requests
-openclaw pairing approve --channel ztm-chat <code>   # Approve a pairing request
+openclaw pairing list ztm-chat             # List pending pairing requests
+openclaw pairing approve ztm-chat <code>   # Approve a pairing request
 ```
 
 ## Configuration Options
@@ -325,14 +325,14 @@ By default, the bot uses **pairing mode** (`dmPolicy: "pairing"`). This means:
 
 ```bash
 # List pending pairing requests
-openclaw pairing list --channel ztm-chat
+openclaw pairing list ztm-chat
 ```
 
 #### Approve a Pairing Request
 
 ```bash
 # Approve using the pairing code shown in the list
-openclaw pairing approve --channel ztm-chat <code>
+openclaw pairing approve ztm-chat <code>
 ```
 
 #### Check Status

@@ -104,7 +104,7 @@ const plugin: any = {
 };
 
 // Pairing commands are handled by OpenClaw core:
-// - openclaw pairing list --channel ztm-chat
-// - openclaw pairing approve --channel ztm-chat <code>
+// - openclaw pairing list ztm-chat
+// - openclaw pairing approve ztm-chat <code>
 
 export default plugin;
