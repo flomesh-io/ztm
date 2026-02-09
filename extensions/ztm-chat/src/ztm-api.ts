@@ -118,35 +118,9 @@ async function fetchWithTimeout(
   }
 }
 
-// Validate certificate format
-function isValidCertificate(cert: string): boolean {
-  return (
-    cert.includes("-----BEGIN CERTIFICATE-----") &&
-    cert.includes("-----END CERTIFICATE-----")
-  );
-}
-
-// Validate private key format
-function isValidPrivateKey(key: string): boolean {
-  return (
-    key.includes("-----BEGIN PRIVATE KEY-----") ||
-    key.includes("-----BEGIN EC PRIVATE KEY-----") ||
-    key.includes("-----BEGIN RSA PRIVATE KEY-----")
-  );
-}
-
 // Create ZTM API Client
 export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
   const baseUrl = config.agentUrl.replace(/\/$/, "");
-
-  // Validate and prepare TLS options
-  const tlsOptions: { cert?: string; key?: string } = {};
-  if (config.certificate && isValidCertificate(config.certificate)) {
-    tlsOptions.cert = config.certificate;
-  }
-  if (config.privateKey && isValidPrivateKey(config.privateKey)) {
-    tlsOptions.key = config.privateKey;
-  }
 
   // Generic request handler
   async function request<T>(
@@ -161,11 +135,6 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
       "Content-Type": "application/json",
       ...additionalHeaders,
     };
-
-    // Add certificate header if available (mTLS-style auth)
-    if (tlsOptions.cert) {
-      headers["X-Client-Cert"] = tlsOptions.cert;
-    }
 
     const response = await fetchWithTimeout(url, {
       method,

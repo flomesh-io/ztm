@@ -16,27 +16,14 @@ const isValidUrl = (value: string): boolean => {
   }
 };
 
-const isValidCertificate = (value: string): boolean => {
-  if (!value) return true;
-  return (
-    value.includes("-----BEGIN CERTIFICATE-----") &&
-    value.includes("-----END CERTIFICATE-----")
-  );
-};
-
-const isValidPrivateKey = (value: string): boolean => {
-  if (!value) return true;
-  return (
-    value.includes("-----BEGIN PRIVATE KEY-----") ||
-    value.includes("-----BEGIN EC PRIVATE KEY-----") ||
-    value.includes("-----BEGIN RSA PRIVATE KEY-----")
-  );
-};
-
 // ZTM Chat Configuration Schema
 export const ZTMChatConfigSchema = Type.Object({
   agentUrl: Type.String({
-    description: "ZTM Agent API URL (e.g., https://ztm-agent.example.com:7777)",
+    description: "ZTM Agent API URL (e.g., http://localhost:7777)",
+    format: "uri",
+  }),
+  permitUrl: Type.String({
+    description: "Permit Server URL (e.g., https://ztm-portal.flomesh.io:7779/permit)",
     format: "uri",
   }),
   meshName: Type.String({
@@ -51,12 +38,6 @@ export const ZTMChatConfigSchema = Type.Object({
     maxLength: 64,
     pattern: "^[a-zA-Z0-9_-]+$",
   }),
-  certificate: Type.Optional(Type.String({
-    description: "ZTM agent certificate (PEM format)",
-  })),
-  privateKey: Type.Optional(Type.String({
-    description: "ZTM private key (PEM format)",
-  })),
   enableGroups: Type.Optional(Type.Boolean({
     description: "Enable group chat support",
     default: false,
@@ -115,6 +96,12 @@ export function validateZTMChatConfig(
     errors.push("agentUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-agent.example.com:7777)");
   }
 
+  if (!config.permitUrl || typeof config.permitUrl !== "string" || !config.permitUrl.trim()) {
+    errors.push("permitUrl is required");
+  } else if (!isValidUrl(config.permitUrl)) {
+    errors.push("permitUrl must be a valid HTTP/HTTPS URL (e.g., https://ztm-portal.flomesh.io:7779/permit)");
+  }
+
   if (!config.meshName || typeof config.meshName !== "string" || !config.meshName.trim()) {
     errors.push("meshName is required");
   } else if (!/^[a-zA-Z0-9_-]+$/.test(config.meshName)) {
@@ -125,18 +112,6 @@ export function validateZTMChatConfig(
     errors.push("username is required");
   } else if (!/^[a-zA-Z0-9_-]+$/.test(config.username)) {
     errors.push("username must contain only letters, numbers, hyphens, and underscores");
-  }
-
-  // Validate certificate format
-  const certificate = config.certificate;
-  if (certificate && typeof certificate === "string" && !isValidCertificate(certificate)) {
-    errors.push("certificate must be a valid PEM certificate");
-  }
-
-  // Validate private key format
-  const privateKey = config.privateKey;
-  if (privateKey && typeof privateKey === "string" && !isValidPrivateKey(privateKey)) {
-    errors.push("privateKey must be a valid PEM private key");
   }
 
   if (errors.length > 0) {
@@ -167,6 +142,10 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
       typeof config.agentUrl === "string" && config.agentUrl.trim()
         ? config.agentUrl.trim()
         : "http://localhost:7777",
+    permitUrl:
+      typeof config.permitUrl === "string" && config.permitUrl.trim()
+        ? config.permitUrl.trim()
+        : "https://ztm-portal.flomesh.io:7779/permit",
     meshName:
       typeof config.meshName === "string" && config.meshName.trim()
         ? config.meshName.trim()
@@ -175,14 +154,6 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
       typeof config.username === "string" && config.username.trim()
         ? config.username.trim()
         : "openclaw-bot",
-    certificate:
-      typeof config.certificate === "string" && config.certificate.trim()
-        ? config.certificate
-        : undefined,
-    privateKey:
-      typeof config.privateKey === "string" && config.privateKey.trim()
-        ? config.privateKey
-        : undefined,
     enableGroups: Boolean(config.enableGroups),
     autoReply: config.autoReply !== false, // default true
     messagePath:
@@ -202,10 +173,9 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
 export function getDefaultConfig(): ZTMChatConfig {
   return {
     agentUrl: "http://localhost:7777",
+    permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
     meshName: "",
     username: "openclaw-bot",
-    certificate: undefined,
-    privateKey: undefined,
     enableGroups: false,
     autoReply: true,
     messagePath: "/shared",
@@ -232,10 +202,9 @@ export function createProbeConfig(
 ): ZTMChatConfig {
   return {
     agentUrl: config.agentUrl ?? "http://localhost:7777",
+    permitUrl: config.permitUrl ?? "https://ztm-portal.flomesh.io:7779/permit",
     meshName: config.meshName ?? "",
     username: config.username ?? "probe",
-    certificate: config.certificate,
-    privateKey: config.privateKey,
     enableGroups: config.enableGroups ?? false,
     autoReply: config.autoReply ?? true,
     messagePath: config.messagePath ?? "/shared",

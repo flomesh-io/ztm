@@ -1,6 +1,6 @@
 // Unit tests for ZTM Chat Onboarding Wizard
 
-import { describe, it, expect, beforeEach, afterEach, vi, test, spyOn } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi, test } from "vitest";
 
 // We'll use vi.mock at the top level properly
 vi.mock("readline", () => ({

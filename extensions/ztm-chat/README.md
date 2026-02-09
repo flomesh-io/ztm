@@ -65,10 +65,9 @@ openclaw ztm-chat-wizard
 
 # Follow the on-screen prompts:
 # 1. ZTM Agent URL
-# 2. Mesh name
+# 2. Permit Server URL
 # 3. Bot username
-# 4. mTLS certificate and key file paths (required)
-# 5. Security settings
+# 4. Security settings
 ```
 
 > **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. Use `npx ztm-chat-wizard` only after the package is published to npm.
@@ -82,14 +81,14 @@ ztm user add openclaw-bot
 # 2. Create config file
 cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
 {
-  "agentUrl": "https://your-ztm-agent.example.com:7777",
+  "agentUrl": "http://localhost:7777",
   "meshName": "your-mesh-name",
+  "permitUrl": "https://ztm-portal.flomesh.io:7779/permit",
   "username": "openclaw-bot",
-  "certificate": "${ZTM_CERTIFICATE}",
-  "privateKey": "${ZTM_PRIVATE_KEY}",
   "enableGroups": false,
   "autoReply": true,
-  "messagePath": "/shared"
+  "messagePath": "/shared",
+  "dmPolicy": "pairing"
 }
 EOF
 
@@ -129,11 +128,11 @@ The wizard guides you through 5 configuration steps:
 
 | Step | Description | Options |
 |------|-------------|---------|
-| 1 | ZTM Agent URL | Default: `https://localhost:7777` |
-| 2 | Mesh Name | Required, alphanumeric + `-_` |
+| 1 | ZTM Agent URL | Default: `http://localhost:7777` |
+| 2 | Permit Server URL | Default: `https://ztm-portal.flomesh.io:7779/permit` |
 | 3 | Bot Username | Default: `openclaw-bot` |
-| 4 | mTLS Authentication | Certificate and key file paths (required) |
-| 5 | Security Settings | DM policy (default: pairing), allowFrom list |
+| 4 | Security Settings | DM policy (default: pairing), allowFrom list |
+| 5 | Summary & Save | Configuration file path |
 
 ### Example Session
 
@@ -141,29 +140,21 @@ The wizard guides you through 5 configuration steps:
 🤖 ZTM Chat Setup Wizard
 ========================================
 
-Step 1: ZTM Agent Connection (Required)
---------------------------------------
-ZTM Agent URL [https://localhost:7777]: https://my-ztm-agent.company.com:7777
+Step 1: ZTM Agent URL (Required)
+----------------------------------
+ZTM Agent URL [http://localhost:7777]: http://localhost:7777
+✓ URL validated: http://localhost:7777
 
-Testing connection...
-✓ Connected to https://my-ztm-agent.company.com:7777
-
-Step 2: Mesh Selection (Required)
--------------------------------
-Mesh name: production-mesh
+Step 2: Permit Server URL (Required)
+-----------------------------------
+Permit Server URL [https://ztm-portal.flomesh.io:7779/permit]: https://ztm-portal.flomesh.io:7779/permit
+✓ URL validated: https://ztm-portal.flomesh.io:7779/permit
 
 Step 3: Bot Username (Required)
 ------------------------------
 Bot username [openclaw-bot]: my-bot
 
-Step 4: mTLS Certificate and Key File Paths (Required)
-------------------------------------------------------
-Certificate file path [~/.openclaw/ztm/cert.pem]: ~/.openclaw/ztm/cert.pem
-Private key file path [~/.openclaw/ztm/key.pem]: ~/.openclaw/ztm/key.pem
-
-✓ mTLS certificates loaded successfully
-
-Step 5: Security Settings
+Step 4: Security Settings
 ------------------------
 Direct Message Policy:
   [1] Require explicit pairing (approval needed)
@@ -175,11 +166,11 @@ Allow messages from (comma-separated, * for all) [*]:
 
 Configuration Summary
 --------------------
-  Agent URL: https://my-ztm-agent.company.com:7777
-  Mesh Name: production-mesh
+  Agent URL: http://localhost:7777
+  Permit Server URL: https://ztm-portal.flomesh.io:7779/permit
   Username: my-bot
-  mTLS: Enabled
   Auto Reply: true
+  DM Policy: pairing
 
 Save this configuration? (Y/n):
 Save to file [/home/user/.openclaw/channels/ztm-chat.json]:
@@ -256,7 +247,8 @@ openclaw channels deny ztm-chat <username>     # Deny a pairing request
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `agentUrl` | string | ZTM Agent API URL (e.g., `https://ztm-agent.example.com:7777`) |
+| `agentUrl` | string | ZTM Agent API URL (e.g., `http://localhost:7777`) |
+| `permitUrl` | string | Permit Server URL (e.g., `https://ztm-portal.flomesh.io:7779/permit`) |
 | `meshName` | string | Name of your ZTM mesh (alphanumeric + `-_`) |
 | `username` | string | Bot's ZTM username (alphanumeric + `-_`) |
 
@@ -264,8 +256,6 @@ openclaw channels deny ztm-chat <username>     # Deny a pairing request
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `certificate` | string | - | ZTM certificate (PEM format) for mTLS |
-| `privateKey` | string | - | ZTM private key (PEM format) for mTLS |
 | `enableGroups` | boolean | `false` | Enable group chat support |
 | `autoReply` | boolean | `true` | Automatically reply to messages via AI agent |
 | `messagePath` | string | `/shared` | Custom message path prefix |
@@ -288,8 +278,6 @@ openclaw channels deny ztm-chat <username>     # Deny a pairing request
 | Variable | Description |
 |----------|-------------|
 | `ZTM_CHAT_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` |
-| `ZTM_CERTIFICATE` | ZTM agent certificate (PEM format) |
-| `ZTM_PRIVATE_KEY` | ZTM private key (PEM format) |
 
 ## Configuration File Location
 
@@ -301,11 +289,10 @@ The wizard saves configuration to:
 Example configuration:
 ```json
 {
-  "agentUrl": "https://ztm-agent.example.com:7777",
+  "agentUrl": "http://localhost:7777",
+  "permitUrl": "https://ztm-portal.flomesh.io:7779/permit",
   "meshName": "production-mesh",
   "username": "my-bot",
-  "certificate": "-----BEGIN CERTIFICATE-----...",
-  "privateKey": "-----BEGIN PRIVATE KEY-----...",
   "enableGroups": false,
   "autoReply": true,
   "messagePath": "/shared",
@@ -457,7 +444,7 @@ When receiving messages, filtering is applied client-side:
 
 1. Verify ZTM Agent is running:
    ```bash
-   curl https://your-ztm-agent.example.com:7777/api/meshes
+   curl http://localhost:7777/api/meshes
    ```
 
 2. Check mesh name matches:
@@ -465,12 +452,7 @@ When receiving messages, filtering is applied client-side:
    ztm get mesh
    ```
 
-3. Verify credentials:
-   ```bash
-   echo "$ZTM_CERTIFICATE" | head -1
-   ```
-
-4. Check plugin logs:
+3. Check plugin logs:
    ```bash
    openclaw logs --level debug --channel ztm-chat
    ```
@@ -480,7 +462,7 @@ When receiving messages, filtering is applied client-side:
 1. Check bot username is correct in configuration
 2. Verify ZTM Agent is running and connected to the mesh:
    ```bash
-   curl https://your-ztm-agent:7777/api/meshes
+   curl http://localhost:7777/api/meshes
    ```
 
 3. Check mesh connectivity:
@@ -490,14 +472,7 @@ When receiving messages, filtering is applied client-side:
 
 4. Verify your mesh has other endpoints:
    ```bash
-   curl https://your-ztm-agent:7777/api/meshes/your-mesh
-   ```
-
-### Certificate Errors (mTLS)
-
-1. Verify certificate is not expired:
-   ```bash
-   openssl x509 -in <(echo "$ZTM_CERTIFICATE") -noout -dates
+   curl http://localhost:7777/api/meshes/your-mesh
    ```
 
 2. Check certificate matches the private key:
@@ -522,7 +497,6 @@ The plugin uses ZTM's shared storage (`/shared/*`) for messaging:
 - This is a trade-off: enables operation without additional apps, but means any mesh member could potentially access these paths
 
 **Current Mitigations**:
-- ZTM transport-layer authentication (mTLS)
 - `allowFrom` whitelist in plugin configuration
 - `dmPolicy: "pairing"` mode for explicit user approval
 
@@ -548,7 +522,6 @@ The plugin does **not** currently verify message signatures at the application l
 |---------|--------|-------------|
 | Peer-to-Peer Messaging | ✅ Done | Send/receive messages with ZTM users |
 | Remote Connection | ✅ Done | HTTP API connection to ZTM Agent |
-| mTLS Authentication | ✅ Done | Certificate-based mutual TLS auth |
 | Interactive Wizard | ✅ Done | CLI-guided 5-step configuration |
 | Message Deduplication | ✅ Done | Automatic duplicate prevention |
 | Structured Logging | ✅ Done | Context-aware logging with redaction |

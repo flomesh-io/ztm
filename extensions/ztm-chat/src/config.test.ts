@@ -21,6 +21,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);
@@ -30,6 +31,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "http://localhost:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);
@@ -39,6 +41,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "not-a-url",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(false);
@@ -48,6 +51,50 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+        username: "test-bot",
+      });
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe("permitUrl validation", () => {
+    it("should accept valid HTTPS permit URLs", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "http://localhost:7777",
+        meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
+        username: "test-bot",
+      });
+      expect(result.valid).toBe(true);
+    });
+
+    it("should accept valid HTTP permit URLs", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "http://localhost:7777",
+        meshName: "my-mesh",
+        permitUrl: "http://localhost:7779/permit",
+        username: "test-bot",
+      });
+      expect(result.valid).toBe(true);
+    });
+
+    it("should reject invalid permitUrl", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "http://localhost:7777",
+        meshName: "my-mesh",
+        permitUrl: "not-a-url",
+        username: "test-bot",
+      });
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.toLowerCase().includes("permiturl"))).toBe(true);
+    });
+
+    it("should reject empty permitUrl", () => {
+      const result = validateZTMChatConfig({
+        agentUrl: "http://localhost:7777",
+        meshName: "my-mesh",
+        permitUrl: "",
         username: "test-bot",
       });
       expect(result.valid).toBe(false);
@@ -59,6 +106,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh-123",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);
@@ -88,6 +136,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot_123",
       });
       expect(result.valid).toBe(true);
@@ -103,55 +152,12 @@ describe("ZTMChatConfigSchema", () => {
     });
   });
 
-  describe("certificate validation", () => {
-    it("should accept valid PEM certificates", () => {
-      const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        username: "test-bot",
-        certificate: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----",
-      });
-      expect(result.valid).toBe(true);
-    });
-
-    it("should reject invalid certificate format", () => {
-      const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        username: "test-bot",
-        certificate: "not-a-certificate",
-      });
-      expect(result.valid).toBe(false);
-    });
-  });
-
-  describe("privateKey validation", () => {
-    it("should accept valid PEM private keys", () => {
-      const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        username: "test-bot",
-        privateKey: "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----",
-      });
-      expect(result.valid).toBe(true);
-    });
-
-    it("should accept RSA private keys", () => {
-      const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        username: "test-bot",
-        privateKey: "-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----",
-      });
-      expect(result.valid).toBe(true);
-    });
-  });
-
   describe("boolean defaults", () => {
     it("should default enableGroups to false", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);
@@ -162,6 +168,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);
@@ -172,6 +179,7 @@ describe("ZTMChatConfigSchema", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);
@@ -185,6 +193,7 @@ describe("validateZTMChatConfig", () => {
     const result = validateZTMChatConfig({
       agentUrl: "https://ztm-agent.example.com:7777",
       meshName: "my-mesh",
+      permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
       username: "test-bot",
     });
 
@@ -224,6 +233,22 @@ describe("validateZTMChatConfig", () => {
 
     expect(result.errors[0]).toContain("agentUrl");
   });
+
+  it("should list all validation errors", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "invalid-url",
+      permitUrl: "invalid-url",
+      meshName: "",
+      username: "",
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBe(4);
+    expect(result.errors.some(e => e.includes("agentUrl"))).toBe(true);
+    expect(result.errors.some(e => e.includes("permitUrl"))).toBe(true);
+    expect(result.errors.some(e => e.includes("meshName"))).toBe(true);
+    expect(result.errors.some(e => e.includes("username"))).toBe(true);
+  });
 });
 
 describe("resolveZTMChatConfig", () => {
@@ -231,10 +256,9 @@ describe("resolveZTMChatConfig", () => {
     const result = resolveZTMChatConfig({});
 
     expect(result.agentUrl).toBe("http://localhost:7777");
+    expect(result.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     expect(result.meshName).toBe("");
     expect(result.username).toBe("openclaw-bot");
-    expect(result.certificate).toBeUndefined();
-    expect(result.privateKey).toBeUndefined();
     expect(result.enableGroups).toBe(false);
     expect(result.autoReply).toBe(true);
     expect(result.messagePath).toBe("/shared");
@@ -243,6 +267,7 @@ describe("resolveZTMChatConfig", () => {
   it("should preserve provided values", () => {
     const input = {
       agentUrl: "https://my-agent.example.com:7777",
+      permitUrl: "https://my-permit.example.com:7779/permit",
       meshName: "my-mesh",
       username: "my-bot",
       enableGroups: true,
@@ -252,6 +277,7 @@ describe("resolveZTMChatConfig", () => {
     const result = resolveZTMChatConfig(input);
 
     expect(result.agentUrl).toBe("https://my-agent.example.com:7777");
+    expect(result.permitUrl).toBe("https://my-permit.example.com:7779/permit");
     expect(result.meshName).toBe("my-mesh");
     expect(result.username).toBe("my-bot");
     expect(result.enableGroups).toBe(true);
@@ -288,14 +314,14 @@ describe("getDefaultConfig", () => {
     const result = getDefaultConfig();
 
     expect(result.agentUrl).toBe("http://localhost:7777");
+    expect(result.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     expect(result.meshName).toBe("");
     expect(result.username).toBe("openclaw-bot");
-    expect(result.certificate).toBeUndefined();
-    expect(result.privateKey).toBeUndefined();
     expect(result.enableGroups).toBe(false);
     expect(result.autoReply).toBe(true);
     expect(result.messagePath).toBe("/shared");
     expect(result.dmPolicy).toBe("pairing");
+    expect(result.allowFrom).toBeUndefined();
   });
 });
 
@@ -348,6 +374,7 @@ describe("createProbeConfig", () => {
     });
 
     expect(result.agentUrl).toBe("https://example.com:7777");
+    expect(result.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     expect(result.meshName).toBe("");
     expect(result.username).toBe("probe");
   });
@@ -356,24 +383,39 @@ describe("createProbeConfig", () => {
     const result = createProbeConfig({});
 
     expect(result.agentUrl).toBe("http://localhost:7777");
+    expect(result.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     expect(result.meshName).toBe("");
     expect(result.username).toBe("probe");
+    expect(result.dmPolicy).toBe("pairing");
   });
 
   it("should preserve provided values", () => {
     const result = createProbeConfig({
       agentUrl: "https://custom.example.com",
+      permitUrl: "https://custom-permit.example.com:7779/permit",
       meshName: "custom-mesh",
       username: "custom-user",
       enableGroups: true,
       autoReply: false,
+      dmPolicy: "allow",
     });
 
     expect(result.agentUrl).toBe("https://custom.example.com");
+    expect(result.permitUrl).toBe("https://custom-permit.example.com:7779/permit");
     expect(result.meshName).toBe("custom-mesh");
     expect(result.username).toBe("custom-user");
     expect(result.enableGroups).toBe(true);
     expect(result.autoReply).toBe(false);
+    expect(result.dmPolicy).toBe("allow");
+  });
+
+  it("should preserve allowFrom from config", () => {
+    const result = createProbeConfig({
+      agentUrl: "https://example.com",
+      allowFrom: ["alice", "bob"],
+    });
+
+    expect(result.allowFrom).toEqual(["alice", "bob"]);
   });
 });
 
@@ -423,6 +465,7 @@ describe("DMPolicy Configuration", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
         dmPolicy: "allow",
       });
@@ -434,6 +477,7 @@ describe("DMPolicy Configuration", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
         dmPolicy: "deny",
       });
@@ -445,6 +489,7 @@ describe("DMPolicy Configuration", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
         dmPolicy: "pairing",
       });
@@ -456,6 +501,7 @@ describe("DMPolicy Configuration", () => {
       const result = validateZTMChatConfig({
         agentUrl: "https://ztm-agent.example.com:7777",
         meshName: "my-mesh",
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
         username: "test-bot",
       });
       expect(result.valid).toBe(true);

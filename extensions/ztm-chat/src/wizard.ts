@@ -4,7 +4,6 @@
 import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
-import * as net from "net";
 import type { ZTMChatConfig, DMPolicy } from "./config.js";
 
 // Extended config with wizard-specific fields
@@ -14,6 +13,7 @@ interface WizardConfig extends Partial<ZTMChatConfig> {
   autoReply?: boolean;
   allowFrom?: string[];
   dmPolicy?: DMPolicy;
+  permitUrl?: string;
 }
 
 /**
@@ -151,6 +151,7 @@ export class ZTMChatWizard {
       autoReply: true,
       allowFrom: undefined,
       dmPolicy: "pairing",
+      permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
     };
   }
 
@@ -167,19 +168,16 @@ export class ZTMChatWizard {
       // Step 1: Agent URL
       await this.stepAgentUrl();
 
-      // Step 2: Mesh Selection
-      await this.stepMeshSelection();
+      // Step 2: Permit Server URL
+      await this.stepPermitServer();
 
       // Step 3: User Selection
       await this.stepUserSelection();
 
-      // Step 4: mTLS Configuration
-      await this.stepMtlsConfiguration();
-
-      // Step 5: Security Settings
+      // Step 4: Security Settings
       await this.stepSecuritySettings();
 
-      // Step 6: Summary
+      // Step 5: Summary
       const result = await this.summary();
 
       this.prompts.close();
@@ -199,101 +197,47 @@ export class ZTMChatWizard {
    * Step 1: Configure Agent URL
    */
   private async stepAgentUrl(): Promise<void> {
-    this.prompts.heading("Step 1: ZTM Agent Connection (Required)");
+    this.prompts.heading("Step 1: ZTM Agent URL (Required)");
     this.prompts.separator();
 
     const agentUrl = await this.prompts.ask(
       "ZTM Agent URL",
-      "https://localhost:7777"
+      "http://localhost:7777"
     );
 
-    // Test connection
-    this.prompts.separator();
-    this.prompts.heading("Testing connection...");
-
+    // Validate URL format (only format, not connectivity - that's handled by gateway lifecycle)
     try {
-      // Validate URL format
-      const url = new URL(agentUrl);
+      new URL(agentUrl);
+      this.config.agentUrl = agentUrl;
+      this.prompts.success(`URL validated: ${agentUrl}`);
     } catch {
       this.prompts.error(`Invalid URL format: ${agentUrl}`);
       throw new Error("Invalid URL format");
     }
+  }
 
+  /**
+   * Step 2: Permit Server URL
+   */
+  private async stepPermitServer(): Promise<void> {
+    this.prompts.separator();
+    this.prompts.heading("Step 2: Permit Server URL (Required)");
+    this.prompts.separator();
+
+    const permitUrl = await this.prompts.ask(
+      "Permit Server URL",
+      "https://ztm-portal.flomesh.io:7779/permit"
+    );
+
+    // Validate URL format (only format, not connectivity - that's handled by gateway lifecycle)
     try {
-      // Check if port is open using TCP connection
-      const urlObj = new URL(agentUrl);
-      const hostname = urlObj.hostname;
-      const port = urlObj.port || (urlObj.protocol === "https:" ? 443 : 80);
-
-      const connected = await this.checkPortOpen(hostname, port);
-      if (connected) {
-        this.config.agentUrl = agentUrl;
-        this.prompts.success(`Connected to ${agentUrl}`);
-      } else {
-        this.prompts.error(`Cannot connect to ${hostname}:${port}`);
-        throw new Error("Port not reachable");
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "Port not reachable") {
-        throw error;
-      }
-      this.prompts.error(`Connection failed: ${error}`);
-      throw error;
+      new URL(permitUrl);
+      this.config.permitUrl = permitUrl;
+      this.prompts.success(`URL validated: ${permitUrl}`);
+    } catch {
+      this.prompts.error(`Invalid URL format: ${permitUrl}`);
+      throw new Error("Invalid URL format");
     }
-  }
-
-  /**
-   * Check if a TCP port is open
-   */
-  private async checkPortOpen(hostname: string, port: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      const socket = new net.Socket();
-      socket.setTimeout(5000);
-
-      socket.on("connect", () => {
-        socket.destroy();
-        resolve(true);
-      });
-
-      socket.on("timeout", () => {
-        socket.destroy();
-        resolve(false);
-      });
-
-      socket.on("error", () => {
-        socket.destroy();
-        resolve(false);
-      });
-
-      socket.connect(port, hostname);
-    });
-  }
-
-  /**
-   * Step 2: Select or Enter Mesh Name
-   */
-  private async stepMeshSelection(): Promise<void> {
-    this.prompts.separator();
-    this.prompts.heading("Step 2: Mesh Selection (Required)");
-    this.prompts.separator();
-
-    const meshName = await this.prompts.ask("Mesh name", "");
-
-    if (!meshName.trim()) {
-      this.prompts.error("Mesh name is required");
-      throw new Error("Mesh name is required");
-    }
-
-    // Validate mesh name format
-    if (!/^[a-zA-Z0-9_-]+$/.test(meshName)) {
-      this.prompts.error(
-        "Mesh name must contain only letters, numbers, hyphens, and underscores"
-      );
-      throw new Error("Invalid mesh name format");
-    }
-
-    this.config.meshName = meshName;
-    this.prompts.success(`Mesh configured: ${meshName}`);
   }
 
   /**
@@ -301,7 +245,7 @@ export class ZTMChatWizard {
    */
   private async stepUserSelection(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 3: Bot Username (Required)");
+    this.prompts.heading("Step 2: Bot Username (Required)");
     this.prompts.separator();
 
     const username = await this.prompts.ask(
@@ -327,73 +271,11 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 4: mTLS Configuration
-   */
-  private async stepMtlsConfiguration(): Promise<void> {
-    this.prompts.separator();
-    this.prompts.heading("Step 4: mTLS Certificate and Key File Paths (Required)");
-    this.prompts.separator();
-
-    // Ask for certificate and key paths directly (mTLS is mandatory)
-    const certPath = await this.prompts.ask(
-      "Certificate file path",
-      "~/.openclaw/ztm/cert.pem"
-    );
-
-    const keyPath = await this.prompts.ask(
-      "Private key file path",
-      "~/.openclaw/ztm/key.pem"
-    );
-
-    // Expand ~ to home directory
-    const expandedCertPath = certPath.startsWith("~")
-      ? certPath.replace("~", process.env.HOME || "")
-      : certPath;
-    const expandedKeyPath = keyPath.startsWith("~")
-      ? keyPath.replace("~", process.env.HOME || "")
-      : keyPath;
-
-    // Ensure the directory exists
-    const certDir = path.dirname(expandedCertPath);
-    const keyDir = path.dirname(expandedKeyPath);
-    if (!fs.existsSync(certDir)) {
-      fs.mkdirSync(certDir, { recursive: true });
-    }
-    if (!fs.existsSync(keyDir)) {
-      fs.mkdirSync(keyDir, { recursive: true });
-    }
-
-    // Load and validate certificates
-    try {
-      const cert = this.loadFile(expandedCertPath);
-      const key = this.loadFile(expandedKeyPath);
-
-      // Basic validation
-      if (!cert.includes("-----BEGIN CERTIFICATE-----")) {
-        throw new Error("Invalid certificate format");
-      }
-      if (
-        !key.includes("-----BEGIN") &&
-        !key.includes("PRIVATE KEY-----")
-      ) {
-        throw new Error("Invalid private key format");
-      }
-
-      this.config.certificate = cert;
-      this.config.privateKey = key;
-      this.prompts.success("mTLS certificates loaded successfully");
-    } catch (error) {
-      this.prompts.error(`Failed to load certificates: ${error}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Step 5: Security Settings
+   * Step 4: Security Settings
    */
   private async stepSecuritySettings(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 5: Security Settings");
+    this.prompts.heading("Step 4: Security Settings");
     this.prompts.separator();
 
     // DM Policy - pairing is the default
@@ -428,7 +310,7 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 6: Summary and Save
+   * Step 5: Summary and Save
    */
   private async summary(): Promise<WizardResult> {
     this.prompts.separator();
@@ -436,12 +318,8 @@ export class ZTMChatWizard {
     this.prompts.separator();
 
     console.log("  Agent URL:", this.config.agentUrl);
-    console.log("  Mesh Name:", this.config.meshName);
+    console.log("  Permit Server URL:", this.config.permitUrl);
     console.log("  Username:", this.config.username);
-    console.log(
-      "  mTLS:",
-      this.config.certificate ? "Enabled" : "Disabled"
-    );
     console.log("  Message Path:", this.config.messagePath);
     console.log("  Auto Reply:", this.config.autoReply);
     console.log("  DM Policy:", this.config.dmPolicy);
@@ -506,31 +384,15 @@ export class ZTMChatWizard {
   private buildConfig(): ZTMChatConfig & { allowFrom?: string[] } {
     return {
       agentUrl: this.config.agentUrl || "http://localhost:7777",
+      permitUrl: this.config.permitUrl || "https://ztm-portal.flomesh.io:7779/permit",
       meshName: this.config.meshName || "",
       username: this.config.username || "openclaw-bot",
-      certificate: this.config.certificate,
-      privateKey: this.config.privateKey,
       enableGroups: this.config.enableGroups ?? false,
       autoReply: this.config.autoReply ?? true,
       messagePath: this.config.messagePath || "/shared",
       dmPolicy: this.config.dmPolicy ?? "pairing",
       allowFrom: this.config.allowFrom,
     };
-  }
-
-  /**
-   * Load file content with path expansion
-   */
-  private loadFile(filePath: string): string {
-    const expandedPath = filePath.startsWith("~")
-      ? filePath.replace("~", process.env.HOME || "")
-      : filePath;
-
-    if (!fs.existsSync(expandedPath)) {
-      throw new Error(`File not found: ${filePath}`);
-    }
-
-    return fs.readFileSync(expandedPath, "utf-8");
   }
 }
 

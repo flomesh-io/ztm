@@ -1,6 +1,10 @@
 // ZTM Chat Channel Adapter for OpenClaw
 // Implements ChannelPlugin interface with multi-account support
 
+import { spawn } from "child_process";
+import * as fs from "fs";
+import * as net from "net";
+import * as path from "path";
 import {
   buildChannelConfigSchema,
   type ChannelPlugin,
@@ -252,26 +256,6 @@ function buildChannelConfigSchemaWithHints(
         validation: {
           pattern: "^[a-zA-Z0-9_-]+$",
           message: "Only letters, numbers, hyphens, and underscores",
-        },
-      },
-      certificate: {
-        label: "Certificate",
-        sensitive: true,
-        help: "ZTM agent certificate (PEM format) for mTLS authentication",
-        placeholder: "-----BEGIN CERTIFICATE-----...",
-        validation: {
-          pattern: "-----BEGIN CERTIFICATE-----",
-          message: "Must be a valid PEM certificate",
-        },
-      },
-      privateKey: {
-        label: "Private Key",
-        sensitive: true,
-        help: "ZTM private key (PEM format) for mTLS authentication",
-        placeholder: "-----BEGIN PRIVATE KEY-----...",
-        validation: {
-          pattern: "-----BEGIN (RSA|EC|PRIVATE) KEY-----",
-          message: "Must be a valid PEM private key",
         },
       },
       enableGroups: {
@@ -662,6 +646,162 @@ async function sendZTMMessage(
   }
 }
 
+// Check if a TCP port is open
+async function checkPortOpen(hostname: string, port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(5000);
+
+    socket.on("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+
+    socket.on("timeout", () => {
+      socket.destroy();
+      resolve(false);
+    });
+
+    socket.on("error", () => {
+      socket.destroy();
+      resolve(false);
+    });
+
+    socket.connect(port, hostname);
+  });
+}
+
+// Execute ztm identity command to get public key
+async function getPublicKeyFromIdentity(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const child = spawn("ztm", ["identity"], {
+      timeout: 30000,
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    child.on("close", (code) => {
+      if (code === 0 && stdout.includes("-----BEGIN PUBLIC KEY-----")) {
+        // Extract the public key from output
+        const match = stdout.match(/-----BEGIN PUBLIC KEY-----[\s\S]+?-----END PUBLIC KEY-----/);
+        if (match) {
+          resolve(match[0]);
+        } else {
+          resolve(null);
+        }
+      } else {
+        logger.error(`ztm identity failed: ${stderr}`);
+        resolve(null);
+      }
+    });
+
+    child.on("error", (error) => {
+      logger.error(`Failed to execute ztm identity: ${error.message}`);
+      resolve(null);
+    });
+  });
+}
+
+// Request permit from permit server
+async function requestPermit(
+  permitUrl: string,
+  publicKey: string,
+  username: string
+): Promise<unknown> {
+  try {
+    const response = await fetch(permitUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        PublicKey: publicKey,
+        UserName: username,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error(`Permit request failed: ${response.status} ${errorText}`);
+      return null;
+    }
+
+    const permitData = await response.json();
+    logger.info("Permit request successful");
+    return permitData;
+  } catch (error) {
+    logger.error(`Permit request error: ${error}`);
+    return null;
+  }
+}
+
+// Save permit data to file
+function savePermitData(permitData: unknown, permitPath: string): boolean {
+  try {
+    // Ensure directory exists
+    const dir = path.dirname(permitPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(permitPath, JSON.stringify(permitData, null, 2));
+    logger.info(`Permit data saved to ${permitPath}`);
+    return true;
+  } catch (error) {
+    logger.error(`Failed to save permit data: ${error}`);
+    return false;
+  }
+}
+
+// Execute ztm join command
+async function joinMesh(
+  meshName: string,
+  endpointName: string,
+  permitPath: string
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn(
+      "ztm",
+      ["join", meshName, "--as", endpointName, "--permit", permitPath],
+      { timeout: 60000 }
+    );
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        logger.info(`Successfully joined mesh ${meshName} as ${endpointName}`);
+        resolve(true);
+      } else {
+        logger.error(`ztm join failed: ${stderr}`);
+        resolve(false);
+      }
+    });
+
+    child.on("error", (error) => {
+      logger.error(`Failed to execute ztm join: ${error.message}`);
+      resolve(false);
+    });
+  });
+}
+
 // Initialize runtime for an account
 async function initializeRuntime(
   config: ZTMChatConfig,
@@ -791,12 +931,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       const warnings: string[] = [];
       const account = resolveZTMChatAccount({ cfg, accountId });
       const config = account.config as ZTMChatConfig;
-
-      if (!config?.certificate || !config?.privateKey) {
-        warnings.push(
-          "No mTLS credentials configured - API requests will use no authentication"
-        );
-      }
 
       const allowFrom = config?.allowFrom ?? [];
       if (!allowFrom.length) {
@@ -1010,6 +1144,63 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         throw new Error(validation.errors.join("; "));
       }
 
+      const homeDir = process.env.HOME || "";
+      const permitPath = `${homeDir}/.openclaw/ztm/permit.json`;
+      const endpointName = `${config.username}-ep`;
+
+      // Step 1: Validate connectivity for agent URL
+      try {
+        const agentUrlObj = new URL(config.agentUrl);
+        const portStr = agentUrlObj.port || (agentUrlObj.protocol === "https:" ? "443" : "80");
+        const agentPort = parseInt(portStr, 10);
+        const agentConnected = await checkPortOpen(agentUrlObj.hostname, agentPort);
+        if (!agentConnected) {
+          throw new Error(`Cannot connect to ZTM agent at ${config.agentUrl}`);
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("Cannot connect")) {
+          throw error;
+        }
+        throw new Error(`Invalid ZTM agent URL: ${config.agentUrl}`);
+      }
+
+      // Step 2: Check if permit.json exists
+      const permitExists = fs.existsSync(permitPath);
+
+      if (!permitExists) {
+        // Step 3: Get public key from ztm identity
+        ctx.log?.info("Getting public key from ztm identity...");
+        const publicKey = await getPublicKeyFromIdentity();
+        if (!publicKey) {
+          throw new Error("Failed to get public key from ztm identity");
+        }
+
+        // Step 4: Request permit from permit server
+        ctx.log?.info("Requesting permit from permit server...");
+        const permitData = await requestPermit(
+          config.permitUrl,
+          publicKey,
+          config.username
+        );
+
+        if (!permitData) {
+          throw new Error("Failed to request permit from permit server");
+        }
+
+        // Step 5: Save permit data
+        if (!savePermitData(permitData, permitPath)) {
+          throw new Error("Failed to save permit data");
+        }
+      }
+
+      // Step 6: Join mesh
+      ctx.log?.info(`Joining mesh ${config.meshName} as ${endpointName}...`);
+      const joinSuccess = await joinMesh(config.meshName, endpointName, permitPath);
+      if (!joinSuccess) {
+        throw new Error("Failed to join mesh");
+      }
+
+      // Step 7: Initialize runtime (original flow)
       const initialized = await initializeRuntime(config, account.accountId);
 
       if (!initialized) {
