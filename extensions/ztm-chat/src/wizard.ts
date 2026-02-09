@@ -355,12 +355,12 @@ export class ZTMChatWizard {
     this.prompts.heading("Step 5: Security Settings");
     this.prompts.separator();
 
-    // DM Policy
-    const policies = ["allow", "deny", "pairing"] as const;
+    // DM Policy - pairing is the default
+    const policies = ["pairing", "allow", "deny"] as const;
     const policyLabels = [
+      "Require explicit pairing (approval needed)",
       "Allow messages from all users",
       "Deny messages from all users",
-      "Require explicit pairing (approval needed)",
     ];
 
     const policy = await this.prompts.select<DMPolicy>(

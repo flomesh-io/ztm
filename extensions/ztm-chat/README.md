@@ -133,7 +133,7 @@ The wizard guides you through 5 configuration steps:
 | 2 | Mesh Name | Required, alphanumeric + `-_` |
 | 3 | Bot Username | Default: `openclaw-bot` |
 | 4 | mTLS Authentication | Certificate and key file paths (required) |
-| 5 | Security Settings | DM policy, allowFrom list |
+| 5 | Security Settings | DM policy (default: pairing), allowFrom list |
 
 ### Example Session
 
@@ -166,12 +166,12 @@ Private key file path [~/.openclaw/ztm/key.pem]: ~/.openclaw/ztm/key.pem
 Step 5: Security Settings
 ------------------------
 Direct Message Policy:
-  [1] Allow messages from all users
-  [2] Deny messages from all users
-  [3] Require explicit pairing
+  [1] Require explicit pairing (approval needed)
+  [2] Allow messages from all users
+  [3] Deny messages from all users
 Select: 1
 
-Allow messages from (comma-separated, * for all) [*]: alice, bob, dev-team
+Allow messages from (comma-separated, * for all) [*]:
 
 Configuration Summary
 --------------------
