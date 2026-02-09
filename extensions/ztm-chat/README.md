@@ -67,7 +67,7 @@ openclaw ztm-chat-wizard
 # 1. ZTM Agent URL
 # 2. Mesh name
 # 3. Bot username
-# 4. mTLS certificate and key (required)
+# 4. mTLS certificate and key file paths (required)
 # 5. Security settings
 ```
 
@@ -141,23 +141,23 @@ The wizard guides you through 5 configuration steps:
 🤖 ZTM Chat Setup Wizard
 ========================================
 
-Step 1: ZTM Agent Connection
-----------------------------
+Step 1: ZTM Agent Connection (Required)
+--------------------------------------
 ZTM Agent URL [https://localhost:7777]: https://my-ztm-agent.company.com:7777
 
 Testing connection...
 ✓ Connected to https://my-ztm-agent.company.com:7777
 
-Step 2: Mesh Selection
-----------------------
+Step 2: Mesh Selection (Required)
+-------------------------------
 Mesh name: production-mesh
 
-Step 3: Bot Username
--------------------
+Step 3: Bot Username (Required)
+------------------------------
 Bot username [openclaw-bot]: my-bot
 
-Step 4: mTLS Authentication (Required)
---------------------------------------
+Step 4: mTLS Certificate and Key File Paths (Required)
+------------------------------------------------------
 Certificate file path [~/.openclaw/ztm/cert.pem]: ~/.openclaw/ztm/cert.pem
 Private key file path [~/.openclaw/ztm/key.pem]: ~/.openclaw/ztm/key.pem
 

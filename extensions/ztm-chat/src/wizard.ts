@@ -199,7 +199,7 @@ export class ZTMChatWizard {
    * Step 1: Configure Agent URL
    */
   private async stepAgentUrl(): Promise<void> {
-    this.prompts.heading("Step 1: ZTM Agent Connection");
+    this.prompts.heading("Step 1: ZTM Agent Connection (Required)");
     this.prompts.separator();
 
     const agentUrl = await this.prompts.ask(
@@ -233,7 +233,7 @@ export class ZTMChatWizard {
    */
   private async stepMeshSelection(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 2: Mesh Selection");
+    this.prompts.heading("Step 2: Mesh Selection (Required)");
     this.prompts.separator();
 
     const meshName = await this.prompts.ask("Mesh name", "");
@@ -260,7 +260,7 @@ export class ZTMChatWizard {
    */
   private async stepUserSelection(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 3: Bot Username");
+    this.prompts.heading("Step 3: Bot Username (Required)");
     this.prompts.separator();
 
     const username = await this.prompts.ask(
@@ -290,7 +290,7 @@ export class ZTMChatWizard {
    */
   private async stepMtlsConfiguration(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 4: mTLS Authentication (Required)");
+    this.prompts.heading("Step 4: mTLS Certificate and Key File Paths (Required)");
     this.prompts.separator();
 
     // Ask for certificate and key paths directly (mTLS is mandatory)
