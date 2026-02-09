@@ -21,7 +21,7 @@ flowchart TB
     Plugin -->|"Route"| Agent
 ```
 
-### Direct Storage Access (MVP)
+### Direct Storage Access
 
 This plugin uses **direct ZTM Mesh storage access** for messaging:
 
@@ -34,6 +34,8 @@ This plugin uses **direct ZTM Mesh storage access** for messaging:
 
 This approach provides full functionality via storage APIs, suitable for headless Gateway deployments.
 
+## Features
+
 - **Peer-to-Peer Messaging**: Send and receive messages with other ZTM users
 - **Remote Connection**: Connect to ZTM Agent from anywhere via HTTP API
 - **Secure**: Supports mTLS authentication with ZTM certificates
@@ -45,9 +47,38 @@ This approach provides full functionality via storage APIs, suitable for headles
 - **Structured Logging**: Context-aware logger with sensitive data filtering
 - **Interactive Wizard**: CLI-guided configuration setup
 
-## Quick Start
+## Installation
 
-### Step 1: Install the Plugin
+### 1. Install ZTM CLI
+
+Download ZTM from GitHub releases and install to `/usr/local/bin`:
+
+```bash
+# Download (example: v1.0.4 for Linux x86_64)
+curl -L "https://github.com/flomesh-io/ztm/releases/download/v1.0.4/ztm-aio-v1.0.4-generic_linux-x86_64.tar.gz" -o /tmp/ztm.tar.gz
+
+# Extract
+tar -xzf /tmp/ztm.tar.gz -C /tmp
+
+# Install to /usr/local/bin (requires sudo)
+sudo mv /tmp/bin/ztm /usr/local/bin/ztm
+
+# Cleanup
+rm /tmp/ztm.tar.gz
+
+# Verify
+ztm version
+```
+
+### 2. Start ZTM Agent
+
+```bash
+ztm start agent
+```
+
+The agent will start listening on `http://localhost:7777` by default.
+
+### 3. Install Plugin
 
 ```bash
 openclaw plugins install -l ./extensions/ztm-chat
@@ -57,248 +88,23 @@ openclaw plugins install -l ./extensions/ztm-chat
 # openclaw plugins install @ztm/openclaw-ztm-chat
 ```
 
-### Step 2: Run the Wizard (Recommended)
+### 4. Run Configuration Wizard
 
 ```bash
-# After plugin is installed, run the wizard
 openclaw ztm-chat-wizard
-
-# Follow the on-screen prompts:
-# 1. ZTM Agent URL
-# 2. Permit Server URL
-# 3. Bot username
-# 4. Security settings
 ```
 
-> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. Use `npx ztm-chat-wizard` only after the package is published to npm.
+The wizard will guide you through:
+1. ZTM Agent URL (default: `http://localhost:7777`)
+2. Permit Server URL (default: `https://ztm-portal.flomesh.io:7779/permit`)
+3. Bot Username (default: `openclaw-bot`)
+4. Security Settings (DM policy, allowFrom list)
+5. Summary & Save
 
-### Alternative: Manual Configuration
+### 5. Restart OpenClaw
 
 ```bash
-# 1. Create bot account on ZTM
-ztm user add openclaw-bot
-
-# 2. Create config file
-cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
-{
-  "agentUrl": "http://localhost:7777",
-  "meshName": "your-mesh-name",
-  "permitUrl": "https://ztm-portal.flomesh.io:7779/permit",
-  "username": "openclaw-bot",
-  "enableGroups": false,
-  "autoReply": true,
-  "messagePath": "/shared",
-  "dmPolicy": "pairing"
-}
-EOF
-
-# 3. Restart OpenClaw
-openclaw restart
-```
-
-> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. The wizard command requires the plugin to be installed first. Use `npx ztm-chat-wizard` only after the package is published to npm.
-
-## Prerequisites
-
-1. ZTM Agent running (`ztm agent start`)
-2. A dedicated ZTM user account for the bot
-3. OpenClaw gateway installed (version 2026.1+ recommended)
-
-## Interactive Wizard Guide
-
-### Running the Wizard
-
-The wizard is available after the plugin is installed:
-
-```bash
-# From OpenClaw's plugin directory (when using ZTM source repository)
-cd ~/.openclaw/plugins/ztm-chat
-openclaw ztm-chat-wizard
-
-# Or install globally (when published to npm)
-npm install -g @ztm/openclaw-ztm-chat
-ztm-chat-wizard
-```
-
-> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard`. Use `npx ztm-chat-wizard` or `ztm-chat-wizard` only after the package is published to npm.
-
-### Wizard Steps
-
-The wizard guides you through 5 configuration steps:
-
-| Step | Description | Options |
-|------|-------------|---------|
-| 1 | ZTM Agent URL | Default: `http://localhost:7777` |
-| 2 | Permit Server URL | Default: `https://ztm-portal.flomesh.io:7779/permit` |
-| 3 | Bot Username | Default: `openclaw-bot` |
-| 4 | Security Settings | DM policy (default: pairing), allowFrom list |
-| 5 | Summary & Save | Configuration file path |
-
-### Example Session
-
-```
-🤖 ZTM Chat Setup Wizard
-========================================
-
-Step 1: ZTM Agent URL (Required)
-----------------------------------
-ZTM Agent URL [http://localhost:7777]: http://localhost:7777
-✓ URL validated: http://localhost:7777
-
-Step 2: Permit Server URL (Required)
------------------------------------
-Permit Server URL [https://ztm-portal.flomesh.io:7779/permit]: https://ztm-portal.flomesh.io:7779/permit
-✓ URL validated: https://ztm-portal.flomesh.io:7779/permit
-
-Step 3: Bot Username (Required)
-------------------------------
-Bot username [openclaw-bot]: my-bot
-
-Step 4: Security Settings
-------------------------
-Direct Message Policy:
-  [1] Require explicit pairing (approval needed)
-  [2] Allow messages from all users
-  [3] Deny messages from all users
-Select: 1
-
-Allow messages from (comma-separated, * for all) [*]:
-
-Configuration Summary
---------------------
-  Agent URL: http://localhost:7777
-  Permit Server URL: https://ztm-portal.flomesh.io:7779/permit
-  Username: my-bot
-  Auto Reply: true
-  DM Policy: pairing
-
-Save this configuration? (Y/n):
-Save to file [/home/user/.openclaw/channels/ztm-chat.json]:
-
-✓ Configuration saved to /home/user/.openclaw/channels/ztm-chat.json
-✓ ZTM Chat channel configured successfully!
-
-Next steps:
-  1. Restart OpenClaw: openclaw gateway restart
-  2. Check status: openclaw channels status
-```
-
-### Auto-Discovery
-
-Discover existing ZTM configuration without running the wizard:
-
-```bash
-openclaw ztm-chat-discover
-
-# Output:
-📡 Discovered ZTM Configuration:
-   Agent URL: https://ztm-agent.example.com:7777
-   Mesh: production-mesh
-   Username: my-bot
-
-💡 To use this configuration, run: openclaw ztm-chat-wizard
-```
-
-> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-discover`. Use `npx ztm-chat-discover` only after the package is published to npm.
-
-## CLI Commands
-
-> **Note**: These commands require the plugin to be installed first.
-
-### Plugin Commands
-
-```bash
-# Setup wizard (after plugin is installed)
-openclaw ztm-chat-wizard
-
-# Auto-discover existing configuration
-openclaw ztm-chat-discover
-```
-
-> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard` and `openclaw ztm-chat-discover`. Use `npx` only after the package is published to npm.
-
-### OpenClaw Commands
-
-```bash
-# Check channel status
-openclaw channels status ztm-chat
-
-# List connected peers
-openclaw channels directory ztm-chat peers
-
-# View configuration
-openclaw channels describe ztm-chat
-
-# Probe connection
-openclaw channels status ztm-chat --probe
-
-# Enable/disable channel
-openclaw channels disable ztm-chat
-openclaw channels enable ztm-chat
-
-# Pairing mode commands (when dmPolicy is "pairing")
-openclaw pairing list ztm-chat             # List pending pairing requests
-openclaw pairing approve ztm-chat <code>   # Approve a pairing request
-```
-
-## Configuration Options
-
-### Required Options
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `agentUrl` | string | ZTM Agent API URL (e.g., `http://localhost:7777`) |
-| `permitUrl` | string | Permit Server URL (e.g., `https://ztm-portal.flomesh.io:7779/permit`) |
-| `meshName` | string | Name of your ZTM mesh (alphanumeric + `-_`) |
-| `username` | string | Bot's ZTM username (alphanumeric + `-_`) |
-
-### Optional Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enableGroups` | boolean | `false` | Enable group chat support |
-| `autoReply` | boolean | `true` | Automatically reply to messages via AI agent |
-| `messagePath` | string | `/shared` | Custom message path prefix |
-
-### Security Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `dmPolicy` | string | `"pairing"` | DM policy: `"allow"`, `"deny"`, `"pairing"` |
-| `allowFrom` | string[] | `[]` | List of approved usernames (whitelist) |
-
-### Advanced Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `pollingInterval` | number | `2000` | Polling interval in ms (fallback mode) |
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `ZTM_CHAT_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` |
-
-## Configuration File Location
-
-The wizard saves configuration to:
-```
-~/.openclaw/channels/ztm-chat.json
-```
-
-Example configuration:
-```json
-{
-  "agentUrl": "http://localhost:7777",
-  "permitUrl": "https://ztm-portal.flomesh.io:7779/permit",
-  "meshName": "production-mesh",
-  "username": "my-bot",
-  "enableGroups": false,
-  "autoReply": true,
-  "messagePath": "/shared",
-  "dmPolicy": "pairing",
-  "allowFrom": ["alice", "trusted-team"]
-}
+openclaw gateway restart
 ```
 
 ## Usage
@@ -315,37 +121,22 @@ The bot will respond through OpenClaw's AI agent.
 
 ### Pairing Mode
 
-By default, the bot uses **pairing mode** (`dmPolicy: "pairing"`). This means:
+By default, the bot uses **pairing mode** (`dmPolicy: "pairing"`):
 
 1. **New users** must be approved before they can send messages
 2. When an unapproved user sends a message, the bot sends them a pairing code
-3. You approve users using the OpenClaw CLI with their pairing code
+3. Approve users using the CLI with their pairing code
 
 #### List Pending Requests
 
 ```bash
-# List pending pairing requests
 openclaw pairing list ztm-chat
 ```
 
 #### Approve a Pairing Request
 
 ```bash
-# Approve using the pairing code shown in the list
 openclaw pairing approve ztm-chat <code>
-```
-
-#### Check Status
-
-```bash
-# Basic status
-openclaw channels status ztm-chat
-
-# Detailed probe
-openclaw channels status ztm-chat --probe
-
-# View logs
-openclaw logs --level debug --channel ztm-chat
 ```
 
 #### Pairing Mode Policies
@@ -356,24 +147,97 @@ openclaw logs --level debug --channel ztm-chat
 | `deny` | Reject messages from all users (except allowFrom list) |
 | `pairing` | Require explicit approval for new users (recommended) |
 
-To change the policy, edit `~/.openclaw/channels/ztm-chat.json`:
+## CLI Commands
 
-```json
-{
-  "dmPolicy": "pairing",
-  "allowFrom": ["alice", "trusted-team"]
-}
-```
-
-### Directory Operations
+### Plugin Commands
 
 ```bash
-# List all peers
+# Setup wizard
+openclaw ztm-chat-wizard
+
+# Auto-discover existing configuration
+openclaw ztm-chat-discover
+```
+
+### Channel Commands
+
+```bash
+# Check channel status
+openclaw channels status ztm-chat
+
+# View configuration
+openclaw channels describe ztm-chat
+
+# Probe connection
+openclaw channels status ztm-chat --probe
+
+# Enable/disable channel
+openclaw channels disable ztm-chat
+openclaw channels enable ztm-chat
+
+# List connected peers
 openclaw channels directory ztm-chat peers
 
 # List groups (if enabled)
 openclaw channels directory ztm-chat groups
 ```
+
+### Pairing Commands
+
+```bash
+# List pending pairing requests
+openclaw pairing list ztm-chat
+
+# Approve a pairing request
+openclaw pairing approve ztm-chat <code>
+```
+
+## Configuration
+
+### Configuration File
+
+Location: `~/.openclaw/channels/ztm-chat.json`
+
+```json
+{
+  "agentUrl": "http://localhost:7777",
+  "permitUrl": "https://ztm-portal.flomesh.io:7779/permit",
+  "meshName": "production-mesh",
+  "username": "my-bot",
+  "enableGroups": false,
+  "autoReply": true,
+  "messagePath": "/shared",
+  "dmPolicy": "pairing",
+  "allowFrom": ["alice", "trusted-team"]
+}
+```
+
+### Options
+
+**Required:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `agentUrl` | string | ZTM Agent API URL |
+| `permitUrl` | string | Permit Server URL |
+| `meshName` | string | Name of your ZTM mesh |
+| `username` | string | Bot's ZTM username |
+
+**Optional:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enableGroups` | boolean | `false` | Enable group chat support |
+| `autoReply` | boolean | `true` | Automatically reply to messages |
+| `messagePath` | string | `/shared` | Custom message path prefix |
+| `dmPolicy` | string | `"pairing"` | DM policy: `allow`, `deny`, `pairing` |
+| `allowFrom` | string[] | `[]` | List of approved usernames |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ZTM_CHAT_LOG_LEVEL` | Logging level: `debug`, `info`, `warn`, `error` |
 
 ## Message Flow
 
@@ -394,21 +258,9 @@ sequenceDiagram
     M->>U: 7. Deliver to recipient
 ```
 
-## API Endpoints
+## ZTM Agent API
 
-1. User sends message via ZTM
-2. Message stored to mesh storage (`/shared/{peer}/publish/peers/{bot}/...`)
-3. Plugin polls/watches for new messages via storage API
-4. Message routed to OpenClaw agent
-5. AI generates response
-6. Response stored via storage API (`/shared/{bot}/publish/peers/{peer}/...`)
-7. Recipient receives message via ZTM
-
-## API Endpoints
-
-The plugin uses these ZTM Agent API endpoints:
-
-### Storage API (Direct Access)
+### Storage API
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -425,15 +277,6 @@ The plugin uses these ZTM Agent API endpoints:
 | Send | `/shared/{bot}/publish/peers/{peer}/messages/{time}-{sender}.json` | Bot publishes to peer |
 | Receive | `/shared/{peer}/publish/peers/{bot}/messages/*.json` | Peers publish to bot |
 | Discovery | `/shared/*/publish/` | Scan for active users |
-
-### Filtering
-
-When receiving messages, filtering is applied client-side:
-
-| Parameter | Description |
-|-----------|-------------|
-| `since` | Only return messages after this timestamp |
-| `before` | Only return messages before this timestamp |
 
 ## Troubleshooting
 
@@ -457,93 +300,14 @@ When receiving messages, filtering is applied client-side:
 ### No Messages Received
 
 1. Check bot username is correct in configuration
-2. Verify ZTM Agent is running and connected to the mesh:
+2. Verify ZTM Agent is running:
    ```bash
    curl http://localhost:7777/api/meshes
    ```
-
 3. Check mesh connectivity:
    ```bash
    openclaw channels status ztm-chat --probe
    ```
-
-4. Verify your mesh has other endpoints:
-   ```bash
-   curl http://localhost:7777/api/meshes/your-mesh
-   ```
-
-2. Check certificate matches the private key:
-   ```bash
-   openssl x509 -noout -modulus -in <(echo "$ZTM_CERTIFICATE") | openssl md5
-   openssl rsa -noout -modulus -in <(echo "$ZTM_PRIVATE_KEY") | openssl md5
-   ```
-
-## Security Best Practices
-
-1. **Use mTLS in production**: Configure `certificate` and `privateKey` for production deployments
-2. **Restrict allowFrom**: Limit which ZTM users can trigger the bot
-3. **Use environment variables**: Never commit credentials to version control
-4. **Regular certificate rotation**: Rotate certificates periodically
-
-### Storage Access Model
-
-The plugin uses ZTM's shared storage (`/shared/*`) for messaging:
-
-- `/shared/*` paths are **open by default** to all mesh members
-- The plugin does **not** set ACLs on messages
-- This is a trade-off: enables operation without additional apps, but means any mesh member could potentially access these paths
-
-**Current Mitigations**:
-- `allowFrom` whitelist in plugin configuration
-- `dmPolicy: "pairing"` mode for explicit user approval
-
-### Known Limitation: Message Signature Verification
-
-**Status**: ⚠️ Not Implemented
-
-ZTM is a peer-to-peer network where messages may pass through multiple relay nodes:
-
-```
-Alice → [Node A] → [Node B] → [Node C] → Bot
-```
-
-The plugin does **not** currently verify message signatures at the application layer.
-
-**Risk Assessment**: **Low** for typical internal/network deployments (assuming trusted mesh members).
-
-## Feature Status
-
-### Completed Features
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Peer-to-Peer Messaging | ✅ Done | Send/receive messages with ZTM users |
-| Remote Connection | ✅ Done | HTTP API connection to ZTM Agent |
-| Interactive Wizard | ✅ Done | CLI-guided 5-step configuration |
-| Message Deduplication | ✅ Done | Automatic duplicate prevention |
-| Structured Logging | ✅ Done | Context-aware logging with redaction |
-| Real-Time Updates | ✅ Done | Watch mechanism with polling fallback |
-| Mock ZTM Agent | ✅ Done | Test infrastructure for development |
-| Configuration Discovery | ✅ Done | Auto-detect existing ZTM setup |
-| User Discovery | ✅ Done | Browse mesh users via API |
-| Direct Storage Access | ✅ Done | Uses `/api/allFiles` and `/api/setFileData` for messaging |
-
-### Planned Features
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Group Chat Support | 🔜 Planned | Enable `enableGroups` for group messages |
-| Message Signatures | ⚠️ Planned | Application-layer signature verification |
-| DM Policy Enforcement | 🔜 Planned | Full `dmPolicy` implementation |
-| Webhook Integration | 🔜 Planned | HTTP callbacks for events |
-| Rich Media Messages | 🔜 Planned | Support images, files, etc. |
-| Message Encryption | ⚠️ Planned | End-to-end encrypted messages |
-
-### Legend
-
-- ✅ **Done**: Fully implemented and tested
-- 🔜 **Planned**: On the roadmap, partial or coming soon
-- ⚠️ **Known Limitation**: Identified but not yet implemented
 
 ## Development
 
@@ -552,40 +316,24 @@ The plugin does **not** currently verify message signatures at the application l
 ```bash
 cd extensions/ztm-chat
 npm install
-npm test          # Run all tests (182 tests)
-npm test:watch    # Watch mode for development
-```
-
-### Testing Infrastructure
-
-The plugin includes a mock ZTM Agent server for testing:
-
-```typescript
-import { MockZTMClient, createMockConfig } from "./mocks/ztm-client.js";
-
-const client = new MockZTMClient(createMockConfig());
-await client.start();
-
-// Simulate storage API calls
-const messages = await fetch(`${client.url}/api/allFiles/shared/alice/publish/peers/bot/messages/`);
-
-await client.stop();
+npm test          # Run all tests
+npm test:watch    # Watch mode
 ```
 
 ### Test Coverage
 
 ```
 Test Files  7 passed (7)
-      Tests  182 passed (182)
+      Tests  192 passed (192)
 
-覆盖率:
+Coverage:
 - ZTM API Client: 40 tests
-- Configuration: 56 tests
+- Configuration: 57 tests
 - Channel Plugin: 23 tests
-- Wizard: 15 tests
+- Wizard: 25 tests
 - Logger: 15 tests
 - Runtime: 17 tests
-- Index: 16 tests
+- Index: 15 tests
 ```
 
 ### Debug Logging
@@ -594,21 +342,21 @@ Test Files  7 passed (7)
 ZTM_CHAT_LOG_LEVEL=debug openclaw restart
 ```
 
-### Project Structure
+## Project Structure
 
 ```
 ztm-chat/
-├── index.ts              # Plugin entry point (190 lines)
-├── index.test.ts         # Plugin tests (16 tests)
+├── index.ts              # Plugin entry point
+├── index.test.ts         # Plugin tests
 ├── package.json          # NPM package config
 ├── openclaw.plugin.json  # OpenClaw plugin manifest
 └── src/
-    ├── channel.ts        # Channel adapter (917 lines)
+    ├── channel.ts        # Channel adapter
     ├── config.ts         # Config schema (TypeBox)
-    ├── ztm-api.ts       # API client (481 lines)
+    ├── ztm-api.ts        # API client
     ├── logger.ts         # Structured logging
     ├── runtime.ts        # Runtime management
-    ├── wizard.ts         # Setup wizard (520 lines)
+    ├── wizard.ts         # Setup wizard
     └── mocks/
-        └── ztm-client.ts # Mock agent (282 lines)
+        └── ztm-client.ts # Mock agent
 ```
