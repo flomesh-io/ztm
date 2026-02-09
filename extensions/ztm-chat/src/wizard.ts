@@ -290,55 +290,60 @@ export class ZTMChatWizard {
    */
   private async stepMtlsConfiguration(): Promise<void> {
     this.prompts.separator();
-    this.prompts.heading("Step 4: mTLS Authentication");
+    this.prompts.heading("Step 4: mTLS Authentication (Required)");
     this.prompts.separator();
 
-    const useMtls = await this.prompts.confirm(
-      "Use mTLS authentication?",
-      false
+    // Ask for certificate and key paths directly (mTLS is mandatory)
+    const certPath = await this.prompts.ask(
+      "Certificate file path",
+      "~/.openclaw/ztm/cert.pem"
     );
 
-    if (useMtls) {
-      const certPath = await this.prompts.ask(
-        "Certificate file path",
-        "~/ztm/cert.pem"
-      );
+    const keyPath = await this.prompts.ask(
+      "Private key file path",
+      "~/.openclaw/ztm/key.pem"
+    );
 
-      const keyPath = await this.prompts.ask(
-        "Private key file path",
-        "~/ztm/key.pem"
-      );
+    // Expand ~ to home directory
+    const expandedCertPath = certPath.startsWith("~")
+      ? certPath.replace("~", process.env.HOME || "")
+      : certPath;
+    const expandedKeyPath = keyPath.startsWith("~")
+      ? keyPath.replace("~", process.env.HOME || "")
+      : keyPath;
 
-      // Load and validate certificates
-      try {
-        const cert = this.loadFile(certPath);
-        const key = this.loadFile(keyPath);
+    // Ensure the directory exists
+    const certDir = path.dirname(expandedCertPath);
+    const keyDir = path.dirname(expandedKeyPath);
+    if (!fs.existsSync(certDir)) {
+      fs.mkdirSync(certDir, { recursive: true });
+    }
+    if (!fs.existsSync(keyDir)) {
+      fs.mkdirSync(keyDir, { recursive: true });
+    }
 
-        // Basic validation
-        if (!cert.includes("-----BEGIN CERTIFICATE-----")) {
-          throw new Error("Invalid certificate format");
-        }
-        if (
-          !key.includes("-----BEGIN") &&
-          !key.includes("PRIVATE KEY-----")
-        ) {
-          throw new Error("Invalid private key format");
-        }
+    // Load and validate certificates
+    try {
+      const cert = this.loadFile(expandedCertPath);
+      const key = this.loadFile(expandedKeyPath);
 
-        this.config.certificate = cert;
-        this.config.privateKey = key;
-        this.prompts.success("mTLS certificates loaded successfully");
-      } catch (error) {
-        this.prompts.warning(
-          `Failed to load certificates: ${error}. Skipping mTLS.`
-        );
-        this.config.certificate = undefined;
-        this.config.privateKey = undefined;
+      // Basic validation
+      if (!cert.includes("-----BEGIN CERTIFICATE-----")) {
+        throw new Error("Invalid certificate format");
       }
-    } else {
-      this.config.certificate = undefined;
-      this.config.privateKey = undefined;
-      this.prompts.warning("Skipping mTLS - using anonymous connection");
+      if (
+        !key.includes("-----BEGIN") &&
+        !key.includes("PRIVATE KEY-----")
+      ) {
+        throw new Error("Invalid private key format");
+      }
+
+      this.config.certificate = cert;
+      this.config.privateKey = key;
+      this.prompts.success("mTLS certificates loaded successfully");
+    } catch (error) {
+      this.prompts.error(`Failed to load certificates: ${error}`);
+      throw error;
     }
   }
 

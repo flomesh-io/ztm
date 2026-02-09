@@ -67,7 +67,7 @@ openclaw ztm-chat-wizard
 # 1. ZTM Agent URL
 # 2. Mesh name
 # 3. Bot username
-# 4. mTLS configuration (optional)
+# 4. mTLS certificate and key (required)
 # 5. Security settings
 ```
 
@@ -132,7 +132,7 @@ The wizard guides you through 5 configuration steps:
 | 1 | ZTM Agent URL | Default: `https://localhost:7777` |
 | 2 | Mesh Name | Required, alphanumeric + `-_` |
 | 3 | Bot Username | Default: `openclaw-bot` |
-| 4 | mTLS Authentication | Y/N, loads cert/key from files |
+| 4 | mTLS Authentication | Certificate and key file paths (required) |
 | 5 | Security Settings | DM policy, allowFrom list |
 
 ### Example Session
@@ -156,11 +156,10 @@ Step 3: Bot Username
 -------------------
 Bot username [openclaw-bot]: my-bot
 
-Step 4: mTLS Authentication
-----------------------------
-Use mTLS authentication? (y/N): y
-Certificate file path [~/ztm/cert.pem]: ~/ztm/bot-cert.pem
-Private key file path [~/ztm/key.pem]: ~/ztm/bot-key.pem
+Step 4: mTLS Authentication (Required)
+--------------------------------------
+Certificate file path [~/.openclaw/ztm/cert.pem]: ~/.openclaw/ztm/cert.pem
+Private key file path [~/.openclaw/ztm/key.pem]: ~/.openclaw/ztm/key.pem
 
 ✓ mTLS certificates loaded successfully
 
