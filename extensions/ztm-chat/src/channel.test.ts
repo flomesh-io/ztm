@@ -186,16 +186,16 @@ describe("ZTM Chat Channel Plugin", () => {
       const message = `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n` +
         `To approve this user, run:\n` +
-        `  openclaw channels approve ztm-chat ${peer}\n\n` +
+        `  openclaw pairing approve ztm-chat ${peer}\n\n` +
         `To deny this request, run:\n` +
-        `  openclaw channels deny ztm-chat ${peer}\n` +
+        `  openclaw pairing deny ztm-chat ${peer}\n` +
         `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
         `Note: Your bot is in "pairing" mode, which requires explicit approval for new users.`;
 
       expect(message).toContain("PAIRING REQUEST");
       expect(message).toContain(`User "${peer}"`);
-      expect(message).toContain("openclaw channels approve ztm-chat alice");
-      expect(message).toContain("openclaw channels deny ztm-chat alice");
+      expect(message).toContain("openclaw pairing approve ztm-chat alice");
+      expect(message).toContain("openclaw pairing deny ztm-chat alice");
       expect(message).toContain('"pairing"');
     });
 

@@ -467,9 +467,9 @@ async function handlePairingRequest(
     message: `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `To approve this user, run:\n` +
-      `  openclaw channels approve ztm-chat ${peer}\n\n` +
+      `  openclaw pairing approve ztm-chat ${peer}\n\n` +
       `To deny this request, run:\n` +
-      `  openclaw channels deny ztm-chat ${peer}\n` +
+      `  openclaw pairing deny ztm-chat ${peer}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
       `Note: Your bot is in "pairing" mode, which requires explicit approval for new users.`,
     sender: config.username,
@@ -572,13 +572,6 @@ async function startMessageWatcher(
         }
       }
 
-      // Fall back to polling if watch returns no results (watch API may not be supported)
-      if (changedPaths.length === 0) {
-        logger.warn(`[${state.accountId}] Watch API returned no changes, switching to polling mode`);
-        await startPollingWatcher(state);
-        return;
-      }
-
       state.watchErrorCount = 0;
     } catch (error) {
       state.watchErrorCount++;
@@ -594,8 +587,7 @@ async function startMessageWatcher(
       }
     }
 
-    // Continue watching
-    watchLoop();
+    setTimeout(watchLoop, 2000);
   };
 
   watchLoop();
@@ -1353,7 +1345,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
           ctx.log?.info(
             `[${account.accountId}] Pairing mode active - no approved users. ` +
             `Users must send a message to initiate pairing. ` +
-            `Approve users with: openclaw channels approve ztm-chat <username>`
+            `Approve users with: openclaw pairing approve ztm-chat <username>`
           );
         } else {
           ctx.log?.info(
