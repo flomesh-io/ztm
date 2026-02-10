@@ -16,7 +16,7 @@ export {
 
 // Plugin configuration path
 function getConfigPath(): string {
-  return path.join(process.env.HOME || "", ".openclaw", "channels", "ztm-chat.json");
+  return path.join(process.env.HOME || "", ".openclaw", "ztm", "config.json");
 }
 
 // Read config file

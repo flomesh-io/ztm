@@ -337,8 +337,8 @@ export class ZTMChatWizard {
       const defaultPath = path.join(
         process.env.HOME || "",
         ".openclaw",
-        "channels",
-        "ztm-chat.json"
+        "ztm",
+        "config.json"
       );
 
       savePath = await this.prompts.ask(
@@ -423,7 +423,7 @@ export async function discoverConfig(): Promise<DiscoveredConfig | null> {
   // Try to read from existing config
   const configPaths = [
     path.join(process.env.HOME || "", ".ztm", "config.json"),
-    path.join(process.env.HOME || "", ".openclaw", "channels", "ztm-chat.json"),
+    path.join(process.env.HOME || "", ".openclaw", "ztm", "config.json"),
   ];
 
   for (const configPath of configPaths) {

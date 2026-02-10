@@ -35,12 +35,12 @@ describe("First Install Detection", () => {
   });
 
   it("should detect first install when config does not exist", () => {
-    mockExistsSync.mockImplementation((p: string) => !p.includes("ztm-chat"));
+    mockExistsSync.mockImplementation((p: string) => !p.includes("config"));
     process.env.HOME = "/home/user";
 
     // Inline test of the logic
     const isFirstInstall = () => {
-      const configPath = "/home/user/.openclaw/channels/ztm-chat.json";
+      const configPath = "/home/user/.openclaw/ztm/config.json";
       return !mockExistsSync(configPath);
     };
 
@@ -48,11 +48,11 @@ describe("First Install Detection", () => {
   });
 
   it("should detect not first install when config exists", () => {
-    mockExistsSync.mockImplementation((p: string) => p.includes("ztm-chat"));
+    mockExistsSync.mockImplementation((p: string) => p.includes("config"));
     process.env.HOME = "/home/user";
 
     const isFirstInstall = () => {
-      const configPath = "/home/user/.openclaw/channels/ztm-chat.json";
+      const configPath = "/home/user/.openclaw/ztm/config.json";
       return !mockExistsSync(configPath);
     };
 
@@ -147,10 +147,10 @@ describe("Config Path Resolution", () => {
 
     const getConfigPath = () => {
       const home = process.env.HOME || "";
-      return `${home}/.openclaw/channels/ztm-chat.json`;
+      return `${home}/.openclaw/ztm/config.json`;
     };
 
-    expect(getConfigPath()).toBe("/home/testuser/.openclaw/channels/ztm-chat.json");
+    expect(getConfigPath()).toBe("/home/testuser/.openclaw/ztm/config.json");
   });
 
   it("should use empty HOME if not set", () => {
@@ -158,10 +158,10 @@ describe("Config Path Resolution", () => {
 
     const getConfigPath = () => {
       const home = process.env.HOME || "";
-      return `${home}/.openclaw/channels/ztm-chat.json`;
+      return `${home}/.openclaw/ztm/config.json`;
     };
 
-    expect(getConfigPath()).toBe("/.openclaw/channels/ztm-chat.json");
+    expect(getConfigPath()).toBe("/.openclaw/ztm/config.json");
   });
 });
 
@@ -190,7 +190,7 @@ describe("CLI Banner Output", () => {
       "     Run: openclaw ztm-chat-wizard",
       "",
       "  2️⃣  Manual Configuration",
-      "     Edit: ~/.openclaw/channels/ztm-chat.json",
+      "     Edit: ~/.openclaw/ztm/config.json",
       "",
       "  For documentation, see:",
       "  https://github.com/flomesh-io/ztm/tree/main/extensions/ztm-chat",
@@ -212,7 +212,7 @@ describe("CLI Banner Output", () => {
       "     Run: openclaw ztm-chat-wizard",
       "",
       "  2️⃣  Manual Configuration",
-      "     Edit: ~/.openclaw/channels/ztm-chat.json",
+      "     Edit: ~/.openclaw/ztm/config.json",
     ];
 
     expect(bannerLines.some((l) => l.includes("Interactive Wizard"))).toBe(true);
@@ -258,7 +258,7 @@ describe("Wizard Result Handling", () => {
         username: "test-bot",
       },
       accountId: "test-bot",
-      savePath: "/home/user/.openclaw/channels/ztm-chat.json",
+      savePath: "/home/user/.openclaw/ztm/config.json",
     };
 
     expect(result.accountId).toBe("test-bot");

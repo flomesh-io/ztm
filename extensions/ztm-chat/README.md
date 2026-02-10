@@ -196,7 +196,7 @@ openclaw pairing approve ztm-chat <code>
 
 ### Configuration File
 
-Location: `~/.openclaw/channels/ztm-chat.json`
+Location: `~/.openclaw/ztm/config.json`
 
 ```json
 {

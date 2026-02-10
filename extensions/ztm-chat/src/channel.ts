@@ -415,14 +415,14 @@ function buildChannelConfigSchemaWithHints(
   };
 }
 
-// Read channel config from external file (~/.openclaw/channels/ztm-chat.json)
+// Read channel config from external file (~/.openclaw/ztm/config.json)
 function readExternalChannelConfig(): Record<string, unknown> | null {
   try {
     const configPath = path.join(
       process.env.HOME || "",
       ".openclaw",
-      "channels",
-      "ztm-chat.json",
+      "ztm",
+      "config.json",
     );
     if (fs.existsSync(configPath)) {
       const content = fs.readFileSync(configPath, "utf-8");

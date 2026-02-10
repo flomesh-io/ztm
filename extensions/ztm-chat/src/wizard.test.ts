@@ -408,7 +408,7 @@ describe("ZTMChatWizard", () => {
     it("should read existing config file", async () => {
       const { existsSync, readFileSync } = await import("fs");
 
-      vi.mocked(existsSync).mockImplementation((p: string) => p.includes("channels"));
+      vi.mocked(existsSync).mockImplementation((p: string) => p.includes("ztm"));
 
       vi.mocked(readFileSync).mockReturnValue(
         JSON.stringify({
