@@ -484,13 +484,14 @@ async function handlePairingRequest(
 }
 
 // Start message watcher with Watch mechanism
+// Watches for messages sent TO the bot (stored at /shared/{SENDER}/publish/peers/{BOT}/messages/)
 async function startMessageWatcher(
   state: AccountRuntimeState
 ): Promise<void> {
   const { config, apiClient } = state;
   if (!apiClient) return;
 
-  const messagePath = `/shared/${config.username}/publish/peers/*/messages/`;
+  const messagePath = "/shared/";
 
   // Initial read of all messages
   try {
@@ -538,9 +539,10 @@ async function startMessageWatcher(
       }
 
       for (const path of changedPaths) {
-        // Parse path to get peer name
+        // Parse path to get peer name (sender)
+        // Path pattern: /shared/{SENDER}/publish/peers/{RECIPIENT}/messages/
         const match = path.match(
-          /\/shared\/[^/]+\/publish\/peers\/([^/]+)\/messages/
+          /\/shared\/([^/]+)\/publish\/peers\/.*\/messages/
         );
         if (match) {
           const peer = match[1];
@@ -568,6 +570,13 @@ async function startMessageWatcher(
             logger.warn(`[${state.accountId}] Failed to read messages from ${peer}: ${error}`);
           }
         }
+      }
+
+      // Fall back to polling if watch returns no results (watch API may not be supported)
+      if (changedPaths.length === 0) {
+        logger.warn(`[${state.accountId}] Watch API returned no changes, switching to polling mode`);
+        await startPollingWatcher(state);
+        return;
       }
 
       state.watchErrorCount = 0;
