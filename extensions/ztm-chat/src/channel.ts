@@ -121,8 +121,8 @@ class MessageStateStore {
     this.statePath = path.join(
       process.env.HOME || "",
       ".openclaw",
-      "channels",
-      "ztm-chat-state.json",
+      "ztm",
+      "state.json",
     );
     this.data = { accounts: {}, fileTimes: {} };
     this.load();
