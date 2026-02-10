@@ -1602,7 +1602,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       // Dispatch inbound messages to the AI agent via OpenClaw's reply pipeline
       // (same pattern as Telegram/WhatsApp/iMessage built-in channels)
       const messageCallback = (msg: ZTMChatMessage) => {
-        const handleInbound = async () => {
+        const handleInbound = async (): Promise<void> => {
           try {
             const route = rt.channel.routing.resolveAgentRoute({
               channel: "ztm-chat",
@@ -1662,12 +1662,12 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
             ctx.log?.error?.(
               `[${account.accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`
             );
+            throw error; // Re-throw so caller can be aware of failures
           }
         };
 
-        handleInbound().catch((err) => {
-          logger.error(`[${state.accountId}] Dispatch error: ${err}`);
-        });
+        // Handle inbound asynchronously, errors are logged and will be caught by global handler
+        void handleInbound();
       };
 
       state.messageCallbacks.add(messageCallback);

@@ -5,6 +5,14 @@ import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel.js";
 import { setZTMRuntime } from "./src/runtime.js";
 import { runWizard, discoverConfig } from "./src/wizard.js";
 
+// Set up global unhandled rejection handler in non-test environments
+// This ensures async errors are logged instead of being silently swallowed
+if (process.env.NODE_ENV !== "test") {
+  process.on("unhandledRejection", (reason: unknown) => {
+    console.error("[ztm-chat] Unhandled Promise rejection:", reason);
+  });
+}
+
 export {
   ZTMChatWizard,
   ConsolePrompts,
