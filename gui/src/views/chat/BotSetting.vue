@@ -230,7 +230,7 @@ onMounted(()=>{
 			</div>
 		</li>
 		<li class="nav-li flex" >
-			<b class="opacity-70">{{t('Prompts')}}</b>
+			<b class="opacity-70">{{t('Self Introduction')}}</b>
 			<div class="flex-item text-right pr-3">
 			</div>
 			<Button icon="pi pi-pencil" severity="secondary" @click="showPrompt"/>
@@ -274,14 +274,14 @@ onMounted(()=>{
 	<Dialog class="noheader" v-model:visible="openPrompt" modal :style="{ minHeight:'500px',minWidth:'400px'  }">
 		<AppHeader :back="() => openPrompt = false" :main="false">
 				<template #center>
-					<b>{{t('Prompts')}}</b>
+					<b>{{t('Self Introduction')}}</b>
 				</template>
 				<template #end> 
 					<Button icon="pi pi-check" @click="savePrompt" />
 				</template>
 		</AppHeader>
 		<div class="px-2 mt-2">
-			<Tag class="mb-2">{{t('Self Introduction')}}</Tag>
+			<Tag class="mb-2">{{t('Personality')}}</Tag>
 				<Chip class="mb-2 align-items-top teatarea-panel w-full"  >
 					<span class="font-medium">
 						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.system" :autoResize="false" rows="11" />
