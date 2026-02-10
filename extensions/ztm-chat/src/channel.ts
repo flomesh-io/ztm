@@ -20,6 +20,35 @@ type ChannelStatusIssue = BaseChannelStatusIssue & {
   message: string;
 };
 
+// Simple Semaphore implementation for concurrency control
+class Semaphore {
+  private permits: number;
+  private waiters: Array<{ resolve: () => void }> = [];
+
+  constructor(permits: number) {
+    this.permits = permits;
+  }
+
+  async acquire(): Promise<void> {
+    if (this.permits > 0) {
+      this.permits--;
+      return;
+    }
+    return new Promise((resolve) => {
+      this.waiters.push({ resolve });
+    });
+  }
+
+  release(): void {
+    this.permits++;
+    if (this.waiters.length > 0) {
+      this.permits--;
+      const waiter = this.waiters.shift();
+      waiter?.resolve();
+    }
+  }
+}
+
 // Local type extension for ChannelAccountSnapshot with additional properties
 type ChannelAccountSnapshot = BaseChannelAccountSnapshot & {
   meshConnected?: boolean;
@@ -806,6 +835,9 @@ async function startMessageWatcher(
   const watchLoop = async (): Promise<void> => {
     if (!state.apiClient || !state.config) return;
 
+    // Semaphore to limit concurrent message processing
+    const messageSemaphore = new Semaphore(5);
+
     try {
       const changedPaths = await state.apiClient.watchChanges(messagePath);
 
@@ -816,12 +848,20 @@ async function startMessageWatcher(
       const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
 
       for (const path of changedPaths) {
-        const match = path.match(
-          /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages/
-        );
-        if (match) {
+        await messageSemaphore.acquire();
+        try {
+          const match = path.match(
+            /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages/
+          );
+          if (!match) {
+            messageSemaphore.release();
+            continue;
+          }
           const peer = match[1];
-          if (peer === state.config.username) continue;
+          if (peer === state.config.username) {
+            messageSemaphore.release();
+            continue;
+          }
           try {
             const messages = await state.apiClient!.getPeerMessages(peer);
             if (messages) {
@@ -845,7 +885,13 @@ async function startMessageWatcher(
             }
           } catch (error) {
             logger.warn(`[${state.accountId}] Failed to read messages from ${peer}: ${error}`);
+          } finally {
+            messageSemaphore.release();
           }
+        } catch (error) {
+          // Handle semaphore or other errors
+          logger.warn(`[${state.accountId}] Error processing path ${path}: ${error}`);
+          messageSemaphore.release();
         }
       }
 
