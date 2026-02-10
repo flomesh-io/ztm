@@ -117,6 +117,11 @@ class MessageStateStore {
   private dirty = false;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Maximum number of peers to track per account (prevents unbounded state growth)
+  private readonly MAX_PEERS_PER_ACCOUNT = 1000;
+  // Maximum number of file paths to track per account
+  private readonly MAX_FILES_PER_ACCOUNT = 1000;
+
   constructor() {
     this.statePath = path.join(
       process.env.HOME || "",
@@ -204,7 +209,32 @@ class MessageStateStore {
       this.data.accounts[accountId] = {};
     }
     this.data.accounts[accountId][peer] = time;
+    this.cleanupIfNeeded(accountId);
     this.scheduleSave();
+  }
+
+  /** Clean up old entries if limits are exceeded (called after watermark updates) */
+  private cleanupIfNeeded(accountId: string): void {
+    const peers = this.data.accounts[accountId];
+    if (peers && Object.keys(peers).length > this.MAX_PEERS_PER_ACCOUNT) {
+      // Keep the most recently active peers (sorted by timestamp descending)
+      const sorted = Object.entries(peers)
+        .sort(([, t1], [, t2]) => t2 - t1)
+        .slice(0, this.MAX_PEERS_PER_ACCOUNT);
+      this.data.accounts[accountId] = Object.fromEntries(sorted);
+      this.dirty = true;
+    }
+
+    // Also cleanup fileTimes if needed
+    const fileTimes = this.data.fileTimes[accountId];
+    if (fileTimes && Object.keys(fileTimes).length > this.MAX_FILES_PER_ACCOUNT) {
+      // Keep the most recently seen files (sorted by timestamp descending)
+      const sorted = Object.entries(fileTimes)
+        .sort(([, t1], [, t2]) => t2 - t1)
+        .slice(0, this.MAX_FILES_PER_ACCOUNT);
+      this.data.fileTimes[accountId] = Object.fromEntries(sorted);
+      this.dirty = true;
+    }
   }
 
   /** Get all persisted file times for an account (used to seed lastSeenTimes) */
