@@ -602,6 +602,12 @@ function processIncomingMessage(
   storeAllowFrom: string[] = [],
   accountId: string = "default"
 ): ZTMChatMessage | null {
+  // Skip empty or whitespace-only messages
+  if (!msg.message || msg.message.trim() === "") {
+    logger.debug(`Skipping empty message from ${msg.sender}`);
+    return null;
+  }
+
   const watermark = messageStateStore.getWatermark(accountId, msg.sender);
   if (msg.time <= watermark) {
     logger.debug(`Skipping already-processed message from ${msg.sender} (time=${msg.time} <= watermark=${watermark})`);
