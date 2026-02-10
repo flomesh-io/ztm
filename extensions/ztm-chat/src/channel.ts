@@ -320,6 +320,7 @@ class MessageDeduplicator {
   private cache: Map<string, DedupeEntry>;
   private maxSize: number;
   private trimRatio: number;
+  private lastMemoryCheck = 0;
 
   constructor(maxSize: number = 10000, trimRatio: number = 0.5) {
     this.cache = new Map();
@@ -329,6 +330,24 @@ class MessageDeduplicator {
 
   private generateKey(sender: string, time: number, content: string): string {
     return `${sender}-${time}-${content.substring(0, 32)}`;
+  }
+
+  /** Check memory usage and clear cache if under memory pressure */
+  private checkMemoryUsage(): void {
+    const now = Date.now();
+    // Only check every 10 seconds to avoid overhead
+    if (now - this.lastMemoryCheck < 10000) return;
+    this.lastMemoryCheck = now;
+
+    const used = process.memoryUsage();
+    // Clear cache if heap exceeds 100MB
+    if (used.heapUsed > 100 * 1024 * 1024) {
+      this.cache.clear();
+      logger.warn("[ztm-chat] Cleared deduplication cache due to memory pressure", {
+        heapUsed: Math.round(used.heapUsed / 1024 / 1024) + "MB",
+        heapTotal: Math.round(used.heapTotal / 1024 / 1024) + "MB",
+      });
+    }
   }
 
   isDuplicate(sender: string, time: number, content: string): boolean {
@@ -341,6 +360,7 @@ class MessageDeduplicator {
     // Add new entry
     this.cache.set(key, { sender, time, contentHash: content });
     this.trimIfNeeded();
+    this.checkMemoryUsage();
     return false;
   }
 
