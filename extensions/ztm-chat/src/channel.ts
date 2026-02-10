@@ -856,6 +856,7 @@ async function startMessageWatcher(
 
       if (state.watchErrorCount > 5) {
         logger.warn(`[${state.accountId}] Too many watch errors, falling back to polling`);
+        state.watchErrorCount = 0; // Reset for fresh start in polling mode
         await startPollingWatcher(state);
         return;
       }
