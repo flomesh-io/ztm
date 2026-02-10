@@ -1,7 +1,7 @@
 import type { OpenClawPluginApi, ChannelPlugin } from "openclaw/plugin-sdk";
 import * as fs from "fs";
 import * as path from "path";
-import { ztmChatPlugin } from "./src/channel.js";
+import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel.js";
 import { setZTMRuntime } from "./src/runtime.js";
 import { runWizard, discoverConfig } from "./src/wizard.js";
 
@@ -13,6 +13,8 @@ export {
   type WizardResult,
   type WizardPrompts,
 } from "./src/wizard.js";
+
+export { disposeMessageStateStore } from "./src/channel.js";
 
 // Plugin configuration path
 function getConfigPath(): string {
@@ -112,6 +114,7 @@ const plugin: any = {
   name: "ZTM Chat",
   description: "ZTM (Zero Trust Mesh) Chat channel plugin - Connect OpenClaw to the ZTM P2P network",
   register: registerPlugin,
+  dispose: disposeMessageStateStore,
 };
 
 // Pairing commands are handled by OpenClaw core:

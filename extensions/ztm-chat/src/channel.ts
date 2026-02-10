@@ -231,6 +231,20 @@ class MessageStateStore {
     }
     this.scheduleSave();
   }
+
+  /** Dispose of resources - call on plugin unload to prevent memory leaks */
+  dispose(): void {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    this.save();
+  }
+}
+
+// Export dispose function for plugin cleanup
+export function disposeMessageStateStore(): void {
+  messageStateStore.dispose();
 }
 
 // Global state store instance
