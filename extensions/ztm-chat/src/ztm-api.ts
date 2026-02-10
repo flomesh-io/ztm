@@ -92,37 +92,70 @@ export interface ZTMApiClient {
 }
 
 // Default timeout for API requests (in milliseconds)
-const DEFAULT_TIMEOUT = 15000;
+const DEFAULT_TIMEOUT = 30000;
 
-// Create fetch with timeout support
+const MAX_RETRIES = 3;
+const RETRY_INITIAL_DELAY = 1000;
+const RETRY_MAX_DELAY = 10000;
+const RETRY_BACKOFF_MULTIPLIER = 2;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getRetryDelay(attempt: number): number {
+  const delay = RETRY_INITIAL_DELAY * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1);
+  return Math.min(delay, RETRY_MAX_DELAY);
+}
+
 async function fetchWithTimeout(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  timeoutMs: number = DEFAULT_TIMEOUT,
+  retries: number = MAX_RETRIES
 ): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+  let lastError: Error | null = null;
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${DEFAULT_TIMEOUT}ms`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (
+        !lastError.name.includes("AbortError") &&
+        !lastError.message.includes("timeout") &&
+        !lastError.message.includes("fetch") &&
+        !lastError.message.includes("network")
+      ) {
+        throw lastError;
+      }
+
+      if (attempt < retries) {
+        const delay = getRetryDelay(attempt + 1);
+        logger.warn?.(`[ZTM API] Request failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms: ${lastError.message}`);
+        await sleep(delay);
+      }
     }
-    throw error;
   }
+
+  throw new Error(`Request failed after ${retries + 1} attempts: ${lastError?.message}`);
 }
 
 // Create ZTM API Client
 export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
   const baseUrl = config.agentUrl.replace(/\/$/, "");
+  const apiTimeout = config.apiTimeout || DEFAULT_TIMEOUT;
 
-  // Generic request handler
   async function request<T>(
     method: string,
     path: string,
@@ -140,20 +173,18 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
-    });
+    }, apiTimeout);
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
       throw new Error(`ZTM API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    // Handle different response types
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("application/json")) {
       return (await response.json()) as T;
     }
 
-    // For non-JSON responses
     const text = await response.text();
     try {
       return JSON.parse(text) as T;
@@ -196,8 +227,10 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     return result;
   }
 
-  async function listFiles(): Promise<Record<string, { hash?: string; size?: number; time?: number }>> {
-    return request<Record<string, { hash?: string; size?: number; time?: number }>>("GET", `/api/meshes/${config.meshName}/files`);
+  async function listFiles(since?: number): Promise<Record<string, { hash?: string; size?: number; time?: number }>> {
+    const path = `/api/meshes/${config.meshName}/files`;
+    const queryParams = since !== undefined ? `?since=${since}` : "";
+    return request<Record<string, { hash?: string; size?: number; time?: number }>>("GET", path + queryParams);
   }
 
   async function readFile<T = unknown>(filePath: string): Promise<T> {
@@ -251,7 +284,7 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     async getChats(): Promise<ZTMChat[]> {
       try {
         const fileList = await listFiles();
-        const chatsByPeer = new Map<string, { path: string; time: number }>();
+        const chatsByPeer = new Map<string, { path: string; time: number; filename: string }>();
 
         for (const filePath of Object.keys(fileList)) {
           const peerMatch = filePath.match(peerMessagePattern);
@@ -261,7 +294,8 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
             const fileTime = meta?.time ?? 0;
             const existing = chatsByPeer.get(peer);
             if (!existing || fileTime > existing.time) {
-              chatsByPeer.set(peer, { path: filePath, time: fileTime });
+              const filename = filePath.split('/').pop() || '';
+              chatsByPeer.set(peer, { path: filePath, time: fileTime, filename });
             }
           }
         }
@@ -269,15 +303,18 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
         const chats: ZTMChat[] = [];
         for (const [peer, info] of chatsByPeer) {
           try {
+            const timestampMatch = info.filename.match(/^(\d+)\.json$/);
+            const timestamp = timestampMatch ? parseInt(timestampMatch[1], 10) : info.time;
+
             const fileContent = await readFile(info.path);
             const messages = parseMessageFile(fileContent, peer);
             const latest = messages.length > 0
               ? messages.reduce((a, b) => a.time > b.time ? a : b)
-              : { time: info.time, message: "", sender: peer };
+              : { time: timestamp, message: "", sender: peer };
             chats.push({
               peer,
-              time: info.time,
-              updated: info.time,
+              time: timestamp,
+              updated: timestamp,
               latest,
             });
           } catch {
@@ -361,7 +398,8 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     async watchChanges(prefix: string): Promise<string[]> {
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
       try {
-        const fileList = await listFiles();
+        const minLastSeen = Math.min(...Array.from(lastSeenTimes.values()), Infinity);
+        const fileList = await listFiles(isFinite(minLastSeen) ? minLastSeen : undefined);
         const changedPaths: string[] = [];
 
         for (const [filePath, meta] of Object.entries(fileList)) {
@@ -440,13 +478,4 @@ export function parseMessagePath(
   }
 
   return null;
-}
-
-// Create API client with timeout
-export function createZTMApiClientWithTimeout(
-  config: ZTMChatConfig,
-  timeoutMs: number = 15000
-): ZTMApiClient {
-  // This is a wrapper that could be used for per-request timeout customization
-  return createZTMApiClient(config);
 }

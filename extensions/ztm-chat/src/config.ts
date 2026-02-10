@@ -58,6 +58,12 @@ export const ZTMChatConfigSchema = Type.Object({
   allowFrom: Type.Optional(Type.Array(Type.String({
     description: "List of allowed sender usernames",
   }))),
+  apiTimeout: Type.Optional(Type.Number({
+    description: "API request timeout in milliseconds",
+    minimum: 1000,
+    maximum: 300000,
+    default: 30000,
+  })),
 });
 
 export type ZTMChatConfig = Static<typeof ZTMChatConfigSchema>;
@@ -166,6 +172,9 @@ export function resolveZTMChatConfig(raw: unknown): ZTMChatConfig {
     allowFrom: Array.isArray(config.allowFrom)
       ? config.allowFrom.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean)
       : undefined,
+    apiTimeout: typeof config.apiTimeout === "number" && config.apiTimeout >= 1000
+      ? Math.min(config.apiTimeout, 300000)
+      : 30000,
   };
 }
 
@@ -181,6 +190,7 @@ export function getDefaultConfig(): ZTMChatConfig {
     messagePath: "/shared",
     dmPolicy: "pairing",
     allowFrom: undefined,
+    apiTimeout: 30000,
   };
 }
 
@@ -208,6 +218,7 @@ export function createProbeConfig(
     messagePath: config.messagePath ?? "/shared",
     dmPolicy: config.dmPolicy ?? "pairing",
     allowFrom: config.allowFrom,
+    apiTimeout: config.apiTimeout ?? 30000,
   };
 }
 

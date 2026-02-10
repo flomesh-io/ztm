@@ -9,29 +9,59 @@ interface ZTMMessage {
   sender: string;
 }
 
-// Helper function under test (replicating from ztm-api.ts)
 async function fetchWithTimeout(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const DEFAULT_TIMEOUT = 15000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+  const DEFAULT_TIMEOUT = 30000;
+  const MAX_RETRIES = 3;
+  const RETRY_INITIAL_DELAY = 1000;
+  const RETRY_MAX_DELAY = 10000;
+  const RETRY_BACKOFF_MULTIPLIER = 2;
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${DEFAULT_TIMEOUT}ms`);
-    }
-    throw error;
+  function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  function getRetryDelay(attempt: number): number {
+    const delay = RETRY_INITIAL_DELAY * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1);
+    return Math.min(delay, RETRY_MAX_DELAY);
+  }
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (
+        !lastError.name.includes("AbortError") &&
+        !lastError.message.includes("timeout") &&
+        !lastError.message.includes("fetch") &&
+        !lastError.message.includes("network")
+      ) {
+        throw lastError;
+      }
+
+      if (attempt < MAX_RETRIES) {
+        const delay = getRetryDelay(attempt + 1);
+        await sleep(delay);
+      }
+    }
+  }
+
+  throw new Error(`Request failed after ${MAX_RETRIES + 1} attempts: ${lastError?.message}`);
 }
 
 describe("ZTM API Client", () => {
