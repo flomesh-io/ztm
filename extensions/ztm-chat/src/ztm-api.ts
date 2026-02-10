@@ -182,188 +182,36 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
       return request<ZTMMeshInfo>("GET", `/api/meshes/${config.meshName}`);
     },
 
-    // Discover all users in the mesh - uses direct storage API (MVP)
-    async discoverUsers(): Promise<ZTMUserInfo[]> {
-      // MVP: Use direct storage API
-      return this.discoverUsersViaStorage();
-    },
-
-    // Discover all peers/endpoints
-    async discoverPeers(): Promise<ZTMPeer[]> {
-      return safeRequest<ZTMPeer[]>([], "GET", `/api/meshes/${config.meshName}/endpoints`);
-    },
-
-    // Get all chats - uses direct storage API (MVP)
-    async getChats(): Promise<ZTMChat[]> {
-      // MVP: Discover users via storage and build chat list
-      const users = await this.discoverUsersViaStorage();
-
-      const chats: ZTMChat[] = [];
-      const now = Date.now();
-
-      for (const user of users) {
-        // Check if there's a conversation with this user
-        const messages = await this.receiveMessagesViaStorage(user.username);
-        if (messages && messages.length > 0) {
-          const latest = messages[messages.length - 1];
-          chats.push({
-            peer: user.username,
-            time: latest.time,
-            updated: now,
-            latest,
-          });
-        }
-      }
-
-      return chats;
-    },
-
-    // Get messages from a peer - uses direct storage API (MVP)
-    async getPeerMessages(peer: string, since?: number, before?: number): Promise<ZTMMessage[] | null> {
-      // MVP: Use direct storage API
-      const messages = await this.receiveMessagesViaStorage(peer);
-
-      if (!messages) return null;
-
-      // Apply time filters
-      let filtered = messages;
-      if (since) {
-        filtered = filtered.filter(m => m.time > since);
-      }
-      if (before) {
-        filtered = filtered.filter(m => m.time < before);
-      }
-
-      return filtered;
-    },
-
-    // Send message to a peer - uses direct storage API (MVP)
-    async sendPeerMessage(peer: string, message: ZTMMessage): Promise<boolean> {
-      // MVP: Use direct storage API
-      return this.sendMessageViaStorage(peer, message);
-    },
-
-    // Get all groups (future feature)
-    async getGroups(): Promise<ZTMChat[]> {
-      // Placeholder for group chat API when enableGroups is implemented
-      return safeRequest<ZTMChat[]>([], "GET", "/apps/ztm/chat/api/chats");
-    },
-
-    // Get group messages (future feature)
-    async getGroupMessages(creator: string, group: string): Promise<ZTMMessage[] | null> {
+    // Discover all users in mesh - uses ZTM Agent storage API
+    async discoverUsersViaStorage(): Promise<ZTMUserInfo[]> {
       try {
-        return await request<ZTMMessage[] | null>(
-          "GET",
-          `/apps/ztm/chat/api/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages`
-        );
-      } catch {
-        return null;
-      }
-    },
-
-    // Add a file to shared storage
-    async addFile(data: ArrayBuffer): Promise<string | null> {
-      try {
-        const response = await fetchWithTimeout(`${baseUrl}/apps/ztm/chat/api/files`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/octet-stream",
-          },
-          body: data,
-        });
-        if (!response.ok) return null;
-        const hash = await response.text();
-        return hash.trim() || null;
-      } catch {
-        return null;
-      }
-    },
-
-    // Get a file from shared storage
-    async getFile(owner: string, hash: string): Promise<ArrayBuffer | null> {
-      try {
-        const response = await fetchWithTimeout(
-          `${baseUrl}/apps/ztm/chat/api/files/${encodeURIComponent(owner)}/${encodeURIComponent(hash)}`
-        );
-        if (!response.ok) return null;
-        return response.arrayBuffer();
-      } catch {
-        return null;
-      }
-    },
-
-    // Watch for changes in a path prefix
-    async watchChanges(prefix: string): Promise<string[]> {
-      try {
-        return await request<string[]>("GET", `/api/watch${prefix}`);
-      } catch {
+        return await request<ZTMUserInfo[]>("GET", "/api/allFiles/shared/");
+      } catch (error) {
+        logger.warn(`[ZTM API] Failed to discover users via storage: ${error}`);
         return [];
       }
     },
 
-    // ===== Direct Storage API Methods (MVP) =====
-
-    /** Send message using direct storage API (setFileData) */
-    async sendMessageViaStorage(peer: string, message: ZTMMessage): Promise<boolean> {
+    // Get all chats - uses ZTM Agent storage API
+    async getChats(): Promise<ZTMChat[]> {
       try {
-        const messageId = `${message.time}-${message.sender}`;
-        const path = buildPeerMessagePath("/shared", config.username, peer);
-        const filePath = `${path}${messageId}.json`;
-        const data = JSON.stringify(message, null, 2);
-
-        await request<void>("POST", `/api/setFileData${filePath}`, { data });
-        logger.debug(`[ZTM API] Sent message to ${peer} via storage: ${filePath}`);
-        return true;
+        return await request<ZTMChat[]>("GET", "/api/allFiles/shared/");
       } catch (error) {
-        logger.warn(`[ZTM API] Failed to send message via storage: ${error}`);
-        return false;
+        logger.warn(`[ZTM API] Failed to get chats via storage: ${error}`);
+        return [];
       }
     },
 
-    /** Receive messages using direct storage API (allFiles + getFileData) */
-    async receiveMessagesViaStorage(peer: string): Promise<ZTMMessage[] | null> {
+    // Get messages from a peer - uses ZTM Agent storage API
+    async getPeerMessages(peer: string, since?: number, before?: number): Promise<ZTMMessage[] | null> {
       try {
-        // Path where the peer publishes messages intended for us
+        // Path where peer publishes messages intended for us
         // Pattern: /shared/{peer}/publish/peers/{botUsername}/messages/
         const publishPath = `/shared/${peer}/publish/peers/${config.username}/messages/`;
 
         // Get list of message files
         const fileList = await request<string[]>("GET", `/api/allFiles${publishPath}`);
 
-        if (!fileList || fileList.length === 0) {
-          return [];
-        }
-
-        const messages: ZTMMessage[] = [];
-        for (const fullPath of fileList) {
-          if (!fullPath.endsWith('.json')) continue;
-
-          try {
-            const response = await request<{ data: string }>("GET", `/api/getFileData${fullPath}`);
-            if (response?.data) {
-              const message = JSON.parse(response.data) as ZTMMessage;
-              messages.push(message);
-            }
-          } catch {
-            logger.debug(`[ZTM API] Failed to read message file: ${fullPath}`);
-          }
-        }
-
-        // Sort by time
-        messages.sort((a, b) => a.time - b.time);
-        return messages;
-      } catch (error) {
-        logger.warn(`[ZTM API] Failed to receive messages via storage: ${error}`);
-        return null;
-      }
-    },
-
-    /** Discover active peers by scanning shared storage */
-    async discoverUsersViaStorage(): Promise<ZTMUserInfo[]> {
-      try {
-        // Scan /shared/*/publish/ to find active users
-        const publishPath = "/shared/*/publish/";
-        const fileList = await request<string[]>("GET", `/api/allFiles${publishPath}`);
 
         if (!fileList || fileList.length === 0) {
           return [];

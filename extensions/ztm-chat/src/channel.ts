@@ -491,7 +491,7 @@ async function startMessageWatcher(
   const { config, apiClient } = state;
   if (!apiClient) return;
 
-  const messagePath = "/shared/";
+  const messagePath = "/apps/ztm/chat/shared/";
 
   // Initial read of all messages
   try {
@@ -540,9 +540,9 @@ async function startMessageWatcher(
 
       for (const path of changedPaths) {
         // Parse path to get peer name (sender)
-        // Path pattern: /shared/{SENDER}/publish/peers/{RECIPIENT}/messages/
+        // Path pattern: /apps/ztm/chat/shared/{SENDER}/publish/peers/{BOT}/messages/
         const match = path.match(
-          /\/shared\/([^/]+)\/publish\/peers\/.*\/messages/
+          /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages/
         );
         if (match) {
           const peer = match[1];
