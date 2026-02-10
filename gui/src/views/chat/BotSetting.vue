@@ -271,7 +271,7 @@ onMounted(()=>{
 		</li>
 	</ul>
 	
-	<Dialog class="noheader" v-model:visible="openPrompt" modal :style="{ minHeight:'400px',minWidth:'400px'  }">
+	<Dialog class="noheader" v-model:visible="openPrompt" modal :style="{ minHeight:'500px',minWidth:'400px'  }">
 		<AppHeader :back="() => openPrompt = false" :main="false">
 				<template #center>
 					<b>{{t('Prompts')}}</b>
@@ -281,18 +281,18 @@ onMounted(()=>{
 				</template>
 		</AppHeader>
 		<div class="px-2 mt-2">
-			<Tag class="mb-2">{{t('User')}}</Tag>
-			<Chip class=" mb-2 align-items-top teatarea-panel w-full"  >
-					<span class="font-medium">
-						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.user" :autoResize="false" rows="5" />
-					</span>
-				</Chip>
-		</div>
-		<div class="px-2">
-			<Tag class="mb-2">{{t('System')}}</Tag>
+			<Tag class="mb-2">{{t('Self Introduction')}}</Tag>
 				<Chip class="mb-2 align-items-top teatarea-panel w-full"  >
 					<span class="font-medium">
 						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.system" :autoResize="false" rows="11" />
+					</span>
+				</Chip>
+		</div>
+		<div class="px-2 ">
+			<Tag class="mb-2">{{t('Task')}}</Tag>
+			<Chip class=" mb-2 align-items-top teatarea-panel w-full"  >
+					<span class="font-medium">
+						<Textarea :placeholder="t('Prompt')+'...'" v-model="prompts.user" :autoResize="false" rows="5" />
 					</span>
 				</Chip>
 		</div>

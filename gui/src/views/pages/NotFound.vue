@@ -10,7 +10,7 @@
                     <h1 class="text-900 font-bold text-3xl lg:text-5xl mb-2">Not Found</h1>
                     <div class="text-600 mb-5">Requested resource is not available.</div>
                     <!-- <router-link to="/" class="w-full flex align-items-center py-5 border-300 border-bottom-1">
-                        <span class="flex justify-content-center align-items-center bg-cyan-400 border-round" class="notfound-icon-box">
+                        <span class="flex justify-content-center align-items-center bg-cyan-400 border-round notfound-icon-box">
                             <i class="text-50 pi pi-fw pi-table text-2xl"></i>
                         </span>
                         <span class="ml-4 flex flex-column">
@@ -19,7 +19,7 @@
                         </span>
                     </router-link>
                     <router-link to="/" class="w-full flex align-items-center py-5 border-300 border-bottom-1">
-                        <span class="flex justify-content-center align-items-center bg-orange-400 border-round" class="notfound-icon-box">
+                        <span class="flex justify-content-center align-items-center bg-orange-400 border-round notfound-icon-box">
                             <i class="pi pi-fw pi-question-circle text-50 text-2xl"></i>
                         </span>
                         <span class="ml-4 flex flex-column">
@@ -28,7 +28,7 @@
                         </span>
                     </router-link>
                     <router-link to="/" class="w-full flex align-items-center mb-5 py-5 border-300 border-bottom-1">
-                        <span class="flex justify-content-center align-items-center bg-indigo-400 border-round" class="notfound-icon-box">
+                        <span class="flex justify-content-center align-items-center bg-indigo-400 border-round notfound-icon-box">
                             <i class="pi pi-fw pi-unlock text-50 text-2xl"></i>
                         </span>
                         <span class="ml-4 flex flex-column">

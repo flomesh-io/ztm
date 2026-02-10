@@ -160,7 +160,7 @@ onMounted(()=>{
 						<div v-if="!isRunning" class="flex-item" >
 							<Button class="browser-btn-left" size="small" :loading="saving" icon="pi pi-play" @click="start"/>
 						</div>
-						<ToggleSwitch v-else class="relative green" v-model="proxy" class="toggle-left" />
+						<ToggleSwitch v-else class="relative green toggle-left" v-model="proxy" />
 					</template>
 				</Select>
 			</div>
