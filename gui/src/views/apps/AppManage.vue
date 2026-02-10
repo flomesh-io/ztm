@@ -118,8 +118,8 @@ onMounted(()=>{
 	<div class="grid text-center" >
 			<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in (props.meshApps||[])">
 				<div class="flex">
-					<img :class="app.isDisabled?'grayfilter':''" :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer" width="26" height="26" class="app-icon-img"/>
-					<div class="flex-item text-left pl-3" :class="{'text-white-alpha-80':!props.theme}" class="line-height-40">
+					<img :class="app.isDisabled?'grayfilter':''" :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon || defaultIcon" class="pointer app-icon-img" width="26" height="26"/>
+					<div class="flex-item text-left pl-3 line-height-40" :class="{'text-white-alpha-80':!props.theme}">
 						<b>{{ t(app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name) }}</b> | 
 						<i class="iconfont icon-provider" v-if="app?.provider == (props.embedEp?.username || selectedMesh.value?.agent?.username)"/>
 						{{app.provider}}
@@ -140,7 +140,7 @@ onMounted(()=>{
 					<Button v-if="app.provider != 'ztm' || app.shortcut" v-tooltip.left="t('Delete')" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 					</Button>
 					
-					<ToggleSwitch @click="disabledApp(app,!app.isDisabled)" v-tooltip.left="!app.isDisabled?t('Click to disabled'):t('Click to enabled')" class="relative ml-1" class="relative-top-6" v-model="app.isDisabled" :trueValue="false" :falseValue="true">
+					<ToggleSwitch @click="disabledApp(app,!app.isDisabled)" v-tooltip.left="!app.isDisabled?t('Click to disabled'):t('Click to enabled')" class="relative ml-1 relative-top-6" v-model="app.isDisabled" :trueValue="false" :falseValue="true">
 						<template #handle="{ checked }">
 								<i :class="['!text-xs pi', { 'pi-check': checked, 'pi-times': !checked }]" />
 						</template>
@@ -149,8 +149,8 @@ onMounted(()=>{
 			</div>
 			<div class="col-12 py-1 relative align-items-center justify-content-center " v-for="(app) in shortcutApps">
 				<div class="flex">
-					<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon" class="pointer" width="26" height="26" class="app-icon-img"/>
-					<div class="flex-item text-left pl-3" :class="{'text-white-alpha-80':!props.theme}" class="line-height-40"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}} </div>
+					<img :src="app.icon || mapping[`${app?.provider||''}/${app.name}`]?.icon" class="pointer app-icon-img" width="26" height="26"/>
+					<div class="flex-item text-left pl-3 line-height-40" :class="{'text-white-alpha-80':!props.theme}"><b>{{ app.label ||mapping[`${app?.provider||''}/${app.name}`]?.name || app.name}}</b> | {{app.provider}} </div>
 					<Button  v-tooltip.left="t('Delete')" icon="pi pi-trash" severity="help" text rounded aria-label="Filter" @click="removeApp(app)" >
 					</Button>
 				</div>

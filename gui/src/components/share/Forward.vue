@@ -68,7 +68,7 @@ const hideSender = () => {
 
 <template>
 	
-	<Drawer class="relative" @hide="hideSender" v-model:visible="visible" header="Forward" position="bottom" class="drawer-h-80">
+	<Drawer class="relative drawer-h-80" @hide="hideSender" v-model:visible="visible" header="Forward" position="bottom">
 		<ScrollPanel class="w-full absolute scroll-panel-bottom" :style="{'top': (`${45}px`)}">
 		<div class="flex message-item pointer" :key="index">
 			<div v-for="(file,index) in props.message?.files" class="flex flex-col py-3 px-3 gap-4 w-full" :class="{ 'border-t border-surface-200 dark:border-surface-700': index !== 0 }">
