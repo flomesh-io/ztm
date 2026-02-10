@@ -298,6 +298,7 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     },
 
     async getPeerMessages(peer: string, since?: number, before?: number): Promise<ZTMMessage[] | null> {
+      logger.debug?.(`[ZTM API] Fetching messages from peer "${peer}" since=${since}, before=${before}`);
       try {
         const messagePath = `/apps/ztm/chat/shared/${peer}/publish/peers/${config.username}/messages/`;
         const fileList = await listFiles();
@@ -320,6 +321,7 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
         }
 
         messages.sort((a, b) => b.time - a.time);
+        logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
         return messages;
       } catch (error) {
         logger.warn?.(`[ZTM API] Failed to get peer messages from ${peer}: ${error}`);
@@ -328,11 +330,13 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     },
 
     async sendPeerMessage(peer: string, message: ZTMMessage): Promise<boolean> {
+      logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message}"`);
       try {
         const messagePath = `/apps/ztm/chat/shared/${config.username}/publish/peers/${peer}/messages/${message.time}.json`;
         // ZTM Chat expects array format: [{time, message:{text}}]
         const ztmEntry = { time: message.time, message: { text: message.message } };
         await writeFile(messagePath, [ztmEntry]);
+        logger.debug?.(`[ZTM API] Successfully sent message to peer "${peer}" at path=${messagePath}`);
         return true;
       } catch (error) {
         logger.error?.(`[ZTM API] Failed to send message to ${peer}: ${error}`);
@@ -341,14 +345,21 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     },
 
     async sendMessageViaStorage(peer: string, message: ZTMMessage): Promise<boolean> {
-      return client.sendPeerMessage(peer, message);
+      logger.debug?.(`[ZTM API] Sending message via storage to peer "${peer}"`);
+      const success = await client.sendPeerMessage(peer, message);
+      logger.debug?.(`[ZTM API] Message via storage ${success ? "succeeded" : "failed"} for peer "${peer}"`);
+      return success;
     },
 
     async receiveMessagesViaStorage(peer: string): Promise<ZTMMessage[] | null> {
-      return client.getPeerMessages(peer);
+      logger.debug?.(`[ZTM API] Receiving messages via storage from peer "${peer}"`);
+      const messages = await client.getPeerMessages(peer);
+      logger.debug?.(`[ZTM API] Received ${messages?.length ?? 0} messages from peer "${peer}" via storage`);
+      return messages;
     },
 
     async watchChanges(prefix: string): Promise<string[]> {
+      logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
       try {
         const fileList = await listFiles();
         const changedPaths: string[] = [];
@@ -361,9 +372,11 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
           if (fileTime > lastSeen) {
             changedPaths.push(filePath);
             lastSeenTimes.set(filePath, fileTime);
+            logger.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, lastSeen=${lastSeen})`);
           }
         }
 
+        logger.debug?.(`[ZTM API] Watch complete: ${changedPaths.length} changed paths for prefix="${prefix}"`);
         return changedPaths;
       } catch (error) {
         logger.warn?.(`[ZTM API] Watch failed for ${prefix}: ${error}`);

@@ -371,10 +371,9 @@ function checkDmPolicy(
 ): MessageCheckResult {
   const normalizedSender = sender.trim().toLowerCase();
   const allowFrom = config.allowFrom ?? [];
-  const isWhitelisted = allowFrom.length === 0 ||
+  const isWhitelisted = allowFrom.length > 0 &&
     allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
 
-  // If sender is whitelisted, always allow
   if (isWhitelisted) {
     return { allowed: true, reason: "whitelisted", action: "process" };
   }
@@ -458,28 +457,77 @@ async function handlePairingRequest(
     return;
   }
 
-  // Add to pending pairings
+  // Register pairing request with openclaw's pairing store
+  // This makes it visible to `openclaw pairing list ztm-chat` and approvable via `openclaw pairing approve ztm-chat <code>`
+  let pairingCode = "";
+  let pairingCreated = false;
+  try {
+    const rt = getZTMRuntime();
+    const { code, created } = await rt.channel.pairing.upsertPairingRequest({
+      channel: "ztm-chat",
+      id: normalizedPeer,
+      meta: { name: peer },
+    });
+    pairingCode = code;
+    pairingCreated = created;
+    logger.info(`[${state.accountId}] Registered pairing request for ${peer} (code=${code}, created=${created})`);
+  } catch (error) {
+    logger.warn(`[${state.accountId}] Failed to register pairing request in store for ${peer}: ${error}`);
+    // Continue anyway — still add to in-memory pending and notify the peer
+  }
+
+  // Add to pending pairings (in-memory tracking)
   state.pendingPairings.set(normalizedPeer, new Date());
 
-  // Send pairing request message
-  const pairingMessage: ZTMMessage = {
-    time: Date.now(),
-    message: `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
+  // Build pairing reply message using openclaw's standard format
+  let messageText: string;
+  if (pairingCode) {
+    try {
+      const rt = getZTMRuntime();
+      messageText = rt.channel.pairing.buildPairingReply({
+        channel: "ztm-chat",
+        idLine: `Your ZTM Chat username: ${peer}`,
+        code: pairingCode,
+      });
+    } catch {
+      // Fallback if buildPairingReply is unavailable
+      messageText = `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Pairing code: ${pairingCode}\n\n` +
+        `To approve this user, run:\n` +
+        `  openclaw pairing approve ztm-chat ${pairingCode}\n\n` +
+        `To deny this request, run:\n` +
+        `  openclaw pairing deny ztm-chat ${pairingCode}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━`;
+    }
+  } else {
+    // No code available (store registration failed)
+    messageText = `[🤖 PAIRING REQUEST]\n\nUser "${peer}" wants to send messages to your OpenClaw ZTM Chat bot.\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n` +
       `To approve this user, run:\n` +
       `  openclaw pairing approve ztm-chat ${peer}\n\n` +
       `To deny this request, run:\n` +
       `  openclaw pairing deny ztm-chat ${peer}\n` +
       `━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `Note: Your bot is in "pairing" mode, which requires explicit approval for new users.`,
-    sender: config.username,
-  };
+      `Note: Your bot is in "pairing" mode, which requires explicit approval for new users.`;
+  }
 
-  try {
-    await apiClient.sendPeerMessage(peer, pairingMessage);
-    logger.info(`[${state.accountId}] Sent pairing request to ${peer}`);
-  } catch (error) {
-    logger.warn(`[${state.accountId}] Failed to send pairing request to ${peer}: ${error}`);
+  // Only send pairing message to the peer if this is a newly created request
+  if (pairingCreated || !pairingCode) {
+    const pairingMessage: ZTMMessage = {
+      time: Date.now(),
+      message: messageText,
+      sender: config.username,
+    };
+
+    try {
+      await apiClient.sendPeerMessage(peer, pairingMessage);
+      logger.info(`[${state.accountId}] Sent pairing request to ${peer}`);
+    } catch (error) {
+      logger.warn(`[${state.accountId}] Failed to send pairing request to ${peer}: ${error}`);
+    }
+  } else {
+    logger.debug(`[${state.accountId}] Pairing request already exists for ${peer} (code=${pairingCode}), not re-sending message`);
   }
 }
 
@@ -587,7 +635,7 @@ async function startMessageWatcher(
       }
     }
 
-    setTimeout(watchLoop, 2000);
+    setTimeout(watchLoop, 1000);
   };
 
   watchLoop();
