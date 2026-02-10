@@ -101,6 +101,136 @@ const meta = {
   systemImage: undefined,
 };
 
+// Persistent message state store
+// Tracks per-account, per-peer watermarks so that already-processed messages
+// are skipped across gateway restarts.
+interface MessageStateData {
+  // Per-account → per-peer → last processed message timestamp
+  accounts: Record<string, Record<string, number>>;
+  // Per-account → last seen file times (for watchChanges seeding)
+  fileTimes: Record<string, Record<string, number>>;
+}
+
+class MessageStateStore {
+  private statePath: string;
+  private data: MessageStateData;
+  private dirty = false;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.statePath = path.join(
+      process.env.HOME || "",
+      ".openclaw",
+      "channels",
+      "ztm-chat-state.json",
+    );
+    this.data = { accounts: {}, fileTimes: {} };
+    this.load();
+  }
+
+  private load(): void {
+    try {
+      if (fs.existsSync(this.statePath)) {
+        const content = fs.readFileSync(this.statePath, "utf-8");
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed === "object") {
+          this.data = {
+            accounts: parsed.accounts ?? {},
+            fileTimes: parsed.fileTimes ?? {},
+          };
+        }
+      }
+    } catch {
+      // Ignore read/parse errors — start fresh
+      logger.warn("Failed to load message state, starting fresh");
+    }
+  }
+
+  private scheduleSave(): void {
+    this.dirty = true;
+    if (this.flushTimer) return;
+    // Debounce writes to avoid excessive I/O during burst processing
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.save();
+    }, 1000);
+  }
+
+  private save(): void {
+    if (!this.dirty) return;
+    try {
+      const dir = path.dirname(this.statePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(this.statePath, JSON.stringify(this.data, null, 2));
+      this.dirty = false;
+    } catch {
+      logger.warn("Failed to persist message state");
+    }
+  }
+
+  /** Flush any pending writes immediately (call on shutdown) */
+  flush(): void {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    this.save();
+  }
+
+  /** Get the last-processed message timestamp for a peer under an account */
+  getWatermark(accountId: string, peer: string): number {
+    return this.data.accounts[accountId]?.[peer] ?? 0;
+  }
+
+  /** Get the global watermark (max across all peers) for an account */
+  getGlobalWatermark(accountId: string): number {
+    const peers = this.data.accounts[accountId];
+    if (!peers) return 0;
+    return Math.max(0, ...Object.values(peers));
+  }
+
+  /** Update the watermark for a peer (only advances forward) */
+  setWatermark(accountId: string, peer: string, time: number): void {
+    const current = this.getWatermark(accountId, peer);
+    if (time <= current) return;
+    if (!this.data.accounts[accountId]) {
+      this.data.accounts[accountId] = {};
+    }
+    this.data.accounts[accountId][peer] = time;
+    this.scheduleSave();
+  }
+
+  /** Get all persisted file times for an account (used to seed lastSeenTimes) */
+  getFileTimes(accountId: string): Record<string, number> {
+    return this.data.fileTimes[accountId] ?? {};
+  }
+
+  /** Update a file's last-seen time */
+  setFileTime(accountId: string, filePath: string, time: number): void {
+    if (!this.data.fileTimes[accountId]) {
+      this.data.fileTimes[accountId] = {};
+    }
+    this.data.fileTimes[accountId][filePath] = time;
+    this.scheduleSave();
+  }
+
+  /** Bulk-set file times (e.g. after initial scan) */
+  setFileTimes(accountId: string, times: Record<string, number>): void {
+    if (!this.data.fileTimes[accountId]) {
+      this.data.fileTimes[accountId] = {};
+    }
+    for (const [fp, t] of Object.entries(times)) {
+      this.data.fileTimes[accountId][fp] = t;
+    }
+    this.scheduleSave();
+  }
+}
+
+// Global state store instance
+const messageStateStore = new MessageStateStore();
+
 // Message deduplication with LRU-like behavior
 interface DedupeEntry {
   sender: string;
@@ -134,6 +264,12 @@ class MessageDeduplicator {
     this.cache.set(key, { sender, time, contentHash: content });
     this.trimIfNeeded();
     return false;
+  }
+
+  /** Mark a message as seen without checking (used to seed from persisted state) */
+  markSeen(sender: string, time: number, content: string): void {
+    const key = this.generateKey(sender, time, content);
+    this.cache.set(key, { sender, time, contentHash: content });
   }
 
   private trimIfNeeded(): void {
@@ -410,13 +546,19 @@ function checkDmPolicy(
   }
 }
 
-// Message processing
 function processIncomingMessage(
   msg: { time: number; message: string; sender: string },
   config: ZTMChatConfig,
   pendingPairings: Map<string, Date>,
-  storeAllowFrom: string[] = []
+  storeAllowFrom: string[] = [],
+  accountId: string = "default"
 ): ZTMChatMessage | null {
+  const watermark = messageStateStore.getWatermark(accountId, msg.sender);
+  if (msg.time <= watermark) {
+    logger.debug(`Skipping already-processed message from ${msg.sender} (time=${msg.time} <= watermark=${watermark})`);
+    return null;
+  }
+
   if (messageDeduplicator.isDuplicate(msg.sender, msg.time, msg.message)) {
     logger.debug(`Skipping duplicate message from ${msg.sender}`);
     return null;
@@ -427,7 +569,6 @@ function processIncomingMessage(
   if (!check.allowed) {
     if (check.action === "request_pairing") {
       logger.info(`[DM Policy] Pairing request from ${msg.sender}`);
-      // Will be handled by the watcher
     } else if (check.action === "ignore") {
       logger.debug(`[DM Policy] Ignoring message from ${msg.sender} (${check.reason})`);
     }
@@ -558,14 +699,21 @@ async function startMessageWatcher(
 
   const messagePath = "/apps/ztm/chat/shared/";
 
+  // Seed the API client's lastSeenTimes from persisted state
+  // so that watchChanges doesn't treat all existing files as "new"
+  const persistedFileTimes = messageStateStore.getFileTimes(state.accountId);
+  if (Object.keys(persistedFileTimes).length > 0) {
+    apiClient.seedLastSeenTimes(persistedFileTimes);
+    logger.info(`[${state.accountId}] Seeded ${Object.keys(persistedFileTimes).length} file timestamps from persisted state`);
+  }
+
   const rt = getZTMRuntime();
   const storeAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
 
-  // Initial read of all messages
+  // Initial read of all messages (watermark check in processIncomingMessage will skip old ones)
   try {
     const chats = await apiClient.getChats();
     for (const chat of chats) {
-      // Skip self — bot's own username appears as a peer in getChats()
       if (!chat.peer || chat.peer === config.username) continue;
       if (chat.latest) {
         const normalized = processIncomingMessage(
@@ -576,7 +724,8 @@ async function startMessageWatcher(
           },
           config,
           state.pendingPairings,
-          storeAllowFrom
+          storeAllowFrom,
+          state.accountId
         );
         if (normalized) {
           notifyMessageCallbacks(state, normalized);
@@ -612,8 +761,6 @@ async function startMessageWatcher(
       const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
 
       for (const path of changedPaths) {
-        // Parse path to get peer name (sender)
-        // Path pattern: /apps/ztm/chat/shared/{SENDER}/publish/peers/{BOT}/messages/
         const match = path.match(
           /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages/
         );
@@ -628,7 +775,8 @@ async function startMessageWatcher(
                   msg,
                   state.config,
                   state.pendingPairings,
-                  loopStoreAllowFrom
+                  loopStoreAllowFrom,
+                  state.accountId
                 );
                 if (normalized) {
                   notifyMessageCallbacks(state, normalized);
@@ -646,6 +794,10 @@ async function startMessageWatcher(
         }
       }
 
+      if (changedPaths.length > 0 && state.apiClient) {
+        messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
+      }
+
       state.watchErrorCount = 0;
     } catch (error) {
       state.watchErrorCount++;
@@ -653,7 +805,6 @@ async function startMessageWatcher(
         `[${state.accountId}] Watch error (${state.watchErrorCount}): ${error}`
       );
 
-      // Fall back to polling if watch fails repeatedly
       if (state.watchErrorCount > 5) {
         logger.warn(`[${state.accountId}] Too many watch errors, falling back to polling`);
         await startPollingWatcher(state);
@@ -698,7 +849,8 @@ async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
             },
             config,
             state.pendingPairings,
-            pollStoreAllowFrom
+            pollStoreAllowFrom,
+            state.accountId
           );
           if (normalized) {
             notifyMessageCallbacks(state, normalized);
@@ -729,6 +881,7 @@ function notifyMessageCallbacks(
       logger.error(`[${state.accountId}] Callback error: ${error}`);
     }
   }
+  messageStateStore.setWatermark(state.accountId, message.peer, message.timestamp.getTime());
 }
 
 // Send message to peer
@@ -986,6 +1139,8 @@ async function stopRuntime(accountId: string): Promise<void> {
   state.connected = false;
   state.meshConnected = false;
   state.lastStopAt = new Date();
+
+  messageStateStore.flush();
 
   logger.info(`[${accountId}] Stopped`);
 }

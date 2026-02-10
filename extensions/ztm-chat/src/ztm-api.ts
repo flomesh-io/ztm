@@ -82,6 +82,12 @@ export interface ZTMApiClient {
   // Watch mechanism for real-time updates
   watchChanges(prefix: string): Promise<string[]>;
 
+  /** Seed lastSeenTimes from persisted state (call before first watchChanges) */
+  seedLastSeenTimes(times: Record<string, number>): void;
+
+  /** Export current lastSeenTimes for persistence */
+  exportLastSeenTimes(): Record<string, number>;
+
   // Direct storage API methods (MVP implementation)
   /** Send message using direct storage API */
   sendMessageViaStorage(peer: string, message: ZTMMessage): Promise<boolean>;
@@ -436,6 +442,23 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
 
     async getFile(_owner: string, _hash: string): Promise<ArrayBuffer | null> {
       return null;
+    },
+
+    seedLastSeenTimes(times: Record<string, number>): void {
+      for (const [filePath, time] of Object.entries(times)) {
+        const current = lastSeenTimes.get(filePath) ?? 0;
+        if (time > current) {
+          lastSeenTimes.set(filePath, time);
+        }
+      }
+    },
+
+    exportLastSeenTimes(): Record<string, number> {
+      const result: Record<string, number> = {};
+      for (const [filePath, time] of lastSeenTimes) {
+        result[filePath] = time;
+      }
+      return result;
     },
   };
 
