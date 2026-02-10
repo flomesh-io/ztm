@@ -124,6 +124,11 @@ class MessageStateStore {
       "ztm",
       "state.json",
     );
+    // Ensure the config directory exists on startup to prevent write errors later
+    const configDir = path.dirname(this.statePath);
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
     this.data = { accounts: {}, fileTimes: {} };
     this.load();
   }

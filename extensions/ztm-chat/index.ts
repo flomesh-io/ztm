@@ -49,8 +49,19 @@ function writeConfig(config: Record<string, unknown>): boolean {
   }
 }
 
+// Ensure config directory exists on plugin startup
+function ensureConfigDir(): void {
+  const configDir = path.join(process.env.HOME || "", ".openclaw", "ztm");
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+}
+
 // Plugin registration function
 function registerPlugin(api: OpenClawPluginApi): void {
+  // Ensure config directory exists on startup
+  ensureConfigDir();
+
   // Set runtime for the plugin
   setZTMRuntime(api.runtime);
 
