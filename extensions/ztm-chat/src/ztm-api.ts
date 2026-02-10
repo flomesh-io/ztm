@@ -185,7 +185,22 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     // Discover all users in mesh - uses ZTM Agent storage API
     async discoverUsersViaStorage(): Promise<ZTMUserInfo[]> {
       try {
-        return await request<ZTMUserInfo[]>("GET", "/api/allFiles/shared/");
+        const fileList = await request<Record<string, unknown>>("GET", `/api/meshes/${config.meshName}/files`);
+        const users = new Map<string, ZTMUserInfo>();
+        const userSet = new Set<string>();
+
+        for (const path of Object.keys(fileList)) {
+          const match = path.match(/^\/apps\/ztm\/chat\/shared\/([^\/]+)\/publish\/peers\//);
+          if (match) {
+            const username = match[1];
+            if (username !== config.username && !userSet.has(username)) {
+              userSet.add(username);
+              users.set(username, { username });
+            }
+          }
+        }
+
+        return Array.from(users.values());
       } catch (error) {
         logger.warn(`[ZTM API] Failed to discover users via storage: ${error}`);
         return [];
@@ -195,7 +210,31 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     // Get all chats - uses ZTM Agent storage API
     async getChats(): Promise<ZTMChat[]> {
       try {
-        return await request<ZTMChat[]>("GET", "/api/allFiles/shared/");
+        const fileList = await request<Record<string, unknown>>("GET", `/api/meshes/${config.meshName}/files`);
+        const chats: ZTMChat[] = [];
+
+        for (const path of Object.keys(fileList)) {
+          const peerPattern = new RegExp(`^/apps/ztm/chat/shared/([^/]+)/publish/peers/${config.username}/messages/`);
+          const peerMatch = path.match(peerPattern);
+          if (peerMatch) {
+            const peer = peerMatch[1];
+            const meta = fileList[path] as { time?: number; $?: number; T?: number };
+            if (meta.time) {
+              chats.push({
+                peer,
+                time: meta.time,
+                updated: meta.T || meta.time,
+                latest: {
+                  time: meta.time,
+                  message: "",
+                  sender: peer,
+                },
+              });
+            }
+          }
+        }
+
+        return chats;
       } catch (error) {
         logger.warn(`[ZTM API] Failed to get chats via storage: ${error}`);
         return [];
@@ -205,36 +244,70 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     // Get messages from a peer - uses ZTM Agent storage API
     async getPeerMessages(peer: string, since?: number, before?: number): Promise<ZTMMessage[] | null> {
       try {
-        // Path where peer publishes messages intended for us
-        // Pattern: /shared/{peer}/publish/peers/{botUsername}/messages/
-        const publishPath = `/shared/${peer}/publish/peers/${config.username}/messages/`;
+        const messagePath = `/apps/ztm/chat/shared/${peer}/publish/peers/${config.username}/messages/`;
+        const fileList = await request<Record<string, unknown>>("GET", `/api/meshes/${config.meshName}/files`);
 
-        // Get list of message files
-        const fileList = await request<string[]>("GET", `/api/allFiles${publishPath}`);
-
-
-        if (!fileList || fileList.length === 0) {
-          return [];
-        }
-
-        // Extract usernames from paths like /shared/{username}/publish/...
-        const users = new Map<string, ZTMUserInfo>();
-        const userSet = new Set<string>();
-
-        for (const path of fileList) {
-          const match = path.match(/^\/shared\/([^\/]+)\//);
-          if (match && match[1] !== config.username) {
-            userSet.add(match[1]);
+        const messages: ZTMMessage[] = [];
+        for (const path of Object.keys(fileList)) {
+          if (path.startsWith(messagePath)) {
+            try {
+              const fileContent = await request<any>("GET", `/api/meshes/${config.meshName}/file-data${path}`);
+              // File content is an array of {time, message: {text}} entries
+              const entries = Array.isArray(fileContent) ? fileContent : [fileContent];
+              for (const entry of entries) {
+                if (entry?.time) {
+                  if (since !== undefined && entry.time <= since) {
+                    continue;
+                  }
+                  if (before !== undefined && entry.time >= before) {
+                    continue;
+                  }
+                  // Extract text from nested message object or use as-is
+                  const messageText = typeof entry.message === 'object' && entry.message !== null
+                    ? (entry.message.text || JSON.stringify(entry.message))
+                    : String(entry.message || '');
+                  messages.push({
+                    time: entry.time,
+                    message: messageText,
+                    sender: entry.sender || peer,
+                  });
+                }
+              }
+            } catch (error) {
+              logger.debug(`[ZTM API] Failed to read message file ${path}: ${error}`);
+            }
           }
         }
 
-        for (const username of userSet) {
-          users.set(username, { username });
-        }
+        messages.sort((a, b) => b.time - a.time);
 
-        return Array.from(users.values());
+        return messages;
       } catch (error) {
-        logger.warn(`[ZTM API] Failed to discover users via storage: ${error}`);
+        logger.warn(`[ZTM API] Failed to get peer messages from ${peer}: ${error}`);
+        return null;
+      }
+    },
+
+    async sendPeerMessage(peer: string, message: ZTMMessage): Promise<boolean> {
+      try {
+        const messageId = `${message.time}-${message.sender}`;
+        const messagePath = `/apps/ztm/chat/shared/${config.username}/publish/peers/${peer}/messages/${messageId}.json`;
+
+        await request("POST", `/api/meshes/${config.meshName}/file-data${messagePath}`, message);
+        return true;
+      } catch (error) {
+        logger.error(`[ZTM API] Failed to send message to ${peer}: ${error}`);
+        return false;
+      }
+    },
+
+    async watchChanges(prefix: string): Promise<string[]> {
+      try {
+        const fileList = await request<Record<string, unknown>>("GET", `/api/meshes/${config.meshName}/files?since=0`);
+        const changedPaths = Object.keys(fileList).filter(path => path.startsWith(prefix));
+        return changedPaths || [];
+      } catch (error) {
+        logger.warn(`[ZTM API] Watch failed for ${prefix}: ${error}`);
         return [];
       }
     },
@@ -264,15 +337,13 @@ export function buildGroupMessagePath(
 export function parseMessagePath(
   path: string
 ): { peer?: string; creator?: string; group?: string } | null {
-  // Match: /shared/{username}/publish/peers/{peer}/messages/
-  const peerMatch = path.match(/\/shared\/[^/]+\/publish\/peers\/([^/]+)\/messages/);
+  const peerMatch = path.match(/(?:\/apps\/ztm\/chat)?\/shared\/[^/]+\/publish\/peers\/([^/]+)\/messages/);
   if (peerMatch) {
     return { peer: peerMatch[1] };
   }
 
-  // Match: /shared/{username}/publish/groups/{creator}/{group}/messages/
   const groupMatch = path.match(
-    /\/shared\/[^/]+\/publish\/groups\/([^/]+)\/([^/]+)\/messages/
+    /(?:\/apps\/ztm\/chat)?\/shared\/[^/]+\/publish\/groups\/([^/]+)\/([^/]+)\/messages/
   );
   if (groupMatch) {
     return { creator: groupMatch[1], group: groupMatch[2] };
