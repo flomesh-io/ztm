@@ -565,7 +565,9 @@ async function startMessageWatcher(
   try {
     const chats = await apiClient.getChats();
     for (const chat of chats) {
-      if (chat.peer && chat.latest) {
+      // Skip self — bot's own username appears as a peer in getChats()
+      if (!chat.peer || chat.peer === config.username) continue;
+      if (chat.latest) {
         const normalized = processIncomingMessage(
           {
             time: chat.latest.time,
@@ -588,7 +590,7 @@ async function startMessageWatcher(
 
   // Handle pairing requests for initial chats
   for (const chat of (await apiClient.getChats()) || []) {
-    if (chat.peer) {
+    if (chat.peer && chat.peer !== config.username) {
       const check = checkDmPolicy(chat.peer, config, state.pendingPairings, storeAllowFrom);
       if (check.action === "request_pairing") {
         await handlePairingRequest(state, chat.peer, "Initial chat request", storeAllowFrom);
@@ -617,6 +619,7 @@ async function startMessageWatcher(
         );
         if (match) {
           const peer = match[1];
+          if (peer === state.config.username) continue;
           try {
             const messages = await state.apiClient!.getPeerMessages(peer);
             if (messages) {
@@ -685,7 +688,8 @@ async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
       const pollStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
       const chats = await state.apiClient.getChats();
       for (const chat of chats) {
-        if (chat.peer && chat.latest) {
+        if (!chat.peer || chat.peer === config.username) continue;
+        if (chat.latest) {
           const normalized = processIncomingMessage(
             {
               time: chat.latest.time,
