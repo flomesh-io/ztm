@@ -367,14 +367,23 @@ interface MessageCheckResult {
 function checkDmPolicy(
   sender: string,
   config: ZTMChatConfig,
-  pendingPairings: Map<string, Date>
+  pendingPairings: Map<string, Date>,
+  storeAllowFrom: string[] = []
 ): MessageCheckResult {
   const normalizedSender = sender.trim().toLowerCase();
+
   const allowFrom = config.allowFrom ?? [];
   const isWhitelisted = allowFrom.length > 0 &&
     allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
 
   if (isWhitelisted) {
+    return { allowed: true, reason: "whitelisted", action: "process" };
+  }
+
+  const isStoreApproved = storeAllowFrom.length > 0 &&
+    storeAllowFrom.some((entry) => entry.trim().toLowerCase() === normalizedSender);
+
+  if (isStoreApproved) {
     return { allowed: true, reason: "whitelisted", action: "process" };
   }
 
@@ -405,14 +414,15 @@ function checkDmPolicy(
 function processIncomingMessage(
   msg: { time: number; message: string; sender: string },
   config: ZTMChatConfig,
-  pendingPairings: Map<string, Date>
+  pendingPairings: Map<string, Date>,
+  storeAllowFrom: string[] = []
 ): ZTMChatMessage | null {
   if (messageDeduplicator.isDuplicate(msg.sender, msg.time, msg.message)) {
     logger.debug(`Skipping duplicate message from ${msg.sender}`);
     return null;
   }
 
-  const check = checkDmPolicy(msg.sender, config, pendingPairings);
+  const check = checkDmPolicy(msg.sender, config, pendingPairings, storeAllowFrom);
 
   if (!check.allowed) {
     if (check.action === "request_pairing") {
@@ -438,7 +448,8 @@ function processIncomingMessage(
 async function handlePairingRequest(
   state: AccountRuntimeState,
   peer: string,
-  context: string
+  context: string,
+  storeAllowFrom: string[] = []
 ): Promise<void> {
   const { config, apiClient } = state;
   if (!apiClient) return;
@@ -454,6 +465,12 @@ async function handlePairingRequest(
   const allowFrom = config.allowFrom ?? [];
   if (allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedPeer)) {
     logger.debug(`[${state.accountId}] ${peer} is already approved`);
+    return;
+  }
+
+  // Check if already approved via pairing store (persisted across restarts)
+  if (storeAllowFrom.length > 0 && storeAllowFrom.some((entry) => entry.trim().toLowerCase() === normalizedPeer)) {
+    logger.debug(`[${state.accountId}] ${peer} is already approved via pairing store`);
     return;
   }
 
@@ -541,6 +558,9 @@ async function startMessageWatcher(
 
   const messagePath = "/apps/ztm/chat/shared/";
 
+  const rt = getZTMRuntime();
+  const storeAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
+
   // Initial read of all messages
   try {
     const chats = await apiClient.getChats();
@@ -553,7 +573,8 @@ async function startMessageWatcher(
             sender: chat.peer,
           },
           config,
-          state.pendingPairings
+          state.pendingPairings,
+          storeAllowFrom
         );
         if (normalized) {
           notifyMessageCallbacks(state, normalized);
@@ -568,9 +589,9 @@ async function startMessageWatcher(
   // Handle pairing requests for initial chats
   for (const chat of (await apiClient.getChats()) || []) {
     if (chat.peer) {
-      const check = checkDmPolicy(chat.peer, config, state.pendingPairings);
+      const check = checkDmPolicy(chat.peer, config, state.pendingPairings, storeAllowFrom);
       if (check.action === "request_pairing") {
-        await handlePairingRequest(state, chat.peer, "Initial chat request");
+        await handlePairingRequest(state, chat.peer, "Initial chat request", storeAllowFrom);
       }
     }
   }
@@ -585,6 +606,8 @@ async function startMessageWatcher(
       if (changedPaths.length > 0) {
         logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
       }
+
+      const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
 
       for (const path of changedPaths) {
         // Parse path to get peer name (sender)
@@ -601,7 +624,8 @@ async function startMessageWatcher(
                 const normalized = processIncomingMessage(
                   msg,
                   state.config,
-                  state.pendingPairings
+                  state.pendingPairings,
+                  loopStoreAllowFrom
                 );
                 if (normalized) {
                   notifyMessageCallbacks(state, normalized);
@@ -609,10 +633,9 @@ async function startMessageWatcher(
               }
             }
 
-            // Check if this is a pairing request message
-            const check = checkDmPolicy(peer, state.config, state.pendingPairings);
+            const check = checkDmPolicy(peer, state.config, state.pendingPairings, loopStoreAllowFrom);
             if (check.action === "request_pairing") {
-              await handlePairingRequest(state, peer, "New message");
+              await handlePairingRequest(state, peer, "New message", loopStoreAllowFrom);
             }
           } catch (error) {
             logger.warn(`[${state.accountId}] Failed to read messages from ${peer}: ${error}`);
@@ -653,10 +676,13 @@ async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
 
   logger.info(`[${state.accountId}] Starting polling watcher (${pollingInterval}ms)`);
 
+  const rt = getZTMRuntime();
+
   state.watchInterval = setInterval(async () => {
     if (!state.apiClient || !state.config) return;
 
     try {
+      const pollStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
       const chats = await state.apiClient.getChats();
       for (const chat of chats) {
         if (chat.peer && chat.latest) {
@@ -667,16 +693,16 @@ async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
               sender: chat.peer,
             },
             config,
-            state.pendingPairings
+            state.pendingPairings,
+            pollStoreAllowFrom
           );
           if (normalized) {
             notifyMessageCallbacks(state, normalized);
           }
 
-          // Check for pairing requests
-          const check = checkDmPolicy(chat.peer, config, state.pendingPairings);
+          const check = checkDmPolicy(chat.peer, config, state.pendingPairings, pollStoreAllowFrom);
           if (check.action === "request_pairing") {
-            await handlePairingRequest(state, chat.peer, "Polling check");
+            await handlePairingRequest(state, chat.peer, "Polling check", pollStoreAllowFrom);
           }
         }
       }
@@ -1104,7 +1130,8 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         };
       }
 
-      const success = await sendZTMMessage(state, to, text);
+      const peer = to.replace(/^ztm-chat:/, "");
+      const success = await sendZTMMessage(state, peer, text);
       return {
         channel: "ztm-chat",
         ok: success,
@@ -1342,51 +1369,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       const state = accountStates.get(account.accountId)!;
       state.lastStartAt = new Date();
 
-      // Subscribe to messages
-      const rt = getZTMRuntime() as {
-        onMessage?: (callback: (message: {
-          sender: { id: string; name: string };
-          content: string;
-          timestamp?: number;
-          thread?: { id: string };
-          id: string;
-        }) => void) => () => void;
-        log?: {
-          info?: (...args: unknown[]) => void;
-          warn?: (...args: unknown[]) => void;
-          error?: (...args: unknown[]) => void;
-        };
-      };
-      const router = (ctx as { router?: {
-        route: (msg: {
-          channel: string;
-          sender: { id: string; name: string };
-          content: string;
-          timestamp?: Date | number;
-          thread?: string;
-          id: string;
-        }) => void;
-      } }).router;
-
-      const unsubscribe = rt.onMessage?.((message) => {
-        router?.route({
-          channel: "ztm-chat",
-          sender: {
-            id: message.sender.id,
-            name: message.sender.name,
-          },
-          content: message.content,
-          timestamp: message.timestamp,
-          thread: message.thread?.id,
-          id: message.id,
-        });
-      }) ?? (() => {});
+      const rt = getZTMRuntime();
+      const cfg = ctx.cfg;
 
       ctx.log?.info(
         `[${account.accountId}] Connected to ZTM mesh "${config.meshName}" as ${config.username}`
       );
 
-      // Show pairing mode status
       if (config.dmPolicy === "pairing") {
         const allowFrom = config.allowFrom ?? [];
         if (allowFrom.length === 0) {
@@ -1402,35 +1391,80 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         }
       }
 
-      // Add message callback
-      const gatewayRouter = (ctx as { router?: {
-        route: (msg: {
-          channel: string;
-          sender: { id: string; name: string };
-          content: string;
-          timestamp?: Date | number;
-          id: string;
-        }) => void;
-      } }).router;
-
+      // Dispatch inbound messages to the AI agent via OpenClaw's reply pipeline
+      // (same pattern as Telegram/WhatsApp/iMessage built-in channels)
       const messageCallback = (msg: ZTMChatMessage) => {
-        gatewayRouter?.route({
-          channel: "ztm-chat",
-          sender: {
-            id: msg.sender,
-            name: msg.sender,
-          },
-          content: msg.content,
-          timestamp: msg.timestamp,
-          id: msg.id,
+        const handleInbound = async () => {
+          try {
+            const route = rt.channel.routing.resolveAgentRoute({
+              channel: "ztm-chat",
+              accountId: account.accountId,
+              peer: { kind: "dm", id: msg.sender },
+              cfg,
+            });
+
+            const ctxPayload = rt.channel.reply.finalizeInboundContext({
+              Body: msg.content,
+              RawBody: msg.content,
+              CommandBody: msg.content,
+              From: `ztm-chat:${msg.sender}`,
+              To: `ztm-chat:${config.username}`,
+              SessionKey: route.sessionKey,
+              AccountId: route.accountId,
+              ChatType: "direct" as const,
+              ConversationLabel: msg.sender,
+              SenderName: msg.sender,
+              SenderId: msg.sender,
+              Provider: "ztm-chat",
+              Surface: "ztm-chat",
+              MessageSid: msg.id,
+              Timestamp: msg.timestamp,
+              OriginatingChannel: "ztm-chat",
+              OriginatingTo: `ztm-chat:${msg.sender}`,
+            });
+
+            ctx.log?.info(
+              `[${account.accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${route.matchedBy})`
+            );
+
+            const { queuedFinal } = await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+              ctx: ctxPayload,
+              cfg,
+              dispatcherOptions: {
+                humanDelay: rt.channel.reply.resolveHumanDelayConfig(cfg, route.agentId),
+                deliver: async (payload: { text?: string; mediaUrl?: string }) => {
+                  const replyText = payload.text ?? "";
+                  if (!replyText) return;
+                  await sendZTMMessage(state, msg.sender, replyText);
+                },
+                onError: (err: unknown) => {
+                  ctx.log?.error?.(
+                    `[${account.accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`
+                  );
+                },
+              },
+            });
+
+            if (!queuedFinal) {
+              ctx.log?.info(
+                `[${account.accountId}] No response generated for message from ${msg.sender}`
+              );
+            }
+          } catch (error) {
+            ctx.log?.error?.(
+              `[${account.accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`
+            );
+          }
+        };
+
+        handleInbound().catch((err) => {
+          logger.error(`[${state.accountId}] Dispatch error: ${err}`);
         });
       };
 
       state.messageCallbacks.add(messageCallback);
 
-      // Return cleanup function
       return async () => {
-        unsubscribe();
         state.messageCallbacks.delete(messageCallback);
         await stopRuntime(account.accountId);
       };
