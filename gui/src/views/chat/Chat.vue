@@ -204,8 +204,9 @@ const loaddataCore = (callback) => {
 				}
 			})
 			_messages.forEach((msg)=>{
-				chat.value.addMessage(msg);
-				// chat.value.addMessage({...msg,overwrite: true},true);
+					// chat.value.addMessage(msg);
+				const overwrite = user.value == msg.endpoint;
+				chat.value.addMessage({...msg,overwrite },overwrite);
 			})
 		}
 		if(!!chatReady.value){
@@ -387,15 +388,17 @@ const request = ref({
 					// signals.onResponse({files:[],overwrite: true});
 					if(!!html2){
 						// signals.onResponse({role: 'user',html:html2,overwrite: true});
-						// chat.value.addMessage({role: 'user',html:html2,overwrite: true},true);
-						chat.value.addMessage({html:html2,role: 'user',overwrite: false},true);
+						chat.value.addMessage({html:html2,role: 'user',overwrite: true},true);
 						chat.value.scrollToBottom();
 					}
 				});
 			}else if(body?.messages){
 				if(body?.messages[0]){
 					postMessage(body?.messages[0],()=>{
-						signals.onResponse({...body?.messages[0],overwrite: true});
+						// signals.onResponse({...body?.messages[0],overwrite: true});
+						
+						signals.onResponse({files:[],overwrite: true});
+						chat.value.scrollToBottom();
 					});
 				}else{
 					signals.onResponse({error: 'No message'});
