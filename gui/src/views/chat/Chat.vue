@@ -98,7 +98,7 @@ const htmlClassUtilities = () => {
 	}
 }
 const hashMap = ref({});
-const buildMessage = (item) => {
+const buildMessage = (item,init) => {
 	const _msg = {
 		id:item.time,
 		html: '',
@@ -108,8 +108,8 @@ const buildMessage = (item) => {
 		// role: item.sender
 	}
 	if(!!item.message?.text){
-		_msg.key = item.message?.text;
-		_msg.html = `<pre style="white-space: pre-wrap;color:${user.value != item.sender?'black':'white'} !important;word-wrap: break-word;overflow-wrap: break-word;background:transparent;margin:0;max-width:600px">${item.message?.text}</pre>`;
+		_msg.key = item.message?.text+(new Date().getTime());
+		_msg.html = `<pre style="white-space: pre-wrap;color:${user.value != item.sender?'black':'white'} !important;word-wrap: break-word;overflow-wrap: break-word;background:transparent;margin:0;max-width:600px;padding:0">${item.message?.text}</pre>`;
 	}
 	if(!!item.message?.files?.length){
 		_msg.files = []
@@ -191,7 +191,7 @@ const loaddataCore = (callback) => {
 			const _messages = [];
 			(res || []).sort((a, b) => a.time - b.time).forEach(item=>{
 				
-				const _msg = buildMessage(item);
+				const _msg = buildMessage(item,true);
 				if(!!_msg?.key && messages.value[`${_msg?.role}-${_msg?.key}`]){
 					messages.value[`${_msg?.role}-${_msg?.key}`] = false;
 					messages.value[`${_msg?.role}-${_msg?.id}`] = true;
@@ -205,6 +205,7 @@ const loaddataCore = (callback) => {
 			})
 			_messages.forEach((msg)=>{
 				chat.value.addMessage(msg);
+				// chat.value.addMessage({...msg,overwrite: true},true);
 			})
 		}
 		if(!!chatReady.value){
@@ -386,7 +387,9 @@ const request = ref({
 					// signals.onResponse({files:[],overwrite: true});
 					if(!!html2){
 						// signals.onResponse({role: 'user',html:html2,overwrite: true});
-						chat.value.addMessage({role: 'user',html:html2,overwrite: true},true);
+						// chat.value.addMessage({role: 'user',html:html2,overwrite: true},true);
+						chat.value.addMessage({html:html2,role: 'user',overwrite: false},true);
+						chat.value.scrollToBottom();
 					}
 				});
 			}else if(body?.messages){
