@@ -1,7 +1,8 @@
 // ZTM Chat Configuration Defaults and Resolution
 // Default values and configuration resolution logic
 
-import type { ZTMChatConfig, ExtendedZTMChatConfig, DMPolicy } from "../types/config.js";
+import type { ZTMChatConfig, ExtendedZTMChatConfig } from "../types/config.js";
+import type { DMPolicy } from "./schema.js";
 
 /**
  * Get default configuration

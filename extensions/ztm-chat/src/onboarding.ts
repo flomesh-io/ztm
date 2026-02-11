@@ -4,7 +4,8 @@
 import * as readline from "readline";
 import * as fs from "fs";
 import * as path from "path";
-import type { ZTMChatConfig, DMPolicy } from "./types/config.js";
+import type { ZTMChatConfig } from "./types/config.js";
+import type { DMPolicy } from "./config/schema.js";
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
