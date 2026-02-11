@@ -30,7 +30,7 @@ import {
 } from "./api/ztm-api.js";
 import { isSuccess } from "./types/common.js";
 import { logger } from "./utils/logger.js";
-import { messageStateStore, disposeMessageStateStore } from "./runtime/store.js";
+import { getMessageStateStore, disposeMessageStateStore } from "./runtime/store.js";
 import {
   getOrCreateAccountState,
   removeAccountState,

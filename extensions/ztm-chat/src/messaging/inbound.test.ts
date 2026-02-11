@@ -1,6 +1,6 @@
 // Unit tests for Inbound message processing
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   processIncomingMessage,
   checkDmPolicy,
@@ -24,23 +24,27 @@ vi.mock("../utils/logger.js", () => ({
 vi.mock("./dedup.js", () => ({
   messageDeduplicator: {
     isDuplicate: vi.fn(() => false),
+    markSeen: vi.fn(),
+    clear: vi.fn(),
   },
 }));
 
-// Mock store with function calls captured
-let mockGetWatermarkCalls: any[] = [];
-let mockSetWatermarkCalls: any[] = [];
-
+// Mock store with fresh instances for each call
 vi.mock("../runtime/store.js", () => ({
-  messageStateStore: {
-    getWatermark: (...args: any[]) => {
-      mockGetWatermarkCalls.push(args);
-      return -1; // Default to -1 to allow messages through
-    },
-    setWatermark: (...args: any[]) => {
-      mockSetWatermarkCalls.push(args);
-    },
-  },
+  getMessageStateStore: vi.fn(function() {
+    // Return a fresh mock object for each call
+    return {
+      getWatermark: vi.fn(() => -1),
+      getGlobalWatermark: vi.fn(() => 0),
+      setWatermark: vi.fn(),
+      getFileMetadata: vi.fn(() => ({})),
+      setFileMetadata: vi.fn(),
+      setFileMetadataBulk: vi.fn(),
+      flush: vi.fn(),
+      dispose: vi.fn(),
+    };
+  }),
+  disposeMessageStateStore: vi.fn(),
 }));
 
 describe("Inbound message processing", () => {
@@ -74,12 +78,18 @@ describe("Inbound message processing", () => {
     pendingPairings: new Map(),
   };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeEach(async () => {
     mockState.pendingPairings.clear();
     mockState.messageCallbacks.clear();
-    mockGetWatermarkCalls = [];
-    mockSetWatermarkCalls = [];
+
+    // Clear the deduplicator cache between tests
+    const { messageDeduplicator } = await import("./dedup.js");
+    messageDeduplicator.clear();
+  });
+
+  afterEach(() => {
+    // Restore all mocks after each test to prevent pollution
+    vi.restoreAllMocks();
   });
 
   describe("checkDmPolicy", () => {
@@ -193,18 +203,21 @@ describe("Inbound message processing", () => {
   });
 
   describe("processIncomingMessage", () => {
-    const baseMessage = {
-      time: Date.now(),
+    // Use a function to generate unique timestamps for each test
+    const createMessage = (overrides?: Partial<{ time: number; message: string; sender: string }>) => ({
+      time: Date.now() + Math.floor(Math.random() * 1000000),
       message: "Hello, world!",
       sender: "alice",
-    };
+      ...overrides,
+    });
 
     it("should normalize valid messages", () => {
+      const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(baseMessage, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).not.toBeNull();
-      expect(result?.id).toBe(`${baseMessage.time}-alice`);
+      expect(result?.id).toBe(`${message.time}-alice`);
       expect(result?.content).toBe("Hello, world!");
       expect(result?.sender).toBe("alice");
       expect(result?.senderId).toBe("alice");
@@ -213,134 +226,130 @@ describe("Inbound message processing", () => {
     });
 
     it("should skip empty messages", () => {
+      const message = createMessage({ message: "" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(
-        { ...baseMessage, message: "" },
-        config,
-        new Map(),
-        [],
-        "test-account"
-      );
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).toBeNull();
     });
 
     it("should skip whitespace-only messages", () => {
+      const message = createMessage({ message: "   " });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(
-        { ...baseMessage, message: "   " },
-        config,
-        new Map(),
-        [],
-        "test-account"
-      );
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).toBeNull();
     });
 
     it("should skip already-processed messages based on watermark", async () => {
-      // Override the mock to return a high watermark
-      const { messageStateStore } = await import("../runtime/store.js");
-      const originalGetWatermark = messageStateStore.getWatermark.bind(messageStateStore);
-      messageStateStore.getWatermark = () => Date.now() + 1000;
+      // Get the original mock and override getWatermark
+      const { getMessageStateStore } = await import("../runtime/store.js");
+      const message = createMessage();
+
+      // Create a new store mock with high watermark
+      const mockStore = {
+        getWatermark: vi.fn(() => message.time + 1000),
+        getGlobalWatermark: vi.fn(() => 0),
+        setWatermark: vi.fn(),
+        getFileMetadata: vi.fn(() => ({})),
+        setFileMetadata: vi.fn(),
+        setFileMetadataBulk: vi.fn(),
+        flush: vi.fn(),
+        dispose: vi.fn(),
+      };
+
+      // Save original implementation
+      const originalImpl = vi.mocked(getMessageStateStore).getMockImplementation?.();
+
+      // Override
+      vi.mocked(getMessageStateStore).mockReturnValue(mockStore);
 
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(baseMessage, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).toBeNull();
 
-      // Restore original
-      messageStateStore.getWatermark = originalGetWatermark;
+      // Restore original if there was one
+      if (originalImpl) {
+        vi.mocked(getMessageStateStore).mockImplementation(originalImpl);
+      } else {
+        vi.mocked(getMessageStateStore).mockReset();
+      }
     });
 
     it("should skip duplicate messages", async () => {
       const { messageDeduplicator } = await import("./dedup.js");
-      const originalIsDuplicate = messageDeduplicator.isDuplicate.bind(messageDeduplicator);
-      messageDeduplicator.isDuplicate = () => true;
+      const originalFn = messageDeduplicator.isDuplicate;
+      messageDeduplicator.isDuplicate = vi.fn(() => true);
 
+      const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(baseMessage, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).toBeNull();
 
-      // Restore original
-      messageDeduplicator.isDuplicate = originalIsDuplicate;
+      // Restore original function
+      messageDeduplicator.isDuplicate = originalFn;
     });
 
     it("should respect dmPolicy='deny'", () => {
+      const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "deny" as const };
-      const result = processIncomingMessage(baseMessage, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).toBeNull();
     });
 
     it("should trigger pairing request for dmPolicy='pairing'", () => {
+      const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const };
-      const result = processIncomingMessage(baseMessage, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).toBeNull();
     });
 
     it("should allow whitelisted senders in pairing mode", () => {
+      const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
-      const result = processIncomingMessage(baseMessage, config, new Map(), [], "test-account");
+
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.sender).toBe("alice");
     });
 
     it("should handle messages with newlines", () => {
+      const message = createMessage({ message: "Hello\nWorld\n" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(
-        { ...baseMessage, message: "Hello\nWorld\n" },
-        config,
-        new Map(),
-        [],
-        "test-account"
-      );
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello\nWorld\n");
     });
 
     it("should handle messages with special characters", () => {
+      const message = createMessage({ message: "Hello! 🌍 世界" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(
-        { ...baseMessage, message: "Hello! 🌍 世界" },
-        config,
-        new Map(),
-        [],
-        "test-account"
-      );
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello! 🌍 世界");
     });
 
     it("should handle very long messages", () => {
+      const message = createMessage({ message: "a".repeat(10000) });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const longMessage = "a".repeat(10000);
-      const result = processIncomingMessage(
-        { ...baseMessage, message: longMessage },
-        config,
-        new Map(),
-        [],
-        "test-account"
-      );
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).not.toBeNull();
-      expect(result?.content).toBe(longMessage);
+      expect(result?.content).toBe("a".repeat(10000));
     });
 
     it("should handle zero timestamp", () => {
+      const message = createMessage({ time: 0 });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(
-        { ...baseMessage, time: 0 },
-        config,
-        new Map(),
-        [],
-        "test-account"
-      );
+
+      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
 
       expect(result).not.toBeNull();
     });
@@ -387,7 +396,23 @@ describe("Inbound message processing", () => {
       expect(mockState.lastInboundAt!.getTime()).toBeGreaterThanOrEqual(before.getTime());
     });
 
-    it("should set watermark in message state store", () => {
+    it("should set watermark in message state store", async () => {
+      // Mock getMessageStateStore to return a store with a tracked setWatermark
+      const setWatermarkMock = vi.fn();
+      const { getMessageStateStore } = await import("../runtime/store.js");
+
+      // Override mock to return store with tracked setWatermark
+      vi.mocked(getMessageStateStore).mockReturnValue({
+        getWatermark: vi.fn(() => -1),
+        getGlobalWatermark: vi.fn(() => 0),
+        setWatermark: setWatermarkMock,
+        getFileMetadata: vi.fn(() => ({})),
+        setFileMetadata: vi.fn(),
+        setFileMetadataBulk: vi.fn(),
+        flush: vi.fn(),
+        dispose: vi.fn(),
+      });
+
       mockState.messageCallbacks.add(vi.fn());
 
       const message: ZTMChatMessage = {
@@ -401,10 +426,8 @@ describe("Inbound message processing", () => {
 
       notifyMessageCallbacks(mockState, message);
 
-      // Check that watermark was set using call tracking
-      expect(mockSetWatermarkCalls.length).toBeGreaterThan(0);
-      const lastCall = mockSetWatermarkCalls[mockSetWatermarkCalls.length - 1];
-      expect(lastCall).toEqual(["test-account", "alice", 1234567890]);
+      // Check that watermark was set
+      expect(setWatermarkMock).toHaveBeenCalledWith("test-account", "alice", 1234567890);
     });
 
     it("should handle callback errors gracefully", () => {

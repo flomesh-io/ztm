@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { MessageStateStore } from "./store.js";
+import { MessageStateStoreImpl, createMessageStateStore, type MessageStateStore } from "./store.js";
 
 /**
  * Create a fresh isolated MessageStateStore for testing
@@ -13,7 +13,7 @@ function createTestStore(): MessageStateStore {
   const testDir = path.join(os.tmpdir(), `ztm-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const testFile = path.join(testDir, "state.json");
   fs.mkdirSync(testDir, { recursive: true });
-  return new MessageStateStore(testFile);
+  return new MessageStateStoreImpl(testFile);
 }
 
 describe("MessageStateStore", () => {
@@ -294,13 +294,13 @@ describe("MessageStateStore", () => {
       // Create store, set data, dispose to save
       const tempFile = path.join(os.tmpdir(), `ztm-persist-test-${Date.now()}`);
       {
-        const store = new MessageStateStore(tempFile);
+        const store = new MessageStateStoreImpl(tempFile);
         store.setWatermark("test-startup", "peer", 12345);
         store.dispose();
       }
 
       // Create new store with same file, should load existing state
-      const store2 = new MessageStateStore(tempFile);
+      const store2 = new MessageStateStoreImpl(tempFile);
       expect(store2.getWatermark("test-startup", "peer")).toBe(12345);
       store2.dispose();
 
@@ -315,7 +315,7 @@ describe("MessageStateStore", () => {
       fs.writeFileSync(tempFile, "not valid json {{{");
 
       expect(() => {
-        const store = new MessageStateStore(tempFile);
+        const store = new MessageStateStoreImpl(tempFile);
         store.setWatermark("test-corrupt", "test", 1000);
         store.dispose();
       }).not.toThrow();

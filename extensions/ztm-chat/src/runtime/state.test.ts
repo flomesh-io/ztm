@@ -36,11 +36,17 @@ vi.mock("../utils/logger.js", () => ({
 }));
 
 vi.mock("./store.js", () => ({
-  messageStateStore: {
+  getMessageStateStore: vi.fn(() => ({
     flush: vi.fn(),
     getWatermark: () => -1,
-    setWatermark: () => {},
-  },
+    getGlobalWatermark: vi.fn(() => 0),
+    setWatermark: vi.fn(),
+    getFileMetadata: vi.fn(() => ({})),
+    setFileMetadata: vi.fn(),
+    setFileMetadataBulk: vi.fn(),
+    dispose: vi.fn(),
+  })),
+  disposeMessageStateStore: vi.fn(),
 }));
 
 vi.mock("../messaging/inbound.js", () => ({
@@ -334,11 +340,26 @@ describe("Account Runtime State Management", () => {
     });
 
     it("should flush message state store", async () => {
+      const { getMessageStateStore, disposeMessageStateStore } = await import("./store.js");
+      const store = {
+        flush: vi.fn(),
+        getWatermark: () => -1,
+        getGlobalWatermark: vi.fn(() => 0),
+        setWatermark: vi.fn(),
+        getFileMetadata: vi.fn(() => ({})),
+        setFileMetadata: vi.fn(),
+        setFileMetadataBulk: vi.fn(),
+        dispose: vi.fn(),
+      };
+      vi.mocked(getMessageStateStore).mockReturnValue(store);
+      vi.mocked(disposeMessageStateStore).mockImplementation(() => {
+        store.dispose();
+      });
+
       await initializeRuntime(testConfig, testAccountId);
       await stopRuntime(testAccountId);
 
-      const { messageStateStore } = await import("./store.js");
-      expect(messageStateStore.flush).toHaveBeenCalled();
+      expect(store.flush).toHaveBeenCalled();
     });
 
     it("should handle stopping unknown account gracefully", async () => {

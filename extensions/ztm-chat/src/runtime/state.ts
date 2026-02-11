@@ -1,7 +1,7 @@
 // Account runtime state management
 
 import { logger } from "../utils/logger.js";
-import { messageStateStore } from "./store.js";
+import { getMessageStateStore } from "./store.js";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
@@ -129,7 +129,7 @@ export async function stopRuntime(accountId: string): Promise<void> {
   state.meshConnected = false;
   state.lastStopAt = new Date();
 
-  messageStateStore.flush();
+  getMessageStateStore().flush();
 
   logger.info(`[${accountId}] Stopped`);
 }

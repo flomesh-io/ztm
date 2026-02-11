@@ -4,6 +4,12 @@ import type { UserConfig } from 'vitest/config';
 const testConfig: UserConfig = {
   test: {
     testTimeout: 30000, // 30 seconds default timeout
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true, // Run tests in single thread to avoid race conditions
+      },
+    },
   },
 };
 

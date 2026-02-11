@@ -2,7 +2,7 @@
 // Handles notification of registered message callbacks
 
 import { logger } from "../utils/logger.js";
-import { messageStateStore } from "../runtime/store.js";
+import { getMessageStateStore } from "../runtime/store.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
@@ -47,7 +47,7 @@ export function notifyMessageCallbacks(
   }
 
   // Update watermark after processing
-  messageStateStore.setWatermark(state.accountId, message.peer, message.timestamp.getTime());
+  getMessageStateStore().setWatermark(state.accountId, message.peer, message.timestamp.getTime());
 }
 
 /**

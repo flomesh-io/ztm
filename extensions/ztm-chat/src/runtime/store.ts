@@ -4,7 +4,27 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { logger } from "../utils/logger.js";
+import { defaultLogger, type Logger } from "../utils/logger.js";
+
+/**
+ * FileSystem interface for dependency injection (enables testing without real I/O)
+ */
+export interface FileSystem {
+  existsSync(path: string): boolean;
+  mkdirSync(path: string, options?: { recursive?: boolean }): void;
+  readFileSync(path: string, encoding: string): string;
+  writeFileSync(path: string, data: string): void;
+}
+
+/**
+ * Default Node.js file system implementation
+ */
+export const nodeFs: FileSystem = {
+  existsSync: fs.existsSync,
+  mkdirSync: fs.mkdirSync,
+  readFileSync: (p, enc) => fs.readFileSync(p, enc as BufferEncoding),
+  writeFileSync: (p, d) => fs.writeFileSync(p, d),
+};
 
 export interface FileMetadata {
   time: number;
@@ -18,18 +38,45 @@ export interface MessageStateData {
   fileMetadata: Record<string, Record<string, FileMetadata>>;
 }
 
-export class MessageStateStore {
+/**
+ * MessageStateStore interface - abstract interface for persistence operations
+ */
+export interface MessageStateStore {
+  getWatermark(accountId: string, peer: string): number;
+  getGlobalWatermark(accountId: string): number;
+  setWatermark(accountId: string, peer: string, time: number): void;
+  getFileMetadata(accountId: string): Record<string, FileMetadata>;
+  setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void;
+  setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void;
+  flush(): void;
+  dispose(): void;
+}
+
+/**
+ * Implementation of MessageStateStore
+ */
+export class MessageStateStoreImpl implements MessageStateStore {
   private statePath: string;
   private data: MessageStateData;
   private dirty = false;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly fs: FileSystem;
+  private readonly logger: Logger;
+  private readonly stateDir: string;
 
   // Maximum number of peers to track per account (prevents unbounded state growth)
   private readonly MAX_PEERS_PER_ACCOUNT = 1000;
   // Maximum number of file paths to track per account
   private readonly MAX_FILES_PER_ACCOUNT = 1000;
 
-  constructor(statePath?: string) {
+  constructor(
+    statePath?: string,
+    fsImpl?: FileSystem,
+    loggerImpl?: Logger
+  ) {
+    this.fs = fsImpl ?? nodeFs;
+    this.logger = loggerImpl ?? defaultLogger;
+
     // Allow overriding the state path (useful for testing)
     // Priority: constructor param > ZTM_STATE_PATH env var > default path
     if (statePath) {
@@ -44,10 +91,11 @@ export class MessageStateStore {
         "state.json",
       );
     }
+    this.stateDir = path.dirname(this.statePath);
+
     // Ensure the config directory exists on startup to prevent write errors later
-    const configDir = path.dirname(this.statePath);
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true });
+    if (!this.fs.existsSync(this.stateDir)) {
+      this.fs.mkdirSync(this.stateDir, { recursive: true });
     }
     this.data = { accounts: {}, fileMetadata: {} };
     this.load();
@@ -55,8 +103,8 @@ export class MessageStateStore {
 
   private load(): void {
     try {
-      if (fs.existsSync(this.statePath)) {
-        const content = fs.readFileSync(this.statePath, "utf-8");
+      if (this.fs.existsSync(this.statePath)) {
+        const content = this.fs.readFileSync(this.statePath, "utf-8");
         const parsed = JSON.parse(content);
         if (parsed && typeof parsed === "object") {
           // Migrate from old fileTimes format (Record<string, number>) to new fileMetadata format
@@ -68,8 +116,8 @@ export class MessageStateStore {
             // Old format: migrate time to metadata with size 0
             for (const [accountId, files] of Object.entries(parsed.fileTimes as Record<string, Record<string, number>>)) {
               fileMetadata[accountId] = {};
-              for (const [path, time] of Object.entries(files)) {
-                fileMetadata[accountId][path] = { time, size: 0 };
+              for (const [p, time] of Object.entries(files)) {
+                fileMetadata[accountId][p] = { time, size: 0 };
               }
             }
           }
@@ -82,7 +130,7 @@ export class MessageStateStore {
       }
     } catch {
       // Ignore read/parse errors — start fresh
-      logger.warn("Failed to load message state, starting fresh");
+      this.logger.warn("Failed to load message state, starting fresh");
     }
   }
 
@@ -99,14 +147,13 @@ export class MessageStateStore {
   private save(): void {
     if (!this.dirty) return;
     try {
-      const dir = path.dirname(this.statePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+      if (!this.fs.existsSync(this.stateDir)) {
+        this.fs.mkdirSync(this.stateDir, { recursive: true });
       }
-      fs.writeFileSync(this.statePath, JSON.stringify(this.data, null, 2));
+      this.fs.writeFileSync(this.statePath, JSON.stringify(this.data, null, 2));
       this.dirty = false;
     } catch {
-      logger.warn("Failed to persist message state");
+      this.logger.warn("Failed to persist message state");
     }
   }
 
@@ -202,10 +249,35 @@ export class MessageStateStore {
   }
 }
 
-// Global state store instance
-export const messageStateStore = new MessageStateStore();
+/**
+ * Factory function to create MessageStateStore instances
+ * Allows dependency injection for testing
+ */
+export function createMessageStateStore(
+  statePath?: string,
+  fsImpl?: FileSystem,
+  loggerImpl?: Logger
+): MessageStateStore {
+  return new MessageStateStoreImpl(statePath, fsImpl, loggerImpl);
+}
+
+// Default instance for backward compatibility
+let defaultInstance: MessageStateStore | null = null;
+
+/**
+ * Get or create the default MessageStateStore instance
+ */
+export function getMessageStateStore(): MessageStateStore {
+  if (!defaultInstance) {
+    defaultInstance = createMessageStateStore();
+  }
+  return defaultInstance;
+}
 
 // Export dispose function for plugin cleanup
 export function disposeMessageStateStore(): void {
-  messageStateStore.dispose();
+  if (defaultInstance) {
+    defaultInstance.dispose();
+    defaultInstance = null;
+  }
 }

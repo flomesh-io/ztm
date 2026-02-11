@@ -37,8 +37,9 @@ vi.mock("../runtime.js", () => ({
   }),
 }));
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock fetch - use vi.fn that returns real Response objects
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 // Mock fs - using variables to control behavior
 let mockFsExists = true;
@@ -116,19 +117,25 @@ describe("Permit management functions", () => {
       sendPeerMessage: vi.fn().mockResolvedValue(true),
     } as any; // Partial mock for testing
     mockState.config.allowFrom = undefined;
+
+    // Reset fetch mock
+    mockFetch.mockReset();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("requestPermit", () => {
     it("should request permit successfully", async () => {
       const mockPermitData = { token: "permit-token-123" };
-      (global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => mockPermitData,
-      });
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify(mockPermitData), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+          statusText: "OK",
+        })
+      );
 
       const result = await requestPermit(
         "https://example.com/permit",
@@ -137,7 +144,7 @@ describe("Permit management functions", () => {
       );
 
       expect(result).toEqual(mockPermitData);
-      expect(global.fetch).toHaveBeenCalledWith("https://example.com/permit", {
+      expect(mockFetch).toHaveBeenCalledWith("https://example.com/permit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,11 +157,12 @@ describe("Permit management functions", () => {
     });
 
     it("should return null on HTTP error", async () => {
-      (global.fetch as any).mockResolvedValue({
-        ok: false,
-        status: 404,
-        text: async () => "Not Found",
-      });
+      mockFetch.mockResolvedValue(
+        new Response("Not Found", {
+          status: 404,
+          statusText: "Not Found",
+        }) as unknown as Response
+      );
 
       const result = await requestPermit(
         "https://example.com/permit",
@@ -166,7 +174,7 @@ describe("Permit management functions", () => {
     });
 
     it("should return null on network error", async () => {
-      (global.fetch as any).mockRejectedValue(new Error("Network error"));
+      mockFetch.mockRejectedValue(new Error("Network error"));
 
       const result = await requestPermit(
         "https://example.com/permit",
@@ -178,12 +186,13 @@ describe("Permit management functions", () => {
     });
 
     it("should handle non-JSON response", async () => {
-      (global.fetch as any).mockResolvedValue({
+      const mockResponse = {
         ok: true,
         json: async () => {
           throw new Error("Invalid JSON");
         },
-      });
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
 
       const result = await requestPermit(
         "https://example.com/permit",
@@ -196,10 +205,13 @@ describe("Permit management functions", () => {
 
     it("should log success message", async () => {
       const mockPermitData = { token: "test-token" };
-      (global.fetch as any).mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: true,
+        status: 200,
+        statusText: "OK",
+        headers: new Headers({ "Content-Type": "application/json" }),
         json: async () => mockPermitData,
-      });
+      } as unknown as Response);
 
       await requestPermit("https://example.com/permit", "key", "user");
 
@@ -208,11 +220,12 @@ describe("Permit management functions", () => {
     });
 
     it("should log error on failure", async () => {
-      (global.fetch as any).mockResolvedValue({
+      mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
+        statusText: "Internal Server Error",
         text: async () => "Server Error",
-      });
+      } as unknown as Response);
 
       await requestPermit("https://example.com/permit", "key", "user");
 
