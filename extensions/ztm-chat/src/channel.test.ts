@@ -7,10 +7,6 @@ describe("ZTM Chat Channel Plugin", () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.resetModules();
-  });
-
   describe("Channel Metadata", () => {
     it("should have correct channel id", () => {
       const meta = {

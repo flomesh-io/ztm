@@ -61,16 +61,23 @@ describe("First Install Detection", () => {
 });
 
 describe("Wizard Detection Logic", () => {
+  let originalIsTTY: boolean | undefined;
+
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.CI;
-    vi.stubGlobal("process.stdout", { isTTY: true });
+    originalIsTTY = process.stdout.isTTY;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
+    // Reset environment variables after each test
+    delete process.env.CI;
+    delete process.env.HOME;
+    // Restore original isTTY value
+    if (originalIsTTY !== undefined) {
+      Object.defineProperty(process.stdout, "isTTY", { value: originalIsTTY, configurable: true });
+    }
   });
 
   it("should skip wizard in CI environment", () => {
@@ -86,7 +93,8 @@ describe("Wizard Detection Logic", () => {
   });
 
   it("should skip wizard when not interactive", () => {
-    vi.stubGlobal("process.stdout", { isTTY: false });
+    // Simulate non-TTY environment
+    Object.defineProperty(process.stdout, "isTTY", { value: false, configurable: true });
 
     const shouldRunWizard = () => {
       if (process.env.CI === "true") return false;

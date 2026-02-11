@@ -1,0 +1,185 @@
+// Unit tests for Outbound message functions
+
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { sendZTMMessage, generateMessageId } from "./outbound.js";
+import type { AccountRuntimeState } from "../runtime/state.js";
+
+// Create a fresh state for each test
+function createMockState(): AccountRuntimeState {
+  return {
+    accountId: "test-account",
+    config: {
+      agentUrl: "https://example.com:7777",
+      permitUrl: "https://example.com/permit",
+      meshName: "test-mesh",
+      username: "test-bot",
+      enableGroups: false,
+      autoReply: true,
+      messagePath: "/shared",
+      allowFrom: undefined,
+      dmPolicy: "pairing",
+    },
+    apiClient: null,
+    connected: true,
+    meshConnected: true,
+    lastError: null,
+    lastStartAt: null,
+    lastStopAt: null,
+    lastInboundAt: null,
+    lastOutboundAt: null,
+    peerCount: 5,
+    messageCallbacks: new Set(),
+    watchInterval: null,
+    watchErrorCount: 0,
+    pendingPairings: new Map(),
+  };
+}
+
+describe("Outbound message functions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mock("../logger.js", () => ({
+      logger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+      },
+    }));
+  });
+
+  describe("generateMessageId", () => {
+    it("should generate unique IDs", () => {
+      const id1 = generateMessageId();
+      const id2 = generateMessageId();
+
+      expect(id1).not.toBe(id2);
+    });
+
+    it("should start with 'ztm-' prefix", () => {
+      const id = generateMessageId();
+      expect(id).toMatch(/^ztm-/);
+    });
+
+    it("should contain timestamp", () => {
+      const before = Date.now();
+      const id = generateMessageId();
+      const after = Date.now();
+
+      const match = id.match(/^ztm-(\d+)-/);
+      expect(match).not.toBeNull();
+
+      const timestamp = parseInt(match![1], 10);
+      expect(timestamp).toBeGreaterThanOrEqual(before);
+      expect(timestamp).toBeLessThanOrEqual(after);
+    });
+
+    it("should use default format 'ztm-{timestamp}-{random}'", () => {
+      const id = generateMessageId();
+      expect(id).toMatch(/^ztm-\d+-[a-z0-9]{7}$/);
+    });
+
+    it("should be URL-safe", () => {
+      const id = generateMessageId();
+      expect(id).toMatch(/^[\w-]+$/);
+    });
+  });
+
+  describe("sendZTMMessage", () => {
+    it("should send message successfully", async () => {
+      const state = createMockState();
+      const mockApiClient = {
+        sendPeerMessage: vi.fn().mockResolvedValue(true),
+      };
+      state.apiClient = mockApiClient as any;
+
+      const success = await sendZTMMessage(state, "alice", "Hello, world!");
+
+      expect(success).toBe(true);
+      expect(mockApiClient.sendPeerMessage).toHaveBeenCalledWith("alice", {
+        time: expect.any(Number),
+        message: "Hello, world!",
+        sender: "test-bot",
+      });
+      expect(state.lastOutboundAt).toBeInstanceOf(Date);
+      expect(state.lastError).toBeNull();
+    });
+
+    it("should return false when apiClient is null", async () => {
+      const state = createMockState();
+      state.apiClient = null;
+
+      const success = await sendZTMMessage(state, "alice", "Hello!");
+
+      expect(success).toBe(false);
+      expect(state.lastError).toBe("Runtime not initialized");
+    });
+
+    it("should return false when config is null", async () => {
+      const state = createMockState();
+      state.config = null as any;
+
+      const success = await sendZTMMessage(state, "alice", "Hello!");
+
+      expect(success).toBe(false);
+      expect(state.lastError).toBe("Runtime not initialized");
+    });
+
+    it("should handle send failure", async () => {
+      const state = createMockState();
+      const mockApiClient = {
+        sendPeerMessage: vi.fn().mockResolvedValue(false),
+      };
+      state.apiClient = mockApiClient as any;
+
+      const success = await sendZTMMessage(state, "alice", "Hello!");
+
+      expect(success).toBe(false);
+      expect(state.lastOutboundAt).toBeNull();
+    });
+
+    it("should handle send error", async () => {
+      const state = createMockState();
+      const mockError = new Error("Network error");
+      const mockApiClient = {
+        sendPeerMessage: vi.fn().mockRejectedValue(mockError),
+      };
+      state.apiClient = mockApiClient as any;
+
+      const success = await sendZTMMessage(state, "alice", "Hello!");
+
+      expect(success).toBe(false);
+      expect(state.lastError).toBe("Network error");
+    });
+
+    it("should handle empty message", async () => {
+      const state = createMockState();
+      const mockApiClient = {
+        sendPeerMessage: vi.fn().mockResolvedValue(true),
+      };
+      state.apiClient = mockApiClient as any;
+
+      const success = await sendZTMMessage(state, "alice", "");
+
+      expect(success).toBe(true);
+      expect(mockApiClient.sendPeerMessage).toHaveBeenCalledWith("alice", {
+        time: expect.any(Number),
+        message: "",
+        sender: "test-bot",
+      });
+    });
+
+    it("should handle special characters", async () => {
+      const state = createMockState();
+      const specialMessage = "Hello! 🌍 世界\nNew line\tTab";
+      const mockApiClient = {
+        sendPeerMessage: vi.fn().mockResolvedValue(true),
+      };
+      state.apiClient = mockApiClient as any;
+
+      const success = await sendZTMMessage(state, "alice", specialMessage);
+
+      expect(success).toBe(true);
+    });
+  });
+});
