@@ -697,6 +697,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       };
 
       state.messageCallbacks.add(messageCallback);
+      await startMessageWatcher(state);
 
       return async () => {
         state.messageCallbacks.delete(messageCallback);
