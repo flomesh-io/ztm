@@ -185,6 +185,89 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
     }
   }
 
+  // ═════════════════════════════════════════════════════════════════════════════
+  // Helper functions for data transformation
+  // ═════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Extract username from peer message file path
+   * @example "/apps/ztm/chat/shared/alice/publish/peers/bot/messages/123.json" -> "alice"
+   */
+  function extractPeerFromPath(path: string): string | null {
+    const match = path.match(/^\/apps\/ztm\/chat\/shared\/([^\/]+)\/publish\/peers\//);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Extract username from file path for user discovery
+   */
+  function extractUserFromDiscoveryPath(path: string): string | null {
+    const match = path.match(/^\/apps\/ztm\/chat\/shared\/([^\/]+)\/publish\/peers\//);
+    return match && match[1] !== config.username ? match[1] : null;
+  }
+
+  /**
+   * Get unique usernames from file list
+   */
+  function discoverUsersFromFileList(fileList: Record<string, unknown>): ZTMUserInfo[] {
+    const usernames = new Set<string>();
+    for (const path of Object.keys(fileList)) {
+      const user = extractUserFromDiscoveryPath(path);
+      if (user) {
+        usernames.add(user);
+      }
+    }
+    return Array.from(usernames).map(username => ({ username }));
+  }
+
+  /**
+   * Parse timestamp from filename
+   * @example "123.json" -> 123
+   */
+  function parseTimestampFromFilename(filename: string): number {
+    const match = filename.match(/^(\d+)\.json$/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
+   * Create an empty chat placeholder when file read/parse fails
+   */
+  function createEmptyChat(peer: string, time: number): ZTMChat {
+    return {
+      peer,
+      time,
+      updated: time,
+      latest: { time, message: "", sender: peer },
+    };
+  }
+
+  /**
+   * Find latest file for each peer from file list
+   */
+  function findLatestFilesByPeer(
+    fileList: Record<string, { time?: number }>,
+    pattern: RegExp
+  ): Map<string, { path: string; time: number; filename: string }> {
+    const latestByPeer = new Map<string, { path: string; time: number; filename: string }>();
+
+    for (const filePath of Object.keys(fileList)) {
+      const match = filePath.match(pattern);
+      if (!match) continue;
+
+      const peer = match[1];
+      const meta = fileList[filePath];
+      const fileTime = meta?.time ?? 0;
+      const existing = latestByPeer.get(peer);
+
+      if (!existing || fileTime > existing.time) {
+        const filename = filePath.split('/').pop() ?? '';
+        latestByPeer.set(peer, { path: filePath, time: fileTime, filename });
+      }
+    }
+
+    return latestByPeer;
+  }
+
   const client: ZTMApiClient = {
     async getMeshInfo(): Promise<Result<ZTMMeshInfo, ZtmApiError | ZtmTimeoutError>> {
       return request<ZTMMeshInfo>("GET", `/api/meshes/${config.meshName}`);
@@ -215,20 +298,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         }));
       }
 
-      const fileList = fileListResult.value;
-      const userSet = new Set<string>();
-
-      for (const filePath of Object.keys(fileList)) {
-        const match = filePath.match(/^\/apps\/ztm\/chat\/shared\/([^\/]+)\/publish\/peers\//);
-        if (match) {
-          const username = match[1];
-          if (username !== config.username) {
-            userSet.add(username);
-          }
-        }
-      }
-
-      const users = Array.from(userSet).map(username => ({ username }));
+      const users = discoverUsersFromFileList(fileListResult.value);
       log.debug?.(`[ZTM API] Discovered ${users.length} users via storage`);
       return success(users);
     },
@@ -247,29 +317,15 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         return failure(error);
       }
 
-      const fileList = fileListResult.value;
-      const chatsByPeer = new Map<string, { path: string; time: number; filename: string }>();
+      // Find latest message file for each peer
+      const latestByPeer = findLatestFilesByPeer(fileListResult.value, peerMessagePattern);
 
-      for (const filePath of Object.keys(fileList)) {
-        const peerMatch = filePath.match(peerMessagePattern);
-        if (peerMatch) {
-          const peer = peerMatch[1];
-          const meta = fileList[filePath];
-          const fileTime = meta?.time ?? 0;
-          const existing = chatsByPeer.get(peer);
-          if (!existing || fileTime > existing.time) {
-            const filename = filePath.split('/').pop() || '';
-            chatsByPeer.set(peer, { path: filePath, time: fileTime, filename });
-          }
-        }
-      }
-
+      // Process each peer's latest message file
       const chats: ZTMChat[] = [];
       const errors: ZtmReadError[] = [];
 
-      for (const [peer, info] of chatsByPeer) {
-        const timestampMatch = info.filename.match(/^(\d+)\.json$/);
-        const timestamp = timestampMatch ? parseInt(timestampMatch[1], 10) : info.time;
+      for (const [peer, info] of latestByPeer) {
+        const timestamp = parseTimestampFromFilename(info.filename);
 
         const readResult = await readFile(info.path);
         if (!readResult.ok) {
@@ -281,13 +337,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           });
           log.debug?.(`[ZTM API] Failed to read chat file for ${peer}: ${readError.message}`);
           errors.push(readError);
-          // Continue with empty latest message
-          chats.push({
-            peer,
-            time: info.time,
-            updated: info.time,
-            latest: { time: info.time, message: "", sender: peer },
-          });
+          chats.push(createEmptyChat(peer, info.time));
           continue;
         }
 
@@ -295,17 +345,13 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         if (!parseResult.ok) {
           log.debug?.(`[ZTM API] Failed to parse chat file for ${peer}: ${parseResult.error.message}`);
           errors.push(parseResult.error);
-          chats.push({
-            peer,
-            time: info.time,
-            updated: info.time,
-            latest: { time: info.time, message: "", sender: peer },
-          });
+          chats.push(createEmptyChat(peer, info.time));
           continue;
         }
 
+        // Find latest message in the file
         const messages = parseResult.value;
-        const latest = messages.length > 0
+        const latestMessage = messages.length > 0
           ? messages.reduce((a, b) => a.time > b.time ? a : b)
           : { time: timestamp, message: "", sender: peer };
 
@@ -313,12 +359,11 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           peer,
           time: timestamp,
           updated: timestamp,
-          latest,
+          latest: latestMessage,
         });
       }
 
       if (errors.length > 0 && chats.length === 0) {
-        // If all reads failed, return the first error
         return failure(errors[0]);
       }
 
