@@ -135,9 +135,13 @@ function startWatchLoop(
   messagePath: string
 ): void {
   const messageSemaphore = new Semaphore(5); // Limit concurrent message processing
+  let iterationCount = 0;
+  const FULL_SYNC_INTERVAL = 10; // Perform full sync every 10 iterations (10 seconds)
 
   const watchLoop = async (): Promise<void> => {
     if (!state.apiClient || !state.config) return;
+
+    iterationCount++;
 
     try {
       const changedPaths = await state.apiClient.watchChanges(messagePath);
@@ -154,8 +158,15 @@ function startWatchLoop(
         await processChangedPath(state, path, loopStoreAllowFrom, messageSemaphore);
       }
 
+      // Periodic full sync: re-check all peers for new messages
+      // This handles append-only files where file modification time doesn't change
+      if (iterationCount % FULL_SYNC_INTERVAL === 0) {
+        logger.debug(`[${state.accountId}] Performing periodic full sync`);
+        await performFullSync(state, loopStoreAllowFrom);
+      }
+
       // Persist file timestamps after processing
-      if (changedPaths.length > 0 && state.apiClient) {
+      if ((changedPaths.length > 0 || iterationCount % FULL_SYNC_INTERVAL === 0) && state.apiClient) {
         messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
       }
 
@@ -182,6 +193,35 @@ function startWatchLoop(
 
   // Start the loop
   watchLoop();
+}
+
+/**
+ * Perform full sync of all peers to catch missed messages in append-only files
+ */
+async function performFullSync(
+  state: AccountRuntimeState,
+  storeAllowFrom: string[]
+): Promise<void> {
+  if (!state.apiClient) return;
+
+  try {
+    const chats = await state.apiClient.getChats();
+    let processedCount = 0;
+
+    for (const chat of chats) {
+      if (!chat.peer || chat.peer === state.config.username) continue;
+
+      // Re-process all messages from this peer, watermark will skip already-processed ones
+      await processPeerMessages(state, chat.peer, storeAllowFrom);
+      processedCount++;
+    }
+
+    if (processedCount > 0) {
+      logger.debug(`[${state.accountId}] Full sync completed: checked ${processedCount} peers`);
+    }
+  } catch (error) {
+    logger.warn(`[${state.accountId}] Full sync failed: ${error}`);
+  }
 }
 
 /**
