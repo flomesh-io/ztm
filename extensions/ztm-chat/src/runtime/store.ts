@@ -29,13 +29,21 @@ export class MessageStateStore {
   // Maximum number of file paths to track per account
   private readonly MAX_FILES_PER_ACCOUNT = 1000;
 
-  constructor() {
-    this.statePath = path.join(
-      process.env.HOME || "",
-      ".openclaw",
-      "ztm",
-      "state.json",
-    );
+  constructor(statePath?: string) {
+    // Allow overriding the state path (useful for testing)
+    // Priority: constructor param > ZTM_STATE_PATH env var > default path
+    if (statePath) {
+      this.statePath = statePath;
+    } else if (process.env.ZTM_STATE_PATH) {
+      this.statePath = process.env.ZTM_STATE_PATH;
+    } else {
+      this.statePath = path.join(
+        process.env.HOME || "",
+        ".openclaw",
+        "ztm",
+        "state.json",
+      );
+    }
     // Ensure the config directory exists on startup to prevent write errors later
     const configDir = path.dirname(this.statePath);
     if (!fs.existsSync(configDir)) {
