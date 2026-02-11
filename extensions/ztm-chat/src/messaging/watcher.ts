@@ -134,64 +134,67 @@ function startWatchLoop(
   rt: ReturnType<typeof getZTMRuntime>,
   messagePath: string
 ): void {
-  const messageSemaphore = new Semaphore(5); // Limit concurrent message processing
-  let iterationCount = 0;
-  const FULL_SYNC_INTERVAL = 10; // Perform full sync every 10 iterations (10 seconds)
+  const messageSemaphore = new Semaphore(5);
+  const FULL_SYNC_DELAY = 30000;
+  let lastMessageTime = Date.now();
+  let fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  let messagesReceivedInCycle = false;
+
+  const scheduleFullSync = (storeAllowFrom: string[]) => {
+    if (fullSyncTimer) {
+      clearTimeout(fullSyncTimer);
+    }
+    fullSyncTimer = setTimeout(async () => {
+      logger.debug(`[${state.accountId}] Performing delayed full sync after inactivity`);
+      await performFullSync(state, storeAllowFrom);
+      if (state.apiClient) {
+        messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
+      }
+    }, FULL_SYNC_DELAY);
+  };
 
   const watchLoop = async (): Promise<void> => {
     if (!state.apiClient || !state.config) return;
 
-    iterationCount++;
-
     try {
       const changedPaths = await state.apiClient.watchChanges(messagePath);
+      messagesReceivedInCycle = changedPaths.length > 0;
 
-      if (changedPaths.length > 0) {
+      if (messagesReceivedInCycle) {
         logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
+        lastMessageTime = Date.now();
       }
 
-      // Refresh allowFrom store on each iteration
       const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
 
-      // Process each changed path
       for (const path of changedPaths) {
         await processChangedPath(state, path, loopStoreAllowFrom, messageSemaphore);
       }
 
-      // Periodic full sync: re-check all peers for new messages
-      // This handles append-only files where file modification time doesn't change
-      if (iterationCount % FULL_SYNC_INTERVAL === 0) {
-        logger.debug(`[${state.accountId}] Performing periodic full sync`);
-        await performFullSync(state, loopStoreAllowFrom);
+      if (messagesReceivedInCycle) {
+        scheduleFullSync(loopStoreAllowFrom);
+        if (state.apiClient) {
+          messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
+        }
       }
 
-      // Persist file timestamps after processing
-      if ((changedPaths.length > 0 || iterationCount % FULL_SYNC_INTERVAL === 0) && state.apiClient) {
-        messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
-      }
-
-      // Reset error count on success
       state.watchErrorCount = 0;
     } catch (error) {
       state.watchErrorCount++;
-      logger.warn(
-        `[${state.accountId}] Watch error (${state.watchErrorCount}): ${error}`
-      );
+      logger.warn(`[${state.accountId}] Watch error (${state.watchErrorCount}): ${error}`);
 
-      // Fallback to polling if too many errors
       if (state.watchErrorCount > 5) {
+        if (fullSyncTimer) clearTimeout(fullSyncTimer);
         logger.warn(`[${state.accountId}] Too many watch errors, falling back to polling`);
-        state.watchErrorCount = 0; // Reset for fresh start in polling mode
+        state.watchErrorCount = 0;
         await startPollingWatcher(state);
-        return; // Exit watch loop
+        return;
       }
     }
 
-    // Schedule next iteration
     setTimeout(watchLoop, 1000);
   };
 
-  // Start the loop
   watchLoop();
 }
 

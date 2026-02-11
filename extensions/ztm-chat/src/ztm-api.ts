@@ -89,7 +89,12 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     }
   }
 
-  const lastSeenTimes = new Map<string, number>();
+  // Track both time and size for each file to detect changes in append-only files
+  interface FileMetadata {
+    time: number;
+    size: number;
+  }
+  const lastSeenFiles = new Map<string, FileMetadata>();
 
   // ZTM Chat stores messages as [{time, message:{text}}, ...]
   function parseMessageFile(fileContent: unknown, peer: string): ZTMMessage[] {
@@ -280,19 +285,27 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
     async watchChanges(prefix: string): Promise<string[]> {
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
       try {
-        const minLastSeen = Math.min(...Array.from(lastSeenTimes.values()), Infinity);
+        // Get the minimum last seen time for the since parameter
+        const lastSeenTimes = Array.from(lastSeenFiles.values()).map(m => m.time);
+        const minLastSeen = Math.min(...lastSeenTimes, Infinity);
         const fileList = await listFiles(isFinite(minLastSeen) ? minLastSeen : undefined);
         const changedPaths: string[] = [];
 
         for (const [filePath, meta] of Object.entries(fileList)) {
           if (!filePath.startsWith(prefix)) continue;
-          const fileMeta = meta as { time?: number };
+          const fileMeta = meta as { time?: number; size?: number };
           const fileTime = fileMeta?.time ?? 0;
-          const lastSeen = lastSeenTimes.get(filePath) ?? 0;
-          if (fileTime > lastSeen) {
+          const fileSize = fileMeta?.size ?? 0;
+          const lastSeen = lastSeenFiles.get(filePath);
+
+          // Check if either time or size changed (handles append-only files)
+          const timeChanged = !lastSeen || fileTime > lastSeen.time;
+          const sizeChanged = !lastSeen || fileSize > lastSeen.size;
+
+          if (timeChanged || sizeChanged) {
             changedPaths.push(filePath);
-            lastSeenTimes.set(filePath, fileTime);
-            logger.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, lastSeen=${lastSeen})`);
+            lastSeenFiles.set(filePath, { time: fileTime, size: fileSize });
+            logger.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, size=${fileSize}, lastTime=${lastSeen?.time}, lastSize=${lastSeen?.size})`);
           }
         }
 
@@ -322,17 +335,17 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
 
     seedLastSeenTimes(times: Record<string, number>): void {
       for (const [filePath, time] of Object.entries(times)) {
-        const current = lastSeenTimes.get(filePath) ?? 0;
-        if (time > current) {
-          lastSeenTimes.set(filePath, time);
+        const current = lastSeenFiles.get(filePath);
+        if (!current || time > current.time) {
+          lastSeenFiles.set(filePath, { time, size: 0 });
         }
       }
     },
 
     exportLastSeenTimes(): Record<string, number> {
       const result: Record<string, number> = {};
-      for (const [filePath, time] of lastSeenTimes) {
-        result[filePath] = time;
+      for (const [filePath, metadata] of lastSeenFiles) {
+        result[filePath] = metadata.time;
       }
       return result;
     },
