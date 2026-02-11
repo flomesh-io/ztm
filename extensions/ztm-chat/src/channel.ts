@@ -698,11 +698,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
             ctx.log?.error?.(
               `[${account.accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`
             );
-            throw error;
           }
         };
 
-        // Handle inbound asynchronously, errors are logged and will be caught by global handler
         void handleInbound();
       };
 
