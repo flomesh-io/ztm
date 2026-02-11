@@ -46,7 +46,7 @@ export function processIncomingMessage(
   }
 
   // Step 3: Check for duplicates
-  if (messageDeduplicator.isDuplicate(msg.sender, msg.time, msg.message)) {
+  if (messageDeduplicator.isDuplicate(msg.sender, msg.time)) {
     logger.debug(`Skipping duplicate message from ${msg.sender}`);
     return null;
   }
