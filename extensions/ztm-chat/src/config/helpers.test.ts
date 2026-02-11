@@ -6,10 +6,31 @@ import {
   resolveZTMChatConfig,
   createProbeConfig,
 } from "./index.js";
-import {
-  buildPeerMessagePath,
-  parseMessagePath,
-} from "../api/ztm-api.js";
+
+// Inline helper functions (previously exported from ztm-api.ts, now unused in source code)
+const buildPeerMessagePath = (
+  messagePath: string,
+  username: string,
+  peer: string
+): string => `${messagePath}/${username}/publish/peers/${peer}/messages/`;
+
+const parseMessagePath = (
+  path: string
+): { peer?: string; creator?: string; group?: string } | null => {
+  const peerMatch = path.match(/(?:\/apps\/ztm\/chat)?\/shared\/[^/]+\/publish\/peers\/([^/]+)\/messages/);
+  if (peerMatch) {
+    return { peer: peerMatch[1] };
+  }
+
+  const groupMatch = path.match(
+    /(?:\/apps\/ztm\/chat)?\/shared\/[^/]+\/publish\/groups\/([^/]+)\/([^/]+)\/messages/
+  );
+  if (groupMatch) {
+    return { creator: groupMatch[1], group: groupMatch[2] };
+  }
+
+  return null;
+};
 
 describe("Message Path Helpers", () => {
   describe("buildPeerMessagePath", () => {
