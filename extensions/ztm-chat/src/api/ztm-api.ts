@@ -129,6 +129,11 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
     }
   }
 
+  // Type guard for file metadata from API response
+  function isFileMeta(obj: unknown): obj is { time?: number; size?: number } {
+    return typeof obj === "object" && obj !== null;
+  }
+
   async function listFiles(since?: number): ApiResult<Record<string, { hash?: string; size?: number; time?: number }>> {
     const path = `/api/meshes/${config.meshName}/files`;
     const queryParams = since !== undefined ? `?since=${since}` : "";
@@ -454,9 +459,13 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
 
       for (const [filePath, meta] of Object.entries(fileList)) {
         if (!filePath.startsWith(prefix)) continue;
-        const fileMeta = meta as { time?: number; size?: number };
-        const fileTime = fileMeta?.time ?? 0;
-        const fileSize = fileMeta?.size ?? 0;
+        // Use type guard to safely access file metadata
+        if (!isFileMeta(meta)) {
+          log.debug?.(`[ZTM API] Skipping file with invalid metadata: ${filePath}`);
+          continue;
+        }
+        const fileTime = meta.time ?? 0;
+        const fileSize = meta.size ?? 0;
         const lastSeen = lastSeenFiles.get(filePath);
 
         // Check if either time or size changed (handles append-only files)
