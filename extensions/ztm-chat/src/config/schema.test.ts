@@ -79,7 +79,7 @@ describe("ZTMChatConfigSchema", () => {
         username: "test-bot",
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.toLowerCase().includes("permiturl"))).toBe(true);
+      expect(result.errors.some((e) => e.field === "permitUrl")).toBe(true);
     });
 
     it("should reject empty permitUrl", () => {

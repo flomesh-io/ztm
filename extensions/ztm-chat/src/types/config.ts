@@ -6,6 +6,17 @@ import { Type } from "@sinclair/typebox";
 // DM Policy type
 export type DMPolicy = "allow" | "deny" | "pairing";
 
+// Validation error reason types
+export type ValidationErrorReason = 'required' | 'invalid_format' | 'out_of_range' | 'type_mismatch';
+
+// Single configuration validation error
+export interface ConfigValidationError {
+  field: string;
+  reason: ValidationErrorReason;
+  value: unknown;
+  message: string;
+}
+
 // ZTM Chat Configuration interface
 // This matches the schema defined in config.ts
 export interface ZTMChatConfig {
@@ -26,10 +37,10 @@ export interface ExtendedZTMChatConfig extends ZTMChatConfig {
   allowFrom?: string[];
 }
 
-// Validation result type
+// Validation result using Result pattern
 export interface ZTMChatConfigValidation {
   valid: boolean;
-  errors: string[];
+  errors: ConfigValidationError[];
   config?: ZTMChatConfig;
 }
 

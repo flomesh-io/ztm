@@ -39,7 +39,10 @@ describe("validateZTMChatConfig", () => {
     });
 
     expect(result.valid).toBe(false);
-    expect(result.errors.some(e => e.toLowerCase().includes("url"))).toBe(true);
+    expect(result.errors.some((e) => e.field === "agentUrl")).toBe(true);
+    expect(result.errors.some((e) => e.reason === "invalid_format")).toBe(
+      true
+    );
   });
 
   it("should provide user-friendly error messages", () => {
@@ -49,7 +52,8 @@ describe("validateZTMChatConfig", () => {
       username: "",
     });
 
-    expect(result.errors[0]).toContain("agentUrl");
+    expect(result.errors[0].field).toBe("agentUrl");
+    expect(result.errors[0].message).toContain("agentUrl");
   });
 
   it("should list all validation errors", () => {
@@ -62,10 +66,113 @@ describe("validateZTMChatConfig", () => {
 
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBe(4);
-    expect(result.errors.some(e => e.includes("agentUrl"))).toBe(true);
-    expect(result.errors.some(e => e.includes("permitUrl"))).toBe(true);
-    expect(result.errors.some(e => e.includes("meshName"))).toBe(true);
-    expect(result.errors.some(e => e.includes("username"))).toBe(true);
+    expect(result.errors.some((e) => e.field === "agentUrl")).toBe(true);
+    expect(result.errors.some((e) => e.field === "permitUrl")).toBe(true);
+    expect(result.errors.some((e) => e.field === "meshName")).toBe(true);
+    expect(result.errors.some((e) => e.field === "username")).toBe(true);
+  });
+
+  it("should include error reason types", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "",
+      meshName: "valid-mesh",
+      permitUrl: "https://example.com",
+      username: "valid-user",
+    });
+
+    const agentUrlError = result.errors.find(
+      (e) => e.field === "agentUrl"
+    );
+    expect(agentUrlError).toBeDefined();
+    expect(agentUrlError!.reason).toBe("required");
+  });
+
+  it("should include invalid value in error", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "not-a-url",
+      meshName: "valid-mesh",
+      permitUrl: "https://example.com",
+      username: "valid-user",
+    });
+
+    const agentUrlError = result.errors.find(
+      (e) => e.field === "agentUrl"
+    );
+    expect(agentUrlError).toBeDefined();
+    expect(agentUrlError!.value).toBe("not-a-url");
+  });
+
+  it("should handle root type mismatch", () => {
+    const result = validateZTMChatConfig("not-an-object");
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].field).toBe("root");
+    expect(result.errors[0].reason).toBe("type_mismatch");
+  });
+
+  it("should handle null input", () => {
+    const result = validateZTMChatConfig(null);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].field).toBe("root");
+  });
+
+  it("should validate dmPolicy type", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "https://example.com",
+      meshName: "valid-mesh",
+      permitUrl: "https://example.com",
+      username: "valid-user",
+      dmPolicy: "invalid-policy",
+    });
+
+    expect(result.valid).toBe(false);
+    const dmPolicyError = result.errors.find((e) => e.field === "dmPolicy");
+    expect(dmPolicyError).toBeDefined();
+    expect(dmPolicyError!.reason).toBe("type_mismatch");
+  });
+
+  it("should validate apiTimeout range", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "https://example.com",
+      meshName: "valid-mesh",
+      permitUrl: "https://example.com",
+      username: "valid-user",
+      apiTimeout: 500,
+    });
+
+    expect(result.valid).toBe(false);
+    const timeoutError = result.errors.find(
+      (e) => e.field === "apiTimeout"
+    );
+    expect(timeoutError).toBeDefined();
+    expect(timeoutError!.reason).toBe("out_of_range");
+  });
+
+  it("should validate meshName length", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "https://example.com",
+      meshName: "a".repeat(100),
+      permitUrl: "https://example.com",
+      username: "valid-user",
+    });
+
+    expect(result.valid).toBe(false);
+    const meshError = result.errors.find((e) => e.field === "meshName");
+    expect(meshError).toBeDefined();
+    expect(meshError!.reason).toBe("out_of_range");
+  });
+
+  it("should validate username length", () => {
+    const result = validateZTMChatConfig({
+      agentUrl: "https://example.com",
+      meshName: "valid-mesh",
+      permitUrl: "https://example.com",
+      username: "a".repeat(100),
+    });
+
+    expect(result.valid).toBe(false);
+    const userError = result.errors.find((e) => e.field === "username");
+    expect(userError).toBeDefined();
+    expect(userError!.reason).toBe("out_of_range");
   });
 });
 
@@ -85,7 +192,7 @@ describe("resolveZTMChatConfig", () => {
   it("should preserve provided values", () => {
     const input = {
       agentUrl: "https://my-agent.example.com:7777",
-      permitUrl: "https://my-permit.example.com:7779/permit",
+      permitUrl: "https://my-permit.example.com:7779",
       meshName: "my-mesh",
       username: "my-bot",
       enableGroups: true,
@@ -95,7 +202,7 @@ describe("resolveZTMChatConfig", () => {
     const result = resolveZTMChatConfig(input);
 
     expect(result.agentUrl).toBe("https://my-agent.example.com:7777");
-    expect(result.permitUrl).toBe("https://my-permit.example.com:7779/permit");
+    expect(result.permitUrl).toBe("https://my-permit.example.com:7779");
     expect(result.meshName).toBe("my-mesh");
     expect(result.username).toBe("my-bot");
     expect(result.enableGroups).toBe(true);
