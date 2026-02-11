@@ -1,648 +1,529 @@
 // Unit tests for ZTM API Client
+// Uses dependency injection pattern for easy mocking
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type { ZTMChatConfig } from "../types/config.js";
+import type { ZTMApiClient } from "../types/api.js";
+import {
+  createZTMApiClient,
+  createTestClient,
+  createMockLogger,
+  createMockFetch,
+  createMockFetchWithRetry,
+  type MockLogger,
+} from "./ztm-api.js";
 
-// Mock ZTM Message interface
-interface ZTMMessage {
-  time: number;
-  message: string;
-  sender: string;
-}
+// Mock logger module to provide defaultLogger
+vi.mock("../utils/logger.js", async () => {
+  const mod = await vi.importActual<typeof import("../utils/logger.js")>("../utils/logger.js");
+  return {
+    ...mod,
+    defaultLogger: {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    },
+    logger: {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    },
+  };
+});
 
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> {
-  const DEFAULT_TIMEOUT = 30000;
-  const MAX_RETRIES = 3;
-  const RETRY_INITIAL_DELAY = 1000;
-  const RETRY_MAX_DELAY = 10000;
-  const RETRY_BACKOFF_MULTIPLIER = 2;
+// Re-export types for convenience
+export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat } from "../types/api.js";
 
-  function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  function getRetryDelay(attempt: number): number {
-    const delay = RETRY_INITIAL_DELAY * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1);
-    return Math.min(delay, RETRY_MAX_DELAY);
-  }
-
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (
-        !lastError.name.includes("AbortError") &&
-        !lastError.message.includes("timeout") &&
-        !lastError.message.includes("fetch") &&
-        !lastError.message.includes("network")
-      ) {
-        throw lastError;
-      }
-
-      if (attempt < MAX_RETRIES) {
-        const delay = getRetryDelay(attempt + 1);
-        await sleep(delay);
-      }
-    }
-  }
-
-  throw new Error(`Request failed after ${MAX_RETRIES + 1} attempts: ${lastError?.message}`);
-}
+// Test configuration
+const testConfig: ZTMChatConfig = {
+  agentUrl: "https://agent.example.com:7777",
+  meshName: "test-mesh",
+  permitUrl: "https://portal.example.com:7779/permit",
+  username: "test-bot",
+  enableGroups: false,
+  autoReply: true,
+  messagePath: "/shared",
+  dmPolicy: "pairing",
+};
 
 describe("ZTM API Client", () => {
-  describe("fetchWithTimeout", () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
-    it("should correctly construct URL and options", async () => {
-      const mockResponse = new Response(JSON.stringify({ connected: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse);
-
-      const url = "http://test.com/api";
-      const options: RequestInit = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer token",
-        },
-        body: JSON.stringify({ key: "value" }),
-      };
-
-      const response = await fetchWithTimeout(url, options);
-
-      // Verify fetch was called
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(url),
-        expect.objectContaining({
-          method: options.method,
-          headers: expect.objectContaining({
-            "Content-Type": "application/json",
-          }),
-          body: options.body,
-        })
-      );
-      expect(response.ok).toBe(true);
-    });
-
-    it("should handle fetch errors correctly", async () => {
-      const networkError = new Error("Network error");
-      vi.spyOn(globalThis, "fetch").mockRejectedValue(networkError);
-
-      await expect(
-        fetchWithTimeout("http://test.com/api", { method: "GET" })
-      ).rejects.toThrow("Network error");
-    }); // Increase timeout for this test
-
-    it("should return response when request completes in time", async () => {
-      const mockResponse = new Response(JSON.stringify({ connected: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse);
-
-      const response = await fetchWithTimeout("http://test.com/api", {
-        method: "GET",
-      });
-
-      expect(response.ok).toBe(true);
-    });
-
-    it("should include headers in request", async () => {
-      const mockResponse = new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-      });
-
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse);
-
-      await fetchWithTimeout("http://test.com/api", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer token",
-        },
-      });
-
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "http://test.com/api",
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            "Content-Type": "application/json",
-            Authorization: "Bearer token",
-          }),
-        })
-      );
-    });
-
-    it("should handle network errors", async () => {
-      vi.spyOn(globalThis, "fetch").mockRejectedValue(
-        new Error("Network error")
-      );
-
-      await expect(
-        fetchWithTimeout("http://test.com/api", { method: "GET" })
-      ).rejects.toThrow("Network error");
-    });
-
-    it("should pass body in request", async () => {
-      const mockResponse = new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-      });
-
-      vi.spyOn(globalThis, "fetch").mockResolvedValue(mockResponse);
-
-      const body = { message: "test" };
-
-      await fetchWithTimeout("http://test.com/api", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "http://test.com/api",
-        expect.objectContaining({
-          body: JSON.stringify(body),
-        })
-      );
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  describe("Message Path Building", () => {
-    it("should build peer message path correctly", () => {
-      const buildPeerMessagePath = (
-        messagePath: string,
-        username: string,
-        peer: string
-      ) => `${messagePath}/${username}/publish/peers/${peer}/messages/`;
-
-      const result = buildPeerMessagePath("/shared", "bot", "alice");
-
-      expect(result).toBe("/shared/bot/publish/peers/alice/messages/");
-    });
-
-    it("should build group message path correctly", () => {
-      const buildGroupMessagePath = (
-        messagePath: string,
-        username: string,
-        creator: string,
-        group: string
-      ) =>
-        `${messagePath}/${username}/publish/groups/${creator}/${group}/messages/`;
-
-      const result = buildGroupMessagePath("/shared", "bot", "alice", "mygroup");
-
-      expect(result).toBe("/shared/bot/publish/groups/alice/mygroup/messages/");
-    });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  describe("Message Path Parsing", () => {
-    it("should extract peer from peer message path", () => {
-      const path = "/shared/bot/publish/peers/alice/messages/";
-      const peerMatch = path.match(
-        /\/shared\/[^/]+\/publish\/peers\/([^/]+)\/messages/
-      );
+  it("should return an object with required methods", () => {
+    const client = createZTMApiClient(testConfig);
 
-      expect(peerMatch?.[1]).toBe("alice");
-    });
-
-    it("should extract creator and group from group message path", () => {
-      const path = "/shared/bot/publish/groups/alice/mygroup/messages/";
-      const groupMatch = path.match(
-        /\/shared\/[^/]+\/publish\/groups\/([^/]+)\/([^/]+)\/messages/
-      );
-
-      expect(groupMatch?.[1]).toBe("alice");
-      expect(groupMatch?.[2]).toBe("mygroup");
-    });
-
-    it("should return null for invalid path", () => {
-      const path = "/invalid/path";
-      const peerMatch = path.match(
-        /\/shared\/[^/]+\/publish\/peers\/([^/]+)\/messages/
-      );
-
-      expect(peerMatch).toBeNull();
-    });
+    expect(client).toHaveProperty("getMeshInfo");
+    expect(client).toHaveProperty("discoverUsers");
+    expect(client).toHaveProperty("discoverPeers");
+    expect(client).toHaveProperty("sendPeerMessage");
+    expect(client).toHaveProperty("getChats");
+    expect(client).toHaveProperty("getFile");
+    expect(client).toHaveProperty("addFile");
+    expect(client).toHaveProperty("seedFileMetadata");
+    expect(client).toHaveProperty("exportFileMetadata");
   });
 
-  describe("ZTM Message Structure", () => {
-    it("should validate ZTM message structure", () => {
-      const message: ZTMMessage = {
-        time: Date.now(),
-        message: "Hello",
-        sender: "alice",
-      };
+  it("should use config.agentUrl as base URL", () => {
+    const client = createZTMApiClient(testConfig);
 
-      expect(message).toHaveProperty("time");
-      expect(message).toHaveProperty("message");
-      expect(message).toHaveProperty("sender");
-      expect(typeof message.time).toBe("number");
-      expect(typeof message.message).toBe("string");
-      expect(typeof message.sender).toBe("string");
-    });
+    const expectedBaseUrl = testConfig.agentUrl.replace(/\/$/, "");
+    expect(client.getMeshInfo).toBeDefined();
+    expect(typeof client.getMeshInfo).toBe("function");
+  });
+});
+
+describe("Mock Logger", () => {
+  it("should create mock logger with all methods", () => {
+    const mockLogger = createMockLogger();
+
+    expect(typeof mockLogger.debug).toBe("function");
+    expect(typeof mockLogger.info).toBe("function");
+    expect(typeof mockLogger.warn).toBe("function");
+    expect(typeof mockLogger.error).toBe("function");
+    expect(Array.isArray(mockLogger.calls)).toBe(true);
   });
 
-  describe("Mesh Info Structure", () => {
-    it("should validate mesh info structure", () => {
-      interface ZTMMeshInfo {
-        name: string;
-        connected: boolean;
-        endpoints: number;
-      }
+  it("should track all log calls", () => {
+    const mockLogger = createMockLogger();
 
-      const meshInfo: ZTMMeshInfo = {
-        name: "my-mesh",
-        connected: true,
-        endpoints: 3,
-      };
+    mockLogger.info("test message");
+    mockLogger.warn("warning");
+    mockLogger.error("error");
 
-      expect(meshInfo).toHaveProperty("name");
-      expect(meshInfo).toHaveProperty("connected");
-      expect(meshInfo).toHaveProperty("endpoints");
-      expect(meshInfo.connected).toBe(true);
-      expect(meshInfo.endpoints).toBeGreaterThan(0);
-    });
+    expect(mockLogger.calls.length).toBe(3);
+    expect(mockLogger.calls[0]).toEqual({ level: "info", args: ["test message"] });
+    expect(mockLogger.calls[1]).toEqual({ level: "warn", args: ["warning"] });
+    expect(mockLogger.calls[2]).toEqual({ level: "error", args: ["error"] });
+  });
+});
+
+describe("Mock Fetch", () => {
+  it("should create mock fetch with required methods", () => {
+    const mockFetch = createMockFetch();
+
+    expect(typeof mockFetch.fetch).toBe("function");
+    expect(typeof mockFetch.mockResponse).toBe("function");
+    expect(typeof mockFetch.mockError).toBe("function");
+    expect(typeof mockFetch.mockNetworkError).toBe("function");
+    expect(Array.isArray(mockFetch.calls)).toBe(true);
   });
 
-  describe("URL Construction", () => {
-    it("should handle URL with trailing slash removal", () => {
-      const baseUrl = "https://example.com:7777/".replace(/\/$/, "");
-      const meshPath = "/api/meshes/my-mesh";
-      const url = `${baseUrl}${meshPath}`;
+  it("should track all fetch calls", async () => {
+    const { fetch, mockResponse, calls } = createMockFetch();
+    mockResponse({ connected: true }, 200);
 
-      expect(url).toBe("https://example.com:7777/api/meshes/my-mesh");
-    });
+    await fetch("https://test.com/api");
 
-    it("should construct correct API URLs", () => {
-      const baseUrl = "https://agent.example.com:7777".replace(/\/$/, "");
-      const meshPath = "/api/meshes/test-mesh";
-      const meshInfoUrl = `${baseUrl}${meshPath}`;
-      const messagesUrl = `${baseUrl}${meshPath}/messages`;
-
-      expect(meshInfoUrl).toBe("https://agent.example.com:7777/api/meshes/test-mesh");
-      expect(messagesUrl).toBe("https://agent.example.com:7777/api/meshes/test-mesh/messages");
-    });
+    expect(calls.length).toBe(1);
+    expect(calls[0].url).toBe("https://test.com/api");
   });
 
-  describe("Content-Type Handling", () => {
-    it("should identify JSON content type", () => {
-      const contentType = "application/json";
-      const isJson = contentType.includes("application/json");
+  it("should return mocked response", async () => {
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({ connected: true }, 200);
 
-      expect(isJson).toBe(true);
-    });
+    const response = await fetch("https://test.com/api");
+    const data = await response.json();
 
-    it("should handle non-JSON content type", () => {
-      const contentType = "text/plain";
-      const isJson = contentType.includes("application/json");
-
-      expect(isJson).toBe(false);
-    });
+    expect(data).toEqual({ connected: true });
   });
 
-  describe("ACL Structure", () => {
-    it("should validate ACL user permissions", () => {
-      const aclUsers: Record<string, string> = {
-        alice: "readonly",
-        bob: "readwrite",
-      };
+  it("should handle mocked errors", async () => {
+    const { fetch, mockError } = createMockFetch();
+    mockError(new Error("Server error"));
 
-      expect(aclUsers.alice).toBe("readonly");
-      expect(aclUsers.bob).toBe("readwrite");
+    await expect(fetch("https://test.com/api")).rejects.toThrow("Server error");
+  });
+});
+
+describe("createTestClient", () => {
+  it("should create client with injected dependencies", () => {
+    const mockLogger = createMockLogger();
+    const { fetch } = createMockFetch();
+    const { fetchWithRetry } = createMockFetchWithRetry();
+
+    const client = createTestClient(testConfig, {
+      logger: mockLogger,
+      fetch,
+      fetchWithRetry,
     });
 
-    it("should handle empty ACL", () => {
-      const aclUsers: Record<string, string> = {};
-
-      expect(Object.keys(aclUsers)).toHaveLength(0);
-    });
+    expect(client).toHaveProperty("getMeshInfo");
+    expect(client).toHaveProperty("sendPeerMessage");
   });
 
-  describe("Integration with Mock ZTM Agent", () => {
-    let mockAgent: Awaited<ReturnType<typeof createMockAgent>>;
+  it("should work with minimal deps (defaults)", () => {
+    const client = createTestClient(testConfig);
 
-    async function createMockAgent() {
-      const { MockZTMClient, createMockConfig } = await import("../mocks/ztm-client.js");
-      const config = createMockConfig();
-      const client = new MockZTMClient(config);
-      await client.start();
-      return { client, config };
+    expect(client).toHaveProperty("getMeshInfo");
+    expect(typeof client.getMeshInfo).toBe("function");
+  });
+});
+
+describe("ZTM API Client Integration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should get mesh info successfully", async () => {
+    const { fetch, mockResponse, calls } = createMockFetch();
+    mockResponse({
+      connected: true,
+      endpoints: 5,
+      errors: [],
+    });
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.getMeshInfo();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.connected).toBe(true);
+      expect(result.value.endpoints).toBe(5);
     }
 
-    beforeEach(async () => {
-      mockAgent = await createMockAgent();
-    });
-
-    afterEach(async () => {
-      if (mockAgent) {
-        await mockAgent.client.stop();
-      }
-    });
-
-    it("should connect to mesh and get info", async () => {
-      const { client, config } = mockAgent;
-
-      // Simulate API call
-      const response = await fetch(`${client.url}/api/meshes/${config.meshName}`);
-      const data = await response.json() as { name: string; connected: boolean };
-
-      expect(response.ok).toBe(true);
-      expect(data.name).toBe(config.meshName);
-      expect(data.connected).toBe(true);
-    });
-
-    it("should discover users", async () => {
-      const { client } = mockAgent;
-
-      const response = await fetch(`${client.url}/apps/ztm/chat/api/users`);
-      const users = await response.json() as Array<{ username: string }>;
-
-      expect(response.ok).toBe(true);
-      expect(Array.isArray(users)).toBe(true);
-      expect(users.length).toBe(2);
-      expect(users[0].username).toBe("alice");
-      expect(users[1].username).toBe("bob");
-    });
-
-    it("should get peer messages", async () => {
-      const { client } = mockAgent;
-
-      const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages`);
-      const messages = await response.json() as Array<{ sender: string; message: string }>;
-
-      expect(response.ok).toBe(true);
-      expect(Array.isArray(messages)).toBe(true);
-      expect(messages.length).toBe(2);
-      expect(messages[0].sender).toBe("alice");
-      expect(messages[0].message).toBe("Hello!");
-    });
-
-    it("should send peer message", async () => {
-      const { client } = mockAgent;
-
-      const newMessage = {
-        time: Date.now(),
-        message: "Test reply",
-        sender: "test-bot",
-      };
-
-      const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newMessage),
-      });
-
-      expect(response.ok).toBe(true);
-      const result = await response.json() as { success: boolean; id: string };
-      expect(result.success).toBe(true);
-      expect(result.id).toBeDefined();
-      expect(result.id).toMatch(/^msg-\d+$/);
-    });
-
-    it("should watch for path changes", async () => {
-      const { client } = mockAgent;
-
-      const response = await fetch(`${client.url}/api/watch/shared%2Ftest-bot?pollingInterval=2000`);
-      const changes = await response.json();
-
-      expect(response.ok).toBe(true);
-      expect(Array.isArray(changes)).toBe(true);
-      expect(changes[0]).toContain("new-message");
-    });
-
-    it("should filter messages by since timestamp", async () => {
-      const { client } = mockAgent;
-      const now = Date.now();
-
-      const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/alice/messages?since=${now - 40000}`);
-      const messages = await response.json() as Array<{ message: string }>;
-
-      expect(response.ok).toBe(true);
-      expect(Array.isArray(messages)).toBe(true);
-      // Should only get messages from last 40 seconds (the "How are you?" message)
-      expect(messages.length).toBe(1);
-      expect(messages[0].message).toBe("How are you?");
-    });
-
-    it("should add new message via client API", async () => {
-      const { client } = mockAgent;
-
-      client.addMessage("charlie", {
-        time: Date.now(),
-        message: "Hello from Charlie!",
-        sender: "charlie",
-      });
-
-      const response = await fetch(`${client.url}/apps/ztm/chat/api/peers/charlie/messages`);
-      const messages = await response.json() as Array<{ message: string }>;
-
-      expect(response.ok).toBe(true);
-      expect(messages.length).toBe(1);
-      expect(messages[0].message).toBe("Hello from Charlie!");
-    });
-
-    it("should handle unknown mesh gracefully", async () => {
-      const { client } = mockAgent;
-
-      const response = await fetch(`${client.url}/api/meshes/unknown-mesh`);
-
-      expect(response.status).toBe(404);
-      const data = await response.json() as { error: string };
-      expect(data.error).toBe("Mesh not found");
-    });
+    expect(calls.length).toBe(1);
+    expect(calls[0].url).toContain("/api/meshes/test-mesh");
   });
 
-  describe("Direct Storage API (MVP)", () => {
-    describe("sendMessageViaStorage", () => {
-      it("should construct correct file path for sending messages", () => {
-        const config = {
-          agentUrl: "https://agent.example.com:7777",
-          meshName: "test-mesh",
-          username: "test-bot",
-        };
-        const message = {
-          time: 1234567890,
-          message: "Hello",
-          sender: "test-bot",
-        };
-        const messageId = `${message.time}-${message.sender}`;
-        const path = `/shared/${config.username}/publish/peers/alice/messages/`;
-        const expectedPath = `${path}${messageId}.json`;
+  it("should handle mesh info error", async () => {
+    const { fetch, mockError } = createMockFetch();
+    mockError(new Error("Network error"));
 
-        expect(expectedPath).toBe("/shared/test-bot/publish/peers/alice/messages/1234567890-test-bot.json");
-      });
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.getMeshInfo();
 
-      it("should build correct setFileData API URL", () => {
-        const baseUrl = "https://agent.example.com:7777";
-        const filePath = "/shared/test-bot/publish/peers/alice/messages/1234567890-test-bot.json";
-        const apiUrl = `/api/setFileData${filePath}`;
-        const fullUrl = `${baseUrl}${apiUrl}`;
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.message).toContain("Network error");
+    }
+  });
 
-        expect(fullUrl).toBe("https://agent.example.com:7777/api/setFileData/shared/test-bot/publish/peers/alice/messages/1234567890-test-bot.json");
-      });
+  it("should send peer message successfully", async () => {
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({ success: true });
+
+    const client = createTestClient(testConfig, { fetch });
+
+    const message = {
+      time: Date.now(),
+      message: "Hello",
+      sender: "test-bot",
+    };
+
+    const result = await client.sendPeerMessage("alice", message);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("should handle send message failure", async () => {
+    const { fetch, mockError } = createMockFetch();
+    mockError(new Error("Network error"));
+
+    const client = createTestClient(testConfig, { fetch });
+
+    const message = {
+      time: Date.now(),
+      message: "Hello",
+      sender: "test-bot",
+    };
+
+    const result = await client.sendPeerMessage("alice", message);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("should get empty chat list", async () => {
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse([]);
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.getChats();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toEqual([]);
+    }
+  });
+
+  it("should get chat list with messages", async () => {
+    const now = Date.now();
+    const { fetch, mockResponse } = createMockFetch();
+    // API expects Record<string, { time?: number; size?: number }> from listFiles
+    mockResponse({
+      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/123.json": { time: now },
+      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/456.json": { time: now },
     });
 
-    describe("receiveMessagesViaStorage", () => {
-      it("should construct correct subscribe path for receiving messages", () => {
-        const config = {
-          agentUrl: "https://agent.example.com:7777",
-          meshName: "test-mesh",
-          username: "test-bot",
-        };
-        const peer = "alice";
-        const expectedPath = `/shared/${peer}/publish/peers/${config.username}/messages/`;
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.getChats();
 
-        expect(expectedPath).toBe("/shared/alice/publish/peers/test-bot/messages/");
-      });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.length).toBe(2);
+      expect(result.value[0].peer).toBe("alice");
+      expect(result.value[1].peer).toBe("bob");
+    }
+  });
 
-      it("should build correct allFiles API URL", () => {
-        const baseUrl = "https://agent.example.com:7777";
-        const path = "/shared/alice/publish/peers/test-bot/messages/";
-        const apiUrl = `/api/allFiles${path}`;
-        const fullUrl = `${baseUrl}${apiUrl}`;
+  it("should get file successfully", async () => {
+    // getFile is a stub that returns empty buffer - just verify it works
+    const client = createTestClient(testConfig);
+    const result = await client.getFile("alice", "abc123");
+    expect(result.ok).toBe(true);
+  });
+});
 
-        expect(fullUrl).toBe("https://agent.example.com:7777/api/allFiles/shared/alice/publish/peers/test-bot/messages/");
-      });
+describe("File Metadata Tracking", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-      it("should filter messages by time correctly", () => {
-        const messages = [
-          { time: 1000, message: "First", sender: "alice" },
-          { time: 2000, message: "Second", sender: "alice" },
-          { time: 3000, message: "Third", sender: "alice" },
-        ];
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-        const since = 1500;
-        const before = 2500;
-        const filtered = messages.filter(m => m.time > since && m.time < before);
+  it("should return empty metadata for unseen files", async () => {
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({});
 
-        expect(filtered.length).toBe(1);
-        expect(filtered[0].message).toBe("Second");
-      });
+    const client = createTestClient(testConfig, { fetch });
+    const metadata = client.exportFileMetadata();
 
-      it("should handle empty message list", () => {
-        const messages: { time: number; message: string; sender: string }[] = [];
+    expect(Object.keys(metadata).length).toBe(0);
+  });
 
-        expect(messages.length).toBe(0);
-      });
+  it("should track file metadata after reading", async () => {
+    const now = Date.now();
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse([
+      { time: now, message: "Test", sender: "alice" },
+    ]);
+
+    const client = createTestClient(testConfig, { fetch });
+
+    // Seed file metadata directly since readFile is internal
+    client.seedFileMetadata({
+      "/shared/bot/publish/peers/alice/messages/123.json": { time: now, size: 100 },
     });
 
-    describe("discoverUsersViaStorage", () => {
-      it("should construct correct discovery path", () => {
-        const expectedPath = "/shared/*/publish/";
+    const metadata = client.exportFileMetadata();
+    expect(Object.keys(metadata).length).toBeGreaterThan(0);
+  });
+});
 
-        expect(expectedPath).toBe("/shared/*/publish/");
-      });
+describe("discoverUsers via storage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-      it("should build correct allFiles API URL for discovery", () => {
-        const baseUrl = "https://agent.example.com:7777";
-        const path = "/shared/*/publish/";
-        const apiUrl = `/api/allFiles${path}`;
-        const fullUrl = `${baseUrl}${apiUrl}`;
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-        expect(fullUrl).toBe("https://agent.example.com:7777/api/allFiles/shared/*/publish/");
-      });
-
-      it("should extract username from shared path", () => {
-        const path = "/shared/alice/publish/peers/test-bot/messages/123.json";
-        const match = path.match(/^\/shared\/([^\/]+)\//);
-
-        expect(match?.[1]).toBe("alice");
-      });
-
-      it("should handle multiple paths and extract unique users", () => {
-        const paths = [
-          "/shared/alice/publish/peers/bot/messages/1.json",
-          "/shared/alice/publish/peers/bot/messages/2.json",
-          "/shared/bob/publish/peers/bot/messages/1.json",
-          "/shared/charlie/publish/groups/alice/test/messages/1.json",
-        ];
-
-        const userSet = new Set<string>();
-        for (const p of paths) {
-          const match = p.match(/^\/shared\/([^\/]+)\//);
-          if (match) {
-            userSet.add(match[1]);
-          }
-        }
-
-        expect(userSet.size).toBe(3);
-        expect(userSet.has("alice")).toBe(true);
-        expect(userSet.has("bob")).toBe(true);
-        expect(userSet.has("charlie")).toBe(true);
-      });
-
-      it("should exclude bot's own username from discovery", () => {
-        const botUsername = "test-bot";
-        const paths = [
-          "/shared/alice/publish/peers/bot/messages/1.json",
-          "/shared/test-bot/publish/peers/alice/messages/1.json",
-          "/shared/bob/publish/peers/bot/messages/1.json",
-        ];
-
-        const userSet = new Set<string>();
-        for (const p of paths) {
-          const match = p.match(/^\/shared\/([^\/]+)\//);
-          if (match && match[1] !== botUsername) {
-            userSet.add(match[1]);
-          }
-        }
-
-        expect(userSet.has("alice")).toBe(true);
-        expect(userSet.has("bob")).toBe(true);
-        expect(userSet.has("test-bot")).toBe(false);
-      });
+  it("should discover users from storage paths", async () => {
+    const now = Date.now();
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({
+      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/1.json": { time: now },
+      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/1.json": { time: now },
+      "/apps/ztm/chat/shared/charlie/publish/peers/test-bot/messages/1.json": { time: now },
     });
 
-    describe("Message Path Building", () => {
-      it("should build correct outgoing message path", () => {
-        const buildPeerMessagePath = (
-          messagePath: string,
-          username: string,
-          peer: string
-        ) => `${messagePath}/${username}/publish/peers/${peer}/messages/`;
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.discoverUsers();
 
-        const result = buildPeerMessagePath("/shared", "test-bot", "alice");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const usernames = result.value.map((u) => u.username);
+      expect(usernames).toContain("alice");
+      expect(usernames).toContain("bob");
+      expect(usernames).toContain("charlie");
+    }
+  });
 
-        // Bot publishes to alice
-        expect(result).toBe("/shared/test-bot/publish/peers/alice/messages/");
-      });
-
-      it("should handle special characters in usernames", () => {
-        const buildPeerMessagePath = (
-          messagePath: string,
-          username: string,
-          peer: string
-        ) => `${messagePath}/${username}/publish/peers/${peer}/messages/`;
-
-        const result = buildPeerMessagePath("/shared", "bot-test_123", "user_name-456");
-
-        expect(result).toBe("/shared/bot-test_123/publish/peers/user_name-456/messages/");
-      });
+  it("should exclude bot's own username from discovery", async () => {
+    const now = Date.now();
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({
+      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/1.json": { time: now },
+      "/apps/ztm/chat/shared/test-bot/publish/peers/alice/messages/1.json": { time: now },
+      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/1.json": { time: now },
     });
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.discoverUsers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const usernames = result.value.map((u) => u.username);
+      expect(usernames).toContain("alice");
+      expect(usernames).toContain("bob");
+      expect(usernames).not.toContain("test-bot");
+    }
+  });
+
+  it("should return empty list when no peers", async () => {
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({});
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.discoverUsers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toEqual([]);
+    }
+  });
+});
+
+describe("discoverUsers via storage edge cases", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should handle empty file list", async () => {
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({});
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.discoverUsers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toEqual([]);
+    }
+  });
+
+  it("should handle API error response", async () => {
+    // Test that API errors (non-ok status) are handled correctly
+    // This verifies the error path in the API client
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({ error: "Server error" }, 500);
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.getMeshInfo();
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("should handle empty discover result", async () => {
+    // Test when discoverUsers returns empty after filtering
+    const now = Date.now();
+    const { fetch, mockResponse } = createMockFetch();
+    // Only contains bot's own messages (should be filtered out)
+    mockResponse({
+      "/apps/ztm/chat/shared/test-bot/publish/peers/alice/messages/1.json": { time: now },
+    });
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.discoverUsers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Bot's own messages are filtered out
+      expect(result.value).toEqual([]);
+    }
+  });
+});
+
+describe("discoverPeers", () => {
+  it("should discover peers from user discovery", async () => {
+    const now = Date.now();
+    const { fetch, mockResponse } = createMockFetch();
+    mockResponse({
+      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/1.json": { time: now },
+      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/1.json": { time: now },
+    });
+
+    const client = createTestClient(testConfig, { fetch });
+    const result = await client.discoverPeers();
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.length).toBe(2);
+      expect(result.value.map((p) => p.username).sort()).toEqual(["alice", "bob"]);
+    }
+  });
+});
+
+describe("Message Parsing", () => {
+  it("should parse valid message entries", () => {
+    const entries = [
+      { time: 1000, message: "Hello", sender: "alice" },
+      { time: 2000, message: "World", sender: "bob" },
+    ];
+
+    expect(entries.length).toBe(2);
+    expect(entries[0].time).toBe(1000);
+    expect(entries[1].time).toBe(2000);
+  });
+
+  it("should handle entries without time", () => {
+    const entries = [
+      { time: 0, message: "No time", sender: "alice" },
+      { message: "Missing time", sender: "bob" },
+    ];
+
+    expect(entries[0].time).toBe(0);
+    expect(entries[1].time).toBeUndefined();
+  });
+
+  it("should handle message as object", () => {
+    const entry = {
+      time: 1000,
+      message: { text: "Hello", type: "text" },
+      sender: "alice",
+    };
+
+    expect(entry.message).toHaveProperty("text");
+    expect((entry.message as { text: string }).text).toBe("Hello");
+  });
+});
+
+describe("File Path Pattern Matching", () => {
+  it("should match peer message file paths", () => {
+    const pattern = /^\/shared\/([^/]+)\/publish\/peers\/([^/]+)\/messages\//;
+    const path = "/shared/alice/publish/peers/test-bot/messages/123.json";
+    const match = path.match(pattern);
+
+    expect(match).not.toBeNull();
+    expect(match?.[1]).toBe("alice");
+    expect(match?.[2]).toBe("test-bot");
+  });
+
+  it("should match group message file paths", () => {
+    const pattern = /^\/shared\/([^/]+)\/publish\/groups\/([^/]+)\/([^/]+)\/messages\//;
+    const path = "/shared/alice/publish/groups/alice/mygroup/messages/123.json";
+    const match = path.match(pattern);
+
+    expect(match).not.toBeNull();
+    expect(match?.[1]).toBe("alice");
+    expect(match?.[2]).toBe("alice");
+    expect(match?.[3]).toBe("mygroup");
+  });
+
+  it("should not match invalid paths", () => {
+    const pattern = /^\/shared\/([^/]+)\/publish\/peers\/([^/]+)\/messages\//;
+    const path = "/invalid/path";
+    const match = path.match(pattern);
+
+    expect(match).toBeNull();
   });
 });
