@@ -101,7 +101,7 @@ const hashMap = ref({});
 const buildMessage = (item,init) => {
 	const _msg = {
 		id:item.time,
-		html: '',
+		// html: '',
 		// html:`<button class="download-button" title="sdkbqwkejnqwkjehkqweh">test2</button>`,
 		endpoint:item.sender,
 		role: user.value != item.sender?item.sender:'user'
@@ -109,7 +109,7 @@ const buildMessage = (item,init) => {
 	}
 	if(!!item.message?.text){
 		_msg.key = item.message?.text+(new Date().getTime());
-		_msg.html = `<pre style="white-space: pre-wrap;color:${user.value != item.sender?'black':'white'} !important;word-wrap: break-word;overflow-wrap: break-word;background:transparent;margin:0;max-width:600px;padding:0">${item.message?.text}</pre>`;
+		_msg.text = item.message?.text;//use markdown//`<pre style="white-space: pre-wrap;color:${user.value != item.sender?'black':'white'} !important;word-wrap: break-word;overflow-wrap: break-word;background:transparent;margin:0;max-width:600px;padding:0">${item.message?.text}</pre>`;
 	}
 	if(!!item.message?.files?.length){
 		_msg.files = []
