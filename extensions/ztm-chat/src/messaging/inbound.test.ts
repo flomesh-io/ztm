@@ -8,11 +8,11 @@ import {
   type ZTMChatMessage,
   type MessageCheckResult,
 } from "./inbound.js";
-import type { ZTMChatConfig } from "../config.js";
+import type { ZTMChatConfig } from "../types/config.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 
 // Mock dependencies
-vi.mock("../logger.js", () => ({
+vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),

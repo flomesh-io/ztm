@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatConfig } from "../config.js";
+import type { ZTMChatConfig } from "../types/config.js";
 
 // Track intervals created during tests
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
@@ -12,7 +12,7 @@ let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
 
 // Mock dependencies
-vi.mock("../logger.js", () => ({
+vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),

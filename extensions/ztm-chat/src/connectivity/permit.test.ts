@@ -5,7 +5,7 @@ import { requestPermit, savePermitData, handlePairingRequest } from "./permit.js
 import type { AccountRuntimeState } from "../runtime/state.js";
 
 // Mock dependencies
-vi.mock("../logger.js", () => ({
+vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -203,7 +203,7 @@ describe("Permit management functions", () => {
 
       await requestPermit("https://example.com/permit", "key", "user");
 
-      const { logger } = await import("../logger.js");
+      const { logger } = await import("../utils/logger.js");
       expect(logger.info).toHaveBeenCalledWith("Permit request successful");
     });
 
@@ -216,7 +216,7 @@ describe("Permit management functions", () => {
 
       await requestPermit("https://example.com/permit", "key", "user");
 
-      const { logger } = await import("../logger.js");
+      const { logger } = await import("../utils/logger.js");
       expect(logger.error).toHaveBeenCalled();
     });
   });
@@ -275,7 +275,7 @@ describe("Permit management functions", () => {
 
       savePermitData(permitData, testPermitPath);
 
-      const { logger } = await import("../logger.js");
+      const { logger } = await import("../utils/logger.js");
       expect(logger.info).toHaveBeenCalledWith(
         expect.stringContaining("Permit data saved to")
       );
@@ -287,7 +287,7 @@ describe("Permit management functions", () => {
 
       savePermitData(permitData, testPermitPath);
 
-      const { logger } = await import("../logger.js");
+      const { logger } = await import("../utils/logger.js");
       expect(logger.error).toHaveBeenCalled();
     });
   });

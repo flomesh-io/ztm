@@ -2,10 +2,10 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatConfig } from "../config.js";
+import type { ZTMChatConfig } from "../types/config.js";
 
 // Mock dependencies
-vi.mock("../logger.js", () => ({
+vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -30,8 +30,8 @@ vi.mock("./store.js", () => ({
     flush: vi.fn(),
     getWatermark: () => -1,
     setWatermark: () => {},
-    setFileTimes: () => {},
-    getFileTimes: () => ({}),
+    setFileMetadataBulk: () => {},
+    getFileMetadata: () => ({}),
   },
 }));
 
@@ -70,7 +70,7 @@ describe("Watch → Polling Fallback", () => {
         watchChanges: vi.fn(),
         getChats: vi.fn(() => []),
         getPeerMessages: vi.fn(() => []),
-        exportLastSeenTimes: () => ({}),
+        exportFileMetadata: () => ({}),
       } as any,
       connected: true,
       meshConnected: true,

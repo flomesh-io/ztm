@@ -38,7 +38,7 @@ function createMockState(): AccountRuntimeState {
 describe("Outbound message functions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mock("../logger.js", () => ({
+    vi.mock("../utils/logger.js", () => ({
       logger: {
         info: vi.fn(),
         warn: vi.fn(),

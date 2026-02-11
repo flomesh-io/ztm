@@ -71,12 +71,6 @@ export interface ZTMApiClient {
   /** Export current file metadata for persistence */
   exportFileMetadata(): Record<string, { time: number; size: number }>;
 
-  /** @deprecated Use seedFileMetadata instead */
-  seedLastSeenTimes(times: Record<string, number>): void;
-
-  /** @deprecated Use exportFileMetadata instead */
-  exportLastSeenTimes(): Record<string, number>;
-
   // Direct storage API methods (MVP implementation)
   /** Send message using direct storage API */
   sendMessageViaStorage(peer: string, message: ZTMMessage): Promise<boolean>;

@@ -2,7 +2,7 @@
 
 import { spawn } from "child_process";
 import * as net from "net";
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 
 // Check if a TCP port is open
 export async function checkPortOpen(hostname: string, port: number): Promise<boolean> {

@@ -19,13 +19,13 @@ import {
   type ZTMChatConfig,
   isConfigMinimallyValid,
   getDefaultConfig,
-} from "./config.js";
+} from './config/index.js';
 import {
   createZTMApiClient,
   type ZTMMeshInfo,
   type ZTMMessage,
-} from "./ztm-api.js";
-import { logger } from "./logger.js";
+} from "./api/ztm-api.js";
+import { logger } from "./utils/logger.js";
 import { messageStateStore, disposeMessageStateStore } from "./runtime/store.js";
 import {
   getOrCreateAccountState,

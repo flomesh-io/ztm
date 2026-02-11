@@ -92,7 +92,7 @@ vi.mock("./runtime/state.js", () => ({
 }));
 
 // Mock ZTM API client
-vi.mock("./ztm-api.js", () => ({
+vi.mock("./api/ztm-api.js", () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => Promise.resolve({
       connected: mockState.preCheckConnected,
@@ -126,7 +126,7 @@ vi.mock("./runtime.js", () => ({
   } as any),
 }));
 
-vi.mock("./logger.js", () => ({
+vi.mock("./utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -218,7 +218,7 @@ describe("startAccount E2E Tests", () => {
     it("should detect pre-existing mesh connection", async () => {
       mockState.preCheckConnected = true;
 
-      const { createZTMApiClient } = await import("./ztm-api.js");
+      const { createZTMApiClient } = await import("./api/ztm-api.js");
       const client = createZTMApiClient(baseConfig);
       const meshInfo = await client.getMeshInfo();
 

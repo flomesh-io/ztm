@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel.js";
 import { setZTMRuntime } from "./src/runtime.js";
-import { runWizard, discoverConfig } from "./src/wizard.js";
+import { runWizard, discoverConfig } from "./src/onboarding.js";
 
 // Set up global unhandled rejection handler in non-test environments
 // This ensures async errors are logged instead of being silently swallowed
@@ -20,7 +20,7 @@ export {
   discoverConfig,
   type WizardResult,
   type WizardPrompts,
-} from "./src/wizard.js";
+} from "./src/onboarding.js";
 
 export { disposeMessageStateStore } from "./src/channel.js";
 

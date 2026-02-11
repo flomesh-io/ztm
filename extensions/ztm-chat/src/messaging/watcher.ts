@@ -1,7 +1,7 @@
 // Message watching and polling for ZTM Chat
 // Monitors for new messages via Watch mechanism with fallback to polling
 
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime.js";
 import { messageStateStore } from "../runtime/store.js";
 import { startPollingWatcher } from "./polling.js";

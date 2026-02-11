@@ -1,6 +1,6 @@
 // Fallback polling watcher for ZTM Chat
 
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime.js";
 import { processIncomingMessage, notifyMessageCallbacks } from "./inbound.js";
 import type { AccountRuntimeState } from "../runtime/state.js";

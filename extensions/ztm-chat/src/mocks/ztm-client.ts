@@ -2,9 +2,9 @@
 // Simulates the ZTM Chat API endpoints
 
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import type { ZTMChatConfig } from "../config.js";
-import type { ZTMMessage } from "../ztm-api.js";
-import type { ZTMChat, ZTMPeer, ZTMUserInfo } from "../ztm-api.js";
+import type { ZTMChatConfig } from "../types/config.js";
+import type { ZTMMessage } from "../api/ztm-api.js";
+import type { ZTMChat, ZTMPeer, ZTMUserInfo } from "../api/ztm-api.js";
 
 // Test configuration
 export interface MockZTMConfig {

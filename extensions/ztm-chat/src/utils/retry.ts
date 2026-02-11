@@ -1,7 +1,7 @@
 // Retry utilities for ZTM Chat
 // Provides retry logic with exponential backoff for network operations
 
-import { logger } from "../logger.js";
+import { logger } from "./logger.js";
 
 export interface RetryOptions {
   maxRetries?: number;

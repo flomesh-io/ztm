@@ -1,7 +1,7 @@
 // Message callback dispatching for ZTM Chat
 // Handles notification of registered message callbacks
 
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 import { messageStateStore } from "../runtime/store.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";

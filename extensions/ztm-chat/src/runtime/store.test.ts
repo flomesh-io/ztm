@@ -134,105 +134,108 @@ describe("MessageStateStore", () => {
     });
   });
 
-  describe("getFileTimes", () => {
+  describe("getFileMetadata", () => {
     it("should return empty object for unknown account", () => {
       const store = createTestStore();
-      const times = store.getFileTimes("unknown-account-files");
-      expect(times).toEqual({});
+      const metadata = store.getFileMetadata("unknown-account-files");
+      expect(metadata).toEqual({});
     });
 
-    it("should return set file times", () => {
+    it("should return set file metadata", () => {
       const store = createTestStore();
-      const times = { "/path/to/file1": 1000, "/path/to/file2": 2000 };
-      store.setFileTimes("test-account-12", times);
+      const metadata = {
+        "/path/to/file1": { time: 1000, size: 500 },
+        "/path/to/file2": { time: 2000, size: 1500 },
+      };
+      store.setFileMetadataBulk("test-account-12", metadata);
 
-      const retrieved = store.getFileTimes("test-account-12");
-      expect(retrieved).toEqual(times);
+      const retrieved = store.getFileMetadata("test-account-12");
+      expect(retrieved).toEqual(metadata);
     });
 
-    it("should return empty object when no file times set", () => {
+    it("should return empty object when no file metadata set", () => {
       const store = createTestStore();
-      const times = store.getFileTimes("test-account-fresh");
-      expect(times).toEqual({});
+      const metadata = store.getFileMetadata("test-account-fresh");
+      expect(metadata).toEqual({});
     });
   });
 
-  describe("setFileTime", () => {
-    it("should set a single file time", () => {
+  describe("setFileMetadata", () => {
+    it("should set a single file metadata", () => {
       const store = createTestStore();
-      store.setFileTime("test-account-13", "/path/to/file", 1234567890);
+      store.setFileMetadata("test-account-13", "/path/to/file", { time: 1234567890, size: 1000 });
 
-      const times = store.getFileTimes("test-account-13");
-      expect(times["/path/to/file"]).toBe(1234567890);
+      const metadata = store.getFileMetadata("test-account-13");
+      expect(metadata["/path/to/file"]).toEqual({ time: 1234567890, size: 1000 });
     });
 
-    it("should update existing file time", () => {
+    it("should update existing file metadata", () => {
       const store = createTestStore();
-      store.setFileTime("test-account-14", "/path/to/file", 1000);
-      store.setFileTime("test-account-14", "/path/to/file", 2000);
+      store.setFileMetadata("test-account-14", "/path/to/file", { time: 1000, size: 500 });
+      store.setFileMetadata("test-account-14", "/path/to/file", { time: 2000, size: 1500 });
 
-      const times = store.getFileTimes("test-account-14");
-      expect(times["/path/to/file"]).toBe(2000);
+      const metadata = store.getFileMetadata("test-account-14");
+      expect(metadata["/path/to/file"]).toEqual({ time: 2000, size: 1500 });
     });
 
     it("should handle multiple files", () => {
       const store = createTestStore();
-      store.setFileTime("test-account-15", "/file1", 1000);
-      store.setFileTime("test-account-15", "/file2", 2000);
-      store.setFileTime("test-account-15", "/file3", 3000);
+      store.setFileMetadata("test-account-15", "/file1", { time: 1000, size: 100 });
+      store.setFileMetadata("test-account-15", "/file2", { time: 2000, size: 200 });
+      store.setFileMetadata("test-account-15", "/file3", { time: 3000, size: 300 });
 
-      const times = store.getFileTimes("test-account-15");
-      expect(Object.keys(times).length).toBe(3);
+      const metadata = store.getFileMetadata("test-account-15");
+      expect(Object.keys(metadata).length).toBe(3);
     });
 
     it("should trigger cleanup when limit exceeded", () => {
       const store = createTestStore();
-      // Note: setFileTime doesn't trigger cleanup, only setWatermark does
-      // This test verifies that setFileTime can handle many files
+      // Note: setFileMetadata doesn't trigger cleanup, only setWatermark does
+      // This test verifies that setFileMetadata can handle many files
       for (let i = 0; i < 1100; i++) {
-        store.setFileTime("test-account-cleanup-files", `/cleanup/path${i}`, Date.now() + i);
+        store.setFileMetadata("test-account-cleanup-files", `/cleanup/path${i}`, { time: Date.now() + i, size: i });
       }
 
-      // The store accepts all file times (cleanup only happens on watermark updates)
-      const times = store.getFileTimes("test-account-cleanup-files");
-      expect(Object.keys(times).length).toBe(1100);
+      // The store accepts all file metadata (cleanup only happens on watermark updates)
+      const metadata = store.getFileMetadata("test-account-cleanup-files");
+      expect(Object.keys(metadata).length).toBe(1100);
     });
   });
 
-  describe("setFileTimes", () => {
-    it("should set multiple file times at once", () => {
+  describe("setFileMetadataBulk", () => {
+    it("should set multiple file metadata at once", () => {
       const store = createTestStore();
-      const times = {
-        "/path/to/file1": 1000,
-        "/path/to/file2": 2000,
-        "/path/to/file3": 3000,
+      const metadata = {
+        "/path/to/file1": { time: 1000, size: 100 },
+        "/path/to/file2": { time: 2000, size: 200 },
+        "/path/to/file3": { time: 3000, size: 300 },
       };
-      store.setFileTimes("test-account-17", times);
+      store.setFileMetadataBulk("test-account-17", metadata);
 
-      const retrieved = store.getFileTimes("test-account-17");
-      expect(retrieved).toEqual(times);
+      const retrieved = store.getFileMetadata("test-account-17");
+      expect(retrieved).toEqual(metadata);
     });
 
-    it("should merge with existing file times", () => {
+    it("should merge with existing file metadata", () => {
       const store = createTestStore();
-      store.setFileTime("test-account-18", "/existing", 500);
-      const newTimes = { "/new1": 1000, "/new2": 2000 };
-      store.setFileTimes("test-account-18", newTimes);
+      store.setFileMetadata("test-account-18", "/existing", { time: 500, size: 50 });
+      const newMetadata = { "/new1": { time: 1000, size: 100 }, "/new2": { time: 2000, size: 200 } };
+      store.setFileMetadataBulk("test-account-18", newMetadata);
 
-      const retrieved = store.getFileTimes("test-account-18");
-      expect(retrieved["/existing"]).toBe(500);
-      expect(retrieved["/new1"]).toBe(1000);
-      expect(retrieved["/new2"]).toBe(2000);
+      const retrieved = store.getFileMetadata("test-account-18");
+      expect(retrieved["/existing"]).toEqual({ time: 500, size: 50 });
+      expect(retrieved["/new1"]).toEqual({ time: 1000, size: 100 });
+      expect(retrieved["/new2"]).toEqual({ time: 2000, size: 200 });
     });
 
-    it("should overwrite existing file times", () => {
+    it("should overwrite existing file metadata", () => {
       const store = createTestStore();
-      store.setFileTime("test-account-19", "/file1", 1000);
-      store.setFileTimes("test-account-19", { "/file1": 2000, "/file2": 3000 });
+      store.setFileMetadata("test-account-19", "/file1", { time: 1000, size: 100 });
+      store.setFileMetadataBulk("test-account-19", { "/file1": { time: 2000, size: 200 }, "/file2": { time: 3000, size: 300 } });
 
-      const retrieved = store.getFileTimes("test-account-19");
-      expect(retrieved["/file1"]).toBe(2000); // Overwritten
-      expect(retrieved["/file2"]).toBe(3000);
+      const retrieved = store.getFileMetadata("test-account-19");
+      expect(retrieved["/file1"]).toEqual({ time: 2000, size: 200 }); // Overwritten
+      expect(retrieved["/file2"]).toEqual({ time: 3000, size: 300 });
     });
   });
 

@@ -7,5 +7,8 @@ export * from './concurrency.js';
 // Retry utilities
 export * from './retry.js';
 
+// Logger
+export * from './logger.js';
+
 // Type exports
 export type { Result, AsyncResult, ConnectionStatus, MessageDirection, PairingStatus } from '../types/common.js';

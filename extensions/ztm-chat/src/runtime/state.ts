@@ -1,8 +1,8 @@
 // Account runtime state management
 
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 import { messageStateStore } from "./store.js";
-import { createZTMApiClient } from "../ztm-api.js";
+import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
@@ -67,8 +67,8 @@ export async function initializeRuntime(
   try {
     const apiClient = createZTMApiClient(config);
 
-    const MAX_RETRIES = 10;
-    const RETRY_DELAY_MS = 2000;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 100;
     let meshInfo: ZTMMeshInfo | null = null;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {

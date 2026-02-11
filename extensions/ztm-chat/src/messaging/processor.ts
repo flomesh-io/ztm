@@ -1,7 +1,7 @@
 // Message processing for ZTM Chat
 // Normalizes and validates incoming messages
 
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 import { messageStateStore } from "../runtime/store.js";
 import { messageDeduplicator } from "./dedup.js";
 import { checkDmPolicy } from "../core/dm-policy.js";

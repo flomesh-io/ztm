@@ -347,7 +347,7 @@ describe("ZTM API Client", () => {
     let mockAgent: Awaited<ReturnType<typeof createMockAgent>>;
 
     async function createMockAgent() {
-      const { MockZTMClient, createMockConfig } = await import("./mocks/ztm-client.js");
+      const { MockZTMClient, createMockConfig } = await import("../mocks/ztm-client.js");
       const config = createMockConfig();
       const client = new MockZTMClient(config);
       await client.start();

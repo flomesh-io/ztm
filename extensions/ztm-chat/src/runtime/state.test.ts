@@ -19,13 +19,13 @@ const mockApiState = {
   }),
 };
 
-vi.mock("../ztm-api.js", () => ({
+vi.mock("../api/ztm-api.js", () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => mockApiState.getMeshInfo(),
   })),
 }));
 
-vi.mock("../logger.js", () => ({
+vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -216,6 +216,7 @@ describe("Account Runtime State Management", () => {
   });
 
   describe("initializeRuntime", () => {
+
     it("should initialize runtime for valid config", async () => {
       const initialized = await initializeRuntime(testConfig, testAccountId);
 
@@ -281,6 +282,7 @@ describe("Account Runtime State Management", () => {
   });
 
   describe("stopRuntime", () => {
+
     it("should stop runtime for account", async () => {
       // First initialize
       await initializeRuntime(testConfig, testAccountId);
@@ -391,6 +393,7 @@ describe("Account Runtime State Management", () => {
   });
 
   describe("multi-account management", () => {
+
     it("should manage multiple independent accounts", async () => {
       const config1 = { ...testConfig, username: "bot1" };
       const config2 = { ...testConfig, username: "bot2" };

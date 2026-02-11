@@ -2,9 +2,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime.js";
-import type { ZTMMessage, ZTMApiClient } from "../ztm-api.js";
+import type { ZTMMessage, ZTMApiClient } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 
 // Request permit from permit server

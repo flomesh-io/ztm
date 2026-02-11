@@ -11,7 +11,7 @@ import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
 // Mock dependencies
-vi.mock("../logger.js", () => ({
+vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -178,7 +178,7 @@ describe("Message Dispatcher", () => {
 
     it("should log cleared callback count", async () => {
       mockState.messageCallbacks = new Set([vi.fn(), vi.fn()]);
-      const { logger } = await import("../logger.js");
+      const { logger } = await import("../utils/logger.js");
 
       clearCallbacks(mockState);
 

@@ -4,7 +4,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 
 export interface FileMetadata {
   time: number;
@@ -190,30 +190,6 @@ export class MessageStateStore {
       this.data.fileMetadata[accountId][fp] = m;
     }
     this.scheduleSave();
-  }
-
-  /** @deprecated Use getFileMetadata instead */
-  getFileTimes(accountId: string): Record<string, number> {
-    const metadata = this.data.fileMetadata[accountId] ?? {};
-    const times: Record<string, number> = {};
-    for (const [path, meta] of Object.entries(metadata)) {
-      times[path] = meta.time;
-    }
-    return times;
-  }
-
-  /** @deprecated Use setFileMetadata instead */
-  setFileTime(accountId: string, filePath: string, time: number): void {
-    this.setFileMetadata(accountId, filePath, { time, size: 0 });
-  }
-
-  /** @deprecated Use setFileMetadataBulk instead */
-  setFileTimes(accountId: string, times: Record<string, number>): void {
-    const metadata: Record<string, FileMetadata> = {};
-    for (const [path, time] of Object.entries(times)) {
-      metadata[path] = { time, size: 0 };
-    }
-    this.setFileMetadataBulk(accountId, metadata);
   }
 
   /** Dispose of resources - call on plugin unload to prevent memory leaks */

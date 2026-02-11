@@ -1,6 +1,6 @@
 // Message deduplication with LRU-like behavior
 
-import { logger } from "../logger.js";
+import { logger } from "../utils/logger.js";
 
 export interface DedupeEntry {
   sender: string;

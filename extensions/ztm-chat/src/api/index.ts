@@ -1,15 +1,5 @@
-// ZTM Chat API Module
-// Barrel export for all API-related functionality
+// ZTM API Client
+// HTTP communication with remote ZTM Agent for Chat operations
 
-// Re-export from main ztm-api.ts for backward compatibility
-export * from '../ztm-api.js';
-
-// Type exports
-export type {
-  ZTMMessage,
-  ZTMPeer,
-  ZTMUserInfo,
-  ZTMMeshInfo,
-  ZTMChat,
-  ZTMApiClient
-} from '../types/api.js';
+export * from './ztm-api.js';
+export * from '../types/api.js';

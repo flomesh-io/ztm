@@ -34,5 +34,5 @@ export interface ZTMChatConfigValidation {
 }
 
 // Re-export TypeBox schema for external use
-export { ZTMChatConfigSchema } from '../config.js';
+export { ZTMChatConfigSchema } from '../config/index.js';
 export type { Static } from "@sinclair/typebox";

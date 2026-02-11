@@ -1,7 +1,7 @@
 // Outbound message sending for ZTM Chat
 
-import { logger } from "../logger.js";
-import { type ZTMMessage } from "../ztm-api.js";
+import { logger } from "../utils/logger.js";
+import { type ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 
 // Helper to generate unique message ID
