@@ -3,6 +3,7 @@
 import db from './db.js'
 import ca from './ca.js'
 import client from './client.js'
+import tricli from './trial.js'
 import cmdline from './cmdline.js'
 
 try {
@@ -307,6 +308,39 @@ function doCommand(meshName, epName, argv, program) {
         title: `Revoke a permit and block the user from joining the mesh`,
         usage: 'evict <username>',
         action: (args) => selectMesh(meshName).then(mesh => evict(args['<username>'], mesh)),
+      },
+
+      {
+        title: `Try using services of a certain type`,
+        usage: 'try <service type>',
+        options: `
+          --mesh-name       <mesh name>       Specify a mesh name
+          --user-name       <user name>       Specify a user name
+          --ep-name         <ep name>         Specify an endpoint name seen by others within the mesh
+          --pass-key        <pass key>        Specify a pass key
+          --permit          <pathname>        Specify an output file to write the user permit to
+                                              Print the user permit to stdout if not specified
+          For inbound end:
+
+          --master          <master>          Specify master endpoint name
+          --listen          <[ip:]port ...>   Set local ports to listen on
+
+          For outbound end:
+
+          --targets         <host:port ...>   Set targets to connect to
+        `,
+        notes: `
+          Available service types include:
+            openclaw
+        `,
+        action: (args) => {
+          var type = args['<service type>']
+          switch (type) {
+            case 'openclaw':
+              return tryOpenclaw(args['--mesh-name'], args['--user-name'], args['--pass-key'], args['--ep-name'], args['--permit'], args['--targets'], args['--master'], args['--listen'])
+            default: return invalidServiceType(type, 'try')
+          }
+        }
       },
 
       {
@@ -706,6 +740,83 @@ function root(dataDir, pqcSigAlg, caURL, names) {
 
   return generateRootPermit(dataDir, pqcSigAlg, caURL, names).then(
     permit => println(permit)
+  )
+}
+
+
+//
+// Command: tryOpenclaw
+//
+
+function tryOpenclaw(meshName, userName, passKey, epName, permitPathname, targets, master, listen) {
+  if (!meshName) throw 'mesh name not specified (with option --mesh-name)'
+  if (!userName) throw 'user name not specified (with option --user-name)'
+  if (!epName) throw 'endpoint name not specified (with option --ep-name)'
+  if (master && !listen) throw 'listen not specified (with option --listen)'
+  if (listen && !master) throw 'master not specified (with option --master)'
+
+
+  return client.get('/api/identity').then(
+    ret => {
+      var publicKey = ret.toString()
+      return tricli.post('/invite', 
+        JSON.encode({ 
+          PublicKey: publicKey, 
+          UserName: userName,
+          EpName: epName,
+          PassKey: passKey
+        })
+      ).then(
+        ret => {
+          var res = JSON.decode(ret)
+
+          userName = res.UserName
+          epName = res.EpName
+
+          if (!permitPathname) {
+            permitPathname = `${os.home()}/.ztm.permit.json`
+          }
+
+          try {
+            os.write(permitPathname, res.Permit)
+          } catch {
+            throw `cannot write to file: ${os.path.resolve(permitPathname)}`
+          }
+
+          println(`User Name: ${userName}`)
+          println(`Ep Name: ${epName}`)
+          println(`Permit file saved to: ${os.path.resolve(permitPathname)}`)
+
+          return join(meshName, epName, permitPathname).then(
+            () => {
+              if(targets){
+                var targetsStr = targets.join(',')
+                return new Timeout(5).wait().then(
+                  () => selectMeshEndpoint(meshName, epName).then(
+                    ({ mesh, ep }) => {
+                      var argv = ['tunnel', 'open', 'outbound', `tcp/openclaw@${epName}` ,'--targets', targetsStr, '--users', userName]
+                      return callApp(argv, mesh, ep)
+                    }
+                  )
+                )
+              }
+
+              if(listen && master){
+                var targetsStr = targets.join(',')
+                return new Timeout(5).wait().then(
+                  () => selectMeshEndpoint(meshName, epName).then(
+                    ({ mesh, ep }) => {
+                      var argv = ['tunnel', 'open', 'inbound', `tcp/openclaw@${master}` ,'--listen', listen]
+                      return callApp(argv, mesh, ep)
+                    }
+                  )
+                )
+              }
+            }
+          )
+        }
+      )
+    }
   )
 }
 
@@ -1861,6 +1972,10 @@ function uri(s) {
 
 function invalidObjectType(type, command) {
   throw `invalid object type '${type}' for command '${command}'`
+}
+
+function invalidServiceType(type, command) {
+  throw `invalid service type '${type}' for command '${command}'`
 }
 
 function normalizeName(name) {
