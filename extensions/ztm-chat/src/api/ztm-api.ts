@@ -67,6 +67,20 @@ const DEFAULT_TIMEOUT = 30000;
 const MAX_TRACKED_FILES = 500;
 
 /**
+ * Escape special regex characters in string literals
+ */
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Pre-compiled regex patterns for performance
+ */
+function createPeerMessagePattern(username: string): RegExp {
+  return new RegExp(`^/apps/ztm/chat/shared/([^/]+)/publish/peers/${escapeRegExp(username)}/messages/`);
+}
+
+/**
  * Create ZTM API Client with dependency injection
  */
 export function createZTMApiClient(
@@ -184,13 +198,12 @@ export function createZTMApiClient(
     return request<void>("POST", `/api/meshes/${config.meshName}/file-data${filePath}`, data);
   }
 
-  const peerMessagePattern = new RegExp(
-    `^/apps/ztm/chat/shared/([^/]+)/publish/peers/${config.username}/messages/`
-  );
+  // Pre-compiled regex pattern for peer message path matching
+  const peerMessagePattern = createPeerMessagePattern(config.username);
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // Helper: Parse message file content with error handling
-  // ═════════════════════════════════════════════════════════════════════════════
+  // Helper: Find latest file for each peer from file list
+  // ════════════════════════════════════════════════════════════════════════
   function parseMessageFileWithResult(
     fileContent: unknown,
     peer: string,
