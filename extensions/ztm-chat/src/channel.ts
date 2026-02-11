@@ -48,16 +48,16 @@ import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "./connectivit
 import { requestPermit, savePermitData, handlePairingRequest } from "./connectivity/permit.js";
 
 // Local type extension for ChannelStatusIssue with level property
-type ChannelStatusIssue = BaseChannelStatusIssue & {
+interface ChannelStatusIssue extends BaseChannelStatusIssue {
   level?: "error" | "warn" | "info";
   message: string;
-};
+}
 
 // Local type extension for ChannelAccountSnapshot with additional properties
-type ChannelAccountSnapshot = BaseChannelAccountSnapshot & {
+interface ChannelAccountSnapshot extends BaseChannelAccountSnapshot {
   meshConnected?: boolean;
   peerCount?: number;
-};
+}
 
 // Local type for resolved ZTM chat account
 export interface ResolvedZTMChatAccount {
