@@ -802,11 +802,11 @@ function tryOpenclaw(meshName, userName, passKey, epName, permitPathname, target
               }
 
               if(listen && master){
-                var targetsStr = targets.join(',')
                 return new Timeout(5).wait().then(
                   () => selectMeshEndpoint(meshName, epName).then(
                     ({ mesh, ep }) => {
-                      var argv = ['tunnel', 'open', 'inbound', `tcp/openclaw@${master}` ,'--listen', listen]
+                      var listenStr = listen.join(',')
+                      var argv = ['tunnel', 'open', 'inbound', `tcp/openclaw@${master}` ,'--listen', listenStr]
                       return callApp(argv, mesh, ep)
                     }
                   )
