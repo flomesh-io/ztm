@@ -20,6 +20,9 @@ export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClie
 // Default timeout for API requests (in milliseconds)
 const DEFAULT_TIMEOUT = 30000;
 
+// Maximum number of tracked files to prevent memory leaks
+const MAX_TRACKED_FILES = 500;
+
 // Create ZTM API Client
 export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logger): ZTMApiClient {
   // Use injected logger or fall back to module-level logger
@@ -84,6 +87,14 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
     size: number;
   }
   const lastSeenFiles = new Map<string, FileMetadata>();
+
+  // Clean up oldest entries when reaching the limit to prevent memory leaks
+  function trimFileMetadata(): void {
+    while (lastSeenFiles.size > MAX_TRACKED_FILES) {
+      const firstKey = lastSeenFiles.keys().next().value;
+      lastSeenFiles.delete(firstKey);
+    }
+  }
 
   // ZTM Chat stores messages as [{time, message:{text}}, ...]
   function parseMessageFile(fileContent: unknown, peer: string): ZTMMessage[] {
@@ -294,6 +305,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           if (timeChanged || sizeChanged) {
             changedPaths.push(filePath);
             lastSeenFiles.set(filePath, { time: fileTime, size: fileSize });
+            trimFileMetadata();
             log.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, size=${fileSize}, lastTime=${lastSeen?.time}, lastSize=${lastSeen?.size})`);
           }
         }
@@ -329,6 +341,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           lastSeenFiles.set(filePath, meta);
         }
       }
+      trimFileMetadata();
     },
 
     exportFileMetadata(): Record<string, { time: number; size: number }> {
