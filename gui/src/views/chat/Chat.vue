@@ -109,7 +109,7 @@ const buildMessage = (item) => {
 	}
 	if(!!item.message?.text){
 		_msg.key = item.message?.text;
-		_msg.html = item.message?.text;
+		_msg.html = `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;margin:0;max-width:600px">${item.message?.text}</pre>`;
 	}
 	if(!!item.message?.files?.length){
 		_msg.files = []

@@ -81,7 +81,7 @@ const msgHtml = (msg, toolcall) => {
 			rplMsg = rplMsg.replace(/(.*)\[((http|https):[^\]]*)(.*)/g,'$1 <a class="toolcall-link" href="$2" target="_blank">$2</a> $4')
 		})
 		
-		return `<pre style="white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${rplMsg}</pre>`;
+		return `<pre style="max-width:600px;white-space: pre-wrap;word-wrap: break-word;overflow-wrap: break-word;background:transparent;color:var(--p-text-color);margin:0;">${rplMsg}</pre>`;
 	} 
 }
 const openToolcallEditor = ref(false);
