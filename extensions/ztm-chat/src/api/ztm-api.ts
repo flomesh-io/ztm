@@ -163,7 +163,8 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
 
         return Array.from(userSet).map(username => ({ username }));
       } catch (error) {
-        log.warn?.(`[ZTM API] Failed to discover users via storage: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error?.(`[ZTM API] Failed to discover users via storage: ${errorMessage}`);
         return [];
       }
     },
@@ -216,7 +217,8 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
 
         return chats;
       } catch (error) {
-        log.warn?.(`[ZTM API] Failed to get chats via storage: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error?.(`[ZTM API] Failed to get chats via storage: ${errorMessage}`);
         return [];
       }
     },
@@ -239,7 +241,8 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
                 messages.push(msg);
               }
             } catch (error) {
-              log.debug?.(`[ZTM API] Failed to read message file ${filePath}: ${error}`);
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              log.debug?.(`[ZTM API] Failed to read message file ${filePath}: ${errorMessage}`);
             }
           }
         }
@@ -248,7 +251,8 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         log.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
         return messages;
       } catch (error) {
-        log.warn?.(`[ZTM API] Failed to get peer messages from ${peer}: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error?.(`[ZTM API] Failed to get peer messages from ${peer}: ${errorMessage}`);
         return null;
       }
     },
@@ -263,7 +267,8 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         log.debug?.(`[ZTM API] Successfully sent message to peer "${peer}" at path=${messagePath}`);
         return true;
       } catch (error) {
-        log.error?.(`[ZTM API] Failed to send message to ${peer}: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error?.(`[ZTM API] Failed to send message to ${peer}: ${errorMessage}`);
         return false;
       }
     },
@@ -313,7 +318,8 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         log.debug?.(`[ZTM API] Watch complete: ${changedPaths.length} changed paths for prefix="${prefix}"`);
         return changedPaths;
       } catch (error) {
-        log.warn?.(`[ZTM API] Watch failed for ${prefix}: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error?.(`[ZTM API] Watch failed for ${prefix}: ${errorMessage}`);
         return [];
       }
     },
