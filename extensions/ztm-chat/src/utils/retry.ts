@@ -19,6 +19,11 @@ export interface RetryConfig {
   timeout: number;
 }
 
+/**
+ * Type for fetchWithRetry function - used for dependency injection
+ */
+export type FetchWithRetry = typeof fetchWithRetry;
+
 const DEFAULT_RETRY_CONFIG: RetryConfig = {
   maxRetries: 3,
   initialDelay: 1000,

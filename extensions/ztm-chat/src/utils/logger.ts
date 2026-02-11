@@ -3,6 +3,16 @@
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
+/**
+ * Logger interface for dependency injection
+ */
+export interface Logger {
+  debug: (message: string, context?: Record<string, unknown>) => void;
+  info: (message: string, context?: Record<string, unknown>) => void;
+  warn: (message: string, context?: Record<string, unknown>) => void;
+  error: (message: string, context?: Record<string, unknown>) => void;
+}
+
 interface LogEntry {
   timestamp: Date;
   level: LogLevel;
@@ -110,7 +120,10 @@ class ZTMChatLogger {
 }
 
 // Singleton instance
-export const logger = ZTMChatLogger.getInstance();
+export const logger: Logger = ZTMChatLogger.getInstance();
+
+// Default logger for dependency injection
+export const defaultLogger: Logger = logger;
 
 // Context-aware logger factory
 export function createLogger(context: Record<string, string>): {

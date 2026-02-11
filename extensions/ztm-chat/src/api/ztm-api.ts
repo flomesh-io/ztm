@@ -9,7 +9,7 @@ import type {
   ZTMUserInfo,
   ZTMMeshInfo,
   ZTMChat,
-  ZTMApiClient
+  ZTMApiClient,
 } from "../types/api.js";
 import { success, failure, type Result } from "../types/common.js";
 import {
@@ -21,11 +21,39 @@ import {
   ZtmParseError,
   ZtmError,
 } from "../types/errors.js";
-import { logger } from "../utils/logger.js";
-import { fetchWithRetry } from "../utils/retry.js";
+import { defaultLogger, type Logger } from "../utils/logger.js";
+import { fetchWithRetry, type FetchWithRetry } from "../utils/retry.js";
 
 // Re-export types for backward compatibility
 export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClient };
+
+/**
+ * Logger interface for dependency injection
+ */
+export interface ZtmLogger {
+  debug: (...args: unknown[]) => void;
+  info: (...args: unknown[]) => void;
+  warn: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+}
+
+/**
+ * Dependencies that can be injected into the API client
+ */
+export interface ZtmApiClientDeps {
+  logger: ZtmLogger;
+  fetch: typeof fetch;
+  fetchWithRetry: FetchWithRetry;
+}
+
+/**
+ * Default values for dependencies
+ */
+const defaultDeps: ZtmApiClientDeps = {
+  logger: defaultLogger,
+  fetch,
+  fetchWithRetry,
+};
 
 /**
  * Type alias for ZTM API operations that can fail with ZtmApiError
@@ -38,10 +66,18 @@ const DEFAULT_TIMEOUT = 30000;
 // Maximum number of tracked files to prevent memory leaks
 const MAX_TRACKED_FILES = 500;
 
-// Create ZTM API Client
-export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logger): ZTMApiClient {
-  // Use injected logger or fall back to module-level logger
-  const log = _logger ?? logger;
+/**
+ * Create ZTM API Client with dependency injection
+ */
+export function createZTMApiClient(
+  config: ZTMChatConfig,
+  deps: Partial<ZtmApiClientDeps> = {}
+): ZTMApiClient {
+  const { logger, fetch, fetchWithRetry: doFetchWithRetry }: ZtmApiClientDeps = {
+    ...defaultDeps,
+    ...deps,
+  };
+
   const baseUrl = config.agentUrl.replace(/\/$/, "");
   const apiTimeout = config.apiTimeout || DEFAULT_TIMEOUT;
 
@@ -63,7 +99,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
     };
 
     try {
-      const response = await fetchWithRetry(url, {
+      const response = await doFetchWithRetry(url, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
@@ -286,11 +322,11 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
     },
 
     async discoverUsersViaStorage(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
-      log.debug?.(`[ZTM API] Discovering users via storage`);
+      logger.debug?.(`[ZTM API] Discovering users via storage`);
 
       const fileListResult = await listFiles();
       if (!fileListResult.ok) {
-        log.error?.(`[ZTM API] Failed to list files for user discovery: ${fileListResult.error.message}`);
+        logger.error?.(`[ZTM API] Failed to list files for user discovery: ${fileListResult.error.message}`);
         return failure(new ZtmDiscoveryError({
           operation: "discoverUsers",
           source: "storage",
@@ -299,12 +335,12 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
       }
 
       const users = discoverUsersFromFileList(fileListResult.value);
-      log.debug?.(`[ZTM API] Discovered ${users.length} users via storage`);
+      logger.debug?.(`[ZTM API] Discovered ${users.length} users via storage`);
       return success(users);
     },
 
     async getChats(): Promise<Result<ZTMChat[], ZtmReadError>> {
-      log.debug?.(`[ZTM API] Getting chats via storage`);
+      logger.debug?.(`[ZTM API] Getting chats via storage`);
 
       const fileListResult = await listFiles();
       if (!fileListResult.ok) {
@@ -313,7 +349,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           operation: "list",
           cause: fileListResult.error,
         });
-        log.error?.(`[ZTM API] Failed to list files for chats: ${error.message}`);
+        logger.error?.(`[ZTM API] Failed to list files for chats: ${error.message}`);
         return failure(error);
       }
 
@@ -335,7 +371,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
             filePath: info.path,
             cause: readResult.error,
           });
-          log.debug?.(`[ZTM API] Failed to read chat file for ${peer}: ${readError.message}`);
+          logger.debug?.(`[ZTM API] Failed to read chat file for ${peer}: ${readError.message}`);
           errors.push(readError);
           chats.push(createEmptyChat(peer, info.time));
           continue;
@@ -343,7 +379,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
 
         const parseResult = parseMessageFileWithResult(readResult.value, peer, info.path);
         if (!parseResult.ok) {
-          log.debug?.(`[ZTM API] Failed to parse chat file for ${peer}: ${parseResult.error.message}`);
+          logger.debug?.(`[ZTM API] Failed to parse chat file for ${peer}: ${parseResult.error.message}`);
           errors.push(parseResult.error);
           chats.push(createEmptyChat(peer, info.time));
           continue;
@@ -367,7 +403,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         return failure(errors[0]);
       }
 
-      log.debug?.(`[ZTM API] Got ${chats.length} chats via storage`);
+      logger.debug?.(`[ZTM API] Got ${chats.length} chats via storage`);
       return success(chats);
     },
 
@@ -376,7 +412,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
       since?: number,
       before?: number
     ): Promise<Result<ZTMMessage[], ZtmReadError>> {
-      log.debug?.(`[ZTM API] Fetching messages from peer "${peer}" since=${since}, before=${before}`);
+      logger.debug?.(`[ZTM API] Fetching messages from peer "${peer}" since=${since}, before=${before}`);
 
       const messagePath = `/apps/ztm/chat/shared/${peer}/publish/peers/${config.username}/messages/`;
       const fileListResult = await listFiles();
@@ -387,7 +423,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           operation: "list",
           cause: fileListResult.error,
         });
-        log.error?.(`[ZTM API] Failed to list files for peer messages: ${error.message}`);
+        logger.error?.(`[ZTM API] Failed to list files for peer messages: ${error.message}`);
         return failure(error);
       }
 
@@ -406,14 +442,14 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
             filePath,
             cause: readResult.error,
           });
-          log.debug?.(`[ZTM API] Failed to read message file ${filePath}: ${readError.message}`);
+          logger.debug?.(`[ZTM API] Failed to read message file ${filePath}: ${readError.message}`);
           errors.push(readError);
           continue;
         }
 
         const parseResult = parseMessageFileWithResult(readResult.value, peer, filePath);
         if (!parseResult.ok) {
-          log.debug?.(`[ZTM API] Failed to parse message file ${filePath}: ${parseResult.error.message}`);
+          logger.debug?.(`[ZTM API] Failed to parse message file ${filePath}: ${parseResult.error.message}`);
           errors.push(parseResult.error);
           continue;
         }
@@ -432,12 +468,12 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         return failure(errors[0]);
       }
 
-      log.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
+      logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
       return success(messages);
     },
 
     async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>> {
-      log.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
+      logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
 
       const messagePath = `/apps/ztm/chat/shared/${config.username}/publish/peers/${peer}/messages/${message.time}.json`;
       // ZTM Chat expects array format: [{time, message:{text}}]
@@ -451,11 +487,11 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           contentPreview: message.message,
           cause: writeResult.error,
         });
-        log.error?.(`[ZTM API] Failed to send message to ${peer}: ${error.message}`);
+        logger.error?.(`[ZTM API] Failed to send message to ${peer}: ${error.message}`);
         return failure(error);
       }
 
-      log.debug?.(`[ZTM API] Successfully sent message to peer "${peer}" at path=${messagePath}`);
+      logger.debug?.(`[ZTM API] Successfully sent message to peer "${peer}" at path=${messagePath}`);
       return success(true);
     },
 
@@ -463,25 +499,25 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
       peer: string,
       message: ZTMMessage
     ): Promise<Result<boolean, ZtmSendError>> {
-      log.debug?.(`[ZTM API] Sending message via storage to peer "${peer}"`);
+      logger.debug?.(`[ZTM API] Sending message via storage to peer "${peer}"`);
       const result = await client.sendPeerMessage(peer, message);
-      log.debug?.(`[ZTM API] Message via storage ${result.ok ? "succeeded" : "failed"} for peer "${peer}"`);
+      logger.debug?.(`[ZTM API] Message via storage ${result.ok ? "succeeded" : "failed"} for peer "${peer}"`);
       return result;
     },
 
     async receiveMessagesViaStorage(
       peer: string
     ): Promise<Result<ZTMMessage[], ZtmReadError>> {
-      log.debug?.(`[ZTM API] Receiving messages via storage from peer "${peer}"`);
+      logger.debug?.(`[ZTM API] Receiving messages via storage from peer "${peer}"`);
       const result = await client.getPeerMessages(peer);
-      log.debug?.(`[ZTM API] Received ${result.ok ? result.value.length : 0} messages from peer "${peer}" via storage`);
+      logger.debug?.(`[ZTM API] Received ${result.ok ? result.value.length : 0} messages from peer "${peer}" via storage`);
       return result;
     },
 
     async watchChanges(
       prefix: string
     ): Promise<Result<string[], ZtmReadError>> {
-      log.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
+      logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
 
       // Get the minimum last seen time for the since parameter
       const lastSeenTimes = Array.from(lastSeenFiles.values()).map(m => m.time);
@@ -495,7 +531,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           operation: "list",
           cause: fileListResult.error,
         });
-        log.error?.(`[ZTM API] Watch failed for ${prefix}: ${error.message}`);
+        logger.error?.(`[ZTM API] Watch failed for ${prefix}: ${error.message}`);
         return failure(error);
       }
 
@@ -506,7 +542,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
         if (!filePath.startsWith(prefix)) continue;
         // Use type guard to safely access file metadata
         if (!isFileMeta(meta)) {
-          log.debug?.(`[ZTM API] Skipping file with invalid metadata: ${filePath}`);
+          logger.debug?.(`[ZTM API] Skipping file with invalid metadata: ${filePath}`);
           continue;
         }
         const fileTime = meta.time ?? 0;
@@ -521,16 +557,16 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
           changedPaths.push(filePath);
           lastSeenFiles.set(filePath, { time: fileTime, size: fileSize });
           trimFileMetadata();
-          log.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, size=${fileSize}, lastTime=${lastSeen?.time}, lastSize=${lastSeen?.size})`);
+          logger.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, size=${fileSize}, lastTime=${lastSeen?.time}, lastSize=${lastSeen?.size})`);
         }
       }
 
-      log.debug?.(`[ZTM API] Watch complete: ${changedPaths.length} changed paths for prefix="${prefix}"`);
+      logger.debug?.(`[ZTM API] Watch complete: ${changedPaths.length} changed paths for prefix="${prefix}"`);
       return success(changedPaths);
     },
 
     async getGroups(): Promise<Result<ZTMChat[], ZtmError>> {
-      log.debug?.(`[ZTM API] Groups feature not implemented yet`);
+      logger.debug?.(`[ZTM API] Groups feature not implemented yet`);
       return success<ZTMChat[], ZtmError>([]);
     },
 
@@ -538,14 +574,14 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
       _creator: string,
       _group: string
     ): Promise<Result<ZTMMessage[], ZtmReadError>> {
-      log.debug?.(`[ZTM API] Group messages feature not implemented yet`);
+      logger.debug?.(`[ZTM API] Group messages feature not implemented yet`);
       return success<ZTMMessage[], ZtmReadError>([]);
     },
 
     async addFile(
       _data: ArrayBuffer
     ): Promise<Result<string, ZtmError>> {
-      log.debug?.(`[ZTM API] File addition not implemented yet`);
+      logger.debug?.(`[ZTM API] File addition not implemented yet`);
       return success<string, ZtmError>("");
     },
 
@@ -553,7 +589,7 @@ export function createZTMApiClient(config: ZTMChatConfig, _logger?: typeof logge
       _owner: string,
       _hash: string
     ): Promise<Result<ArrayBuffer, ZtmReadError>> {
-      log.debug?.(`[ZTM API] File retrieval not implemented yet`);
+      logger.debug?.(`[ZTM API] File retrieval not implemented yet`);
       return success<ArrayBuffer, ZtmReadError>(new ArrayBuffer(0));
     },
 
