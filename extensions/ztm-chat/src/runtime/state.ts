@@ -3,28 +3,12 @@
 import { logger } from "../logger.js";
 import { messageStateStore } from "./store.js";
 import { createZTMApiClient } from "../ztm-api.js";
-import type { ZTMChatConfig } from "../config.js";
-import type { ZTMApiClient, ZTMMeshInfo } from "../ztm-api.js";
+import type { ZTMChatConfig } from "../types/config.js";
+import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
+import type { AccountRuntimeState } from "../types/runtime.js";
 
-// Runtime state per account
-export interface AccountRuntimeState {
-  accountId: string;
-  config: ZTMChatConfig;
-  apiClient: ZTMApiClient | null;
-  connected: boolean;
-  meshConnected: boolean;
-  lastError: string | null;
-  lastStartAt: Date | null;
-  lastStopAt: Date | null;
-  lastInboundAt: Date | null;
-  lastOutboundAt: Date | null;
-  peerCount: number;
-  messageCallbacks: Set<(message: import("../messaging/inbound.js").ZTMChatMessage) => void>;
-  watchInterval: ReturnType<typeof setInterval> | null;
-  watchErrorCount: number;
-  // Pairing state for dmPolicy="pairing"
-  pendingPairings: Map<string, Date>;
-}
+// Re-export types for backward compatibility
+export type { AccountRuntimeState };
 
 // Multi-account state management
 const accountStates = new Map<string, AccountRuntimeState>();

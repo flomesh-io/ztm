@@ -22,12 +22,16 @@ vi.mock("../logger.js", () => ({
 }));
 
 // Mock runtime with function that can be changed during tests
-let mockReadAllowFromFn = vi.fn(() => Promise.resolve([]));
+let mockReadAllowFromFn: (...args: unknown[]) => Promise<string[]> = vi.fn(() => Promise.resolve([]));
 vi.mock("../runtime.js", () => ({
   getZTMRuntime: () => ({
     channel: {
       pairing: {
-        readAllowFromStore: (...args: any[]) => mockReadAllowFromFn(...args),
+        readAllowFromStore: ((...args: unknown[]) => mockReadAllowFromFn(...args)) as (
+          domain: string,
+          username: string,
+          defaultList: string[]
+        ) => Promise<string[]>,
       },
     },
   }),
@@ -148,11 +152,12 @@ describe("Polling Watcher", () => {
     });
 
     it("should poll chats when interval callback executes", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: Date.now(), message: "Hello" } },
-        { peer: "bob", latest: { time: Date.now(), message: "Hi" } },
+        { peer: "alice", latest: { time: now, message: "Hello" }, time: now, updated: now },
+        { peer: "bob", latest: { time: now, message: "Hi" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       await startPollingWatcher(mockState);
 
@@ -165,11 +170,12 @@ describe("Polling Watcher", () => {
     });
 
     it("should skip messages from self (bot username)", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "test-bot", latest: { time: Date.now(), message: "Self message" } },
-        { peer: "alice", latest: { time: Date.now(), message: "Hello" } },
+        { peer: "test-bot", latest: { time: now, message: "Self message" }, time: now, updated: now },
+        { peer: "alice", latest: { time: now, message: "Hello" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -192,11 +198,12 @@ describe("Polling Watcher", () => {
     });
 
     it("should skip chats without peer", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: null, latest: { time: Date.now(), message: "No peer" } },
-        { peer: "alice", latest: { time: Date.now(), message: "Hello" } },
+        { peer: null, latest: { time: now, message: "No peer" }, time: now, updated: now },
+        { peer: "alice", latest: { time: now, message: "Hello" }, time: now, updated: now },
       ] as any;
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -210,11 +217,12 @@ describe("Polling Watcher", () => {
     });
 
     it("should skip chats without latest message", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: null },
-        { peer: "bob", latest: { time: Date.now(), message: "Hi" } },
+        { peer: "alice", latest: null, time: now, updated: now },
+        { peer: "bob", latest: { time: now, message: "Hi" }, time: now, updated: now },
       ] as any;
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -243,10 +251,11 @@ describe("Polling Watcher", () => {
     });
 
     it("should process valid messages through inbound pipeline", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: 1234567890, message: "Test message" } },
+        { peer: "alice", latest: { time: 1234567890, message: "Test message" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { processIncomingMessage, notifyMessageCallbacks } = await import("./inbound.js");
       const mockNormalizedMessage = {
@@ -280,11 +289,12 @@ describe("Polling Watcher", () => {
     });
 
     it("should check DM policy for each peer", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: Date.now(), message: "Hello" } },
-        { peer: "bob", latest: { time: Date.now(), message: "Hi" } },
+        { peer: "alice", latest: { time: now, message: "Hello" }, time: now, updated: now },
+        { peer: "bob", latest: { time: now, message: "Hi" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { checkDmPolicy } = await import("./inbound.js");
 
@@ -298,10 +308,11 @@ describe("Polling Watcher", () => {
     });
 
     it("should trigger pairing request for new users", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "stranger", latest: { time: Date.now(), message: "Hello" } },
+        { peer: "stranger", latest: { time: now, message: "Hello" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { checkDmPolicy } = await import("./inbound.js");
       (checkDmPolicy as any).mockReturnValue({
@@ -327,10 +338,11 @@ describe("Polling Watcher", () => {
     });
 
     it("should read allowFrom store on each poll", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: Date.now(), message: "Hello" } },
+        { peer: "alice", latest: { time: now, message: "Hello" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       mockReadAllowFromFn = vi.fn(() => Promise.resolve(["alice", "bob"]));
 
@@ -344,10 +356,11 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle store read failures gracefully", async () => {
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: Date.now(), message: "Hello" } },
+        { peer: "alice", latest: { time: now, message: "Hello" }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       mockReadAllowFromFn = vi.fn(() => Promise.reject(new Error("Store read failed")));
 
@@ -362,7 +375,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle empty chat list", async () => {
-      mockState.apiClient.getChats = vi.fn(() => []);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve([]));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -377,10 +390,10 @@ describe("Polling Watcher", () => {
 
     it("should handle multiple messages from same peer", async () => {
       const mockChats = [
-        { peer: "alice", latest: { time: 1000, message: "First" } },
-        { peer: "alice", latest: { time: 2000, message: "Second" } },
+        { peer: "alice", latest: { time: 1000, message: "First" }, time: 1000, updated: 1000 },
+        { peer: "alice", latest: { time: 2000, message: "Second" }, time: 2000, updated: 2000 },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -396,10 +409,11 @@ describe("Polling Watcher", () => {
 
     it("should handle messages with special characters", async () => {
       const specialMessage = "Hello! 🌍 世界\nNew line\tTab";
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: Date.now(), message: specialMessage } },
+        { peer: "alice", latest: { time: now, message: specialMessage }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       await startPollingWatcher(mockState);
 
@@ -413,10 +427,11 @@ describe("Polling Watcher", () => {
 
     it("should handle very long messages", async () => {
       const longMessage = "a".repeat(10000);
+      const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: { time: Date.now(), message: longMessage } },
+        { peer: "alice", latest: { time: now, message: longMessage }, time: now, updated: now },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       await startPollingWatcher(mockState);
 
@@ -429,9 +444,9 @@ describe("Polling Watcher", () => {
 
     it("should handle messages with zero timestamp", async () => {
       const mockChats = [
-        { peer: "alice", latest: { time: 0, message: "Zero time" } },
+        { peer: "alice", latest: { time: 0, message: "Zero time" }, time: 0, updated: 0 },
       ];
-      mockState.apiClient.getChats = vi.fn(() => mockChats);
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(mockChats as any));
 
       await startPollingWatcher(mockState);
 

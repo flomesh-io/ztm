@@ -2,8 +2,17 @@
 // Handles HTTP communication with remote ZTM Agent for Chat operations
 // Supports both direct storage API access and Chat App HTTP endpoints
 
-import type { ZTMChatConfig } from "./config.js";
+import type { ZTMChatConfig } from "./types/config.js";
+import type {
+  ZTMMessage,
+  ZTMPeer,
+  ZTMUserInfo,
+  ZTMMeshInfo,
+  ZTMChat,
+  ZTMApiClient
+} from "./types/api.js";
 import { logger as ztmLogger } from "./logger.js";
+import { fetchWithRetry } from "./utils/retry.js";
 
 // Use actual logger if available, fallback to console
 const logger: {
@@ -18,144 +27,11 @@ const logger: {
   error: (...args: unknown[]) => console.error("[ZTM API]", ...args),
 };
 
-// ZTM Message interface - matches ZTM Agent API format
-export interface ZTMMessage {
-  time: number;
-  message: string;
-  sender: string;
-}
-
-// ZTM Peer interface
-export interface ZTMPeer {
-  username: string;
-  endpoint?: string;
-}
-
-// ZTM User Info interface
-export interface ZTMUserInfo {
-  username: string;
-  endpoint?: string;
-}
-
-// ZTM Mesh Info interface - matches /api/meshes/{name} response
-export interface ZTMMeshInfo {
-  name: string;
-  connected: boolean;
-  endpoints: number;
-  errors?: Array<{ time: string; message: string }>;
-}
-
-// ZTM Chat interface - matches /apps/ztm/chat/api/chats response
-export interface ZTMChat {
-  peer?: string;
-  creator?: string;
-  group?: string;
-  name?: string;
-  members?: string[];
-  time: number;
-  updated: number;
-  latest: ZTMMessage;
-}
-
-// ZTM API Client interface
-export interface ZTMApiClient {
-  // Mesh operations
-  getMeshInfo(): Promise<ZTMMeshInfo>;
-
-  // User/Peer discovery
-  discoverUsers(): Promise<ZTMUserInfo[]>;
-  discoverPeers(): Promise<ZTMPeer[]>;
-
-  // Chat operations (direct storage-based implementation)
-  getChats(): Promise<ZTMChat[]>;
-  getPeerMessages(peer: string, since?: number, before?: number): Promise<ZTMMessage[] | null>;
-  sendPeerMessage(peer: string, message: ZTMMessage): Promise<boolean>;
-
-  // Group operations (future)
-  getGroups(): Promise<ZTMChat[]>;
-  getGroupMessages(creator: string, group: string): Promise<ZTMMessage[] | null>;
-
-  // File operations
-  addFile(data: ArrayBuffer): Promise<string | null>;
-  getFile(owner: string, hash: string): Promise<ArrayBuffer | null>;
-
-  // Watch mechanism for real-time updates
-  watchChanges(prefix: string): Promise<string[]>;
-
-  /** Seed lastSeenTimes from persisted state (call before first watchChanges) */
-  seedLastSeenTimes(times: Record<string, number>): void;
-
-  /** Export current lastSeenTimes for persistence */
-  exportLastSeenTimes(): Record<string, number>;
-
-  // Direct storage API methods (MVP implementation)
-  /** Send message using direct storage API */
-  sendMessageViaStorage(peer: string, message: ZTMMessage): Promise<boolean>;
-  /** Receive messages using direct storage API */
-  receiveMessagesViaStorage(peer: string): Promise<ZTMMessage[] | null>;
-  /** Discover active peers by scanning shared storage */
-  discoverUsersViaStorage(): Promise<ZTMUserInfo[]>;
-}
+// Re-export types for backward compatibility
+export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClient };
 
 // Default timeout for API requests (in milliseconds)
 const DEFAULT_TIMEOUT = 30000;
-
-const MAX_RETRIES = 3;
-const RETRY_INITIAL_DELAY = 1000;
-const RETRY_MAX_DELAY = 10000;
-const RETRY_BACKOFF_MULTIPLIER = 2;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function getRetryDelay(attempt: number): number {
-  const delay = RETRY_INITIAL_DELAY * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1);
-  return Math.min(delay, RETRY_MAX_DELAY);
-}
-
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit = {},
-  timeoutMs: number = DEFAULT_TIMEOUT,
-  retries: number = MAX_RETRIES
-): Promise<Response> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (
-        !lastError.name.includes("AbortError") &&
-        !lastError.message.includes("timeout") &&
-        !lastError.message.includes("fetch") &&
-        !lastError.message.includes("network")
-      ) {
-        throw lastError;
-      }
-
-      if (attempt < retries) {
-        const delay = getRetryDelay(attempt + 1);
-        logger.warn?.(`[ZTM API] Request failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms: ${lastError.message}`);
-        await sleep(delay);
-      }
-    }
-  }
-
-  throw new Error(`Request failed after ${retries + 1} attempts: ${lastError?.message}`);
-}
 
 // Create ZTM API Client
 export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
@@ -175,11 +51,11 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
       ...additionalHeaders,
     };
 
-    const response = await fetchWithTimeout(url, {
+    const response = await fetchWithRetry(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
-    }, apiTimeout);
+    }, { timeout: apiTimeout });
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
