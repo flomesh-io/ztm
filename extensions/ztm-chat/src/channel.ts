@@ -2,6 +2,8 @@
 // Implements ChannelPlugin interface with multi-account support
 
 import * as fs from "fs";
+import * as path from "node:path";
+import { type TSchema } from "@sinclair/typebox";
 import type {
   buildChannelConfigSchema,
   ChannelPlugin,
@@ -62,7 +64,7 @@ export interface ResolvedZTMChatAccount {
   accountId: string;
   username: string;
   enabled: boolean;
-  config: Partial<ZTMChatConfig>;
+  config: ZTMChatConfig;
 }
 
 // Meta information for the channel
@@ -80,7 +82,7 @@ const meta = {
 
 // Build channel config schema with UI hints
 function buildChannelConfigSchemaWithHints(
-  schema: any
+  _schema: TSchema
 ) {
   return {
     schema: {},
@@ -141,7 +143,6 @@ function buildChannelConfigSchemaWithHints(
 // Read channel config from external file (~/.openclaw/ztm/config.json)
 function readExternalChannelConfig(): Record<string, unknown> | null {
   try {
-    const path = require("path");
     const configPath = path.join(
       process.env.HOME || "",
       ".openclaw",
@@ -160,7 +161,7 @@ function readExternalChannelConfig(): Record<string, unknown> | null {
 
 // Get effective channel config: cfg.channels["ztm-chat"] or external file fallback
 function getEffectiveChannelConfig(cfg?: OpenClawConfig): Record<string, unknown> | null {
-  const inlineConfig = (cfg?.channels?.["ztm-chat"] as any);
+  const inlineConfig = (cfg?.channels?.["ztm-chat"] as Record<string, unknown>);
   if (inlineConfig && typeof inlineConfig === "object" && Object.keys(inlineConfig).length > 0) {
     return inlineConfig;
   }
@@ -385,12 +386,12 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 0,
-    } as any, // Extended properties not in base ChannelAccountSnapshot type
+    } as ChannelAccountSnapshot,
     collectStatusIssues: (accounts: ChannelAccountSnapshot[]): ChannelStatusIssue[] => {
       // Extract cfg and accountId from the accounts array context
-      const firstAccount = accounts[0] as ChannelAccountSnapshot & { cfg?: OpenClawConfig };
-      const cfg = firstAccount?.cfg;
-      const accountId = firstAccount?.accountId;
+      const snapshot = accounts[0];
+      const cfg = (snapshot as ChannelAccountSnapshot & { cfg?: OpenClawConfig }).cfg;
+      const accountId = snapshot?.accountId;
 
       const issues: ChannelStatusIssue[] = [];
       const account = resolveZTMChatAccount({ cfg, accountId });
@@ -410,17 +411,20 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
 
       return issues;
     },
-    buildChannelSummary: ({ snapshot }) => ({
-      configured: snapshot.configured ?? false,
-      running: snapshot.running ?? false,
-      connected: (snapshot as ChannelAccountSnapshot).meshConnected ?? false,
-      lastStartAt: snapshot.lastStartAt ?? null,
-      lastStopAt: snapshot.lastStopAt ?? null,
-      lastError: snapshot.lastError ?? null,
-      lastInboundAt: snapshot.lastInboundAt ?? null,
-      lastOutboundAt: snapshot.lastOutboundAt ?? null,
-      peerCount: (snapshot as ChannelAccountSnapshot).peerCount ?? 0,
-    }),
+    buildChannelSummary: ({ snapshot }) => {
+      const extendedSnapshot = snapshot as ChannelAccountSnapshot;
+      return {
+        configured: snapshot.configured ?? false,
+        running: snapshot.running ?? false,
+        connected: extendedSnapshot.meshConnected ?? false,
+        lastStartAt: snapshot.lastStartAt ?? null,
+        lastStopAt: snapshot.lastStopAt ?? null,
+        lastError: snapshot.lastError ?? null,
+        lastInboundAt: snapshot.lastInboundAt ?? null,
+        lastOutboundAt: snapshot.lastOutboundAt ?? null,
+        peerCount: extendedSnapshot.peerCount ?? 0,
+      };
+    },
     probeAccount: async ({ account, timeoutMs = 10000 }) => {
       const config = account.config as ZTMChatConfig;
 
@@ -521,7 +525,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         throw new Error(validation.errors.join("; "));
       }
 
-      const path = require("path");
       const homeDir = process.env.HOME || "";
       const permitPath = path.join(homeDir, ".openclaw", "ztm", "permit.json");
       const endpointName = `${config.username}-ep`;
