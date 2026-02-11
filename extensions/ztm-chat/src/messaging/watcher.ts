@@ -33,7 +33,7 @@ export async function startMessageWatcher(
   const messagePath = "/apps/ztm/chat/shared/";
 
   // Step 1: Seed the API client's lastSeenTimes from persisted state
-  await seedFileTimestamps(state);
+  await seedFileMetadata(state);
 
   // Step 2: Get initial allowFrom store
   const rt = getZTMRuntime();
@@ -50,16 +50,16 @@ export async function startMessageWatcher(
 }
 
 /**
- * Seed API client with persisted file timestamps
+ * Seed API client with persisted file metadata
  */
-async function seedFileTimestamps(state: AccountRuntimeState): Promise<void> {
+async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
   if (!state.apiClient) return;
 
-  const persistedFileTimes = messageStateStore.getFileTimes(state.accountId);
-  if (Object.keys(persistedFileTimes).length > 0) {
-    state.apiClient.seedLastSeenTimes(persistedFileTimes);
+  const persistedMetadata = messageStateStore.getFileMetadata(state.accountId);
+  if (Object.keys(persistedMetadata).length > 0) {
+    state.apiClient.seedFileMetadata(persistedMetadata);
     logger.info(
-      `[${state.accountId}] Seeded ${Object.keys(persistedFileTimes).length} file timestamps from persisted state`
+      `[${state.accountId}] Seeded ${Object.keys(persistedMetadata).length} file metadata from persisted state`
     );
   }
 }
@@ -148,7 +148,7 @@ function startWatchLoop(
       logger.debug(`[${state.accountId}] Performing delayed full sync after inactivity`);
       await performFullSync(state, storeAllowFrom);
       if (state.apiClient) {
-        messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
+        messageStateStore.setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
       }
     }, FULL_SYNC_DELAY);
   };
@@ -174,7 +174,7 @@ function startWatchLoop(
       if (messagesReceivedInCycle) {
         scheduleFullSync(loopStoreAllowFrom);
         if (state.apiClient) {
-          messageStateStore.setFileTimes(state.accountId, state.apiClient.exportLastSeenTimes());
+          messageStateStore.setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
         }
       }
 

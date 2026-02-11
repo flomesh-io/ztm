@@ -65,10 +65,16 @@ export interface ZTMApiClient {
   // Watch mechanism for real-time updates
   watchChanges(prefix: string): Promise<string[]>;
 
-  /** Seed lastSeenTimes from persisted state (call before first watchChanges) */
+  /** Seed file metadata from persisted state (call before first watchChanges) */
+  seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
+
+  /** Export current file metadata for persistence */
+  exportFileMetadata(): Record<string, { time: number; size: number }>;
+
+  /** @deprecated Use seedFileMetadata instead */
   seedLastSeenTimes(times: Record<string, number>): void;
 
-  /** Export current lastSeenTimes for persistence */
+  /** @deprecated Use exportFileMetadata instead */
   exportLastSeenTimes(): Record<string, number>;
 
   // Direct storage API methods (MVP implementation)

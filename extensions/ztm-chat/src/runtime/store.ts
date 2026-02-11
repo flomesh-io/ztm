@@ -6,11 +6,16 @@ import * as fs from "fs";
 import * as path from "path";
 import { logger } from "../logger.js";
 
+export interface FileMetadata {
+  time: number;
+  size: number;
+}
+
 export interface MessageStateData {
   // Per-account → per-peer → last processed message timestamp
   accounts: Record<string, Record<string, number>>;
-  // Per-account → last seen file times (for watchChanges seeding)
-  fileTimes: Record<string, Record<string, number>>;
+  // Per-account → last seen file metadata (time + size for watchChanges seeding)
+  fileMetadata: Record<string, Record<string, FileMetadata>>;
 }
 
 export class MessageStateStore {
@@ -36,7 +41,7 @@ export class MessageStateStore {
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }
-    this.data = { accounts: {}, fileTimes: {} };
+    this.data = { accounts: {}, fileMetadata: {} };
     this.load();
   }
 
@@ -46,9 +51,24 @@ export class MessageStateStore {
         const content = fs.readFileSync(this.statePath, "utf-8");
         const parsed = JSON.parse(content);
         if (parsed && typeof parsed === "object") {
+          // Migrate from old fileTimes format (Record<string, number>) to new fileMetadata format
+          const fileMetadata: Record<string, Record<string, FileMetadata>> = {};
+          if (parsed.fileMetadata) {
+            // New format
+            Object.assign(fileMetadata, parsed.fileMetadata);
+          } else if (parsed.fileTimes) {
+            // Old format: migrate time to metadata with size 0
+            for (const [accountId, files] of Object.entries(parsed.fileTimes as Record<string, Record<string, number>>)) {
+              fileMetadata[accountId] = {};
+              for (const [path, time] of Object.entries(files)) {
+                fileMetadata[accountId][path] = { time, size: 0 };
+              }
+            }
+          }
+
           this.data = {
             accounts: parsed.accounts ?? {},
-            fileTimes: parsed.fileTimes ?? {},
+            fileMetadata,
           };
         }
       }
@@ -127,41 +147,65 @@ export class MessageStateStore {
       this.dirty = true;
     }
 
-    // Also cleanup fileTimes if needed
-    const fileTimes = this.data.fileTimes[accountId];
-    if (fileTimes && Object.keys(fileTimes).length > this.MAX_FILES_PER_ACCOUNT) {
+    // Also cleanup fileMetadata if needed
+    const fileMetadata = this.data.fileMetadata[accountId];
+    if (fileMetadata && Object.keys(fileMetadata).length > this.MAX_FILES_PER_ACCOUNT) {
       // Keep the most recently seen files (sorted by timestamp descending)
-      const sorted = Object.entries(fileTimes)
-        .sort(([, t1], [, t2]) => t2 - t1)
+      const sorted = Object.entries(fileMetadata)
+        .sort(([, m1], [, m2]) => m2.time - m1.time)
         .slice(0, this.MAX_FILES_PER_ACCOUNT);
-      this.data.fileTimes[accountId] = Object.fromEntries(sorted);
+      this.data.fileMetadata[accountId] = Object.fromEntries(sorted);
       this.dirty = true;
     }
   }
 
-  /** Get all persisted file times for an account (used to seed lastSeenTimes) */
+  /** Get all persisted file metadata for an account (used to seed lastSeenTimes) */
+  getFileMetadata(accountId: string): Record<string, FileMetadata> {
+    return this.data.fileMetadata[accountId] ?? {};
+  }
+
+  /** Update a file's metadata */
+  setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void {
+    if (!this.data.fileMetadata[accountId]) {
+      this.data.fileMetadata[accountId] = {};
+    }
+    this.data.fileMetadata[accountId][filePath] = metadata;
+    this.scheduleSave();
+  }
+
+  /** Bulk-set file metadata (e.g. after initial scan) */
+  setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void {
+    if (!this.data.fileMetadata[accountId]) {
+      this.data.fileMetadata[accountId] = {};
+    }
+    for (const [fp, m] of Object.entries(metadata)) {
+      this.data.fileMetadata[accountId][fp] = m;
+    }
+    this.scheduleSave();
+  }
+
+  /** @deprecated Use getFileMetadata instead */
   getFileTimes(accountId: string): Record<string, number> {
-    return this.data.fileTimes[accountId] ?? {};
+    const metadata = this.data.fileMetadata[accountId] ?? {};
+    const times: Record<string, number> = {};
+    for (const [path, meta] of Object.entries(metadata)) {
+      times[path] = meta.time;
+    }
+    return times;
   }
 
-  /** Update a file's last-seen time */
+  /** @deprecated Use setFileMetadata instead */
   setFileTime(accountId: string, filePath: string, time: number): void {
-    if (!this.data.fileTimes[accountId]) {
-      this.data.fileTimes[accountId] = {};
-    }
-    this.data.fileTimes[accountId][filePath] = time;
-    this.scheduleSave();
+    this.setFileMetadata(accountId, filePath, { time, size: 0 });
   }
 
-  /** Bulk-set file times (e.g. after initial scan) */
+  /** @deprecated Use setFileMetadataBulk instead */
   setFileTimes(accountId: string, times: Record<string, number>): void {
-    if (!this.data.fileTimes[accountId]) {
-      this.data.fileTimes[accountId] = {};
+    const metadata: Record<string, FileMetadata> = {};
+    for (const [path, time] of Object.entries(times)) {
+      metadata[path] = { time, size: 0 };
     }
-    for (const [fp, t] of Object.entries(times)) {
-      this.data.fileTimes[accountId][fp] = t;
-    }
-    this.scheduleSave();
+    this.setFileMetadataBulk(accountId, metadata);
   }
 
   /** Dispose of resources - call on plugin unload to prevent memory leaks */

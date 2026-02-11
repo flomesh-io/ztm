@@ -333,11 +333,28 @@ export function createZTMApiClient(config: ZTMChatConfig): ZTMApiClient {
       return null;
     },
 
+    seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void {
+      for (const [filePath, meta] of Object.entries(metadata)) {
+        const current = lastSeenFiles.get(filePath);
+        if (!current || meta.time > current.time || meta.size > current.size) {
+          lastSeenFiles.set(filePath, meta);
+        }
+      }
+    },
+
+    exportFileMetadata(): Record<string, { time: number; size: number }> {
+      const result: Record<string, { time: number; size: number }> = {};
+      for (const [filePath, metadata] of lastSeenFiles) {
+        result[filePath] = metadata;
+      }
+      return result;
+    },
+
     seedLastSeenTimes(times: Record<string, number>): void {
       for (const [filePath, time] of Object.entries(times)) {
         const current = lastSeenFiles.get(filePath);
         if (!current || time > current.time) {
-          lastSeenFiles.set(filePath, { time, size: 0 });
+          lastSeenFiles.set(filePath, { time, size: current?.size ?? 0 });
         }
       }
     },
