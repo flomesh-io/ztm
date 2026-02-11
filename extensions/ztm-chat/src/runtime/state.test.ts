@@ -9,14 +9,15 @@ import {
   stopRuntime,
   type AccountRuntimeState,
 } from "./state.js";
+import { success } from "../types/common.js";
 
 // Mock state using mutable container
 const mockApiState = {
-  getMeshInfo: vi.fn().mockResolvedValue({
+  getMeshInfo: vi.fn().mockResolvedValue(success({
     connected: true,
     endpoints: 5,
     errors: [],
-  }),
+  })),
 };
 
 vi.mock("../api/ztm-api.js", () => ({
@@ -70,11 +71,11 @@ describe("Account Runtime State Management", () => {
 
     // Reset mock calls and implementation, then set default behavior
     mockApiState.getMeshInfo.mockReset();
-    mockApiState.getMeshInfo.mockResolvedValue({
+    mockApiState.getMeshInfo.mockResolvedValue(success({
       connected: true,
       endpoints: 5,
       errors: [],
-    });
+    }));
   });
 
   afterEach(() => {
@@ -245,12 +246,12 @@ describe("Account Runtime State Management", () => {
     });
 
     it("should handle mesh connection failure", async () => {
-      // Override mock to return disconnected state
-      mockApiState.getMeshInfo.mockResolvedValue({
+      // Override mock to return disconnected state wrapped in success Result
+      mockApiState.getMeshInfo.mockResolvedValue(success({
         connected: false,
         endpoints: 0,
         errors: [],
-      });
+      }));
 
       const initialized = await initializeRuntime(testConfig, testAccountId);
 
@@ -269,9 +270,9 @@ describe("Account Runtime State Management", () => {
       mockApiState.getMeshInfo.mockImplementation(async () => {
         attempts++;
         if (attempts < 3) {
-          return { connected: false, endpoints: 0, errors: [] };
+          return success({ connected: false, endpoints: 0, errors: [] });
         }
-        return { connected: true, endpoints: 5, errors: [] };
+        return success({ connected: true, endpoints: 5, errors: [] });
       });
 
       const initialized = await initializeRuntime(testConfig, testAccountId);

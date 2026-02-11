@@ -1,6 +1,13 @@
 // ZTM Chat API Types
 // Types for ZTM Agent API communication
 
+import type { Result } from "./common.js";
+import type { ZtmSendError, ZtmReadError, ZtmDiscoveryError } from "./errors.js";
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Core ZTM Types
+// ═════════════════════════════════════════════════════════════════════════════
+
 // ZTM Message interface - matches ZTM Agent API format
 export interface ZTMMessage {
   time: number;
@@ -40,30 +47,91 @@ export interface ZTMChat {
   latest: ZTMMessage;
 }
 
-// ZTM API Client interface
+// ═════════════════════════════════════════════════════════════════════════════
+// ZTM API Client Interface - Using Result<T, E> for consistent error handling
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * ZTM API Client interface with Result-based error handling.
+ *
+ * All operations return Result<T, E> types for consistent error handling:
+ * - Success: { ok: true, value: T }
+ * - Failure: { ok: false, error: E }
+ *
+ * This replaces previous patterns of:
+ * - Promise<boolean> (lost error details)
+ * - Promise<T | null> (couldn't distinguish "not found" from "error")
+ * - Silent failures (returning empty arrays)
+ */
 export interface ZTMApiClient {
-  // Mesh operations
-  getMeshInfo(): Promise<ZTMMeshInfo>;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Mesh Operations - Return Result types with ZtmApiError
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // User/Peer discovery
-  discoverUsers(): Promise<ZTMUserInfo[]>;
-  discoverPeers(): Promise<ZTMPeer[]>;
+  /** Get current mesh information */
+  getMeshInfo(): Promise<Result<ZTMMeshInfo, import("./errors.js").ZtmApiError>>;
 
-  // Chat operations (direct storage-based implementation)
-  getChats(): Promise<ZTMChat[]>;
-  getPeerMessages(peer: string, since?: number, before?: number): Promise<ZTMMessage[] | null>;
-  sendPeerMessage(peer: string, message: ZTMMessage): Promise<boolean>;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // User/Peer Discovery - Return Result types with ZtmDiscoveryError
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  // Group operations (future)
-  getGroups(): Promise<ZTMChat[]>;
-  getGroupMessages(creator: string, group: string): Promise<ZTMMessage[] | null>;
+  /** Discover available users in the mesh. Returns Result with discovered users or discovery error. */
+  discoverUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
 
-  // File operations
-  addFile(data: ArrayBuffer): Promise<string | null>;
-  getFile(owner: string, hash: string): Promise<ArrayBuffer | null>;
+  /** Discover available peers. Returns Result with discovered peers or discovery error. */
+  discoverPeers(): Promise<Result<ZTMPeer[], ZtmDiscoveryError>>;
 
-  // Watch mechanism for real-time updates
-  watchChanges(prefix: string): Promise<string[]>;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Chat Operations - Return Result types with ZtmSendError / ZtmReadError
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Get all chats. Returns Result with chats list or error. */
+  getChats(): Promise<Result<ZTMChat[], import("./errors.js").ZtmReadError>>;
+
+  /** Get messages from a specific peer. Returns Result with messages or read error. */
+  getPeerMessages(
+    peer: string,
+    since?: number,
+    before?: number
+  ): Promise<Result<ZTMMessage[], ZtmReadError>>;
+
+  /** Send a message to a peer. Returns Result with success=true or ZtmSendError on failure. */
+  sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>>;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Group Operations - Future feature, still return Result
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Get available groups. Returns Result with groups list or error. */
+  getGroups(): Promise<Result<ZTMChat[], import("./errors.js").ZtmError>>;
+
+  /** Get messages from a group. Returns Result with messages or read error. */
+  getGroupMessages(
+    creator: string,
+    group: string
+  ): Promise<Result<ZTMMessage[], import("./errors.js").ZtmReadError>>;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // File Operations - Return Result types with appropriate errors
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Add a file to storage. Returns Result with file ID or error. */
+  addFile(
+    data: ArrayBuffer
+  ): Promise<Result<string, import("./errors.js").ZtmWriteError>>;
+
+  /** Get a file from storage. Returns Result with file data or error. */
+  getFile(
+    owner: string,
+    hash: string
+  ): Promise<Result<ArrayBuffer, import("./errors.js").ZtmReadError>>;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Watch Mechanism - Return Result types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Watch for changes in storage with given prefix. Returns Result with changed paths or error. */
+  watchChanges(prefix: string): Promise<Result<string[], import("./errors.js").ZtmReadError>>;
 
   /** Seed file metadata from persisted state (call before first watchChanges) */
   seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
@@ -71,11 +139,21 @@ export interface ZTMApiClient {
   /** Export current file metadata for persistence */
   exportFileMetadata(): Record<string, { time: number; size: number }>;
 
-  // Direct storage API methods (MVP implementation)
-  /** Send message using direct storage API */
-  sendMessageViaStorage(peer: string, message: ZTMMessage): Promise<boolean>;
-  /** Receive messages using direct storage API */
-  receiveMessagesViaStorage(peer: string): Promise<ZTMMessage[] | null>;
-  /** Discover active peers by scanning shared storage */
-  discoverUsersViaStorage(): Promise<ZTMUserInfo[]>;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Direct Storage API Methods - MVP implementation with Result types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Send message using direct storage API. Returns Result with success status or send error. */
+  sendMessageViaStorage(
+    peer: string,
+    message: ZTMMessage
+  ): Promise<Result<boolean, ZtmSendError>>;
+
+  /** Receive messages using direct storage API. Returns Result with messages or read error. */
+  receiveMessagesViaStorage(
+    peer: string
+  ): Promise<Result<ZTMMessage[], ZtmReadError>>;
+
+  /** Discover active peers by scanning shared storage. Returns Result with users or discovery error. */
+  discoverUsersViaStorage(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
 }

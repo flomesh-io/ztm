@@ -9,6 +9,7 @@ import { processIncomingMessage } from "./processor.js";
 import { notifyMessageCallbacks } from "./dispatcher.js";
 import { Semaphore } from "../utils/concurrency.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
+import { isSuccess } from "../types/common.js";
 
 // Peer message path pattern
 const PEER_MESSAGE_PATTERN = /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages\//;
@@ -73,35 +74,37 @@ async function performInitialSync(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  try {
-    const chats = await state.apiClient.getChats();
-    let processedCount = 0;
+  const chatsResult = await state.apiClient.getChats();
+  if (!isSuccess(chatsResult)) {
+    logger.warn(`[${state.accountId}] Initial read failed: ${chatsResult.error?.message}`);
+    return;
+  }
 
-    for (const chat of chats) {
-      if (!chat.peer || chat.peer === state.config.username) continue;
-      if (chat.latest) {
-        const normalized = processIncomingMessage(
-          {
-            time: chat.latest.time,
-            message: chat.latest.message,
-            sender: chat.peer,
-          },
-          state.config,
-          state.pendingPairings,
-          storeAllowFrom,
-          state.accountId
-        );
-        if (normalized) {
-          notifyMessageCallbacks(state, normalized);
-          processedCount++;
-        }
+  const chats = chatsResult.value;
+  let processedCount = 0;
+
+  for (const chat of chats) {
+    if (!chat.peer || chat.peer === state.config.username) continue;
+    if (chat.latest) {
+      const normalized = processIncomingMessage(
+        {
+          time: chat.latest.time,
+          message: chat.latest.message,
+          sender: chat.peer,
+        },
+        state.config,
+        state.pendingPairings,
+        storeAllowFrom,
+        state.accountId
+      );
+      if (normalized) {
+        notifyMessageCallbacks(state, normalized);
+        processedCount++;
       }
     }
-
-    logger.info(`[${state.accountId}] Initial sync: ${chats.length} chats, ${processedCount} messages processed`);
-  } catch (error) {
-    logger.warn(`[${state.accountId}] Initial read failed: ${error}`);
   }
+
+  logger.info(`[${state.accountId}] Initial sync: ${chats.length} chats, ${processedCount} messages processed`);
 }
 
 /**
@@ -115,7 +118,13 @@ async function handleInitialPairingRequests(
 
   const { checkDmPolicy } = await import("../core/dm-policy.js");
 
-  for (const chat of (await state.apiClient.getChats()) || []) {
+  const chatsResult = await state.apiClient.getChats();
+  if (!isSuccess(chatsResult)) {
+    logger.warn(`[${state.accountId}] Failed to get chats for pairing requests: ${chatsResult.error?.message}`);
+    return;
+  }
+
+  for (const chat of chatsResult.value) {
     if (chat.peer && chat.peer !== state.config.username) {
       const check = checkDmPolicy(chat.peer, state.config, state.pendingPairings, storeAllowFrom);
       if (check.action === "request_pairing") {
@@ -156,32 +165,10 @@ function startWatchLoop(
   const watchLoop = async (): Promise<void> => {
     if (!state.apiClient || !state.config) return;
 
-    try {
-      const changedPaths = await state.apiClient.watchChanges(messagePath);
-      messagesReceivedInCycle = changedPaths.length > 0;
-
-      if (messagesReceivedInCycle) {
-        logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
-        lastMessageTime = Date.now();
-      }
-
-      const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
-
-      for (const path of changedPaths) {
-        await processChangedPath(state, path, loopStoreAllowFrom, messageSemaphore);
-      }
-
-      if (messagesReceivedInCycle) {
-        scheduleFullSync(loopStoreAllowFrom);
-        if (state.apiClient) {
-          messageStateStore.setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
-        }
-      }
-
-      state.watchErrorCount = 0;
-    } catch (error) {
+    const changedResult = await state.apiClient.watchChanges(messagePath);
+    if (!isSuccess(changedResult)) {
       state.watchErrorCount++;
-      logger.warn(`[${state.accountId}] Watch error (${state.watchErrorCount}): ${error}`);
+      logger.warn(`[${state.accountId}] Watch error (${state.watchErrorCount}): ${changedResult.error?.message}`);
 
       if (state.watchErrorCount > 5) {
         if (fullSyncTimer) clearTimeout(fullSyncTimer);
@@ -190,8 +177,32 @@ function startWatchLoop(
         await startPollingWatcher(state);
         return;
       }
+      setTimeout(watchLoop, 1000);
+      return;
     }
 
+    const changedPaths = changedResult.value;
+    messagesReceivedInCycle = changedPaths.length > 0;
+
+    if (messagesReceivedInCycle) {
+      logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
+      lastMessageTime = Date.now();
+    }
+
+    const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
+
+    for (const path of changedPaths) {
+      await processChangedPath(state, path, loopStoreAllowFrom, messageSemaphore);
+    }
+
+    if (messagesReceivedInCycle) {
+      scheduleFullSync(loopStoreAllowFrom);
+      if (state.apiClient) {
+        messageStateStore.setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+      }
+    }
+
+    state.watchErrorCount = 0;
     setTimeout(watchLoop, 1000);
   };
 
@@ -207,23 +218,25 @@ async function performFullSync(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  try {
-    const chats = await state.apiClient.getChats();
-    let processedCount = 0;
+  const chatsResult = await state.apiClient.getChats();
+  if (!isSuccess(chatsResult)) {
+    logger.warn(`[${state.accountId}] Full sync failed: ${chatsResult.error?.message}`);
+    return;
+  }
 
-    for (const chat of chats) {
-      if (!chat.peer || chat.peer === state.config.username) continue;
+  const chats = chatsResult.value;
+  let processedCount = 0;
 
-      // Re-process all messages from this peer, watermark will skip already-processed ones
-      await processPeerMessages(state, chat.peer, storeAllowFrom);
-      processedCount++;
-    }
+  for (const chat of chats) {
+    if (!chat.peer || chat.peer === state.config.username) continue;
 
-    if (processedCount > 0) {
-      logger.debug(`[${state.accountId}] Full sync completed: checked ${processedCount} peers`);
-    }
-  } catch (error) {
-    logger.warn(`[${state.accountId}] Full sync failed: ${error}`);
+    // Re-process all messages from this peer, watermark will skip already-processed ones
+    await processPeerMessages(state, chat.peer, storeAllowFrom);
+    processedCount++;
+  }
+
+  if (processedCount > 0) {
+    logger.debug(`[${state.accountId}] Full sync completed: checked ${processedCount} peers`);
   }
 }
 
@@ -269,31 +282,31 @@ async function processPeerMessages(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  try {
-    const messages = await state.apiClient.getPeerMessages(peer);
-    if (messages) {
-      for (const msg of messages) {
-        const normalized = processIncomingMessage(
-          msg,
-          state.config,
-          state.pendingPairings,
-          storeAllowFrom,
-          state.accountId
-        );
-        if (normalized) {
-          notifyMessageCallbacks(state, normalized);
-        }
-      }
-    }
+  const messagesResult = await state.apiClient.getPeerMessages(peer);
+  if (!isSuccess(messagesResult)) {
+    logger.warn(`[${state.accountId}] Failed to read messages from ${peer}: ${messagesResult.error?.message}`);
+    return;
+  }
 
-    // Check for pairing request
-    const { checkDmPolicy } = await import("../core/dm-policy.js");
-    const check = checkDmPolicy(peer, state.config, state.pendingPairings, storeAllowFrom);
-    if (check.action === "request_pairing") {
-      const { handlePairingRequest } = await import("../connectivity/permit.js");
-      await handlePairingRequest(state, peer, "New message", storeAllowFrom);
+  const messages = messagesResult.value;
+  for (const msg of messages) {
+    const normalized = processIncomingMessage(
+      msg,
+      state.config,
+      state.pendingPairings,
+      storeAllowFrom,
+      state.accountId
+    );
+    if (normalized) {
+      notifyMessageCallbacks(state, normalized);
     }
-  } catch (error) {
-    logger.warn(`[${state.accountId}] Failed to read messages from ${peer}: ${error}`);
+  }
+
+  // Check for pairing request
+  const { checkDmPolicy } = await import("../core/dm-policy.js");
+  const check = checkDmPolicy(peer, state.config, state.pendingPairings, storeAllowFrom);
+  if (check.action === "request_pairing") {
+    const { handlePairingRequest } = await import("../connectivity/permit.js");
+    await handlePairingRequest(state, peer, "New message", storeAllowFrom);
   }
 }

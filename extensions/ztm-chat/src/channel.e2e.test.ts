@@ -95,9 +95,12 @@ vi.mock("./runtime/state.js", () => ({
 vi.mock("./api/ztm-api.js", () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => Promise.resolve({
-      connected: mockState.preCheckConnected,
-      endpoints: 5,
-      errors: [],
+      ok: true,
+      value: {
+        connected: mockState.preCheckConnected,
+        endpoints: 5,
+        errors: [],
+      },
     }),
   })),
 }));
@@ -220,10 +223,11 @@ describe("startAccount E2E Tests", () => {
 
       const { createZTMApiClient } = await import("./api/ztm-api.js");
       const client = createZTMApiClient(baseConfig);
-      const meshInfo = await client.getMeshInfo();
+      const meshInfoResult = await client.getMeshInfo();
 
-      expect(meshInfo.connected).toBe(true);
-      expect(meshInfo.endpoints).toBe(5);
+      expect(meshInfoResult.ok).toBe(true);
+      expect(meshInfoResult.value?.connected).toBe(true);
+      expect(meshInfoResult.value?.endpoints).toBe(5);
     });
   });
 

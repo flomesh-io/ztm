@@ -28,6 +28,7 @@ import {
   type ZTMMeshInfo,
   type ZTMMessage,
 } from "./api/ztm-api.js";
+import { isSuccess } from "./types/common.js";
 import { logger } from "./utils/logger.js";
 import { messageStateStore, disposeMessageStateStore } from "./runtime/store.js";
 import {
@@ -243,7 +244,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         message: `✅ Pairing approved! You can now send messages to this bot.`,
         sender: config.username,
       };
-      await apiClient.sendPeerMessage(id, message);
+      const result = await apiClient.sendPeerMessage(id, message);
+      if (!result.ok) {
+        logger.warn?.(`[ZTM] Failed to send pairing approval message to ${id}: ${result.error?.message}`);
+      }
     },
   },
   capabilities: {
@@ -320,8 +324,14 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       try {
         const probeConfig = resolveZTMChatConfig(config);
         const apiClient = createZTMApiClient(probeConfig);
-        const meshInfo = await apiClient.getMeshInfo();
+        const meshResult = await apiClient.getMeshInfo();
 
+        if (!meshResult.ok) {
+          // Silently ignore probe errors - don't add to warnings
+          return warnings;
+        }
+
+        const meshInfo = meshResult.value;
         if (!meshInfo.connected) {
           warnings.push("ZTM Agent is not connected to the mesh network");
         }
@@ -365,12 +375,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       }
 
       const peer = to.replace(/^ztm-chat:/, "");
-      const success = await sendZTMMessage(state, peer, text);
+      const result = await sendZTMMessage(state, peer, text);
+
       return {
         channel: "ztm-chat",
-        ok: success,
-        messageId: success ? generateMessageId() : "",
-        error: success ? undefined : state.lastError,
+        ok: result.ok,
+        messageId: result.ok ? generateMessageId() : "",
+        error: result.ok ? undefined : result.error?.message ?? state.lastError,
       };
     },
   },
@@ -435,27 +446,25 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         };
       }
 
-      try {
-        const probeConfig = resolveZTMChatConfig(config);
-        const apiClient = createZTMApiClient(probeConfig);
-        const meshInfo = await apiClient.getMeshInfo();
+      const probeConfig = resolveZTMChatConfig(config);
+      const apiClient = createZTMApiClient(probeConfig);
+      const meshResult = await apiClient.getMeshInfo();
 
-        return {
-          ok: meshInfo.connected,
-          error: meshInfo.connected
-            ? null
-            : "ZTM Agent is not connected to mesh",
-          meshInfo,
-        };
-      } catch (error) {
+      if (!meshResult.ok) {
         return {
           ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : String(error),
+          error: meshResult.error.message,
         };
       }
+
+      const meshInfo = meshResult.value;
+      return {
+        ok: meshInfo.connected,
+        error: meshInfo.connected
+          ? null
+          : "ZTM Agent is not connected to mesh",
+        meshInfo,
+      };
     },
     buildAccountSnapshot: ({ account }) => {
       const accountStates = getAllAccountStates();
@@ -497,18 +506,18 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       const config = account.config as ZTMChatConfig;
       const apiClient = createZTMApiClient(resolveZTMChatConfig(config));
 
-      try {
-        const users = await apiClient.discoverUsers();
-        return users.map((user) => ({
-          kind: "user" as const,
-          id: user.username,
-          name: user.username,
-          raw: user,
-        }));
-      } catch (error) {
-        logger.error(`Failed to list peers: ${error}`);
+      const usersResult = await apiClient.discoverUsers();
+      if (!usersResult.ok) {
+        logger.warn?.(`Failed to list peers: ${usersResult.error.message}`);
         return [];
       }
+
+      return usersResult.value.map((user) => ({
+        kind: "user" as const,
+        id: user.username,
+        name: user.username,
+        raw: user,
+      }));
     },
     listGroups: async () => {
       // Group chat support is future feature
@@ -577,11 +586,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       // Step 6: Join mesh (skip if already connected)
       const preCheckClient = createZTMApiClient(config);
       let alreadyConnected = false;
-      try {
-        const preCheck = await preCheckClient.getMeshInfo();
-        alreadyConnected = preCheck.connected;
-      } catch {
-        // Agent reachable but mesh not joined yet
+      const preCheckResult = await preCheckClient.getMeshInfo();
+      if (isSuccess(preCheckResult)) {
+        alreadyConnected = preCheckResult.value.connected;
       }
 
       if (alreadyConnected) {

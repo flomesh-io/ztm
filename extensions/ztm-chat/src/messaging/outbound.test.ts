@@ -3,6 +3,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { sendZTMMessage, generateMessageId } from "./outbound.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
+import { success, failure, isSuccess } from "../types/common.js";
+import { ZtmSendError } from "../types/errors.js";
 
 // Create a fresh state for each test
 function createMockState(): AccountRuntimeState {
@@ -32,6 +34,18 @@ function createMockState(): AccountRuntimeState {
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),
+  };
+}
+
+// Helper to create a failure Result for ZtmSendError
+function createSendFailure(peer: string, message: string) {
+  return {
+    ok: false,
+    error: new ZtmSendError({
+      peer,
+      messageTime: Date.now(),
+      cause: new Error(message),
+    }),
   };
 }
 
@@ -89,13 +103,13 @@ describe("Outbound message functions", () => {
     it("should send message successfully", async () => {
       const state = createMockState();
       const mockApiClient = {
-        sendPeerMessage: vi.fn().mockResolvedValue(true),
+        sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
       };
       state.apiClient = mockApiClient as any;
 
-      const success = await sendZTMMessage(state, "alice", "Hello, world!");
+      const result = await sendZTMMessage(state, "alice", "Hello, world!");
 
-      expect(success).toBe(true);
+      expect(isSuccess(result)).toBe(true);
       expect(mockApiClient.sendPeerMessage).toHaveBeenCalledWith("alice", {
         time: expect.any(Number),
         message: "Hello, world!",
@@ -105,63 +119,63 @@ describe("Outbound message functions", () => {
       expect(state.lastError).toBeNull();
     });
 
-    it("should return false when apiClient is null", async () => {
+    it("should return failure when apiClient is null", async () => {
       const state = createMockState();
       state.apiClient = null;
 
-      const success = await sendZTMMessage(state, "alice", "Hello!");
+      const result = await sendZTMMessage(state, "alice", "Hello!");
 
-      expect(success).toBe(false);
-      expect(state.lastError).toBe("Runtime not initialized");
+      expect(isSuccess(result)).toBe(false);
+      expect(state.lastError).toContain("Runtime not initialized");
     });
 
-    it("should return false when config is null", async () => {
+    it("should return failure when config is null", async () => {
       const state = createMockState();
       state.config = null as any;
 
-      const success = await sendZTMMessage(state, "alice", "Hello!");
+      const result = await sendZTMMessage(state, "alice", "Hello!");
 
-      expect(success).toBe(false);
-      expect(state.lastError).toBe("Runtime not initialized");
+      expect(isSuccess(result)).toBe(false);
+      expect(state.lastError).toContain("Runtime not initialized");
     });
 
     it("should handle send failure", async () => {
       const state = createMockState();
       const mockApiClient = {
-        sendPeerMessage: vi.fn().mockResolvedValue(false),
+        sendPeerMessage: vi.fn().mockResolvedValue(createSendFailure("alice", "Message not delivered")),
       };
       state.apiClient = mockApiClient as any;
 
-      const success = await sendZTMMessage(state, "alice", "Hello!");
+      const result = await sendZTMMessage(state, "alice", "Hello!");
 
-      expect(success).toBe(false);
+      // API call succeeded but operation failed - returns failure Result
+      expect(isSuccess(result)).toBe(false);
       expect(state.lastOutboundAt).toBeNull();
     });
 
     it("should handle send error", async () => {
       const state = createMockState();
-      const mockError = new Error("Network error");
       const mockApiClient = {
-        sendPeerMessage: vi.fn().mockRejectedValue(mockError),
+        sendPeerMessage: vi.fn().mockResolvedValue(createSendFailure("alice", "Network error")),
       };
       state.apiClient = mockApiClient as any;
 
-      const success = await sendZTMMessage(state, "alice", "Hello!");
+      const result = await sendZTMMessage(state, "alice", "Hello!");
 
-      expect(success).toBe(false);
-      expect(state.lastError).toBe("Network error");
+      expect(isSuccess(result)).toBe(false);
+      expect(state.lastError).toContain("Network error");
     });
 
     it("should handle empty message", async () => {
       const state = createMockState();
       const mockApiClient = {
-        sendPeerMessage: vi.fn().mockResolvedValue(true),
+        sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
       };
       state.apiClient = mockApiClient as any;
 
-      const success = await sendZTMMessage(state, "alice", "");
+      const result = await sendZTMMessage(state, "alice", "");
 
-      expect(success).toBe(true);
+      expect(isSuccess(result)).toBe(true);
       expect(mockApiClient.sendPeerMessage).toHaveBeenCalledWith("alice", {
         time: expect.any(Number),
         message: "",
@@ -173,13 +187,13 @@ describe("Outbound message functions", () => {
       const state = createMockState();
       const specialMessage = "Hello! 🌍 世界\nNew line\tTab";
       const mockApiClient = {
-        sendPeerMessage: vi.fn().mockResolvedValue(true),
+        sendPeerMessage: vi.fn().mockResolvedValue(success(true)),
       };
       state.apiClient = mockApiClient as any;
 
-      const success = await sendZTMMessage(state, "alice", specialMessage);
+      const result = await sendZTMMessage(state, "alice", specialMessage);
 
-      expect(success).toBe(true);
+      expect(isSuccess(result)).toBe(true);
     });
   });
 });

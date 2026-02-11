@@ -6,6 +6,7 @@ import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
+import { isSuccess } from "../types/common.js";
 
 // Re-export types for backward compatibility
 export type { AccountRuntimeState };
@@ -64,42 +65,52 @@ export async function initializeRuntime(
   const state = getOrCreateAccountState(accountId);
   state.config = config;
 
-  try {
-    const apiClient = createZTMApiClient(config);
+  const apiClient = createZTMApiClient(config);
 
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY_MS = 100;
-    let meshInfo: ZTMMeshInfo | null = null;
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 100;
+  let meshInfo: ZTMMeshInfo | null = null;
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      meshInfo = await apiClient.getMeshInfo();
-      if (meshInfo.connected) break;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const meshResult = await apiClient.getMeshInfo();
+    if (!isSuccess(meshResult)) {
       if (attempt < MAX_RETRIES) {
         logger.info(
-          `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+          `[${accountId}] Mesh info request failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       }
+      continue;
     }
+    meshInfo = meshResult.value;
+    if (meshInfo.connected) break;
+    if (attempt < MAX_RETRIES) {
+      logger.info(
+        `[${accountId}] Mesh not yet connected (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    }
+  }
 
-    state.apiClient = apiClient;
-    state.connected = true;
-    state.meshConnected = meshInfo!.connected;
-    state.peerCount = meshInfo!.endpoints;
-    state.lastError = meshInfo!.connected ? null : "Not connected to ZTM mesh";
-
-    logger.info(
-      `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo!.endpoints}`
-    );
-
-    return meshInfo!.connected;
-  } catch (error) {
-    state.lastError = error instanceof Error ? error.message : String(error);
+  if (!meshInfo) {
+    state.lastError = "Failed to get mesh info after retries";
     state.connected = false;
     state.meshConnected = false;
     logger.error(`[${accountId}] Initialization failed: ${state.lastError}`);
     return false;
   }
+
+  state.apiClient = apiClient;
+  state.connected = true;
+  state.meshConnected = meshInfo.connected;
+  state.peerCount = meshInfo.endpoints;
+  state.lastError = meshInfo.connected ? null : "Not connected to ZTM mesh";
+
+  logger.info(
+    `[${accountId}] Connected: mesh=${config.meshName}, peers=${meshInfo.endpoints}`
+  );
+
+  return meshInfo.connected;
 }
 
 // Stop runtime for an account
