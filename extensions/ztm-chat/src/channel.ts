@@ -21,6 +21,7 @@ import {
   type ZTMChatConfig,
   isConfigMinimallyValid,
   getDefaultConfig,
+  mergeAccountConfig,
 } from './config/index.js';
 import {
   createZTMApiClient,
@@ -202,9 +203,8 @@ function resolveZTMChatAccount({
   const accounts = channelConfig.accounts as Record<string, unknown> | undefined;
   const account = (accounts?.[accountKey] ?? accounts?.default ?? {}) as Record<string, unknown>;
 
-  // Merge top-level config with account-level overrides (account takes precedence)
-  const { accounts: _ignored, ...baseConfig } = channelConfig;
-  const merged = { ...baseConfig, ...account };
+  // Merge base config with account-level overrides (account takes precedence)
+  const merged = mergeAccountConfig(channelConfig, account);
 
   const config = resolveZTMChatConfig(merged);
 
