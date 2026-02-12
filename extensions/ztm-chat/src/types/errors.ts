@@ -81,8 +81,10 @@ export class ZtmSendError extends ZtmError {
 
 /**
  * Error thrown when message file write operation fails.
+ * Separated from ZtmSendError to clearly distinguish storage operation failures
+ * from message sending failures.
  */
-export class ZtmWriteError extends ZtmSendError {
+export class ZtmWriteError extends ZtmError {
   constructor({
     peer,
     messageTime,
@@ -94,8 +96,15 @@ export class ZtmWriteError extends ZtmSendError {
     filePath: string;
     cause?: Error;
   }) {
-    super({ peer, messageTime, cause });
-    this.name = "ZtmWriteError";
+    super(
+      {
+        peer,
+        messageTime,
+        filePath,
+        attemptedAt: new Date().toISOString(),
+      },
+      cause
+    );
     this.message = `Failed to write message file for ${peer} at ${messageTime}: ${filePath}` +
       (cause ? `: ${cause.message}` : "");
   }
