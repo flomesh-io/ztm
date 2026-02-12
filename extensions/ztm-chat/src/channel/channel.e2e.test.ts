@@ -37,19 +37,19 @@ vi.mock("fs", () => ({
 }));
 
 // Mock connectivity functions
-vi.mock("./connectivity/mesh.js", () => ({
+vi.mock("../connectivity/mesh.js", () => ({
   checkPortOpen: () => Promise.resolve(mockState.checkPortOpen),
   getPublicKeyFromIdentity: () => Promise.resolve(mockState.getPublicKey),
   joinMesh: () => Promise.resolve(mockState.joinMesh),
 }));
 
-vi.mock("./connectivity/permit.js", () => ({
+vi.mock("../connectivity/permit.js", () => ({
   requestPermit: () => Promise.resolve(mockState.requestPermit),
   savePermitData: () => mockState.savePermit,
 }));
 
 // Mock runtime state
-vi.mock("./runtime/state.js", () => ({
+vi.mock("../runtime/state.js", () => ({
   getOrCreateAccountState: vi.fn((accountId: string) => ({
     accountId,
     config: {},
@@ -92,7 +92,7 @@ vi.mock("./runtime/state.js", () => ({
 }));
 
 // Mock ZTM API client
-vi.mock("./api/ztm-api.js", () => ({
+vi.mock("../api/ztm-api.js", () => ({
   createZTMApiClient: vi.fn(() => ({
     getMeshInfo: () => Promise.resolve({
       ok: true,
@@ -106,7 +106,7 @@ vi.mock("./api/ztm-api.js", () => ({
 }));
 
 // Mock runtime
-vi.mock("./runtime.js", () => ({
+vi.mock("../runtime.js", () => ({
   getZTMRuntime: () => ({
     channel: {
       routing: {
@@ -170,12 +170,12 @@ describe("startAccount E2E Tests", () => {
 
   describe("successful startup flow", () => {
     it("should complete all steps when starting fresh", async () => {
-      const { checkPortOpen } = await import("./connectivity/mesh.js");
-      const { getPublicKeyFromIdentity } = await import("./connectivity/mesh.js");
-      const { requestPermit } = await import("./connectivity/permit.js");
-      const { savePermitData } = await import("./connectivity/permit.js");
-      const { joinMesh } = await import("./connectivity/mesh.js");
-      const { initializeRuntime } = await import("./runtime/state.js");
+      const { checkPortOpen } = await import("../connectivity/mesh.js");
+      const { getPublicKeyFromIdentity } = await import("../connectivity/mesh.js");
+      const { requestPermit } = await import("../connectivity/permit.js");
+      const { savePermitData } = await import("../connectivity/permit.js");
+      const { joinMesh } = await import("../connectivity/mesh.js");
+      const { initializeRuntime } = await import("../runtime/state.js");
 
       // Simulate the flow
       // Step 1: Check port
@@ -206,8 +206,8 @@ describe("startAccount E2E Tests", () => {
     it("should skip permit flow when permit.json already exists", async () => {
       mockState.fsExistsSync = true; // permit.json exists
 
-      const { getPublicKeyFromIdentity } = await import("./connectivity/mesh.js");
-      const { requestPermit } = await import("./connectivity/permit.js");
+      const { getPublicKeyFromIdentity } = await import("../connectivity/mesh.js");
+      const { requestPermit } = await import("../connectivity/permit.js");
 
       // These should not be called when permit.json exists
       const publicKey = await getPublicKeyFromIdentity();
@@ -221,7 +221,7 @@ describe("startAccount E2E Tests", () => {
     it("should detect pre-existing mesh connection", async () => {
       mockState.preCheckConnected = true;
 
-      const { createZTMApiClient } = await import("./api/ztm-api.js");
+      const { createZTMApiClient } = await import("../api/ztm-api.js");
       const client = createZTMApiClient(baseConfig);
       const meshInfoResult = await client.getMeshInfo();
 
@@ -263,7 +263,7 @@ describe("startAccount E2E Tests", () => {
     it("should fail when agent port is closed", async () => {
       mockState.checkPortOpen = false;
 
-      const { checkPortOpen } = await import("./connectivity/mesh.js");
+      const { checkPortOpen } = await import("../connectivity/mesh.js");
       const result = await checkPortOpen("example.com", 7777);
 
       expect(result).toBe(false);
@@ -272,7 +272,7 @@ describe("startAccount E2E Tests", () => {
     it("should succeed when agent port is open", async () => {
       mockState.checkPortOpen = true;
 
-      const { checkPortOpen } = await import("./connectivity/mesh.js");
+      const { checkPortOpen } = await import("../connectivity/mesh.js");
       const result = await checkPortOpen("example.com", 7777);
 
       expect(result).toBe(true);
@@ -283,7 +283,7 @@ describe("startAccount E2E Tests", () => {
     it("should handle public key retrieval failure", async () => {
       mockState.getPublicKey = null;
 
-      const { getPublicKeyFromIdentity } = await import("./connectivity/mesh.js");
+      const { getPublicKeyFromIdentity } = await import("../connectivity/mesh.js");
       const result = await getPublicKeyFromIdentity();
 
       expect(result).toBeNull();
@@ -292,7 +292,7 @@ describe("startAccount E2E Tests", () => {
     it("should handle permit request failure", async () => {
       mockState.requestPermit = null;
 
-      const { requestPermit } = await import("./connectivity/permit.js");
+      const { requestPermit } = await import("../connectivity/permit.js");
       const result = await requestPermit(baseConfig.permitUrl, "key", "user");
 
       expect(result).toBeNull();
@@ -301,7 +301,7 @@ describe("startAccount E2E Tests", () => {
     it("should handle permit save failure", async () => {
       mockState.savePermit = false;
 
-      const { savePermitData } = await import("./connectivity/permit.js");
+      const { savePermitData } = await import("../connectivity/permit.js");
       const result = savePermitData({ token: "test" }, "/path/permit.json");
 
       expect(result).toBe(false);
@@ -312,7 +312,7 @@ describe("startAccount E2E Tests", () => {
     it("should handle mesh join failure", async () => {
       mockState.joinMesh = false;
 
-      const { joinMesh } = await import("./connectivity/mesh.js");
+      const { joinMesh } = await import("../connectivity/mesh.js");
       const result = await joinMesh("test-mesh", "endpoint", "/path/permit.json");
 
       expect(result).toBe(false);
@@ -324,8 +324,8 @@ describe("startAccount E2E Tests", () => {
       mockState.initializeRuntime = false;
       mockState.runtimeLastError = "Mesh connection timeout";
 
-      const { initializeRuntime } = await import("./runtime/state.js");
-      const { getAllAccountStates } = await import("./runtime/state.js");
+      const { initializeRuntime } = await import("../runtime/state.js");
+      const { getAllAccountStates } = await import("../runtime/state.js");
 
       const result = await initializeRuntime(baseConfig, "test-account");
       const states = getAllAccountStates();
@@ -339,7 +339,7 @@ describe("startAccount E2E Tests", () => {
       mockState.initializeRuntime = false;
       mockState.runtimeLastError = null;
 
-      const { initializeRuntime } = await import("./runtime/state.js");
+      const { initializeRuntime } = await import("../runtime/state.js");
 
       const result = await initializeRuntime(baseConfig, "test-account");
 
@@ -349,7 +349,7 @@ describe("startAccount E2E Tests", () => {
 
   describe("message dispatch flow", () => {
     it("should resolve agent route correctly", async () => {
-      const { getZTMRuntime } = await import("./runtime.js");
+      const { getZTMRuntime } = await import("../runtime.js");
       const rt = getZTMRuntime();
 
       const route = rt.channel.routing.resolveAgentRoute({
@@ -364,7 +364,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should finalize inbound context", async () => {
-      const { getZTMRuntime } = await import("./runtime.js");
+      const { getZTMRuntime } = await import("../runtime.js");
       const rt = getZTMRuntime();
 
       const context = rt.channel.reply.finalizeInboundContext({
@@ -393,7 +393,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should dispatch to agent", async () => {
-      const { getZTMRuntime } = await import("./runtime.js");
+      const { getZTMRuntime } = await import("../runtime.js");
       const rt = getZTMRuntime() as any;
 
       await expect(rt.channel.text.toAgent()).resolves.not.toThrow();
@@ -402,7 +402,7 @@ describe("startAccount E2E Tests", () => {
 
   describe("pairing integration", () => {
     it("should upsert pairing request", async () => {
-      const { getZTMRuntime } = await import("./runtime.js");
+      const { getZTMRuntime } = await import("../runtime.js");
       const rt = getZTMRuntime() as any;
 
       const result = await rt.channel.pairing.upsertPairingRequest({
@@ -417,7 +417,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should read allow from store", async () => {
-      const { getZTMRuntime } = await import("./runtime.js");
+      const { getZTMRuntime } = await import("../runtime.js");
       const rt = getZTMRuntime();
 
       const allowFrom = await rt.channel.pairing.readAllowFromStore("test-account");
@@ -428,7 +428,7 @@ describe("startAccount E2E Tests", () => {
 
   describe("account state management", () => {
     it("should get or create account state", async () => {
-      const { getOrCreateAccountState } = await import("./runtime/state.js");
+      const { getOrCreateAccountState } = await import("../runtime/state.js");
 
       const state = getOrCreateAccountState("new-account");
 
@@ -438,7 +438,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should get all account states", async () => {
-      const { getAllAccountStates } = await import("./runtime/state.js");
+      const { getAllAccountStates } = await import("../runtime/state.js");
 
       const states = getAllAccountStates();
 
@@ -447,7 +447,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should remove account state", async () => {
-      const { removeAccountState } = await import("./runtime/state.js");
+      const { removeAccountState } = await import("../runtime/state.js");
 
       expect(() => removeAccountState("test-account")).not.toThrow();
     });

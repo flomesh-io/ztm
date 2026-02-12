@@ -1,8 +1,8 @@
 import type { OpenClawPluginApi, ChannelPlugin } from "openclaw/plugin-sdk";
-import type { ResolvedZTMChatAccount } from "./src/channel.js";
+import type { ResolvedZTMChatAccount } from "./src/channel/index.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel.js";
+import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel/index.js";
 import { setZTMRuntime } from "./src/runtime.js";
 import { runWizard, discoverConfig } from "./src/onboarding.js";
 
@@ -23,7 +23,7 @@ export {
   type WizardPrompts,
 } from "./src/onboarding.js";
 
-export { disposeMessageStateStore } from "./src/channel.js";
+export { disposeMessageStateStore } from "./src/channel/index.js";
 
 // Plugin configuration path
 function getConfigPath(): string {
