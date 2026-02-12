@@ -319,7 +319,7 @@ export async function startAccountGateway(
         const route = rt.channel.routing.resolveAgentRoute({
           channel: "ztm-chat",
           accountId: account.accountId,
-          peer: { kind: "dm", id: msg.sender },
+          peer: { kind: "direct", id: msg.sender },
           cfg,
         });
 
@@ -435,7 +435,7 @@ export function buildMessageCallback(
         const route = rt.channel.routing.resolveAgentRoute({
           channel: "ztm-chat",
           accountId,
-          peer: { kind: "dm", id: msg.sender },
+          peer: { kind: "direct", id: msg.sender },
           cfg: {},
         });
 

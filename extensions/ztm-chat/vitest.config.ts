@@ -1,7 +1,6 @@
 import { defineConfig } from 'vitest/config';
-import type { UserConfig } from 'vitest/config';
 
-const testConfig: UserConfig = {
+const testConfig = {
   test: {
     testTimeout: 30000, // 30 seconds default timeout
     pool: 'threads',

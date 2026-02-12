@@ -23,6 +23,7 @@ export {
   type WizardPrompts,
 } from "./src/onboarding.js";
 
+// Re-export dispose function for plugin cleanup (from channel/index.js)
 export { disposeMessageStateStore } from "./src/channel/index.js";
 
 // Plugin configuration path
@@ -135,4 +136,4 @@ const plugin: ZtmChatPluginDefinition = {
 // Export registerPlugin as default (OpenClaw requires a register/activate export)
 export default registerPlugin;
 
-export { plugin, disposeMessageStateStore };
+export { plugin };

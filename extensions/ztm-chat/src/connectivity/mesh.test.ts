@@ -7,7 +7,7 @@ import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "./mesh.js";
 const mockState = {
   childProcessValue: null as any,
   childProcessError: null as Error | null,
-  socketValue: null as any,
+  socketEvent: null as string | null,
 };
 
 vi.mock("child_process", () => ({
@@ -17,8 +17,22 @@ vi.mock("child_process", () => ({
   }),
 }));
 
+// Track event handlers for manual triggering
+const socketHandlers: Map<string, () => void> = new Map();
+
 vi.mock("net", () => ({
-  Socket: vi.fn(() => mockState.socketValue),
+  Socket: class MockSocket {
+    setTimeout = vi.fn((ms: number) => {});
+    on = vi.fn(function(this: any, event: string, handler: () => void) {
+      socketHandlers.set(event, handler);
+      // Auto-trigger if event matches mockState.socketEvent
+      if (event === mockState.socketEvent) {
+        setTimeout(handler, 0);
+      }
+    });
+    connect = vi.fn();
+    destroy = vi.fn();
+  },
 }));
 
 describe("Mesh connectivity functions", () => {
@@ -26,7 +40,8 @@ describe("Mesh connectivity functions", () => {
     vi.clearAllMocks();
     mockState.childProcessValue = null;
     mockState.childProcessError = null;
-    mockState.socketValue = null;
+    mockState.socketEvent = null;
+    socketHandlers.clear();
   });
 
   afterEach(() => {
@@ -35,14 +50,7 @@ describe("Mesh connectivity functions", () => {
 
   describe("checkPortOpen", () => {
     it("should return true when port is open", async () => {
-      mockState.socketValue = {
-        setTimeout: vi.fn(),
-        on: vi.fn(function(this: any, event: string, handler: () => void) {
-          if (event === "connect") setTimeout(handler, 0);
-        }),
-        connect: vi.fn(),
-        destroy: vi.fn(),
-      };
+      mockState.socketEvent = "connect";
 
       const result = await checkPortOpen("localhost", 7777);
 
@@ -50,14 +58,7 @@ describe("Mesh connectivity functions", () => {
     });
 
     it("should return false when port is closed (timeout)", async () => {
-      mockState.socketValue = {
-        setTimeout: vi.fn(),
-        on: vi.fn(function(this: any, event: string, handler: () => void) {
-          if (event === "timeout") setTimeout(handler, 0);
-        }),
-        connect: vi.fn(),
-        destroy: vi.fn(),
-      };
+      mockState.socketEvent = "timeout";
 
       const result = await checkPortOpen("localhost", 7777);
 
@@ -65,14 +66,7 @@ describe("Mesh connectivity functions", () => {
     });
 
     it("should return false when port is closed (error)", async () => {
-      mockState.socketValue = {
-        setTimeout: vi.fn(),
-        on: vi.fn(function(this: any, event: string, handler: () => void) {
-          if (event === "error") setTimeout(handler, 0);
-        }),
-        connect: vi.fn(),
-        destroy: vi.fn(),
-      };
+      mockState.socketEvent = "error";
 
       const result = await checkPortOpen("localhost", 7777);
 
@@ -80,19 +74,12 @@ describe("Mesh connectivity functions", () => {
     });
 
     it("should handle various hostnames", async () => {
-      mockState.socketValue = {
-        setTimeout: vi.fn(),
-        on: vi.fn(function(this: any, event: string, handler: () => void) {
-          if (event === "connect") setTimeout(handler, 0);
-        }),
-        connect: vi.fn(),
-        destroy: vi.fn(),
-      };
+      mockState.socketEvent = "connect";
 
       await checkPortOpen("example.com", 443);
       await checkPortOpen("192.168.1.1", 8080);
 
-      expect(true).toBe(true);
+      // No assertion needed - just verify no errors are thrown
     });
   });
 
@@ -267,14 +254,7 @@ Some footer text`;
 
   describe("error handling", () => {
     it("should handle network timeout gracefully", async () => {
-      mockState.socketValue = {
-        setTimeout: vi.fn(),
-        on: vi.fn(function(this: any, event: string, handler: () => void) {
-          if (event === "timeout") setTimeout(handler, 0);
-        }),
-        connect: vi.fn(),
-        destroy: vi.fn(),
-      };
+      mockState.socketEvent = "timeout";
 
       const result = await checkPortOpen("unreachable-host", 7777);
 

@@ -355,7 +355,7 @@ describe("startAccount E2E Tests", () => {
       const route = rt.channel.routing.resolveAgentRoute({
         channel: "ztm-chat",
         accountId: "test-account",
-        peer: { kind: "dm", id: "alice" },
+        peer: { kind: "direct", id: "alice" },
         cfg: {},
       });
 
