@@ -27,15 +27,16 @@ export class MockZTMClient {
 
   constructor(config: Partial<MockZTMConfig> = {}) {
     this.port = 0;  // Random port
+    const defaults = createMockConfig();
     this.config = {
-      meshName: config.meshName || "test-mesh",
-      username: config.username || "test-bot",
-      users: config.users || [],
-      peers: config.peers || [],
-      chats: config.chats || [],
-      messages: config.messages || new Map(),
-      certificate: config.certificate,
-      privateKey: config.privateKey,
+      meshName: config.meshName ?? defaults.meshName,
+      username: config.username ?? defaults.username,
+      users: config.users ?? defaults.users,
+      peers: config.peers ?? defaults.peers,
+      chats: config.chats ?? defaults.chats,
+      messages: config.messages ?? defaults.messages,
+      certificate: config.certificate ?? defaults.certificate,
+      privateKey: config.privateKey ?? defaults.privateKey,
     };
   }
 
@@ -46,7 +47,13 @@ export class MockZTMClient {
   start(): Promise<void> {
     return new Promise((resolve) => {
       this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
-        this.handleRequest(req, res);
+        // Handle async request handler and catch errors
+        this.handleRequest(req, res).catch((err) => {
+          if (!res.headersSent) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Internal Server Error" }));
+          }
+        });
       });
       this.server.listen(this.port, () => {
         // Get actual port
@@ -70,7 +77,7 @@ export class MockZTMClient {
     });
   }
 
-  private handleRequest(req: IncomingMessage, res: ServerResponse): void {
+  private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url || "/", `http://localhost:${this.port}`);
     const pathname = url.pathname;
 
@@ -121,7 +128,7 @@ export class MockZTMClient {
       // Route: POST /apps/ztm/chat/api/peers/{peer}/messages
       if (pathname.match(/^\/apps\/ztm\/chat\/api\/peers\/[^/]+\/messages$/) && req.method === "POST") {
         const peer = pathname.split("/")[6];
-        this.handleSendPeerMessage(peer, req, res);
+        await this.handleSendPeerMessage(peer, req, res);
         return;
       }
 
@@ -190,24 +197,26 @@ export class MockZTMClient {
     res.end(JSON.stringify(messages));
   }
 
-  private handleSendPeerMessage(peer: string, req: IncomingMessage, res: ServerResponse): void {
-    let body = "";
-    req.on("data", chunk => body += chunk);
-    req.on("end", () => {
-      try {
-        const message: ZTMMessage = JSON.parse(body);
-        const key = `${this.config.username}→${peer}`;
-        const messages = this.config.messages.get(key) || [];
-        messages.push(message);
-        this.config.messages.set(key, messages);
+  private async handleSendPeerMessage(peer: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    const body = Buffer.concat(chunks).toString();
 
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true, id: `msg-${Date.now()}` }));
-      } catch {
-        res.writeHead(400);
-        res.end(JSON.stringify({ error: "Invalid message format" }));
-      }
-    });
+    try {
+      const message: ZTMMessage = JSON.parse(body);
+      const key = `${this.config.username}→${peer}`;
+      const messages = this.config.messages.get(key) || [];
+      messages.push(message);
+      this.config.messages.set(key, messages);
+
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, id: `msg-${Date.now()}` }));
+    } catch {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: "Invalid message format" }));
+    }
   }
 
   private handleWatch(prefix: string, url: URL, res: ServerResponse): void {

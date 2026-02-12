@@ -10,6 +10,8 @@ const testConfig: UserConfig = {
         singleThread: true, // Run tests in single thread to avoid race conditions
       },
     },
+    isolate: true, // Isolate each test file for better stability
+    fileParallelism: false, // Run test files sequentially
   },
 };
 

@@ -1,6 +1,6 @@
 // Unit tests for Permit management functions
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
 import { requestPermit, savePermitData, handlePairingRequest } from "./permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 
@@ -39,6 +39,7 @@ vi.mock("../runtime.js", () => ({
 
 // Mock fetch - use vi.fn that returns real Response objects
 const mockFetch = vi.fn();
+const originalFetch = global.fetch;
 global.fetch = mockFetch;
 
 // Mock fs - using variables to control behavior
@@ -124,6 +125,11 @@ describe("Permit management functions", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    // Restore original fetch to avoid affecting other test files
+    global.fetch = originalFetch;
   });
 
   describe("requestPermit", () => {
