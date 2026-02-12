@@ -69,7 +69,7 @@ function ensureConfigDir(): void {
 }
 
 // Plugin registration function
-function registerPlugin(api: OpenClawPluginApi): void {
+export function registerPlugin(api: OpenClawPluginApi): void {
   // Ensure config directory exists on startup
   ensureConfigDir();
 
@@ -132,4 +132,7 @@ const plugin: ZtmChatPluginDefinition = {
 // - openclaw pairing list ztm-chat
 // - openclaw pairing approve ztm-chat <code>
 
-export default plugin;
+// Export registerPlugin as default (OpenClaw requires a register/activate export)
+export default registerPlugin;
+
+export { plugin, disposeMessageStateStore };
