@@ -11,55 +11,73 @@ import { Type, type TSchema, type Static } from "@sinclair/typebox";
 // ZTM Chat Configuration Schema
 export const ZTMChatConfigSchema = Type.Object({
   agentUrl: Type.String({
-    description: "ZTM Agent API URL (e.g., http://localhost:7777)",
+    title: "Agent URL",
+    description: "ZTM Agent HTTP endpoint URL for mesh communication",
     format: "uri",
+    examples: ["http://localhost:7777", "https://agent.example.com:7777"],
   }),
   permitUrl: Type.String({
-    description: "Permit Server URL (e.g., https://ztm-portal.flomesh.io:7779/permit)",
+    title: "Permit Server URL",
+    description: "Permit server URL for mesh authentication and authorization",
     format: "uri",
+    examples: ["https://ztm-portal.flomesh.io:7779/permit"],
   }),
   meshName: Type.String({
-    description: "ZTM mesh name",
+    title: "Mesh Name",
+    description: "Unique identifier for the ZTM mesh network",
     minLength: 1,
     maxLength: 64,
     pattern: "^[a-zA-Z0-9_-]+$",
+    examples: ["my-mesh", "production-mesh"],
   }),
   username: Type.String({
-    description: "Bot's ZTM username",
+    title: "Bot Username",
+    description: "Bot identifier used when communicating on the mesh",
     minLength: 1,
     maxLength: 64,
     pattern: "^[a-zA-Z0-9_-]+$",
+    examples: ["chatbot", "assistant-bot"],
   }),
   enableGroups: Type.Optional(Type.Boolean({
-    description: "Enable group chat support",
+    title: "Enable Group Chat",
+    description: "Enable group messaging features (requires ZTM groups support)",
     default: false,
   })),
   autoReply: Type.Optional(Type.Boolean({
-    description: "Automatically reply to messages",
+    title: "Auto-Reply",
+    description: "Automatically respond to received messages",
     default: true,
   })),
   messagePath: Type.Optional(Type.String({
-    description: "Custom message path prefix",
+    title: "Message Storage Path",
+    description: "Custom storage path for messages within ZTM shared directory",
     default: "/shared",
+    examples: ["/shared", "/messages"],
   })),
   dmPolicy: Type.Optional(Type.Union([
     Type.Literal("allow"),
     Type.Literal("deny"),
     Type.Literal("pairing"),
   ], {
-    description: "Direct message policy: allow, deny, or pairing",
+    title: "Direct Message Policy",
+    description: "Control who can send direct messages: allow all, deny all, or require pairing approval",
     default: "pairing",
   })),
   allowFrom: Type.Optional(Type.Array(Type.String({
     description: "List of allowed sender usernames",
-  }))),
+  }), {
+    title: "Allowed Senders",
+    description: "Whitelist of usernames allowed to send messages (empty = allow all paired users)",
+  })),
   apiTimeout: Type.Optional(Type.Number({
-    description: "API request timeout in milliseconds",
+    title: "API Timeout (ms)",
+    description: "Timeout in milliseconds for ZTM API requests",
     minimum: 1000,
     maximum: 300000,
     default: 30000,
+    examples: [5000, 30000, 60000],
   })),
-});
+}, { $id: "ztmChatConfig" });
 
 // Type alias inferred from schema - guaranteed to stay in sync
 export type ZTMChatConfig = Static<typeof ZTMChatConfigSchema>;
