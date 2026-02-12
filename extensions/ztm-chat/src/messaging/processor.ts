@@ -3,7 +3,6 @@
 
 import { logger } from "../utils/logger.js";
 import { getMessageStateStore } from "../runtime/store.js";
-import { messageDeduplicator } from "./dedup.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
@@ -27,12 +26,6 @@ export function processIncomingMessage(
     return null;
   }
 
-  // Step 3: Check for duplicates
-  if (messageDeduplicator.isDuplicate(msg.sender, msg.time)) {
-    logger.debug(`Skipping duplicate message from ${msg.sender}`);
-    return null;
-  }
-
   const check = checkDmPolicy(msg.sender, config, storeAllowFrom);
 
   if (!check.allowed) {
@@ -44,7 +37,7 @@ export function processIncomingMessage(
     return null;
   }
 
-  // Step 5: Return normalized message
+  // Return normalized message
   return {
     id: `${msg.time}-${msg.sender}`,
     content: msg.message,

@@ -21,14 +21,6 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("./dedup.js", () => ({
-  messageDeduplicator: {
-    isDuplicate: vi.fn(() => false),
-    markSeen: vi.fn(),
-    clear: vi.fn(),
-  },
-}));
-
 // Mock store with fresh instances for each call
 vi.mock("../runtime/store.js", () => ({
   getMessageStateStore: vi.fn(function() {
@@ -80,10 +72,6 @@ describe("Inbound message processing", () => {
 
   beforeEach(async () => {
     mockState.messageCallbacks.clear();
-
-    // Clear the deduplicator cache between tests
-    const { messageDeduplicator } = await import("./dedup.js");
-    messageDeduplicator.clear();
   });
 
   afterEach(() => {
@@ -262,21 +250,6 @@ describe("Inbound message processing", () => {
       } else {
         vi.mocked(getMessageStateStore).mockReset();
       }
-    });
-
-    it("should skip duplicate messages", async () => {
-      const { messageDeduplicator } = await import("./dedup.js");
-      const originalFn = messageDeduplicator.isDuplicate;
-      messageDeduplicator.isDuplicate = vi.fn(() => true);
-
-      const message = createMessage();
-      const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
-
-      expect(result).toBeNull();
-
-      // Restore original function
-      messageDeduplicator.isDuplicate = originalFn;
     });
 
     it("should respect dmPolicy='deny'", () => {

@@ -27,7 +27,6 @@ const _inboundProcessorKey = Symbol("ztm:inbound-processor");
 const _watcherKey = Symbol("ztm:watcher");
 const _pollingWatcherKey = Symbol("ztm:polling-watcher");
 const _messageDispatcherKey = Symbol("ztm:message-dispatcher");
-const _dedupCacheKey = Symbol("ztm:dedup-cache");
 
 export const DEPENDENCIES = {
   LOGGER: createDependencyKey<ILogger>(_loggerKey),
@@ -42,7 +41,6 @@ export const DEPENDENCIES = {
   WATCHER: createDependencyKey<unknown>(_watcherKey),
   POLLING_WATCHER: createDependencyKey<unknown>(_pollingWatcherKey),
   MESSAGE_DISPATCHER: createDependencyKey<unknown>(_messageDispatcherKey),
-  DEDUP_CACHE: createDependencyKey<unknown>(_dedupCacheKey),
 } as const;
 
 /**

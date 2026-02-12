@@ -35,12 +35,6 @@ vi.mock("./store.js", () => ({
   },
 }));
 
-vi.mock("./dedup.js", () => ({
-  messageDeduplicator: {
-    isDuplicate: () => false,
-  },
-}));
-
 describe("Watch → Polling Fallback", () => {
   const baseConfig: ZTMChatConfig = {
     agentUrl: "https://example.com:7777",

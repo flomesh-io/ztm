@@ -10,9 +10,6 @@ export * from './watcher.js';
 // Message callback dispatching
 export * from './dispatcher.js';
 
-// Message deduplication
-export * from './dedup.js';
-
 // Outbound messaging
 export * from './outbound.js';
 
