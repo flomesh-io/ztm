@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import type { ZTMChatConfig } from "./types/config.js";
 import type { DMPolicy } from "./config/schema.js";
+import { isValidUrl } from "./utils/validation.js";
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -207,14 +208,12 @@ export class ZTMChatWizard {
     );
 
     // Validate URL format (only format, not connectivity - that's handled by gateway lifecycle)
-    try {
-      new URL(agentUrl);
-      this.config.agentUrl = agentUrl;
-      this.prompts.success(`URL validated: ${agentUrl}`);
-    } catch {
+    if (!isValidUrl(agentUrl)) {
       this.prompts.error(`Invalid URL format: ${agentUrl}`);
       throw new Error("Invalid URL format");
     }
+    this.config.agentUrl = agentUrl;
+    this.prompts.success(`URL validated: ${agentUrl}`);
   }
 
   /**
@@ -231,14 +230,12 @@ export class ZTMChatWizard {
     );
 
     // Validate URL format (only format, not connectivity - that's handled by gateway lifecycle)
-    try {
-      new URL(permitUrl);
-      this.config.permitUrl = permitUrl;
-      this.prompts.success(`URL validated: ${permitUrl}`);
-    } catch {
+    if (!isValidUrl(permitUrl)) {
       this.prompts.error(`Invalid URL format: ${permitUrl}`);
       throw new Error("Invalid URL format");
     }
+    this.config.permitUrl = permitUrl;
+    this.prompts.success(`URL validated: ${permitUrl}`);
   }
 
   /**

@@ -6,30 +6,8 @@ import type {
   ZTMChatConfigValidation,
   DMPolicy,
   ConfigValidationError,
-  ValidationErrorReason,
 } from "../types/config.js";
-
-// Helper validators
-const isValidUrl = (value: string): boolean => {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Create a validation error for a specific field
- */
-function validationError(
-  field: string,
-  reason: ValidationErrorReason,
-  value: unknown,
-  message: string
-): ConfigValidationError {
-  return { field, reason, value, message };
-}
+import { validationError, isValidUrl } from "../utils/validation.js";
 
 /**
  * Validate agent URL field
