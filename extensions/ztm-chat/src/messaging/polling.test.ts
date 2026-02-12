@@ -4,9 +4,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatConfig } from "../types/config.js";
+import type { ZTMApiClient } from "../types/api.js";
 import { success, failure } from "../types/common.js";
 import type { ZTMChat, ZTMMessage } from "../types/api.js";
 import { ZtmReadError } from "../types/errors.js";
+
+// Extended config type for testing (supports runtime properties like pollingInterval)
+type ExtendedConfig = ZTMChatConfig & { pollingInterval?: number; [key: string]: unknown };
 
 // Track intervals created during tests
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
@@ -104,14 +108,14 @@ describe("Polling Watcher", () => {
       const ref = originalSetInterval(callback, Math.min(ms, 100)); // Use short interval for tests
       createdIntervals.push(ref);
       return ref;
-    }) as any;
+    }) as unknown as typeof setInterval;
 
     mockState = {
       accountId: "test-account",
       config: baseConfig,
       apiClient: {
-        getChats: vi.fn(() => []),
-      } as any,
+        getChats: vi.fn(() => Promise.resolve(success([]))),
+      } as unknown as ZTMApiClient,
       connected: true,
       meshConnected: true,
       lastError: null,
@@ -150,7 +154,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should use custom polling interval from config", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: 5000 } as any;
+      mockState.config = { ...baseConfig, pollingInterval: 5000 } as ExtendedConfig;
 
       await startPollingWatcher(mockState);
 
@@ -161,7 +165,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should enforce minimum interval of 1000ms", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: 100 } as any;
+      mockState.config = { ...baseConfig, pollingInterval: 100 } as ExtendedConfig;
 
       await startPollingWatcher(mockState);
 
@@ -286,7 +290,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const { processIncomingMessage, notifyMessageCallbacks } = await import("./inbound.js");
+      const inboundModule = await import("./inbound.js");
       const mockNormalizedMessage = {
         id: "test-id",
         content: "Test message",
@@ -295,7 +299,7 @@ describe("Polling Watcher", () => {
         timestamp: new Date(1234567890),
         peer: "alice",
       };
-      (processIncomingMessage as any).mockReturnValue(mockNormalizedMessage);
+      vi.mocked(inboundModule.processIncomingMessage).mockReturnValue(mockNormalizedMessage);
 
       await startPollingWatcher(mockState);
 
@@ -303,7 +307,7 @@ describe("Polling Watcher", () => {
         await setIntervalCallback();
       }
 
-      expect(processIncomingMessage).toHaveBeenCalledWith(
+      expect(inboundModule.processIncomingMessage).toHaveBeenCalledWith(
         {
           time: 1234567890,
           message: "Test message",
@@ -314,7 +318,7 @@ describe("Polling Watcher", () => {
         expect.any(Array),
         "test-account"
       );
-      expect(notifyMessageCallbacks).toHaveBeenCalledWith(mockState, mockNormalizedMessage);
+      expect(inboundModule.notifyMessageCallbacks).toHaveBeenCalledWith(mockState, mockNormalizedMessage);
     });
 
     it("should check DM policy for each peer", async () => {
@@ -325,7 +329,7 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const { checkDmPolicy } = await import("./inbound.js");
+      const inboundModule = await import("./inbound.js");
 
       await startPollingWatcher(mockState);
 
@@ -333,7 +337,7 @@ describe("Polling Watcher", () => {
         await setIntervalCallback();
       }
 
-      expect(checkDmPolicy).toHaveBeenCalledTimes(2);
+      expect(inboundModule.checkDmPolicy).toHaveBeenCalledTimes(2);
     });
 
     it("should trigger pairing request for new users", async () => {
@@ -343,8 +347,8 @@ describe("Polling Watcher", () => {
       ];
       mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
-      const { checkDmPolicy } = await import("./inbound.js");
-      (checkDmPolicy as any).mockReturnValue({
+      const inboundModule = await import("./inbound.js");
+      vi.mocked(inboundModule.checkDmPolicy).mockReturnValue({
         allowed: false,
         reason: "pending",
         action: "request_pairing",
@@ -561,7 +565,7 @@ describe("Polling Watcher", () => {
 
   describe("configuration edge cases", () => {
     it("should handle undefined pollingInterval", async () => {
-      mockState.config = { ...baseConfig } as any; // no pollingInterval
+      mockState.config = { ...baseConfig }; // no pollingInterval
 
       await startPollingWatcher(mockState);
 
@@ -569,7 +573,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle zero pollingInterval", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: 0 } as any;
+      mockState.config = { ...baseConfig, pollingInterval: 0 } as ExtendedConfig;
 
       await startPollingWatcher(mockState);
 
@@ -577,7 +581,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle negative pollingInterval", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: -1000 } as any;
+      mockState.config = { ...baseConfig, pollingInterval: -1000 } as ExtendedConfig;
 
       await startPollingWatcher(mockState);
 
@@ -585,7 +589,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle very large pollingInterval", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: 60000 } as any;
+      mockState.config = { ...baseConfig, pollingInterval: 60000 } as ExtendedConfig;
 
       await startPollingWatcher(mockState);
 

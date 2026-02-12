@@ -26,7 +26,8 @@ describe("Message Processor", () => {
     });
 
     it("should return false for empty sender", () => {
-      expect(isValidMessage({ time: 123, message: "Hi", sender: "" } as any)).toBe(false);
+      // Empty string for sender should fail validation (sender.length > 0)
+      expect(isValidMessage({ time: 123, message: "Hi", sender: "" })).toBe(false);
     });
 
     it("should return false for non-object", () => {
