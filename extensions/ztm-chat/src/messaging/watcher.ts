@@ -135,6 +135,14 @@ async function handleInitialPairingRequests(
   }
 }
 
+// Watch context for iteration execution
+interface WatchContext {
+  state: AccountRuntimeState;
+  rt: ReturnType<typeof getZTMRuntime>;
+  messagePath: string;
+  messageSemaphore: Semaphore;
+}
+
 /**
  * Start the watch loop that monitors for changes
  */
@@ -149,7 +157,9 @@ function startWatchLoop(
   let fullSyncTimer: ReturnType<typeof setTimeout> | null = null;
   let messagesReceivedInCycle = false;
 
-  const scheduleFullSync = (storeAllowFrom: string[]) => {
+  const ctx: WatchContext = { state, rt, messagePath, messageSemaphore };
+
+  const scheduleFullSync = (storeAllowFrom: string[]): void => {
     if (fullSyncTimer) {
       clearTimeout(fullSyncTimer);
     }
@@ -163,50 +173,101 @@ function startWatchLoop(
   };
 
   const watchLoop = async (): Promise<void> => {
-    if (!state.apiClient || !state.config) return;
+    const result = await executeWatchIteration(ctx);
 
-    const changedResult = await state.apiClient.watchChanges(messagePath);
-    if (!isSuccess(changedResult)) {
-      state.watchErrorCount++;
-      logger.warn(`[${state.accountId}] Watch error (${state.watchErrorCount}): ${changedResult.error?.message}`);
-
-      if (state.watchErrorCount > 5) {
-        if (fullSyncTimer) clearTimeout(fullSyncTimer);
-        logger.warn(`[${state.accountId}] Too many watch errors, falling back to polling`);
-        state.watchErrorCount = 0;
-        await startPollingWatcher(state);
-        return;
-      }
+    if (isWatchError(result)) {
+      handleWatchError(ctx.state, result.errorMessage, scheduleFullSync);
       setTimeout(watchLoop, 1000);
       return;
     }
 
-    const changedPaths = changedResult.value;
-    messagesReceivedInCycle = changedPaths.length > 0;
-
-    if (messagesReceivedInCycle) {
-      logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
-      lastMessageTime = Date.now();
-    }
-
-    const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
-
-    for (const path of changedPaths) {
-      await processChangedPath(state, path, loopStoreAllowFrom, messageSemaphore);
-    }
-
-    if (messagesReceivedInCycle) {
-      scheduleFullSync(loopStoreAllowFrom);
-      if (state.apiClient) {
-        getMessageStateStore().setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
-      }
-    }
+    messagesReceivedInCycle = await processChangedPaths(
+      ctx,
+      result.paths,
+      messagesReceivedInCycle,
+      scheduleFullSync
+    );
 
     state.watchErrorCount = 0;
     setTimeout(watchLoop, 1000);
   };
 
   watchLoop();
+}
+
+// Result type for watch iteration
+type WatchResult =
+  | { success: false; errorMessage: string }
+  | { success: true; paths: string[] };
+
+function isWatchError(result: WatchResult): result is { success: false; errorMessage: string } {
+  return !result.success;
+}
+
+/**
+ * Execute a single watch iteration and return changed paths
+ */
+async function executeWatchIteration(ctx: WatchContext): Promise<WatchResult> {
+  const { state, messagePath } = ctx;
+  if (!state.apiClient || !state.config) {
+    return { success: false, errorMessage: "API client or config not available" };
+  }
+
+  const changedResult = await state.apiClient.watchChanges(messagePath);
+  if (!isSuccess(changedResult)) {
+    return { success: false, errorMessage: changedResult.error?.message ?? "Unknown watch error" };
+  }
+
+  return { success: true, paths: changedResult.value };
+}
+
+/**
+ * Handle watch errors and decide whether to fallback to polling
+ */
+function handleWatchError(
+  state: AccountRuntimeState,
+  errorMessage: string,
+  scheduleFullSync: (storeAllowFrom: string[]) => void
+): void {
+  state.watchErrorCount++;
+  logger.warn(`[${state.accountId}] Watch error (${state.watchErrorCount}): ${errorMessage}`);
+
+  if (state.watchErrorCount > 5) {
+    scheduleFullSync([]);
+    logger.warn(`[${state.accountId}] Too many watch errors, falling back to polling`);
+    state.watchErrorCount = 0;
+    startPollingWatcher(state);
+  }
+}
+
+/**
+ * Process all changed paths and handle state updates
+ */
+async function processChangedPaths(
+  ctx: WatchContext,
+  changedPaths: string[],
+  messagesReceivedInCycle: boolean,
+  scheduleFullSync: (storeAllowFrom: string[]) => void
+): Promise<boolean> {
+  const { state, rt, messageSemaphore } = ctx;
+
+  if (changedPaths.length === 0) {
+    return false;
+  }
+
+  logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
+  const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
+
+  await Promise.all(
+    changedPaths.map(path => processChangedPath(state, path, loopStoreAllowFrom, messageSemaphore))
+  );
+
+  scheduleFullSync(loopStoreAllowFrom);
+  if (state.apiClient) {
+    getMessageStateStore().setFileMetadataBulk(state.accountId, state.apiClient.exportFileMetadata());
+  }
+
+  return true;
 }
 
 /**
