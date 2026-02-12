@@ -93,7 +93,9 @@ export async function handlePairingRequest(
     });
     pairingCode = code;
     pairingCreated = created;
-    logger.info(`[${state.accountId}] Registered pairing request for ${peer} (code=${code}, created=${created})`);
+    if (pairingCreated) {
+      logger.info(`[${state.accountId}] Registered new pairing request for ${peer} (code=${code})`);
+    }
   } catch (error) {
     logger.warn(`[${state.accountId}] Failed to register pairing request in store for ${peer}: ${error}`);
   }
@@ -131,7 +133,7 @@ export async function handlePairingRequest(
   }
 
   // Only send pairing message to the peer if this is a newly created request
-  if (pairingCreated || !pairingCode) {
+  if (pairingCreated) {
     const pairingMessage: ZTMMessage = {
       time: Date.now(),
       message: messageText,
@@ -145,6 +147,6 @@ export async function handlePairingRequest(
       logger.warn(`[${state.accountId}] Failed to send pairing request to ${peer}: ${error}`);
     }
   } else {
-    logger.debug(`[${state.accountId}] Pairing request already exists for ${peer} (code=${pairingCode}), not re-sending message`);
+    logger.debug(`[${state.accountId}] Pairing request already exists for ${peer}, not re-sending message`);
   }
 }

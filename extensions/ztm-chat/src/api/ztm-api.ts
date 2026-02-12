@@ -216,9 +216,20 @@ export function createZTMApiClient(
       const result: ZTMMessage[] = [];
       for (const entry of entries) {
         if (!entry?.time) continue;
-        const messageText = typeof entry.message === 'object' && entry.message !== null
-          ? (entry.message.text || JSON.stringify(entry.message))
-          : String(entry.message || '');
+        let messageText = '';
+        if (typeof entry.message === 'object' && entry.message !== null) {
+          if (typeof entry.message.text === 'string') {
+            messageText = entry.message.text;
+          } else if (typeof entry.message.message === 'object' && entry.message.message !== null) {
+            messageText = typeof entry.message.message.text === 'string'
+              ? entry.message.message.text
+              : JSON.stringify(entry.message.message);
+          } else {
+            messageText = JSON.stringify(entry.message);
+          }
+        } else {
+          messageText = String(entry.message ?? '');
+        }
         result.push({
           time: entry.time,
           message: messageText,
@@ -346,7 +357,27 @@ export function createZTMApiClient(
         return failure(error);
       }
 
-      const chats = result.value;
+      // Normalize message format: convert {text: "..."} to string
+      const chats = result.value.map((chat) => {
+        if (chat.latest) {
+          const latestMessage = chat.latest.message ?? null;
+          let normalizedMessage = '';
+          if (latestMessage !== null && typeof latestMessage === 'object') {
+            normalizedMessage = (latestMessage as { text?: string }).text || JSON.stringify(latestMessage);
+          } else {
+            normalizedMessage = String(latestMessage ?? '');
+          }
+          return {
+            ...chat,
+            latest: {
+              ...chat.latest,
+              message: normalizedMessage,
+            },
+          };
+        }
+        return chat;
+      });
+
       logger.debug?.(`[ZTM API] Got ${chats.length} chats`);
       return success(chats);
     },
@@ -378,7 +409,20 @@ export function createZTMApiClient(
         return failure(error);
       }
 
-      const messages = result.value;
+      const messages = result.value.map((msg) => {
+        const msgMessage = msg.message ?? null;
+        let normalizedMessage = '';
+        if (msgMessage !== null && typeof msgMessage === 'object') {
+          normalizedMessage = (msgMessage as { text?: string }).text || JSON.stringify(msgMessage);
+        } else {
+          normalizedMessage = String(msgMessage ?? '');
+        }
+        return {
+          ...msg,
+          message: normalizedMessage,
+        };
+      });
+
       logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
       return success(messages);
     },
@@ -386,7 +430,7 @@ export function createZTMApiClient(
     async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>> {
       logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
 
-      const ztmEntry = { time: message.time, message: { text: message.message } };
+      const ztmEntry = { text: message.message };
 
       const result = await request<void>("POST", `${CHAT_API_BASE}/peers/${peer}/messages`, ztmEntry);
 
@@ -423,6 +467,8 @@ export function createZTMApiClient(
 
       const changedPeers: string[] = [];
 
+      logger.debug(`[ZTM API] Watch: got ${chatsResult.value.length} chats, lastPollTime=${lastPollTime}`);
+
       for (const chat of chatsResult.value) {
         if (!chat.peer || chat.peer === config.username) continue;
 
@@ -435,6 +481,7 @@ export function createZTMApiClient(
       if (changedPeers.length > 0) {
         const latestTime = Math.max(...chatsResult.value.map(c => c.latest?.time ?? 0));
         lastPollTime = latestTime;
+        logger.debug(`[ZTM API] Watch: found ${changedPeers.length} peers with new messages: ${changedPeers.join(', ')}`);
       }
 
       logger.debug?.(`[ZTM API] Watch complete: ${changedPeers.length} peers with new messages`);

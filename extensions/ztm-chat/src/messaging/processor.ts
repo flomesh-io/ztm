@@ -14,12 +14,18 @@ export function processIncomingMessage(
   accountId: string = "default"
 ): ZTMChatMessage | null {
   // Step 1: Skip empty or whitespace-only messages
-  if (!msg.message || msg.message.trim() === "") {
+  if (typeof msg.message !== "string" || msg.message.trim() === "") {
     logger.debug(`Skipping empty message from ${msg.sender}`);
     return null;
   }
 
-  // Step 2: Check watermark (skip already-processed messages)
+  // Step 2: Skip messages from the bot itself
+  if (msg.sender === config.username) {
+    logger.debug(`Skipping own message from ${msg.sender}`);
+    return null;
+  }
+
+  // Step 3: Check watermark (skip already-processed messages)
   const watermark = getMessageStateStore().getWatermark(accountId, msg.sender);
   if (msg.time <= watermark) {
     logger.debug(`Skipping already-processed message from ${msg.sender} (time=${msg.time} <= watermark=${watermark})`);
@@ -30,7 +36,7 @@ export function processIncomingMessage(
 
   if (!check.allowed) {
     if (check.action === "request_pairing") {
-      logger.info(`[DM Policy] Pairing request from ${msg.sender}`);
+      logger.debug(`[DM Policy] Pairing request from ${msg.sender}`);
     } else if (check.action === "ignore") {
       logger.debug(`[DM Policy] Ignoring message from ${msg.sender} (${check.reason})`);
     }

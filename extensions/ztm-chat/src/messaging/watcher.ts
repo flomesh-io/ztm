@@ -89,11 +89,13 @@ async function performInitialSync(
   for (const chat of chats) {
     if (!chat.peer || chat.peer === state.config.username) continue;
     if (chat.latest) {
+      const sender = chat.latest.sender || chat.peer;
+      if (sender === state.config.username) continue;
       const normalized = processIncomingMessage(
         {
           time: chat.latest.time,
           message: chat.latest.message,
-          sender: chat.peer,
+          sender: sender,
         },
         state.config,
         storeAllowFrom,
@@ -263,6 +265,7 @@ async function processChangedPaths(
     return false;
   }
 
+  logger.debug(`[${state.accountId}] Processing ${changedPeers.length} peers with new messages: ${changedPeers.join(', ')}`);
   logger.debug(`[${state.accountId}] Processing ${changedPeers.length} peers with new messages`);
 
   const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
@@ -307,6 +310,10 @@ async function processChangedPeer(
   const messages = messagesResult.value;
 
   for (const msg of messages) {
+    if (msg.sender === state.config.username) {
+      logger.debug(`[${state.accountId}] Skipping outbound message to ${peer}`);
+      continue;
+    }
     const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
     if (normalized) {
       notifyMessageCallbacks(state, normalized);
@@ -342,11 +349,13 @@ async function performFullSync(
   for (const chat of chats) {
     if (!chat.peer || chat.peer === state.config.username) continue;
     if (chat.latest) {
+      const sender = chat.latest.sender || chat.peer;
+      if (sender === state.config.username) continue;
       const normalized = processIncomingMessage(
         {
           time: chat.latest.time,
           message: chat.latest.message,
-          sender: chat.peer,
+          sender: sender,
         },
         state.config,
         storeAllowFrom,
