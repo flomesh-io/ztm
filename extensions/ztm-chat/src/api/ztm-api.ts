@@ -301,18 +301,18 @@ export function createZTMApiClient(
     },
 
     async discoverUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
-      return client.discoverUsersViaStorage();
+      return client.listUsers();
     },
 
     async discoverPeers(): Promise<Result<ZTMPeer[], ZtmDiscoveryError>> {
-      const usersResult = await client.discoverUsersViaStorage();
+      const usersResult = await client.listUsers();
       if (usersResult.ok) {
         return success(usersResult.value.map(u => ({ username: u.username })));
       }
       return failure(usersResult.error);
     },
 
-    async discoverUsersViaStorage(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
+    async listUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
       logger.debug?.(`[ZTM API] Discovering users via Chat App API`);
 
       const result = await request<string[]>("GET", `${CHAT_API_BASE}/users`);

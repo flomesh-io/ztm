@@ -339,7 +339,7 @@ describe("discoverUsers via storage", () => {
     mockResponse(["alice", "bob"]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsersViaStorage();
+    const result = await client.listUsers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -354,7 +354,7 @@ describe("discoverUsers via storage", () => {
     mockResponse(["alice"]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsersViaStorage();
+    const result = await client.listUsers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -368,7 +368,7 @@ describe("discoverUsers via storage", () => {
     mockResponse([]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsersViaStorage();
+    const result = await client.listUsers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -391,7 +391,7 @@ describe("discoverUsers via storage edge cases", () => {
     mockResponse([]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsersViaStorage();
+    const result = await client.listUsers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -404,7 +404,7 @@ describe("discoverUsers via storage edge cases", () => {
     mockResponse([]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsersViaStorage();
+    const result = await client.listUsers();
 
     expect(result.ok).toBe(true);
     if (result.ok) {

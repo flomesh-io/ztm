@@ -152,5 +152,5 @@ export interface ZTMApiClient {
   exportFileMetadata(): Record<string, { time: number; size: number }>;
 
   /** Discover active peers by scanning shared storage. Returns Result with users or discovery error. */
-  discoverUsersViaStorage(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
+  listUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
 }
