@@ -10,6 +10,8 @@ import { notifyMessageCallbacks } from "./dispatcher.js";
 import { Semaphore } from "../utils/concurrency.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
+import { checkDmPolicy } from "../core/dm-policy.js";
+import { handlePairingRequest } from "../connectivity/permit.js";
 
 // Peer message path pattern
 const PEER_MESSAGE_PATTERN = /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages\//;
@@ -135,8 +137,6 @@ async function handleInitialPairingRequests(
 ): Promise<void> {
   if (!state.apiClient) return;
 
-  const { checkDmPolicy } = await import("../core/dm-policy.js");
-
   const chatsResult = await state.apiClient.getChats();
   if (!isSuccess(chatsResult)) {
     logger.warn(`[${state.accountId}] Failed to get chats for pairing requests: ${chatsResult.error?.message}`);
@@ -147,7 +147,6 @@ async function handleInitialPairingRequests(
     if (chat.peer && chat.peer !== state.config.username) {
       const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);
       if (check.action === "request_pairing") {
-        const { handlePairingRequest } = await import("../connectivity/permit.js");
         await handlePairingRequest(state, chat.peer, "Initial chat request", storeAllowFrom);
       }
     }
@@ -334,10 +333,8 @@ async function processChangedPeer(
     }
   }
 
-  const { checkDmPolicy } = await import("../core/dm-policy.js");
   const check = checkDmPolicy(peer, state.config, storeAllowFrom);
   if (check.action === "request_pairing") {
-    const { handlePairingRequest } = await import("../connectivity/permit.js");
     await handlePairingRequest(state, peer, "New message", storeAllowFrom);
   }
 }
