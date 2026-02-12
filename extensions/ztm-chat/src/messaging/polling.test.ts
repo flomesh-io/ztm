@@ -18,17 +18,69 @@ let createdIntervals: ReturnType<typeof setInterval>[] = [];
 // Original setInterval
 const originalSetInterval = global.setInterval;
 
-// Helper to create a mock ZTMChat
-function createMockChat(peer: string, messageContent: string, time: number): ZTMChat {
+// ============================================================================
+// TYPED MOCK FACTORIES - Type-safe alternatives to `as any`
+// ============================================================================
+
+/**
+ * Options for creating a mock ZTMChat with type safety
+ */
+interface MockChatOptions {
+  peer: string;
+  message: string;
+  time: number;
+  latest?: { time: number; message: string; sender: string } | null;
+}
+
+/**
+ * Options for creating a partial ZTMChat (for edge cases like null peer)
+ */
+interface PartialZTMChat {
+  peer: string | null;
+  latest: { time: number; message: string; sender: string } | null;
+  time: number;
+  updated: number;
+}
+
+/**
+ * Creates a mock ZTMChat object with proper typing
+ * Supports both call styles for backward compatibility:
+ * - createMockChat(peer, message, time)
+ * - createMockChat({ peer, message, time })
+ */
+function createMockChat(
+  peerOrOptions: string | MockChatOptions,
+  message?: string,
+  time?: number
+): ZTMChat {
+  // Handle both call styles for backward compatibility
+  const options: MockChatOptions = typeof peerOrOptions === "string"
+    ? { peer: peerOrOptions, message: message!, time: time! }
+    : peerOrOptions;
+
+  const { peer, latest } = options;
   return {
     peer,
-    time,
-    updated: time,
-    latest: {
-      time,
-      message: messageContent,
+    time: options.time,
+    updated: options.time,
+    latest: latest ?? {
+      time: options.time,
+      message: options.message,
       sender: peer,
     },
+  };
+}
+
+/**
+ * Creates a partial ZTMChat for edge case testing
+ * Provides type safety without `as unknown as ZTMChat` casts
+ */
+function createPartialZTMChat(options: PartialZTMChat): ZTMChat {
+  return {
+    peer: options.peer,
+    time: options.time,
+    updated: options.updated,
+    latest: options.latest,
   };
 }
 
@@ -233,8 +285,13 @@ describe("Polling Watcher", () => {
     it("should skip chats without peer", async () => {
       const now = Date.now();
       const mockChats = [
-        { peer: null, latest: { time: now, message: "No peer", sender: "unknown" }, time: now, updated: now } as unknown as ZTMChat,
-        createMockChat("alice", "Hello", now),
+        createPartialZTMChat({
+          peer: null,
+          latest: { time: now, message: "No peer", sender: "unknown" },
+          time: now,
+          updated: now,
+        }),
+        createMockChat({ peer: "alice", message: "Hello", time: now }),
       ];
       mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
@@ -252,8 +309,13 @@ describe("Polling Watcher", () => {
     it("should skip chats without latest message", async () => {
       const now = Date.now();
       const mockChats = [
-        { peer: "alice", latest: null, time: now, updated: now } as unknown as ZTMChat,
-        createMockChat("bob", "Hi", now),
+        createPartialZTMChat({
+          peer: "alice",
+          latest: null,
+          time: now,
+          updated: now,
+        }),
+        createMockChat({ peer: "bob", message: "Hi", time: now }),
       ];
       mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
