@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel/index.js";
 import { setZTMRuntime } from "./src/runtime/index.js";
-import { runWizard, discoverConfig } from "./src/onboarding.js";
+import { runWizard, discoverConfig } from "./src/onboarding/index.js";
 
 // Set up global unhandled rejection handler in non-test environments
 // This ensures async errors are logged instead of being silently swallowed
@@ -21,7 +21,7 @@ export {
   discoverConfig,
   type WizardResult,
   type WizardPrompts,
-} from "./src/onboarding.js";
+} from "./src/onboarding/index.js";
 
 // Re-export dispose function for plugin cleanup (from channel/index.js)
 export { disposeMessageStateStore } from "./src/channel/index.js";
