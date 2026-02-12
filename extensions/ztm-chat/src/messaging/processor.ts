@@ -21,8 +21,8 @@ export function processIncomingMessage(
 
   // Step 2: Check watermark (skip already-processed messages)
   const watermark = getMessageStateStore().getWatermark(accountId, msg.sender);
-  if (msg.time <= watermark) {
-    logger.debug(`Skipping already-processed message from ${msg.sender} (time=${msg.time} <= watermark=${watermark})`);
+  if (msg.time < watermark) {
+    logger.debug(`Skipping already-processed message from ${msg.sender} (time=${msg.time} < watermark=${watermark})`);
     return null;
   }
 
