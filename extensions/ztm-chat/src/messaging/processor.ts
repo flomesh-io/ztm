@@ -79,12 +79,12 @@ export function processIncomingMessage(
  */
 export function isValidMessage(msg: unknown): msg is { time: number; message: string; sender: string } {
   if (!msg || typeof msg !== "object") return false;
-  const message = msg as Record<string, unknown>;
+  const obj = msg as { time?: unknown; message?: unknown; sender?: unknown };
   return (
-    typeof message.time === "number" &&
-    typeof message.message === "string" &&
-    typeof message.sender === "string" &&
-    message.sender.length > 0
+    typeof obj.time === "number" &&
+    typeof obj.message === "string" &&
+    typeof obj.sender === "string" &&
+    obj.sender.length > 0
   );
 }
 

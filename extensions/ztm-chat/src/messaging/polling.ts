@@ -11,10 +11,8 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
   const { config, apiClient } = state;
   if (!apiClient) return;
 
-  const pollingInterval = Math.max(
-    (config as any).pollingInterval ?? 2000,
-    1000
-  );
+  const rawInterval = (config as Record<string, unknown>).pollingInterval;
+  const pollingInterval = typeof rawInterval === "number" ? Math.max(rawInterval, 1000) : 2000;
 
   logger.info(`[${state.accountId}] Starting polling watcher (${pollingInterval}ms)`);
 
