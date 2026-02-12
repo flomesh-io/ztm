@@ -3,12 +3,23 @@
 
 import type { ZTMChatConfig } from './config.js';
 import type { ZTMChatMessage } from './messaging.js';
+import type { ZTMApiClient } from './api.js';
+import type {
+  ZtmApiError,
+  ZtmTimeoutError,
+  ZtmSendError,
+  ZtmReadError,
+  ZtmWriteError,
+  ZtmDiscoveryError,
+  ZtmParseError,
+  ZtmError,
+} from './errors.js';
 
 // Runtime state per account
 export interface AccountRuntimeState {
   accountId: string;
   config: ZTMChatConfig;
-  apiClient: import('./api.js').ZTMApiClient | null;
+  apiClient: ZTMApiClient | null;
   connected: boolean;
   meshConnected: boolean;
   lastError: string | null;

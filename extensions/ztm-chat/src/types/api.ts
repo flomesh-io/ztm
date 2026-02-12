@@ -2,7 +2,16 @@
 // Types for ZTM Agent API communication
 
 import type { Result } from "./common.js";
-import type { ZtmSendError, ZtmReadError, ZtmDiscoveryError } from "./errors.js";
+import type {
+  ZtmApiError,
+  ZtmTimeoutError,
+  ZtmSendError,
+  ZtmReadError,
+  ZtmWriteError,
+  ZtmDiscoveryError,
+  ZtmParseError,
+  ZtmError,
+} from "./errors.js";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Core ZTM Types
@@ -69,7 +78,7 @@ export interface ZTMApiClient {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Get current mesh information */
-  getMeshInfo(): Promise<Result<ZTMMeshInfo, import("./errors.js").ZtmApiError>>;
+  getMeshInfo(): Promise<Result<ZTMMeshInfo, ZtmApiError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // User/Peer Discovery - Return Result types with ZtmDiscoveryError
@@ -86,7 +95,7 @@ export interface ZTMApiClient {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Get all chats. Returns Result with chats list or error. */
-  getChats(): Promise<Result<ZTMChat[], import("./errors.js").ZtmReadError>>;
+  getChats(): Promise<Result<ZTMChat[], ZtmReadError>>;
 
   /** Get messages from a specific peer. Returns Result with messages or read error. */
   getPeerMessages(
@@ -103,13 +112,13 @@ export interface ZTMApiClient {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Get available groups. Returns Result with groups list or error. */
-  getGroups(): Promise<Result<ZTMChat[], import("./errors.js").ZtmError>>;
+  getGroups(): Promise<Result<ZTMChat[], ZtmError>>;
 
   /** Get messages from a group. Returns Result with messages or read error. */
   getGroupMessages(
     creator: string,
     group: string
-  ): Promise<Result<ZTMMessage[], import("./errors.js").ZtmReadError>>;
+  ): Promise<Result<ZTMMessage[], ZtmReadError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // File Operations - Return Result types with appropriate errors
@@ -118,20 +127,20 @@ export interface ZTMApiClient {
   /** Add a file to storage. Returns Result with file ID or error. */
   addFile(
     data: ArrayBuffer
-  ): Promise<Result<string, import("./errors.js").ZtmWriteError>>;
+  ): Promise<Result<string, ZtmWriteError>>;
 
   /** Get a file from storage. Returns Result with file data or error. */
   getFile(
     owner: string,
     hash: string
-  ): Promise<Result<ArrayBuffer, import("./errors.js").ZtmReadError>>;
+  ): Promise<Result<ArrayBuffer, ZtmReadError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Watch Mechanism - Return Result types
   // ═══════════════════════════════════════════════════════════════════════════
 
   /** Watch for changes in storage with given prefix. Returns Result with changed paths or error. */
-  watchChanges(prefix: string): Promise<Result<string[], import("./errors.js").ZtmReadError>>;
+  watchChanges(prefix: string): Promise<Result<string[], ZtmReadError>>;
 
   /** Seed file metadata from persisted state (call before first watchChanges) */
   seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
