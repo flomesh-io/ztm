@@ -46,8 +46,11 @@ export function notifyMessageCallbacks(
     );
   }
 
-  // Update watermark after processing
-  getMessageStateStore().setWatermark(state.accountId, message.peer, message.timestamp.getTime());
+  if (successCount > 0) {
+    getMessageStateStore().setWatermark(state.accountId, message.peer, message.timestamp.getTime());
+  } else {
+    logger.warn(`[${state.accountId}] Message processing failed for ${message.peer}, watermark not updated`);
+  }
 }
 
 /**

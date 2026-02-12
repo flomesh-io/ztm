@@ -310,6 +310,10 @@ export async function startAccountGateway(
 
   // Dispatch inbound messages to the AI agent via OpenClaw's reply pipeline
   const messageCallback = (msg: ZTMChatMessage) => {
+    ctx.log?.info(
+      `[${account.accountId}] Received message from ${msg.sender}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
+    );
+
     const handleInbound = async (): Promise<void> => {
       try {
         const route = rt.channel.routing.resolveAgentRoute({
@@ -356,6 +360,9 @@ export async function startAccountGateway(
                 const replyText = payload.text ?? "";
                 if (!replyText) return;
                 await sendZTMMessage(state, msg.sender, replyText);
+                ctx.log?.info(
+                  `[${account.accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? "..." : ""}`,
+                );
               },
               onError: (err: unknown) => {
                 ctx.log?.error?.(
