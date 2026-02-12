@@ -4,7 +4,7 @@ import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime.js";
 import { processIncomingMessage, notifyMessageCallbacks } from "./inbound.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import { isSuccess } from "../types/common.js";
+import { handleResult } from "../utils/result.js";
 
 // Fallback polling watcher (when watch is unavailable)
 export async function startPollingWatcher(state: AccountRuntimeState): Promise<void> {
@@ -21,12 +21,13 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
 
     const pollStoreAllowFrom = await getZTMRuntime().channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
     const chatsResult = await state.apiClient.getChats();
-    if (!isSuccess(chatsResult)) {
-      logger.debug(`[${state.accountId}] Polling error: ${chatsResult.error?.message}`);
-      return;
-    }
-
-    const chats = chatsResult.value;
+    const chats = handleResult(chatsResult, {
+      operation: "getChats",
+      peer: state.accountId,
+      logger,
+      logLevel: "debug"
+    });
+    if (!chats) return;
     for (const chat of chats) {
       if (!chat.peer || chat.peer === config.username) continue;
       if (chat.latest) {

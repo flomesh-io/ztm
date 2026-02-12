@@ -3,8 +3,9 @@
 import { logger } from "../utils/logger.js";
 import { type ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
-import { isSuccess, type Result } from "../types/common.js";
+import { type Result } from "../types/common.js";
 import { ZtmSendError } from "../types/errors.js";
+import { handleResult } from "../utils/result.js";
 
 // Helper to generate unique message ID
 export function generateMessageId(): string {
@@ -52,13 +53,17 @@ export async function sendZTMMessage(
 
   const result = await state.apiClient.sendPeerMessage(peer, message);
 
-  if (isSuccess(result)) {
-    state.lastOutboundAt = new Date();
-    logger.info(`[${state.accountId}] Message sent to ${peer}: ${content.substring(0, 50)}...`);
-  } else {
-    state.lastError = result.error.message;
-    logger.error(`[${state.accountId}] Send failed: ${result.error.message}`);
-  }
+  handleResult(result, {
+    operation: "sendPeerMessage",
+    peer: state.accountId,
+    logger,
+    onSuccess: () => {
+      state.lastOutboundAt = new Date();
+    },
+    onError: (err) => {
+      state.lastError = err.message;
+    }
+  });
 
   return result;
 }

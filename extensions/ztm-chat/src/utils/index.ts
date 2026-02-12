@@ -13,5 +13,8 @@ export * from './logger.js';
 // Validation utilities
 export * from './validation.js';
 
+// Result handling utilities
+export * from './result.js';
+
 // Type exports
 export type { Result, AsyncResult, ConnectionStatus, MessageDirection, PairingStatus } from '../types/common.js';
