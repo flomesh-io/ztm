@@ -249,40 +249,31 @@ function handleWatchError(
 }
 
 /**
- * Process all changed paths and handle state updates
+ * Process all changed peers and handle state updates
  */
 async function processChangedPaths(
   ctx: WatchContext,
-  changedPaths: string[],
+  changedPeers: string[],
   messagesReceivedInCycle: boolean,
   scheduleFullSync: (storeAllowFrom: string[]) => void
 ): Promise<boolean> {
   const { state, rt, messageSemaphore } = ctx;
 
-  if (changedPaths.length === 0) {
+  if (changedPeers.length === 0) {
     return false;
   }
 
-  logger.debug(`[${state.accountId}] Watch detected changes: ${changedPaths.length} paths`);
+  logger.debug(`[${state.accountId}] Processing ${changedPeers.length} peers with new messages`);
+
   const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
     logger.error(`[${state.accountId}] readAllowFromStore failed during watch loop: ${err instanceof Error ? err.message : String(err)}`);
     return [] as string[];
   });
 
-  const pathsByPeer = new Map<string, string[]>();
-  for (const filePath of changedPaths) {
-    const match = filePath.match(PEER_MESSAGE_PATTERN);
-    if (!match) continue;
-    const peer = match[1];
-    if (peer === state.config.username) continue;
-    if (!pathsByPeer.has(peer)) pathsByPeer.set(peer, []);
-    pathsByPeer.get(peer)!.push(filePath);
-  }
-
   await Promise.all(
-    Array.from(pathsByPeer.entries()).map(([peer, paths]) =>
+    Array.from(changedPeers).map(peer =>
       messageSemaphore.execute(() =>
-        processChangedFilesForPeer(state, peer, paths, loopStoreAllowFrom)
+        processChangedPeer(state, rt, peer, loopStoreAllowFrom)
       )
     )
   );
@@ -293,6 +284,41 @@ async function processChangedPaths(
   }
 
   return true;
+}
+
+/**
+ * Process all messages for a specific peer
+ */
+async function processChangedPeer(
+  state: AccountRuntimeState,
+  rt: ReturnType<typeof getZTMRuntime>,
+  peer: string,
+  storeAllowFrom: string[]
+): Promise<void> {
+  if (!state.apiClient) return;
+
+  const messagesResult = await state.apiClient.getPeerMessages(peer);
+
+  if (!messagesResult.ok) {
+    logger.warn(`[${state.accountId}] Failed to get messages from peer "${peer}": ${messagesResult.error.message}`);
+    return;
+  }
+
+  const messages = messagesResult.value;
+
+  for (const msg of messages) {
+    const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
+    if (normalized) {
+      notifyMessageCallbacks(state, normalized);
+    }
+  }
+
+  const { checkDmPolicy } = await import("../core/dm-policy.js");
+  const check = checkDmPolicy(peer, state.config, storeAllowFrom);
+  if (check.action === "request_pairing") {
+    const { handlePairingRequest } = await import("../connectivity/permit.js");
+    await handlePairingRequest(state, peer, "New message", storeAllowFrom);
+  }
 }
 
 /**
@@ -337,52 +363,3 @@ async function performFullSync(
     logger.debug(`[${state.accountId}] Full sync completed: ${processedCount} new messages from ${chats.length} peers`);
   }
 }
-
-function parseMessageFileContent(
-  fileContent: unknown,
-  peer: string,
-): Array<{ time: number; message: string; sender: string }> {
-  const entries = Array.isArray(fileContent) ? fileContent : [fileContent];
-  const result: Array<{ time: number; message: string; sender: string }> = [];
-  for (const entry of entries) {
-    if (!entry?.time) continue;
-    const messageText = typeof entry.message === 'object' && entry.message !== null
-      ? (entry.message.text || JSON.stringify(entry.message))
-      : String(entry.message || '');
-    result.push({ time: entry.time, message: messageText, sender: entry.sender || peer });
-  }
-  return result;
-}
-
-async function processChangedFilesForPeer(
-  state: AccountRuntimeState,
-  peer: string,
-  paths: string[],
-  storeAllowFrom: string[],
-): Promise<void> {
-  if (!state.apiClient) return;
-
-  for (const filePath of paths) {
-    const readResult = await state.apiClient.readFile(filePath);
-    if (!readResult.ok) {
-      logger.warn(`[${state.accountId}] Failed to read changed file ${filePath}: ${readResult.error.message}`);
-      continue;
-    }
-
-    const messages = parseMessageFileContent(readResult.value, peer);
-    for (const msg of messages) {
-      const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
-      if (normalized) {
-        notifyMessageCallbacks(state, normalized);
-      }
-    }
-  }
-
-  const { checkDmPolicy } = await import("../core/dm-policy.js");
-  const check = checkDmPolicy(peer, state.config, storeAllowFrom);
-  if (check.action === "request_pairing") {
-    const { handlePairingRequest } = await import("../connectivity/permit.js");
-    await handlePairingRequest(state, peer, "New message", storeAllowFrom);
-  }
-}
-

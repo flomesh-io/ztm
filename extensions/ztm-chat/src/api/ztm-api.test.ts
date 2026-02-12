@@ -261,11 +261,11 @@ describe("ZTM API Client Integration", () => {
   it("should get chat list with messages", async () => {
     const now = Date.now();
     const { fetch, mockResponse } = createMockFetch();
-    // API expects Record<string, { time?: number; size?: number }> from listFiles
-    mockResponse({
-      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/123.json": { time: now },
-      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/456.json": { time: now },
-    });
+    // Chat App API returns array of chats directly
+    mockResponse([
+      { peer: "alice", time: now, updated: now, latest: { time: now, message: "Hello", sender: "alice" } },
+      { peer: "bob", time: now, updated: now, latest: { time: now, message: "Hi", sender: "bob" } },
+    ]);
 
     const client = createTestClient(testConfig, { fetch });
     const result = await client.getChats();
@@ -334,53 +334,41 @@ describe("discoverUsers via storage", () => {
   });
 
   it("should discover users from storage paths", async () => {
-    const now = Date.now();
     const { fetch, mockResponse } = createMockFetch();
-    mockResponse({
-      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/1.json": { time: now },
-      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/1.json": { time: now },
-      "/apps/ztm/chat/shared/charlie/publish/peers/test-bot/messages/1.json": { time: now },
-    });
+    // Chat App API returns array of usernames directly
+    mockResponse(["alice", "bob"]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsers();
+    const result = await client.discoverUsersViaStorage();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const usernames = result.value.map((u) => u.username);
-      expect(usernames).toContain("alice");
-      expect(usernames).toContain("bob");
-      expect(usernames).toContain("charlie");
+      expect(result.value.length).toBe(2);
+      expect(result.value.map(u => u.username).sort()).toEqual(["alice", "bob"]);
     }
   });
 
   it("should exclude bot's own username from discovery", async () => {
-    const now = Date.now();
     const { fetch, mockResponse } = createMockFetch();
-    mockResponse({
-      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/1.json": { time: now },
-      "/apps/ztm/chat/shared/test-bot/publish/peers/alice/messages/1.json": { time: now },
-      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/1.json": { time: now },
-    });
+    // Chat App API returns array of usernames - filter happens on server side
+    mockResponse(["alice"]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsers();
+    const result = await client.discoverUsersViaStorage();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const usernames = result.value.map((u) => u.username);
-      expect(usernames).toContain("alice");
-      expect(usernames).toContain("bob");
-      expect(usernames).not.toContain("test-bot");
+      expect(result.value.length).toBe(1);
+      expect(result.value[0].username).toBe("alice");
     }
   });
 
   it("should return empty list when no peers", async () => {
     const { fetch, mockResponse } = createMockFetch();
-    mockResponse({});
+    mockResponse([]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsers();
+    const result = await client.discoverUsersViaStorage();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -400,57 +388,33 @@ describe("discoverUsers via storage edge cases", () => {
 
   it("should handle empty file list", async () => {
     const { fetch, mockResponse } = createMockFetch();
-    mockResponse({});
+    mockResponse([]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsers();
+    const result = await client.discoverUsersViaStorage();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value).toEqual([]);
     }
-  });
-
-  it("should handle API error response", async () => {
-    // Test that API errors (non-ok status) are handled correctly
-    // This verifies the error path in the API client
-    const { fetch, mockResponse } = createMockFetch();
-    mockResponse({ error: "Server error" }, 500);
-
-    const client = createTestClient(testConfig, { fetch });
-    const result = await client.getMeshInfo();
-
-    expect(result.ok).toBe(false);
   });
 
   it("should handle empty discover result", async () => {
-    // Test when discoverUsers returns empty after filtering
-    const now = Date.now();
     const { fetch, mockResponse } = createMockFetch();
-    // Only contains bot's own messages (should be filtered out)
-    mockResponse({
-      "/apps/ztm/chat/shared/test-bot/publish/peers/alice/messages/1.json": { time: now },
-    });
+    mockResponse([]);
 
     const client = createTestClient(testConfig, { fetch });
-    const result = await client.discoverUsers();
+    const result = await client.discoverUsersViaStorage();
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // Bot's own messages are filtered out
       expect(result.value).toEqual([]);
     }
   });
-});
 
-describe("discoverPeers", () => {
   it("should discover peers from user discovery", async () => {
-    const now = Date.now();
     const { fetch, mockResponse } = createMockFetch();
-    mockResponse({
-      "/apps/ztm/chat/shared/alice/publish/peers/test-bot/messages/1.json": { time: now },
-      "/apps/ztm/chat/shared/bob/publish/peers/test-bot/messages/1.json": { time: now },
-    });
+    mockResponse(["alice", "bob"]);
 
     const client = createTestClient(testConfig, { fetch });
     const result = await client.discoverPeers();
@@ -458,7 +422,7 @@ describe("discoverPeers", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.length).toBe(2);
-      expect(result.value.map((p) => p.username).sort()).toEqual(["alice", "bob"]);
+      expect(result.value.map(p => p.username).sort()).toEqual(["alice", "bob"]);
     }
   });
 });

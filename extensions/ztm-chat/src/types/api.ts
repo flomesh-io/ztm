@@ -151,21 +151,6 @@ export interface ZTMApiClient {
   /** Export current file metadata for persistence */
   exportFileMetadata(): Record<string, { time: number; size: number }>;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Direct Storage API Methods - MVP implementation with Result types
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /** Send message using direct storage API. Returns Result with success status or send error. */
-  sendMessageViaStorage(
-    peer: string,
-    message: ZTMMessage
-  ): Promise<Result<boolean, ZtmSendError>>;
-
-  /** Receive messages using direct storage API. Returns Result with messages or read error. */
-  receiveMessagesViaStorage(
-    peer: string
-  ): Promise<Result<ZTMMessage[], ZtmReadError>>;
-
   /** Discover active peers by scanning shared storage. Returns Result with users or discovery error. */
   discoverUsersViaStorage(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>>;
 }

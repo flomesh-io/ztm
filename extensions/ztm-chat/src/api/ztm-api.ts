@@ -240,36 +240,8 @@ export function createZTMApiClient(
   // Helper functions for data transformation
   // ═════════════════════════════════════════════════════════════════════════════
 
-  /**
-   * Extract username from peer message file path
-   * @example "/apps/ztm/chat/shared/alice/publish/peers/bot/messages/123.json" -> "alice"
-   */
-  function extractPeerFromPath(path: string): string | null {
-    const match = path.match(/^\/apps\/ztm\/chat\/shared\/([^\/]+)\/publish\/peers\//);
-    return match ? match[1] : null;
-  }
-
-  /**
-   * Extract username from file path for user discovery
-   */
-  function extractUserFromDiscoveryPath(path: string): string | null {
-    const match = path.match(/^\/apps\/ztm\/chat\/shared\/([^\/]+)\/publish\/peers\//);
-    return match && match[1] !== config.username ? match[1] : null;
-  }
-
-  /**
-   * Get unique usernames from file list
-   */
-  function discoverUsersFromFileList(fileList: Record<string, unknown>): ZTMUserInfo[] {
-    const usernames = new Set<string>();
-    for (const path of Object.keys(fileList)) {
-      const user = extractUserFromDiscoveryPath(path);
-      if (user) {
-        usernames.add(user);
-      }
-    }
-    return Array.from(usernames).map(username => ({ username }));
-  }
+  // Build Chat App API paths
+  const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
 
   /**
    * Parse timestamp from filename
@@ -341,88 +313,41 @@ export function createZTMApiClient(
     },
 
     async discoverUsersViaStorage(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
-      logger.debug?.(`[ZTM API] Discovering users via storage`);
+      logger.debug?.(`[ZTM API] Discovering users via Chat App API`);
 
-      const fileListResult = await listFiles();
-      if (!fileListResult.ok) {
-        logger.error?.(`[ZTM API] Failed to list files for user discovery: ${fileListResult.error.message}`);
+      const result = await request<string[]>("GET", `${CHAT_API_BASE}/users`);
+
+      if (!result.ok) {
+        logger.error?.(`[ZTM API] Failed to list users: ${result.error.message}`);
         return failure(new ZtmDiscoveryError({
           operation: "discoverUsers",
-          source: "storage",
-          cause: fileListResult.error,
+          source: "ChatAppAPI",
+          cause: result.error,
         }));
       }
 
-      const users = discoverUsersFromFileList(fileListResult.value);
-      logger.debug?.(`[ZTM API] Discovered ${users.length} users via storage`);
+      const users = result.value.map(username => ({ username }));
+      logger.debug?.(`[ZTM API] Discovered ${users.length} users`);
       return success(users);
     },
 
     async getChats(): Promise<Result<ZTMChat[], ZtmReadError>> {
-      logger.debug?.(`[ZTM API] Getting chats via storage`);
+      logger.debug?.(`[ZTM API] Fetching chats via Chat App API`);
 
-      const fileListResult = await listFiles();
-      if (!fileListResult.ok) {
+      const result = await request<ZTMChat[]>("GET", `${CHAT_API_BASE}/chats`);
+
+      if (!result.ok) {
         const error = new ZtmReadError({
           peer: "*",
           operation: "list",
-          cause: fileListResult.error,
+          cause: result.error,
         });
-        logger.error?.(`[ZTM API] Failed to list files for chats: ${error.message}`);
+        logger.error?.(`[ZTM API] Failed to get chats: ${error.message}`);
         return failure(error);
       }
 
-      // Find latest message file for each peer
-      const latestByPeer = findLatestFilesByPeer(fileListResult.value, peerMessagePattern);
-
-      // Process each peer's latest message file
-      const chats: ZTMChat[] = [];
-      const errors: ZtmReadError[] = [];
-
-      for (const [peer, info] of latestByPeer) {
-        const timestamp = parseTimestampFromFilename(info.filename);
-
-        const readResult = await readFile(info.path);
-        if (!readResult.ok) {
-          const readError = new ZtmReadError({
-            peer,
-            operation: "read",
-            filePath: info.path,
-            cause: readResult.error,
-          });
-          logger.debug?.(`[ZTM API] Failed to read chat file for ${peer}: ${readError.message}`);
-          errors.push(readError);
-          chats.push(createEmptyChat(peer, info.time));
-          continue;
-        }
-
-        const parseResult = parseMessageFileWithResult(readResult.value, peer, info.path);
-        if (!parseResult.ok) {
-          logger.debug?.(`[ZTM API] Failed to parse chat file for ${peer}: ${parseResult.error.message}`);
-          errors.push(parseResult.error);
-          chats.push(createEmptyChat(peer, info.time));
-          continue;
-        }
-
-        // Find latest message in the file
-        const messages = parseResult.value;
-        const latestMessage = messages.length > 0
-          ? messages.reduce((a, b) => a.time > b.time ? a : b)
-          : { time: timestamp, message: "", sender: peer };
-
-        chats.push({
-          peer,
-          time: timestamp,
-          updated: timestamp,
-          latest: latestMessage,
-        });
-      }
-
-      if (errors.length > 0 && chats.length === 0) {
-        return failure(errors[0]);
-      }
-
-      logger.debug?.(`[ZTM API] Got ${chats.length} chats via storage`);
+      const chats = result.value;
+      logger.debug?.(`[ZTM API] Got ${chats.length} chats`);
       return success(chats);
     },
 
@@ -433,60 +358,27 @@ export function createZTMApiClient(
     ): Promise<Result<ZTMMessage[], ZtmReadError>> {
       logger.debug?.(`[ZTM API] Fetching messages from peer "${peer}" since=${since}, before=${before}`);
 
-      const messagePath = `/apps/ztm/chat/shared/${peer}/publish/peers/${config.username}/messages/`;
-      const fileListResult = await listFiles();
+      const queryParams = new URLSearchParams();
+      if (since !== undefined) {
+        queryParams.set('since', since.toString());
+      }
+      if (before !== undefined) {
+        queryParams.set('before', before.toString());
+      }
 
-      if (!fileListResult.ok) {
+      const result = await request<ZTMMessage[]>("GET", `${CHAT_API_BASE}/peers/${peer}/messages?${queryParams.toString()}`);
+
+      if (!result.ok) {
         const error = new ZtmReadError({
           peer,
-          operation: "list",
-          cause: fileListResult.error,
+          operation: "read",
+          cause: result.error,
         });
-        logger.error?.(`[ZTM API] Failed to list files for peer messages: ${error.message}`);
+        logger.error?.(`[ZTM API] Failed to get peer messages: ${error.message}`);
         return failure(error);
       }
 
-      const fileList = fileListResult.value;
-      const messages: ZTMMessage[] = [];
-      const errors: ZtmReadError[] = [];
-
-      for (const filePath of Object.keys(fileList)) {
-        if (!filePath.startsWith(messagePath)) continue;
-
-        const readResult = await readFile(filePath);
-        if (!readResult.ok) {
-          const readError = new ZtmReadError({
-            peer,
-            operation: "read",
-            filePath,
-            cause: readResult.error,
-          });
-          logger.debug?.(`[ZTM API] Failed to read message file ${filePath}: ${readError.message}`);
-          errors.push(readError);
-          continue;
-        }
-
-        const parseResult = parseMessageFileWithResult(readResult.value, peer, filePath);
-        if (!parseResult.ok) {
-          logger.debug?.(`[ZTM API] Failed to parse message file ${filePath}: ${parseResult.error.message}`);
-          errors.push(parseResult.error);
-          continue;
-        }
-
-        for (const msg of parseResult.value) {
-          if (since !== undefined && msg.time <= since) continue;
-          if (before !== undefined && msg.time >= before) continue;
-          messages.push(msg);
-        }
-      }
-
-      messages.sort((a, b) => b.time - a.time);
-
-      if (errors.length > 0 && messages.length === 0) {
-        // If all reads failed, return the first error
-        return failure(errors[0]);
-      }
-
+      const messages = result.value;
       logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
       return success(messages);
     },
@@ -494,43 +386,23 @@ export function createZTMApiClient(
     async sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>> {
       logger.debug?.(`[ZTM API] Sending message to peer "${peer}" at time=${message.time}, text="${message.message.substring(0, 50)}..."`);
 
-      const messagePath = `/apps/ztm/chat/shared/${config.username}/publish/peers/${peer}/messages/${message.time}.json`;
-      // ZTM Chat expects array format: [{time, message:{text}}]
       const ztmEntry = { time: message.time, message: { text: message.message } };
 
-      const writeResult = await writeFile(messagePath, [ztmEntry]);
-      if (!writeResult.ok) {
+      const result = await request<void>("POST", `${CHAT_API_BASE}/peers/${peer}/messages`, ztmEntry);
+
+      if (!result.ok) {
         const error = new ZtmSendError({
           peer,
           messageTime: message.time,
           contentPreview: message.message,
-          cause: writeResult.error,
+          cause: result.error,
         });
         logger.error?.(`[ZTM API] Failed to send message to ${peer}: ${error.message}`);
         return failure(error);
       }
 
-      logger.debug?.(`[ZTM API] Successfully sent message to peer "${peer}" at path=${messagePath}`);
+      logger.debug?.(`[ZTM API] Successfully sent message to peer "${peer}"`);
       return success(true);
-    },
-
-    async sendMessageViaStorage(
-      peer: string,
-      message: ZTMMessage
-    ): Promise<Result<boolean, ZtmSendError>> {
-      logger.debug?.(`[ZTM API] Sending message via storage to peer "${peer}"`);
-      const result = await client.sendPeerMessage(peer, message);
-      logger.debug?.(`[ZTM API] Message via storage ${result.ok ? "succeeded" : "failed"} for peer "${peer}"`);
-      return result;
-    },
-
-    async receiveMessagesViaStorage(
-      peer: string
-    ): Promise<Result<ZTMMessage[], ZtmReadError>> {
-      logger.debug?.(`[ZTM API] Receiving messages via storage from peer "${peer}"`);
-      const result = await client.getPeerMessages(peer);
-      logger.debug?.(`[ZTM API] Received ${result.ok ? result.value.length : 0} messages from peer "${peer}" via storage`);
-      return result;
     },
 
     async watchChanges(
@@ -538,50 +410,35 @@ export function createZTMApiClient(
     ): Promise<Result<string[], ZtmReadError>> {
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
 
-      const sinceTime = lastPollTime;
-      const fileListResult = await listFiles(sinceTime, { maxRetries: 1, initialDelay: 500 });
-      if (!fileListResult.ok) {
+      const chatsResult = await client.getChats();
+      if (!chatsResult.ok) {
         const error = new ZtmReadError({
           peer: "*",
           operation: "list",
-          cause: fileListResult.error,
+          cause: chatsResult.error,
         });
         logger.error?.(`[ZTM API] Watch failed for ${prefix}: ${error.message}`);
         return failure(error);
       }
 
-      const fileList = fileListResult.value;
-      const changedPaths: string[] = [];
-      let maxTimeSeen = lastPollTime ?? 0;
+      const changedPeers: string[] = [];
 
-      for (const [filePath, meta] of Object.entries(fileList)) {
-        if (!filePath.startsWith(prefix)) continue;
-        // Use type guard to safely access file metadata
-        if (!isFileMeta(meta)) {
-          logger.debug?.(`[ZTM API] Skipping file with invalid metadata: ${filePath}`);
-          continue;
-        }
-        const fileTime = meta.time ?? 0;
-        const fileSize = meta.size ?? 0;
-        const lastSeen = lastSeenFiles.get(filePath);
+      for (const chat of chatsResult.value) {
+        if (!chat.peer || chat.peer === config.username) continue;
 
-        if (fileTime > maxTimeSeen) maxTimeSeen = fileTime;
+        const chatLatestTime = chat.latest?.time ?? 0;
+        if (chatLatestTime <= (lastPollTime ?? 0)) continue;
 
-        // Check if either time or size changed (handles append-only files)
-        const timeChanged = !lastSeen || fileTime > lastSeen.time;
-        const sizeChanged = !lastSeen || fileSize > lastSeen.size;
-
-        if (timeChanged || sizeChanged) {
-          changedPaths.push(filePath);
-          lastSeenFiles.set(filePath, { time: fileTime, size: fileSize });
-          trimFileMetadata();
-          logger.debug?.(`[ZTM API] Change detected: ${filePath} (time=${fileTime}, size=${fileSize}, lastTime=${lastSeen?.time}, lastSize=${lastSeen?.size})`);
-        }
+        changedPeers.push(chat.peer);
       }
 
-      lastPollTime = maxTimeSeen > 0 ? maxTimeSeen : undefined;
-      logger.debug?.(`[ZTM API] Watch complete: ${changedPaths.length} changed paths for prefix="${prefix}"`);
-      return success(changedPaths);
+      if (changedPeers.length > 0) {
+        const latestTime = Math.max(...chatsResult.value.map(c => c.latest?.time ?? 0));
+        lastPollTime = latestTime;
+      }
+
+      logger.debug?.(`[ZTM API] Watch complete: ${changedPeers.length} peers with new messages`);
+      return success(changedPeers);
     },
 
     async getGroups(): Promise<Result<ZTMChat[], ZtmError>> {
