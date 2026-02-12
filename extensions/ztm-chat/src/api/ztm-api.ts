@@ -203,6 +203,24 @@ export function createZTMApiClient(
   // Pre-compiled regex pattern for peer message path matching
   const peerMessagePattern = createPeerMessagePattern(config.username);
 
+  /**
+   * Normalize message content from API format to plain string.
+   * Handles cases where message is either a string or {text: "..."} object.
+   */
+  function normalizeMessageContent(message: unknown): string {
+    if (message === null || message === undefined) {
+      return '';
+    }
+    if (typeof message === 'object') {
+      const text = (message as { text?: string }).text;
+      if (typeof text === 'string') {
+        return text;
+      }
+      return JSON.stringify(message);
+    }
+    return String(message);
+  }
+
   // ═════════════════════════════════════════════════════════════════════════════
   // Helper: Find latest file for each peer from file list
   // ════════════════════════════════════════════════════════════════════════
@@ -360,18 +378,11 @@ export function createZTMApiClient(
       // Normalize message format: convert {text: "..."} to string
       const chats = result.value.map((chat) => {
         if (chat.latest) {
-          const latestMessage = chat.latest.message ?? null;
-          let normalizedMessage = '';
-          if (latestMessage !== null && typeof latestMessage === 'object') {
-            normalizedMessage = (latestMessage as { text?: string }).text || JSON.stringify(latestMessage);
-          } else {
-            normalizedMessage = String(latestMessage ?? '');
-          }
           return {
             ...chat,
             latest: {
               ...chat.latest,
-              message: normalizedMessage,
+              message: normalizeMessageContent(chat.latest.message),
             },
           };
         }
@@ -409,19 +420,10 @@ export function createZTMApiClient(
         return failure(error);
       }
 
-      const messages = result.value.map((msg) => {
-        const msgMessage = msg.message ?? null;
-        let normalizedMessage = '';
-        if (msgMessage !== null && typeof msgMessage === 'object') {
-          normalizedMessage = (msgMessage as { text?: string }).text || JSON.stringify(msgMessage);
-        } else {
-          normalizedMessage = String(msgMessage ?? '');
-        }
-        return {
-          ...msg,
-          message: normalizedMessage,
-        };
-      });
+      const messages = result.value.map((msg) => ({
+        ...msg,
+        message: normalizeMessageContent(msg.message),
+      }));
 
       logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from peer "${peer}"`);
       return success(messages);
