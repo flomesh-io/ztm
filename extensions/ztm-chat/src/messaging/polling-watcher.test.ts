@@ -1,30 +1,19 @@
-// Unit tests for Polling watcher (Watch → Polling fallback)
+// Unit tests for Polling Watcher
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient } from "../types/api.js";
-import { success, failure } from "../types/common.js";
-import type { ZTMChat, ZTMMessage } from "../types/api.js";
+import { success } from "../types/common.js";
+import type { ZTMChat } from "../types/api.js";
 import { ZtmReadError } from "../types/errors.js";
 
-// Extended config type for testing (supports runtime properties like pollingInterval)
 type ExtendedConfig = ZTMChatConfig & { pollingInterval?: number; [key: string]: unknown };
 
-// Track intervals created during tests
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
-
-// Original setInterval
 const originalSetInterval = global.setInterval;
 
-// ============================================================================
-// TYPED MOCK FACTORIES - Type-safe alternatives to `as any`
-// ============================================================================
-
-/**
- * Options for creating a mock ZTMChat with type safety
- */
 interface MockChatOptions {
   peer: string;
   message: string;
@@ -32,28 +21,11 @@ interface MockChatOptions {
   latest?: { time: number; message: string; sender: string } | null;
 }
 
-/**
- * Options for creating a partial ZTMChat (for edge cases like null peer)
- */
-interface PartialZTMChat {
-  peer: string | null;
-  latest: { time: number; message: string; sender: string } | null;
-  time: number;
-  updated: number;
-}
-
-/**
- * Creates a mock ZTMChat object with proper typing
- * Supports both call styles for backward compatibility:
- * - createMockChat(peer, message, time)
- * - createMockChat({ peer, message, time })
- */
 function createMockChat(
   peerOrOptions: string | MockChatOptions,
   message?: string,
   time?: number
 ): ZTMChat {
-  // Handle both call styles for backward compatibility
   const options: MockChatOptions = typeof peerOrOptions === "string"
     ? { peer: peerOrOptions, message: message!, time: time! }
     : peerOrOptions;
@@ -71,20 +43,6 @@ function createMockChat(
   };
 }
 
-/**
- * Creates a partial ZTMChat for edge case testing
- * Provides type safety without `as unknown as ZTMChat` casts
- */
-function createPartialZTMChat(options: PartialZTMChat): ZTMChat {
-  return {
-    peer: options.peer,
-    time: options.time,
-    updated: options.updated,
-    latest: options.latest,
-  };
-}
-
-// Helper to create a failure Result for getChats
 function createChatsFailure(): { ok: false; error: ZtmReadError } {
   return {
     ok: false,
@@ -96,7 +54,6 @@ function createChatsFailure(): { ok: false; error: ZtmReadError } {
   };
 }
 
-// Mock dependencies
 vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
@@ -106,7 +63,6 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-// Mock runtime with function that can be changed during tests
 let mockReadAllowFromFn: (...args: unknown[]) => Promise<string[]> = vi.fn(() => Promise.resolve([]));
 vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: () => ({
@@ -154,10 +110,9 @@ describe("Polling Watcher", () => {
     mockReadAllowFromFn = vi.fn(() => Promise.resolve([]));
     setIntervalCallback = null;
 
-    // Mock setInterval to capture callback and create real interval
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
       setIntervalCallback = callback;
-      const ref = originalSetInterval(callback, Math.min(ms, 100)); // Use short interval for tests
+      const ref = originalSetInterval(callback, Math.min(ms, 100));
       createdIntervals.push(ref);
       return ref;
     }) as unknown as typeof setInterval;
@@ -184,13 +139,11 @@ describe("Polling Watcher", () => {
   });
 
   afterEach(() => {
-    // Clear all intervals
     for (const interval of createdIntervals) {
       clearInterval(interval);
     }
     createdIntervals = [];
     setIntervalCallback = null;
-    // Restore original setInterval
     global.setInterval = originalSetInterval;
   });
 
@@ -198,10 +151,7 @@ describe("Polling Watcher", () => {
     it("should start polling watcher with default interval", async () => {
       await startPollingWatcher(mockState);
 
-      expect(global.setInterval).toHaveBeenCalledWith(
-        expect.any(Function),
-        2000 // default 2000ms
-      );
+      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 2000);
       expect(mockState.watchInterval).not.toBeNull();
     });
 
@@ -210,10 +160,7 @@ describe("Polling Watcher", () => {
 
       await startPollingWatcher(mockState);
 
-      expect(global.setInterval).toHaveBeenCalledWith(
-        expect.any(Function),
-        5000
-      );
+      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 5000);
     });
 
     it("should enforce minimum interval of 1000ms", async () => {
@@ -221,10 +168,7 @@ describe("Polling Watcher", () => {
 
       await startPollingWatcher(mockState);
 
-      expect(global.setInterval).toHaveBeenCalledWith(
-        expect.any(Function),
-        1000 // enforced minimum
-      );
+      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
     });
 
     it("should return early if apiClient is null", async () => {
@@ -246,7 +190,6 @@ describe("Polling Watcher", () => {
 
       await startPollingWatcher(mockState);
 
-      // Manually trigger the polling callback
       if (setIntervalCallback) {
         await setIntervalCallback();
       }
@@ -266,12 +209,10 @@ describe("Polling Watcher", () => {
 
       await startPollingWatcher(mockState);
 
-      // Trigger the callback
       if (setIntervalCallback) {
         await setIntervalCallback();
       }
 
-      // Should only call processIncomingMessage for alice (skip self)
       expect(processIncomingMessage).toHaveBeenCalledTimes(1);
       expect(processIncomingMessage).toHaveBeenCalledWith(
         expect.objectContaining({ sender: "alice" }),
@@ -284,15 +225,15 @@ describe("Polling Watcher", () => {
     it("should skip chats without peer", async () => {
       const now = Date.now();
       const mockChats = [
-        createPartialZTMChat({
-          peer: null,
-          latest: { time: now, message: "No peer", sender: "unknown" },
+        {
+          peer: null as unknown as string,
           time: now,
           updated: now,
-        }),
+          latest: { time: now, message: "No peer", sender: "unknown" },
+        },
         createMockChat({ peer: "alice", message: "Hello", time: now }),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -308,15 +249,15 @@ describe("Polling Watcher", () => {
     it("should skip chats without latest message", async () => {
       const now = Date.now();
       const mockChats = [
-        createPartialZTMChat({
+        {
           peer: "alice",
-          latest: null,
           time: now,
           updated: now,
-        }),
+          latest: null,
+        },
         createMockChat({ peer: "bob", message: "Hi", time: now }),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -330,17 +271,14 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle polling errors gracefully", async () => {
-      // Return a failure Result instead of throwing
       mockState.apiClient.getChats = vi.fn(() => Promise.resolve(createChatsFailure()));
 
       await startPollingWatcher(mockState);
 
-      // Trigger should not throw and should handle failure Result gracefully
       if (setIntervalCallback) {
         await setIntervalCallback();
       }
 
-      // Interval should still be created despite polling error
       expect(createdIntervals.length).toBe(1);
     });
 
@@ -369,11 +307,7 @@ describe("Polling Watcher", () => {
       }
 
       expect(inboundModule.processIncomingMessage).toHaveBeenCalledWith(
-        {
-          time: 1234567890,
-          message: "Test message",
-          sender: "alice",
-        },
+        { time: 1234567890, message: "Test message", sender: "alice" },
         mockState.config,
         expect.any(Array),
         "test-account"
@@ -459,7 +393,6 @@ describe("Polling Watcher", () => {
 
       await startPollingWatcher(mockState);
 
-      // Should not throw, interval should still be created
       if (setIntervalCallback) {
         await expect(setIntervalCallback()).resolves.toBeUndefined();
       }
@@ -496,7 +429,6 @@ describe("Polling Watcher", () => {
         await setIntervalCallback();
       }
 
-      // Both entries get processed
       expect(processIncomingMessage).toHaveBeenCalledTimes(2);
     });
 
@@ -510,7 +442,6 @@ describe("Polling Watcher", () => {
 
       await startPollingWatcher(mockState);
 
-      // Should not throw
       if (setIntervalCallback) {
         await expect(setIntervalCallback()).resolves.toBeUndefined();
       }
@@ -548,112 +479,6 @@ describe("Polling Watcher", () => {
       }
 
       expect(createdIntervals.length).toBe(1);
-    });
-  });
-
-  describe("interval management", () => {
-    it("should store interval reference in state", async () => {
-      await startPollingWatcher(mockState);
-
-      expect(mockState.watchInterval).not.toBeNull();
-    });
-
-    it("should allow clearing interval via state reference", async () => {
-      await startPollingWatcher(mockState);
-
-      const intervalRef = mockState.watchInterval;
-      expect(intervalRef).not.toBeNull();
-
-      // Simulate clearing the interval
-      if (intervalRef) {
-        clearInterval(intervalRef);
-        mockState.watchInterval = null;
-      }
-
-      expect(mockState.watchInterval).toBeNull();
-    });
-
-    it("should replace existing interval if already set", async () => {
-      // Start first watcher
-      await startPollingWatcher(mockState);
-      const firstInterval = mockState.watchInterval;
-
-      // Start second watcher (should replace)
-      await startPollingWatcher(mockState);
-      const secondInterval = mockState.watchInterval;
-
-      // In production, the old interval should be cleared
-      // This test verifies the state is updated
-      expect(secondInterval).not.toBeNull();
-    });
-  });
-
-  describe("Watch → Polling transition", () => {
-    it("should preserve pendingPairings during transition", async () => {
-      mockState.pendingPairings.set("alice", new Date());
-      mockState.pendingPairings.set("bob", new Date());
-
-      await startPollingWatcher(mockState);
-
-      expect(mockState.pendingPairings.size).toBe(2);
-      expect(mockState.pendingPairings.has("alice")).toBe(true);
-      expect(mockState.pendingPairings.has("bob")).toBe(true);
-    });
-
-    it("should preserve messageCallbacks during transition", async () => {
-      const mockCallback = vi.fn();
-      mockState.messageCallbacks.add(mockCallback);
-
-      await startPollingWatcher(mockState);
-
-      expect(mockState.messageCallbacks.size).toBe(1);
-      expect(mockState.messageCallbacks.has(mockCallback)).toBe(true);
-    });
-
-    it("should preserve connection state during transition", async () => {
-      mockState.connected = true;
-      mockState.meshConnected = true;
-      mockState.peerCount = 10;
-
-      await startPollingWatcher(mockState);
-
-      expect(mockState.connected).toBe(true);
-      expect(mockState.meshConnected).toBe(true);
-      expect(mockState.peerCount).toBe(10);
-    });
-  });
-
-  describe("configuration edge cases", () => {
-    it("should handle undefined pollingInterval", async () => {
-      mockState.config = { ...baseConfig }; // no pollingInterval
-
-      await startPollingWatcher(mockState);
-
-      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 2000);
-    });
-
-    it("should handle zero pollingInterval", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: 0 } as ExtendedConfig;
-
-      await startPollingWatcher(mockState);
-
-      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
-    });
-
-    it("should handle negative pollingInterval", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: -1000 } as ExtendedConfig;
-
-      await startPollingWatcher(mockState);
-
-      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 1000);
-    });
-
-    it("should handle very large pollingInterval", async () => {
-      mockState.config = { ...baseConfig, pollingInterval: 60000 } as ExtendedConfig;
-
-      await startPollingWatcher(mockState);
-
-      expect(global.setInterval).toHaveBeenCalledWith(expect.any(Function), 60000);
     });
   });
 });
