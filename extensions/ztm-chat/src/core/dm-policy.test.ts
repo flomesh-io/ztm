@@ -321,10 +321,10 @@ describe("DM Policy enforcement", () => {
       expect(pendingPairings.has("alice")).toBe(true);
     });
 
-    it("should use 24 hour default maxAge", () => {
+    it("should use 1 hour default maxAge", () => {
       const now = Date.now();
-      const dayOld = new Date(now - 24 * 60 * 60 * 1000 - 1); // 24小时多1毫秒前
-      const pendingPairings = new Map([["old", dayOld]]);
+      const hourOld = new Date(now - 60 * 60 * 1000 - 1);
+      const pendingPairings = new Map([["old", hourOld]]);
 
       const count = cleanupExpiredPairings(pendingPairings);
 

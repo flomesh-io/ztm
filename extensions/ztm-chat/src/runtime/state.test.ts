@@ -47,6 +47,22 @@ vi.mock("./store.js", () => ({
     dispose: vi.fn(),
   })),
   disposeMessageStateStore: vi.fn(),
+  FileSystem: {},
+  nodeFs: {},
+}));
+
+vi.mock("./pairing-store.js", () => ({
+  getPairingStateStore: vi.fn(() => ({
+    loadPendingPairings: vi.fn(() => new Map()),
+    savePendingPairing: vi.fn(),
+    deletePendingPairing: vi.fn(),
+    cleanupExpiredPairings: vi.fn(() => 0),
+    flush: vi.fn(),
+    dispose: vi.fn(),
+  })),
+  disposePairingStateStore: vi.fn(),
+  FileSystem: {},
+  nodeFs: {},
 }));
 
 vi.mock("../messaging/inbound.js", () => ({

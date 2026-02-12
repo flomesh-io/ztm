@@ -12,6 +12,12 @@ vi.mock("../utils/logger.js", () => ({
     error: vi.fn(),
     debug: vi.fn(),
   },
+  defaultLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 // Mock runtime - using functions that return promises
@@ -63,6 +69,18 @@ vi.mock("fs", () => ({
   existsSync: () => mockExistsSync(),
   mkdirSync: (...args: any[]) => mockMkdirSync(...args),
   writeFileSync: (...args: any[]) => mockWriteFileSync(...args),
+}));
+
+vi.mock("../runtime/pairing-store.js", () => ({
+  getPairingStateStore: vi.fn(() => ({
+    loadPendingPairings: vi.fn(() => new Map()),
+    savePendingPairing: vi.fn(),
+    deletePendingPairing: vi.fn(),
+    cleanupExpiredPairings: vi.fn(() => 0),
+    flush: vi.fn(),
+    dispose: vi.fn(),
+  })),
+  disposePairingStateStore: vi.fn(),
 }));
 
 describe("Permit management functions", () => {

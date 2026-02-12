@@ -2,6 +2,7 @@
 
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime.js";
+import { getPairingStateStore } from "../runtime/pairing-store.js";
 import { processIncomingMessage, notifyMessageCallbacks } from "./inbound.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { handleResult } from "../utils/result.js";
@@ -16,8 +17,22 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
 
   logger.info(`[${state.accountId}] Starting polling watcher (${pollingInterval}ms)`);
 
+  const CLEANUP_INTERVAL_ITERATIONS = 300;
+  let iterationCount = 0;
+
   state.watchInterval = setInterval(async () => {
     if (!state.apiClient || !state.config) return;
+
+    iterationCount++;
+    if (iterationCount >= CLEANUP_INTERVAL_ITERATIONS) {
+      iterationCount = 0;
+      const cleanedCount = getPairingStateStore().cleanupExpiredPairings(state.accountId);
+      if (cleanedCount > 0) {
+        const refreshed = getPairingStateStore().loadPendingPairings(state.accountId);
+        state.pendingPairings.clear();
+        refreshed.forEach((date, peer) => state.pendingPairings.set(peer, date));
+      }
+    }
 
     const pollStoreAllowFrom = await getZTMRuntime().channel.pairing.readAllowFromStore("ztm-chat").catch(() => [] as string[]);
     const chatsResult = await state.apiClient.getChats();

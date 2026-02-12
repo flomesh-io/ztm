@@ -152,7 +152,7 @@ export function getExpiredPendingPairings(
  */
 export function cleanupExpiredPairings(
   pendingPairings: Map<string, Date>,
-  maxAgeMs: number = 24 * 60 * 60 * 1000 // 24 hours default
+  maxAgeMs: number = 60 * 60 * 1000 // 1 hour default
 ): number {
   const expired = getExpiredPendingPairings(pendingPairings, maxAgeMs);
   for (const username of expired) {

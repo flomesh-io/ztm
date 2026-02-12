@@ -2,6 +2,7 @@
 
 import { logger } from "../utils/logger.js";
 import { getMessageStateStore } from "./store.js";
+import { getPairingStateStore } from "./pairing-store.js";
 import { createZTMApiClient } from "../api/ztm-api.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient, ZTMMeshInfo } from "../types/api.js";
@@ -18,6 +19,8 @@ const accountStates = new Map<string, AccountRuntimeState>();
 export function getOrCreateAccountState(accountId: string): AccountRuntimeState {
   let state = accountStates.get(accountId);
   if (!state) {
+    const persistedPairings = getPairingStateStore().loadPendingPairings(accountId);
+    
     state = {
       accountId,
       config: {} as ZTMChatConfig,
@@ -33,9 +36,13 @@ export function getOrCreateAccountState(accountId: string): AccountRuntimeState 
       messageCallbacks: new Set(),
       watchInterval: null,
       watchErrorCount: 0,
-      pendingPairings: new Map(),
+      pendingPairings: persistedPairings,
     };
     accountStates.set(accountId, state);
+    
+    if (persistedPairings.size > 0) {
+      logger.info(`[${accountId}] Restored ${persistedPairings.size} pending pairing(s) from store`);
+    }
   }
   return state;
 }
@@ -130,6 +137,7 @@ export async function stopRuntime(accountId: string): Promise<void> {
   state.lastStopAt = new Date();
 
   getMessageStateStore().flush();
+  getPairingStateStore().flush();
 
   logger.info(`[${accountId}] Stopped`);
 }
