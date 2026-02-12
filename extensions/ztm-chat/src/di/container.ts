@@ -4,6 +4,7 @@
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient } from "../types/api.js";
 import type { ZTMMessage } from "../types/api.js";
+import type { Result, AsyncResult } from "../types/common.js";
 import type { PluginRuntime } from "openclaw/plugin-sdk";
 
 // ============================================================================
@@ -14,19 +15,34 @@ import type { PluginRuntime } from "openclaw/plugin-sdk";
  * Symbol-based dependency keys prevent naming conflicts
  * Each service has a unique symbol for type-safe lookup
  */
+const _loggerKey = Symbol("ztm:logger");
+const _configKey = Symbol("ztm:config");
+const _apiClientKey = Symbol("ztm:api-client");
+const _apiClientFactoryKey = Symbol("ztm:api-client-factory");
+const _runtimeKey = Symbol("ztm:runtime");
+const _channelStateKey = Symbol("ztm:channel-state");
+const _meshConnectivityKey = Symbol("ztm:mesh-connectivity");
+const _permitHandlerKey = Symbol("ztm:permit-handler");
+const _inboundProcessorKey = Symbol("ztm:inbound-processor");
+const _watcherKey = Symbol("ztm:watcher");
+const _pollingWatcherKey = Symbol("ztm:polling-watcher");
+const _messageDispatcherKey = Symbol("ztm:message-dispatcher");
+const _dedupCacheKey = Symbol("ztm:dedup-cache");
+
 export const DEPENDENCIES = {
-  LOGGER: Symbol("ztm:logger"),
-  CONFIG: Symbol("ztm:config"),
-  API_CLIENT: Symbol("ztm:api-client"),
-  RUNTIME: Symbol("ztm:runtime"),
-  CHANNEL_STATE: Symbol("ztm:channel-state"),
-  MESH_CONNECTIVITY: Symbol("ztm:mesh-connectivity"),
-  PERMIT_HANDLER: Symbol("ztm:permit-handler"),
-  INBOUND_PROCESSOR: Symbol("ztm:inbound-processor"),
-  WATCHER: Symbol("ztm:watcher"),
-  POLLING_WATCHER: Symbol("ztm:polling-watcher"),
-  MESSAGE_DISPATCHER: Symbol("ztm:message-dispatcher"),
-  DEDUP_CACHE: Symbol("ztm:dedup-cache"),
+  LOGGER: createDependencyKey<ILogger>(_loggerKey),
+  CONFIG: createDependencyKey<IConfig>(_configKey),
+  API_CLIENT: createDependencyKey<IApiClient>(_apiClientKey),
+  API_CLIENT_FACTORY: createDependencyKey<IApiClientFactory>(_apiClientFactoryKey),
+  RUNTIME: createDependencyKey<IRuntime>(_runtimeKey),
+  CHANNEL_STATE: createDependencyKey<unknown>(_channelStateKey),
+  MESH_CONNECTIVITY: createDependencyKey<unknown>(_meshConnectivityKey),
+  PERMIT_HANDLER: createDependencyKey<unknown>(_permitHandlerKey),
+  INBOUND_PROCESSOR: createDependencyKey<unknown>(_inboundProcessorKey),
+  WATCHER: createDependencyKey<unknown>(_watcherKey),
+  POLLING_WATCHER: createDependencyKey<unknown>(_pollingWatcherKey),
+  MESSAGE_DISPATCHER: createDependencyKey<unknown>(_messageDispatcherKey),
+  DEDUP_CACHE: createDependencyKey<unknown>(_dedupCacheKey),
 } as const;
 
 /**
@@ -65,13 +81,21 @@ export interface IConfig {
 
 /**
  * API client service interface
+ * Methods return AsyncResult (Promise<Result<...>>) for proper error handling
  */
 export interface IApiClient {
-  getChats(): Promise<unknown>;
-  sendPeerMessage(peer: string, message: ZTMMessage): Promise<unknown>;
-  discoverUsers(): Promise<unknown>;
-  getMeshInfo(): Promise<unknown>;
-  // Add other API methods as needed
+  getChats: AsyncResult<unknown, Error>;
+  sendPeerMessage(peer: string, message: ZTMMessage): AsyncResult<unknown, Error>;
+  discoverUsers: AsyncResult<unknown, Error>;
+  getMeshInfo: AsyncResult<unknown, Error>;
+}
+
+/**
+ * API client factory interface
+ * Returns a function that can create API clients with custom configuration
+ */
+export interface IApiClientFactory {
+  (config: ZTMChatConfig, deps?: unknown): ZTMApiClient;
 }
 
 /**
@@ -176,7 +200,7 @@ export class DIContainer {
    */
   has<T>(key: DependencyKey<T>): boolean {
     const entry = this.services.get(key);
-    return entry?.instance !== null ?? false;
+    return entry?.instance !== null;
   }
 
   /**

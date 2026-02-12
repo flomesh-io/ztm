@@ -8,8 +8,20 @@ import type {
 import { ZTMChatConfigSchema } from "../config/index.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMMessage } from "../api/ztm-api.js";
-import { createZTMApiClient } from "../api/ztm-api.js";
-import { logger } from "../utils/logger.js";
+import {
+  container,
+  DEPENDENCIES,
+  createLogger,
+  createConfigService,
+  createApiClientService,
+  createApiClientFactory,
+  createRuntimeService,
+  type ILogger,
+  type IConfig,
+  type IApiClient,
+  type IApiClientFactory,
+  type IRuntime,
+} from "../di/index";
 import type { ResolvedZTMChatAccount } from "./config.js";
 
 // Local type extension for ChannelAccountSnapshot with additional properties
@@ -42,6 +54,16 @@ const meta = {
   detailLabel: undefined,
   systemImage: undefined,
 };
+
+// ============================================================================
+// DEPENDENCY INJECTION
+// ============================================================================
+// Initialize services on module load
+container.register(DEPENDENCIES.LOGGER, createLogger("ztm-chat"));
+container.register(DEPENDENCIES.CONFIG, createConfigService());
+container.register(DEPENDENCIES.API_CLIENT, createApiClientService());
+container.register(DEPENDENCIES.API_CLIENT_FACTORY, createApiClientFactory());
+container.register(DEPENDENCIES.RUNTIME, createRuntimeService());
 
 // ============================================================================
 // Resolved Account Type
@@ -93,7 +115,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     notifyApproval: async ({ cfg, id }) => {
       const account = resolveZTMChatAccount({ cfg });
       const config = account.config as ZTMChatConfig;
-      const apiClient = createZTMApiClient(config);
+      const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+      const apiClient = container.get<IApiClient>(DEPENDENCIES.API_CLIENT);
+      const runtime = container.get<IRuntime>(DEPENDENCIES.RUNTIME);
       const message: ZTMMessage = {
         time: Date.now(),
         message: `Pairing approved! You can now send messages to this bot.`,
@@ -182,8 +206,10 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
 
       // Try to probe the connection
       try {
+        const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+        const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
         const probeConfig = resolveZTMChatAccount({ cfg, accountId }).config;
-        const apiClient = createZTMApiClient(probeConfig);
+        const apiClient = apiClientFactory(probeConfig, { logger });
         const meshResult = await apiClient.getMeshInfo();
 
         if (!meshResult.ok) {
@@ -280,7 +306,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     listPeers: async ({ cfg, accountId }) => {
       const account = resolveZTMChatAccount({ cfg, accountId });
       const config = account.config as ZTMChatConfig;
-      const apiClient = createZTMApiClient(config);
+      const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
+      const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
+      const apiClient = apiClientFactory(config, { logger });
 
       const usersResult = await apiClient.discoverUsers();
       if (!usersResult.ok) {
