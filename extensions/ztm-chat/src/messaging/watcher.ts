@@ -2,7 +2,7 @@
 // Monitors for new messages via Watch mechanism with fallback to polling
 
 import { logger } from "../utils/logger.js";
-import { getZTMRuntime } from "../runtime.js";
+import { getZTMRuntime } from "../runtime/index.js";
 import { getMessageStateStore } from "../runtime/store.js";
 import { startPollingWatcher } from "./polling.js";
 import { processIncomingMessage } from "./processor.js";

@@ -28,7 +28,7 @@ let mockBuildPairingReplyThrows = false;
 
 const mockUpsertPairingRequest = vi.fn(() => Promise.resolve(mockPairingResult));
 
-vi.mock("../runtime.js", () => ({
+vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: vi.fn(() => ({
     channel: {
       pairing: {
@@ -379,7 +379,7 @@ describe("Permit management functions", () => {
 
     it("should handle registration failure gracefully", async () => {
       // Mock rejection
-      vi.doMock("../runtime.js", () => ({
+      vi.doMock("../runtime/index.js", () => ({
         getZTMRuntime: () => ({
           channel: {
             pairing: {

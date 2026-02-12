@@ -3,7 +3,7 @@ import type { ResolvedZTMChatAccount } from "./src/channel/index.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel/index.js";
-import { setZTMRuntime } from "./src/runtime.js";
+import { setZTMRuntime } from "./src/runtime/index.js";
 import { runWizard, discoverConfig } from "./src/onboarding.js";
 
 // Set up global unhandled rejection handler in non-test environments

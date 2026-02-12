@@ -106,7 +106,7 @@ vi.mock("../api/ztm-api.js", () => ({
 }));
 
 // Mock runtime
-vi.mock("../runtime.js", () => ({
+vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: () => ({
     channel: {
       routing: {
@@ -349,7 +349,7 @@ describe("startAccount E2E Tests", () => {
 
   describe("message dispatch flow", () => {
     it("should resolve agent route correctly", async () => {
-      const { getZTMRuntime } = await import("../runtime.js");
+      const { getZTMRuntime } = await import("../runtime/index.js");
       const rt = getZTMRuntime();
 
       const route = rt.channel.routing.resolveAgentRoute({
@@ -364,7 +364,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should finalize inbound context", async () => {
-      const { getZTMRuntime } = await import("../runtime.js");
+      const { getZTMRuntime } = await import("../runtime/index.js");
       const rt = getZTMRuntime();
 
       const context = rt.channel.reply.finalizeInboundContext({
@@ -393,7 +393,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should dispatch to agent", async () => {
-      const { getZTMRuntime } = await import("../runtime.js");
+      const { getZTMRuntime } = await import("../runtime/index.js");
       const rt = getZTMRuntime() as any;
 
       await expect(rt.channel.text.toAgent()).resolves.not.toThrow();
@@ -402,7 +402,7 @@ describe("startAccount E2E Tests", () => {
 
   describe("pairing integration", () => {
     it("should upsert pairing request", async () => {
-      const { getZTMRuntime } = await import("../runtime.js");
+      const { getZTMRuntime } = await import("../runtime/index.js");
       const rt = getZTMRuntime() as any;
 
       const result = await rt.channel.pairing.upsertPairingRequest({
@@ -417,7 +417,7 @@ describe("startAccount E2E Tests", () => {
     });
 
     it("should read allow from store", async () => {
-      const { getZTMRuntime } = await import("../runtime.js");
+      const { getZTMRuntime } = await import("../runtime/index.js");
       const rt = getZTMRuntime();
 
       const allowFrom = await rt.channel.pairing.readAllowFromStore("test-account");

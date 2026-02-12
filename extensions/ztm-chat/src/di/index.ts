@@ -98,7 +98,7 @@ export function createApiClientService(): () => IApiClient {
 export function createRuntimeService(): () => IRuntime {
   return () => {
     if (!_runtimeModule) {
-      _runtimeModule = require("../runtime.js");
+      _runtimeModule = require("../runtime/runtime.js");
     }
     return {
       get: () => _runtimeModule.getZTMRuntime(),

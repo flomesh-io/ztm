@@ -108,7 +108,7 @@ vi.mock("../utils/logger.js", () => ({
 
 // Mock runtime with function that can be changed during tests
 let mockReadAllowFromFn: (...args: unknown[]) => Promise<string[]> = vi.fn(() => Promise.resolve([]));
-vi.mock("../runtime.js", () => ({
+vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: () => ({
     channel: {
       pairing: {

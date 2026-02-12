@@ -19,6 +19,12 @@ vi.mock("../utils/logger.js", () => ({
     error: vi.fn(),
     debug: vi.fn(),
   },
+  defaultLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 // Mock store with fresh instances for each call

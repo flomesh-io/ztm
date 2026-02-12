@@ -3,7 +3,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { logger } from "../utils/logger.js";
-import { getZTMRuntime } from "../runtime.js";
+import { getZTMRuntime } from "../runtime/index.js";
 import type { ZTMMessage, ZTMApiClient } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 

@@ -1,6 +1,9 @@
 // ZTM Chat Runtime Module
 // Barrel export for all runtime-related functionality
 
+// Runtime manager
+export * from './runtime.js';
+
 // Runtime state management
 export * from './state.js';
 

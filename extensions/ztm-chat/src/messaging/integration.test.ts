@@ -14,7 +14,7 @@ vi.mock("../utils/logger.js", () => ({
   },
 }));
 
-vi.mock("../runtime.js", () => ({
+vi.mock("../runtime/index.js", () => ({
   getZTMRuntime: () => ({
     channel: {
       pairing: {

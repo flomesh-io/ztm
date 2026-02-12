@@ -32,7 +32,7 @@ import { startMessageWatcher } from "../messaging/inbound.js";
 import { sendZTMMessage, generateMessageId } from "../messaging/outbound.js";
 import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "../connectivity/mesh.js";
 import { requestPermit, savePermitData } from "../connectivity/permit.js";
-import { getZTMRuntime } from "../runtime.js";
+import { getZTMRuntime } from "../runtime/index.js";
 import {
   resolveZTMChatAccount,
 } from "./config.js";
