@@ -185,6 +185,90 @@ export async function sendTextGateway({
 // ============================================================================
 
 /**
+ * Handle inbound message dispatch to AI agent
+ * Extracted from messageCallback to reduce nesting complexity
+ */
+async function handleInboundMessage(
+  state: AccountRuntimeState,
+  rt: ReturnType<typeof getZTMRuntime>,
+  cfg: Record<string, unknown>,
+  config: ZTMChatConfig,
+  accountId: string,
+  ctx: { log?: { info?: (...args: unknown[]) => void; error?: (...args: unknown[]) => void } },
+  msg: ZTMChatMessage,
+): Promise<void> {
+  try {
+    const route = rt.channel.routing.resolveAgentRoute({
+      channel: "ztm-chat",
+      accountId,
+      peer: { kind: "direct", id: msg.sender },
+      cfg,
+    });
+
+    const ctxPayload = rt.channel.reply.finalizeInboundContext({
+      Body: msg.content,
+      RawBody: msg.content,
+      CommandBody: msg.content,
+      From: `ztm-chat:${msg.sender}`,
+      To: `ztm-chat:${config.username}`,
+      SessionKey: route.sessionKey,
+      AccountId: route.accountId,
+      ChatType: "direct" as const,
+      ConversationLabel: msg.sender,
+      SenderName: msg.sender,
+      SenderId: msg.sender,
+      Provider: "ztm-chat",
+      Surface: "ztm-chat",
+      MessageSid: msg.id,
+      Timestamp: msg.timestamp,
+      OriginatingChannel: "ztm-chat",
+      OriginatingTo: `ztm-chat:${msg.sender}`,
+    });
+
+    ctx.log?.info(
+      `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${route.matchedBy})`,
+    );
+
+    const { queuedFinal } =
+      await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+        ctx: ctxPayload,
+        cfg,
+        dispatcherOptions: {
+          humanDelay: rt.channel.reply.resolveHumanDelayConfig(
+            cfg,
+            route.agentId,
+          ),
+          deliver: async (payload: { text?: string; mediaUrl?: string }) => {
+            const replyText = payload.text ?? "";
+            if (!replyText) return;
+            await sendZTMMessage(state, msg.sender, replyText);
+            ctx.log?.info(
+              `[${accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? "..." : ""}`,
+            );
+          },
+          onError: (err: unknown) => {
+            ctx.log?.error?.(
+              `[${accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`,
+            );
+          },
+        },
+      });
+
+    if (!queuedFinal) {
+      ctx.log?.info(
+        `[${accountId}] No response generated for message from ${msg.sender}`,
+      );
+    }
+  } catch (error) {
+    ctx.log?.error?.(
+      `[${accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`,
+    );
+  }
+}
+
+// ============================================================================
+
+/**
  * Start account gateway implementation
  */
 export async function startAccountGateway(
@@ -314,77 +398,7 @@ export async function startAccountGateway(
       `[${account.accountId}] Received message from ${msg.sender}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
     );
 
-    const handleInbound = async (): Promise<void> => {
-      try {
-        const route = rt.channel.routing.resolveAgentRoute({
-          channel: "ztm-chat",
-          accountId: account.accountId,
-          peer: { kind: "direct", id: msg.sender },
-          cfg,
-        });
-
-        const ctxPayload = rt.channel.reply.finalizeInboundContext({
-          Body: msg.content,
-          RawBody: msg.content,
-          CommandBody: msg.content,
-          From: `ztm-chat:${msg.sender}`,
-          To: `ztm-chat:${config.username}`,
-          SessionKey: route.sessionKey,
-          AccountId: route.accountId,
-          ChatType: "direct" as const,
-          ConversationLabel: msg.sender,
-          SenderName: msg.sender,
-          SenderId: msg.sender,
-          Provider: "ztm-chat",
-          Surface: "ztm-chat",
-          MessageSid: msg.id,
-          Timestamp: msg.timestamp,
-          OriginatingChannel: "ztm-chat",
-          OriginatingTo: `ztm-chat:${msg.sender}`,
-        });
-
-        ctx.log?.info(
-          `[${account.accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${route.matchedBy})`,
-        );
-
-        const { queuedFinal } =
-          await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-            ctx: ctxPayload,
-            cfg,
-            dispatcherOptions: {
-              humanDelay: rt.channel.reply.resolveHumanDelayConfig(
-                cfg,
-                route.agentId,
-              ),
-              deliver: async (payload: { text?: string; mediaUrl?: string }) => {
-                const replyText = payload.text ?? "";
-                if (!replyText) return;
-                await sendZTMMessage(state, msg.sender, replyText);
-                ctx.log?.info(
-                  `[${account.accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? "..." : ""}`,
-                );
-              },
-              onError: (err: unknown) => {
-                ctx.log?.error?.(
-                  `[${account.accountId}] Reply delivery failed for ${msg.sender}: ${String(err)}`,
-                );
-              },
-            },
-          });
-
-        if (!queuedFinal) {
-          ctx.log?.info(
-            `[${account.accountId}] No response generated for message from ${msg.sender}`,
-          );
-        }
-      } catch (error) {
-        ctx.log?.error?.(
-          `[${account.accountId}] Failed to dispatch message from ${msg.sender}: ${String(error)}`,
-        );
-      }
-    };
-
-    void handleInbound();
+    void handleInboundMessage(state, rt, cfg, config, account.accountId, ctx, msg);
   };
 
   state.messageCallbacks.add(messageCallback);
