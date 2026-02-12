@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import type { ZTMChatConfig } from "./types/config.js";
 import type { DMPolicy } from "./config/schema.js";
-import { isValidUrl } from "./utils/validation.js";
+import { isValidUrl, IDENTIFIER_PATTERN } from "./utils/validation.js";
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -257,7 +257,7 @@ export class ZTMChatWizard {
     }
 
     // Validate username format
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    if (!IDENTIFIER_PATTERN.test(username)) {
       this.prompts.error(
         "Username must contain only letters, numbers, hyphens, and underscores"
       );

@@ -7,7 +7,7 @@ import type {
   DMPolicy,
   ConfigValidationError,
 } from "../types/config.js";
-import { validationError, isValidUrl } from "../utils/validation.js";
+import { validationError, isValidUrl, IDENTIFIER_PATTERN } from "../utils/validation.js";
 
 /**
  * Validate agent URL field
@@ -84,7 +84,7 @@ function validateMeshName(
         "meshName is required"
       )
     );
-  } else if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+  } else if (!IDENTIFIER_PATTERN.test(value)) {
     errors.push(
       validationError(
         "meshName",
@@ -122,7 +122,7 @@ function validateUsername(
         "username is required"
       )
     );
-  } else if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+  } else if (!IDENTIFIER_PATTERN.test(value)) {
     errors.push(
       validationError(
         "username",
@@ -288,7 +288,7 @@ export function isConfigMinimallyValid(config: Partial<ZTMChatConfig>): boolean 
  */
 export function isValidUsername(username: string): boolean {
   return (
-    /^[a-zA-Z0-9_-]+$/.test(username) &&
+    IDENTIFIER_PATTERN.test(username) &&
     username.length > 0 &&
     username.length <= 64
   );
@@ -299,7 +299,7 @@ export function isValidUsername(username: string): boolean {
  */
 export function isValidMeshName(meshName: string): boolean {
   return (
-    /^[a-zA-Z0-9_-]+$/.test(meshName) &&
+    IDENTIFIER_PATTERN.test(meshName) &&
     meshName.length > 0 &&
     meshName.length <= 64
   );

@@ -1,5 +1,16 @@
 import type { ConfigValidationError, ValidationErrorReason } from "../types/config.js";
 
+// ============================================
+// Pattern Constants (centralized definitions)
+// ============================================
+
+/** Pattern for valid usernames and mesh names: alphanumeric, hyphens, underscores */
+export const IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+// ============================================
+// Validation Error Factory
+// ============================================
+
 /**
  * Create a validation error for a specific field
  */
