@@ -1,4 +1,5 @@
 import type { OpenClawPluginApi, ChannelPlugin } from "openclaw/plugin-sdk";
+import type { ResolvedZTMChatAccount } from "./src/channel.js";
 import * as fs from "fs";
 import * as path from "path";
 import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel.js";
@@ -116,12 +117,14 @@ function registerPlugin(api: OpenClawPluginApi): void {
   );
 }
 
+// Plugin type definition extending ChannelPlugin with dispose support
+interface ZtmChatPluginDefinition extends ChannelPlugin<ResolvedZTMChatAccount> {
+  dispose?: () => void;
+}
+
 // Export plugin as default (ES module format)
-const plugin: any = {
-  id: "ztm-chat",
-  name: "ZTM Chat",
-  description: "ZTM (Zero Trust Mesh) Chat channel plugin - Connect OpenClaw to the ZTM P2P network",
-  register: registerPlugin,
+const plugin: ZtmChatPluginDefinition = {
+  ...ztmChatPlugin,
   dispose: disposeMessageStateStore,
 };
 
