@@ -69,6 +69,37 @@ async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
 }
 
 /**
+ * Process a single chat message and notify callbacks if valid
+ */
+function processChatMessage(
+  chat: { latest?: { time: number; message: string; sender?: string }; peer?: string },
+  state: AccountRuntimeState,
+  storeAllowFrom: string[]
+): boolean {
+  if (!chat.peer || chat.peer === state.config.username) return false;
+  if (!chat.latest) return false;
+
+  const sender = chat.latest.sender || chat.peer;
+  if (sender === state.config.username) return false;
+
+  const normalized = processIncomingMessage(
+    {
+      time: chat.latest.time,
+      message: chat.latest.message,
+      sender: sender,
+    },
+    state.config,
+    storeAllowFrom,
+    state.accountId
+  );
+  if (normalized) {
+    notifyMessageCallbacks(state, normalized);
+    return true;
+  }
+  return false;
+}
+
+/**
  * Perform initial sync of all existing messages
  */
 async function performInitialSync(
@@ -87,24 +118,8 @@ async function performInitialSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (!chat.peer || chat.peer === state.config.username) continue;
-    if (chat.latest) {
-      const sender = chat.latest.sender || chat.peer;
-      if (sender === state.config.username) continue;
-      const normalized = processIncomingMessage(
-        {
-          time: chat.latest.time,
-          message: chat.latest.message,
-          sender: sender,
-        },
-        state.config,
-        storeAllowFrom,
-        state.accountId
-      );
-      if (normalized) {
-        notifyMessageCallbacks(state, normalized);
-        processedCount++;
-      }
+    if (processChatMessage(chat, state, storeAllowFrom)) {
+      processedCount++;
     }
   }
 
@@ -265,7 +280,6 @@ async function processChangedPaths(
     return false;
   }
 
-  logger.debug(`[${state.accountId}] Processing ${changedPeers.length} peers with new messages: ${changedPeers.join(', ')}`);
   logger.debug(`[${state.accountId}] Processing ${changedPeers.length} peers with new messages`);
 
   const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
@@ -347,24 +361,8 @@ async function performFullSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (!chat.peer || chat.peer === state.config.username) continue;
-    if (chat.latest) {
-      const sender = chat.latest.sender || chat.peer;
-      if (sender === state.config.username) continue;
-      const normalized = processIncomingMessage(
-        {
-          time: chat.latest.time,
-          message: chat.latest.message,
-          sender: sender,
-        },
-        state.config,
-        storeAllowFrom,
-        state.accountId
-      );
-      if (normalized) {
-        notifyMessageCallbacks(state, normalized);
-        processedCount++;
-      }
+    if (processChatMessage(chat, state, storeAllowFrom)) {
+      processedCount++;
     }
   }
 
