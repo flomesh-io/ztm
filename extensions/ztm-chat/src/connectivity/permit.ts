@@ -4,7 +4,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime.js";
-import { getPairingStateStore } from "../runtime/pairing-store.js";
 import type { ZTMMessage, ZTMApiClient } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 
@@ -70,12 +69,6 @@ export async function handlePairingRequest(
 
   const normalizedPeer = peer.trim().toLowerCase();
 
-  // Check if already pending
-  if (state.pendingPairings.has(normalizedPeer)) {
-    logger.debug(`[${state.accountId}] Pairing request already pending for ${peer}`);
-    return;
-  }
-
   const allowFrom = config.allowFrom ?? [];
   if (allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedPeer)) {
     logger.debug(`[${state.accountId}] ${peer} is already approved`);
@@ -104,10 +97,6 @@ export async function handlePairingRequest(
   } catch (error) {
     logger.warn(`[${state.accountId}] Failed to register pairing request in store for ${peer}: ${error}`);
   }
-
-  const pairingDate = new Date();
-  state.pendingPairings.set(normalizedPeer, pairingDate);
-  getPairingStateStore().savePendingPairing(state.accountId, normalizedPeer, pairingDate);
 
   // Build pairing reply message using openclaw's standard format
   let messageText: string;

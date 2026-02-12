@@ -6,11 +6,6 @@ import {
   isUserWhitelisted,
   normalizeUsername,
   isPairingMode,
-  isPendingPairing,
-  addPendingPairing,
-  removePendingPairing,
-  getExpiredPendingPairings,
-  cleanupExpiredPairings,
 } from "./dm-policy.js";
 import type { ZTMChatConfig } from "../types/config.js";
 
@@ -27,7 +22,7 @@ describe("DM Policy enforcement", () => {
   describe("checkDmPolicy", () => {
     it("should allow messages when dmPolicy='allow'", () => {
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = checkDmPolicy("alice", config, new Map(), []);
+      const result = checkDmPolicy("alice", config, []);
 
       expect(result.allowed).toBe(true);
       expect(result.reason).toBe("allowed");
@@ -36,7 +31,7 @@ describe("DM Policy enforcement", () => {
 
     it("should deny messages when dmPolicy='deny'", () => {
       const config = { ...baseConfig, dmPolicy: "deny" as const };
-      const result = checkDmPolicy("alice", config, new Map(), []);
+      const result = checkDmPolicy("alice", config, []);
 
       expect(result.allowed).toBe(false);
       expect(result.reason).toBe("denied");
@@ -45,26 +40,16 @@ describe("DM Policy enforcement", () => {
 
     it("should request pairing when dmPolicy='pairing' and user not whitelisted", () => {
       const config = { ...baseConfig, dmPolicy: "pairing" as const };
-      const result = checkDmPolicy("alice", config, new Map(), []);
+      const result = checkDmPolicy("alice", config, []);
 
       expect(result.allowed).toBe(false);
       expect(result.reason).toBe("pending");
       expect(result.action).toBe("request_pairing");
     });
 
-    it("should ignore when dmPolicy='pairing' and user is pending", () => {
-      const config = { ...baseConfig, dmPolicy: "pairing" as const };
-      const pendingPairings = new Map([["alice", new Date()]]);
-      const result = checkDmPolicy("alice", config, pendingPairings, []);
-
-      expect(result.allowed).toBe(false);
-      expect(result.reason).toBe("pending");
-      expect(result.action).toBe("ignore");
-    });
-
     it("should allow whitelisted user in config", () => {
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
-      const result = checkDmPolicy("alice", config, new Map(), []);
+      const result = checkDmPolicy("alice", config, []);
 
       expect(result.allowed).toBe(true);
       expect(result.reason).toBe("whitelisted");
@@ -74,7 +59,7 @@ describe("DM Policy enforcement", () => {
     it("should allow whitelisted user in store", () => {
       const config = { ...baseConfig, dmPolicy: "pairing" as const };
       const storeAllowFrom = ["alice"];
-      const result = checkDmPolicy("alice", config, new Map(), storeAllowFrom);
+      const result = checkDmPolicy("alice", config, storeAllowFrom);
 
       expect(result.allowed).toBe(true);
       expect(result.reason).toBe("whitelisted");
@@ -83,21 +68,21 @@ describe("DM Policy enforcement", () => {
 
     it("should be case-insensitive for username matching", () => {
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["Alice"] };
-      const result = checkDmPolicy("ALICE", config, new Map(), []);
+      const result = checkDmPolicy("ALICE", config, []);
 
       expect(result.allowed).toBe(true);
     });
 
     it("should trim whitespace from usernames", () => {
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
-      const result = checkDmPolicy("  alice  ", config, new Map(), []);
+      const result = checkDmPolicy("  alice  ", config, []);
 
       expect(result.allowed).toBe(true);
     });
 
     it("should default to allow for unknown policy", () => {
       const config = { ...baseConfig, dmPolicy: "unknown" as any };
-      const result = checkDmPolicy("alice", config, new Map(), []);
+      const result = checkDmPolicy("alice", config, []);
 
       expect(result.allowed).toBe(true);
       expect(result.reason).toBe("allowed");
@@ -106,7 +91,7 @@ describe("DM Policy enforcement", () => {
     it("should prioritize config whitelist over store whitelist", () => {
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["bob"] };
       const storeAllowFrom = ["alice"];
-      const result = checkDmPolicy("bob", config, new Map(), storeAllowFrom);
+      const result = checkDmPolicy("bob", config, storeAllowFrom);
 
       expect(result.allowed).toBe(true);
     });
@@ -174,171 +159,6 @@ describe("DM Policy enforcement", () => {
       const config = { ...baseConfig, dmPolicy: undefined as any };
 
       expect(isPairingMode(config)).toBe(false);
-    });
-  });
-
-  describe("isPendingPairing", () => {
-    it("should return true when user is in pendingPairings", () => {
-      const pendingPairings = new Map([["alice", new Date()]]);
-
-      expect(isPendingPairing("alice", pendingPairings)).toBe(true);
-    });
-
-    it("should return false when user is not in pendingPairings", () => {
-      const pendingPairings = new Map([["bob", new Date()]]);
-
-      expect(isPendingPairing("alice", pendingPairings)).toBe(false);
-    });
-
-    it("should normalize username before checking", () => {
-      const pendingPairings = new Map([["alice", new Date()]]);
-
-      expect(isPendingPairing("ALICE", pendingPairings)).toBe(true);
-    });
-  });
-
-  describe("addPendingPairing", () => {
-    it("should add user to pendingPairings", () => {
-      const pendingPairings = new Map();
-
-      addPendingPairing("alice", pendingPairings);
-
-      expect(pendingPairings.has("alice")).toBe(true);
-      expect(isPendingPairing("alice", pendingPairings)).toBe(true);
-    });
-
-    it("should normalize username before adding", () => {
-      const pendingPairings = new Map();
-
-      addPendingPairing("ALICE", pendingPairings);
-
-      expect(pendingPairings.has("alice")).toBe(true);
-    });
-
-    it("should store the current date", () => {
-      const pendingPairings = new Map();
-      const before = new Date();
-
-      addPendingPairing("bob", pendingPairings);
-      const storedDate = pendingPairings.get("bob");
-
-      expect(storedDate).toBeDefined();
-      expect(storedDate!.getTime()).toBeGreaterThanOrEqual(before.getTime());
-    });
-  });
-
-  describe("removePendingPairing", () => {
-    it("should remove user from pendingPairings", () => {
-      const pendingPairings = new Map([["alice", new Date()]]);
-
-      const result = removePendingPairing("alice", pendingPairings);
-
-      expect(result).toBe(true);
-      expect(pendingPairings.has("alice")).toBe(false);
-    });
-
-    it("should return false when user not in pendingPairings", () => {
-      const pendingPairings = new Map();
-
-      const result = removePendingPairing("alice", pendingPairings);
-
-      expect(result).toBe(false);
-    });
-
-    it("should normalize username before removing", () => {
-      const pendingPairings = new Map([["alice", new Date()]]);
-
-      const result = removePendingPairing("ALICE", pendingPairings);
-
-      expect(result).toBe(true);
-      expect(pendingPairings.has("alice")).toBe(false);
-    });
-  });
-
-  describe("getExpiredPendingPairings", () => {
-    it("should return empty array when no pending pairings", () => {
-      const pendingPairings = new Map();
-
-      const expired = getExpiredPendingPairings(pendingPairings, 1000);
-
-      expect(expired).toEqual([]);
-    });
-
-    it("should return empty array when no pairings are expired", () => {
-      const now = Date.now();
-      const pendingPairings = new Map([
-        ["alice", new Date(now)],
-        ["bob", new Date(now - 500)],
-      ]);
-
-      const expired = getExpiredPendingPairings(pendingPairings, 10000);
-
-      expect(expired).toEqual([]);
-    });
-
-    it("should return expired pairings", () => {
-      const now = Date.now();
-      const expiredDate = new Date(now - 5000); // 5秒前
-      const pendingPairings = new Map([
-        ["alice", new Date(now)],           // 现在 - 不过期
-        ["bob", expiredDate],                // 5秒前 - 过期 (5000 > 3000)
-        ["charlie", new Date(now - 4000)],  // 4秒前 - 过期 (4000 > 3000)
-      ]);
-
-      const expired = getExpiredPendingPairings(pendingPairings, 3000);
-
-      expect(expired).toContain("bob");
-      expect(expired).toContain("charlie");
-      expect(expired).not.toContain("alice");
-    });
-
-    it("should respect maxAgeMs parameter", () => {
-      const now = Date.now();
-      const oldDate = new Date(now - 5000); // 5秒前
-      const pendingPairings = new Map([["bob", oldDate]]);
-
-      const expired1h = getExpiredPendingPairings(pendingPairings, 3600000); // 1小时
-      const expired3s = getExpiredPendingPairings(pendingPairings, 3000);    // 3秒
-
-      expect(expired1h).toEqual([]);  // 5秒 < 1小时，不过期
-      expect(expired3s).toContain("bob"); // 5秒 > 3秒，过期
-    });
-  });
-
-  describe("cleanupExpiredPairings", () => {
-    it("should remove expired pairings and return count", () => {
-      const now = Date.now();
-      const pendingPairings = new Map([
-        ["alice", new Date(now)],              // 现在 - 不过期
-        ["bob", new Date(now - 5000)],        // 5秒前 - 过期
-        ["charlie", new Date(now - 4000)],    // 4秒前 - 过期
-      ]);
-
-      const count = cleanupExpiredPairings(pendingPairings, 3000);
-
-      expect(count).toBe(2);
-      expect(pendingPairings.size).toBe(1);
-      expect(pendingPairings.has("alice")).toBe(true);
-    });
-
-    it("should use 1 hour default maxAge", () => {
-      const now = Date.now();
-      const hourOld = new Date(now - 60 * 60 * 1000 - 1);
-      const pendingPairings = new Map([["old", hourOld]]);
-
-      const count = cleanupExpiredPairings(pendingPairings);
-
-      expect(count).toBe(1);
-      expect(pendingPairings.size).toBe(0);
-    });
-
-    it("should return 0 when no expired pairings", () => {
-      const pendingPairings = new Map([["alice", new Date()]]);
-
-      const count = cleanupExpiredPairings(pendingPairings);
-
-      expect(count).toBe(0);
-      expect(pendingPairings.size).toBe(1);
     });
   });
 });

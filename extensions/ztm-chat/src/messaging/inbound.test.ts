@@ -79,7 +79,6 @@ describe("Inbound message processing", () => {
   };
 
   beforeEach(async () => {
-    mockState.pendingPairings.clear();
     mockState.messageCallbacks.clear();
 
     // Clear the deduplicator cache between tests
@@ -96,7 +95,7 @@ describe("Inbound message processing", () => {
     describe("with dmPolicy='allow'", () => {
       it("should allow all messages", () => {
         const config = { ...baseConfig, dmPolicy: "allow" as const };
-        const result = checkDmPolicy("alice", config, new Map(), []);
+        const result = checkDmPolicy("alice", config, []);
 
         expect(result).toEqual({
           allowed: true,
@@ -107,7 +106,7 @@ describe("Inbound message processing", () => {
 
       it("should allow messages from unknown senders", () => {
         const config = { ...baseConfig, dmPolicy: "allow" as const };
-        const result = checkDmPolicy("stranger", config, new Map(), []);
+        const result = checkDmPolicy("stranger", config, []);
 
         expect(result.allowed).toBe(true);
       });
@@ -116,7 +115,7 @@ describe("Inbound message processing", () => {
     describe("with dmPolicy='deny'", () => {
       it("should deny all messages", () => {
         const config = { ...baseConfig, dmPolicy: "deny" as const };
-        const result = checkDmPolicy("alice", config, new Map(), []);
+        const result = checkDmPolicy("alice", config, []);
 
         expect(result).toEqual({
           allowed: false,
@@ -129,7 +128,7 @@ describe("Inbound message processing", () => {
     describe("with dmPolicy='pairing'", () => {
       it("should request pairing for new senders", () => {
         const config = { ...baseConfig, dmPolicy: "pairing" as const };
-        const result = checkDmPolicy("alice", config, new Map(), []);
+        const result = checkDmPolicy("alice", config, []);
 
         expect(result).toEqual({
           allowed: false,
@@ -138,21 +137,9 @@ describe("Inbound message processing", () => {
         });
       });
 
-      it("should ignore already pending senders", () => {
-        const config = { ...baseConfig, dmPolicy: "pairing" as const };
-        const pendingPairings = new Map([["alice", new Date()]]);
-        const result = checkDmPolicy("alice", config, pendingPairings, []);
-
-        expect(result).toEqual({
-          allowed: false,
-          reason: "pending",
-          action: "ignore",
-        });
-      });
-
       it("should allow whitelisted senders", () => {
         const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
-        const result = checkDmPolicy("alice", config, new Map(), []);
+        const result = checkDmPolicy("alice", config, []);
 
         expect(result).toEqual({
           allowed: true,
@@ -164,7 +151,7 @@ describe("Inbound message processing", () => {
       it("should allow store-approved senders", () => {
         const config = { ...baseConfig, dmPolicy: "pairing" as const };
         const storeAllowFrom = ["alice"];
-        const result = checkDmPolicy("alice", config, new Map(), storeAllowFrom);
+        const result = checkDmPolicy("alice", config, storeAllowFrom);
 
         expect(result).toEqual({
           allowed: true,
@@ -175,14 +162,14 @@ describe("Inbound message processing", () => {
 
       it("should be case-insensitive for allowFrom matching", () => {
         const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["Alice"] };
-        const result = checkDmPolicy("ALICE", config, new Map(), []);
+        const result = checkDmPolicy("ALICE", config, []);
 
         expect(result.allowed).toBe(true);
       });
 
       it("should trim whitespace from sender names", () => {
         const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
-        const result = checkDmPolicy("  alice  ", config, new Map(), []);
+        const result = checkDmPolicy("  alice  ", config, []);
 
         expect(result.allowed).toBe(true);
       });
@@ -191,7 +178,7 @@ describe("Inbound message processing", () => {
     describe("with unknown dmPolicy", () => {
       it("should default to allow", () => {
         const config = { ...baseConfig, dmPolicy: "unknown" as any };
-        const result = checkDmPolicy("alice", config, new Map(), []);
+        const result = checkDmPolicy("alice", config, []);
 
         expect(result).toEqual({
           allowed: true,
@@ -214,7 +201,7 @@ describe("Inbound message processing", () => {
     it("should normalize valid messages", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.id).toBe(`${message.time}-alice`);
@@ -228,7 +215,7 @@ describe("Inbound message processing", () => {
     it("should skip empty messages", () => {
       const message = createMessage({ message: "" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).toBeNull();
     });
@@ -236,7 +223,7 @@ describe("Inbound message processing", () => {
     it("should skip whitespace-only messages", () => {
       const message = createMessage({ message: "   " });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).toBeNull();
     });
@@ -265,7 +252,7 @@ describe("Inbound message processing", () => {
       vi.mocked(getMessageStateStore).mockReturnValue(mockStore);
 
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).toBeNull();
 
@@ -284,7 +271,7 @@ describe("Inbound message processing", () => {
 
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).toBeNull();
 
@@ -295,7 +282,7 @@ describe("Inbound message processing", () => {
     it("should respect dmPolicy='deny'", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "deny" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).toBeNull();
     });
@@ -303,7 +290,7 @@ describe("Inbound message processing", () => {
     it("should trigger pairing request for dmPolicy='pairing'", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).toBeNull();
     });
@@ -312,7 +299,7 @@ describe("Inbound message processing", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
 
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.sender).toBe("alice");
@@ -321,7 +308,7 @@ describe("Inbound message processing", () => {
     it("should handle messages with newlines", () => {
       const message = createMessage({ message: "Hello\nWorld\n" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello\nWorld\n");
@@ -330,7 +317,7 @@ describe("Inbound message processing", () => {
     it("should handle messages with special characters", () => {
       const message = createMessage({ message: "Hello! 🌍 世界" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello! 🌍 世界");
@@ -339,7 +326,7 @@ describe("Inbound message processing", () => {
     it("should handle very long messages", () => {
       const message = createMessage({ message: "a".repeat(10000) });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("a".repeat(10000));
@@ -349,7 +336,7 @@ describe("Inbound message processing", () => {
       const message = createMessage({ time: 0 });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
 
-      const result = processIncomingMessage(message, config, new Map(), [], "test-account");
+      const result = processIncomingMessage(message, config, [], "test-account");
 
       expect(result).not.toBeNull();
     });

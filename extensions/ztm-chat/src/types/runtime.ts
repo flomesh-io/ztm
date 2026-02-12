@@ -31,11 +31,6 @@ export interface AccountRuntimeState {
   messageCallbacks: Set<(message: ZTMChatMessage) => void>;
   watchInterval: ReturnType<typeof setInterval> | null;
   watchErrorCount: number;
-  // Pairing state for dmPolicy="pairing"
-  pendingPairings: Map<string, Date>;
-}
-
-// ZTM Chat runtime with additional state
-export interface ZTMChatRuntimeState {
+  // Kept for test compatibility - not actively used in simplified flow
   pendingPairings: Map<string, Date>;
 }

@@ -8,4 +8,4 @@ export * from './state.js';
 export * from './store.js';
 
 // Type exports
-export type { AccountRuntimeState, ZTMChatRuntimeState } from '../types/runtime.js';
+export type { AccountRuntimeState } from '../types/runtime.js';

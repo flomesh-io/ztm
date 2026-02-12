@@ -26,11 +26,13 @@ let mockAllowFromResult: string[] = [];
 let mockPairingReplyMessage = "Pairing reply message";
 let mockBuildPairingReplyThrows = false;
 
+const mockUpsertPairingRequest = vi.fn(() => Promise.resolve(mockPairingResult));
+
 vi.mock("../runtime.js", () => ({
-  getZTMRuntime: () => ({
+  getZTMRuntime: vi.fn(() => ({
     channel: {
       pairing: {
-        upsertPairingRequest: () => Promise.resolve(mockPairingResult),
+        upsertPairingRequest: mockUpsertPairingRequest,
         readAllowFromStore: () => Promise.resolve(mockAllowFromResult),
         buildPairingReply: () => {
           if (mockBuildPairingReplyThrows) {
@@ -40,7 +42,7 @@ vi.mock("../runtime.js", () => ({
         },
       },
     },
-  }),
+  })),
 }));
 
 // Mock fetch - use vi.fn that returns real Response objects
@@ -331,30 +333,25 @@ describe("Permit management functions", () => {
 
   describe("handlePairingRequest", () => {
     it("should register pairing request and send message", async () => {
+      mockUpsertPairingRequest.mockClear();
+
       await handlePairingRequest(mockState, "alice", "Test context", []);
 
-      expect(mockState.pendingPairings.has("alice")).toBe(true);
+      expect(mockUpsertPairingRequest).toHaveBeenCalled();
       expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
     });
 
     it("should not send message if pairing already exists", async () => {
       mockPairingResult = { code: "OLD123", created: false };
+      mockUpsertPairingRequest.mockClear();
 
       await handlePairingRequest(mockState, "alice", "Test context", []);
 
+      // When pairing already exists (created=false), don't re-send message
       expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
     });
 
-    it("should skip if already pending", async () => {
-      mockState.pendingPairings.set("alice", new Date());
-
-      await handlePairingRequest(mockState, "alice", "Test context", []);
-
-      expect(mockState.pendingPairings.has("alice")).toBe(true);
-      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
-    });
-
-    it("should skip if in allowFrom config", async () => {
+    it("should skip if already approved in allowFrom", async () => {
       mockState.config.allowFrom = ["alice"];
 
       await handlePairingRequest(mockState, "alice", "Test context", []);
@@ -371,9 +368,12 @@ describe("Permit management functions", () => {
     });
 
     it("should normalize peer name", async () => {
+      mockUpsertPairingRequest.mockClear();
+
       await handlePairingRequest(mockState, "  Alice  ", "Test context", []);
 
-      expect(mockState.pendingPairings.has("alice")).toBe(true);
+      // Verify OpenClaw's pairing API was called
+      expect(mockUpsertPairingRequest).toHaveBeenCalled();
       expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
     });
 
@@ -424,9 +424,6 @@ describe("Permit management functions", () => {
       await expect(
         handlePairingRequest(mockState, "alice", "Test context", [])
       ).resolves.toBeUndefined();
-
-      // Should still add to pending pairings
-      expect(mockState.pendingPairings.has("alice")).toBe(true);
     });
 
     it("should return early if no apiClient", async () => {
@@ -437,8 +434,6 @@ describe("Permit management functions", () => {
       };
 
       await handlePairingRequest(stateWithNullClient, "alice", "Test context", []);
-
-      expect(stateWithNullClient.pendingPairings.has("alice")).toBe(false);
     });
 
     it("should check store allowFrom with normalized names", async () => {

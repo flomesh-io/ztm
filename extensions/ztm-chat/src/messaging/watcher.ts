@@ -93,7 +93,6 @@ async function performInitialSync(
           sender: chat.peer,
         },
         state.config,
-        state.pendingPairings,
         storeAllowFrom,
         state.accountId
       );
@@ -126,7 +125,7 @@ async function handleInitialPairingRequests(
 
   for (const chat of chatsResult.value) {
     if (chat.peer && chat.peer !== state.config.username) {
-      const check = checkDmPolicy(chat.peer, state.config, state.pendingPairings, storeAllowFrom);
+      const check = checkDmPolicy(chat.peer, state.config, storeAllowFrom);
       if (check.action === "request_pairing") {
         const { handlePairingRequest } = await import("../connectivity/permit.js");
         await handlePairingRequest(state, chat.peer, "Initial chat request", storeAllowFrom);
@@ -354,7 +353,6 @@ async function processPeerMessages(
     const normalized = processIncomingMessage(
       msg,
       state.config,
-      state.pendingPairings,
       storeAllowFrom,
       state.accountId
     );
@@ -365,7 +363,7 @@ async function processPeerMessages(
 
   // Check for pairing request
   const { checkDmPolicy } = await import("../core/dm-policy.js");
-  const check = checkDmPolicy(peer, state.config, state.pendingPairings, storeAllowFrom);
+  const check = checkDmPolicy(peer, state.config, storeAllowFrom);
   if (check.action === "request_pairing") {
     const { handlePairingRequest } = await import("../connectivity/permit.js");
     await handlePairingRequest(state, peer, "New message", storeAllowFrom);

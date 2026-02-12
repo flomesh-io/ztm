@@ -276,7 +276,6 @@ describe("Polling Watcher", () => {
       expect(processIncomingMessage).toHaveBeenCalledWith(
         expect.objectContaining({ sender: "alice" }),
         expect.any(Object),
-        expect.any(Map),
         expect.any(Array),
         "test-account"
       );
@@ -376,7 +375,6 @@ describe("Polling Watcher", () => {
           sender: "alice",
         },
         mockState.config,
-        mockState.pendingPairings,
         expect.any(Array),
         "test-account"
       );
