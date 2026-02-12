@@ -139,6 +139,9 @@ export interface ZTMApiClient {
   // Watch Mechanism - Return Result types
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /** Read a file from mesh storage. Returns Result with parsed content or error. */
+  readFile<T = unknown>(filePath: string): Promise<Result<T, ZtmApiError | ZtmTimeoutError>>;
+
   /** Watch for changes in storage with given prefix. Returns Result with changed paths or error. */
   watchChanges(prefix: string): Promise<Result<string[], ZtmReadError>>;
 

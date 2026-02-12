@@ -22,7 +22,7 @@ import {
   ZtmError,
 } from "../types/errors.js";
 import { defaultLogger, type Logger } from "../utils/logger.js";
-import { fetchWithRetry, type FetchWithRetry } from "../utils/retry.js";
+import { fetchWithRetry, type FetchWithRetry, type RetryOptions } from "../utils/retry.js";
 
 // Re-export types for backward compatibility
 export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClient };
@@ -103,7 +103,8 @@ export function createZTMApiClient(
     method: string,
     path: string,
     body?: unknown,
-    additionalHeaders?: Record<string, string>
+    additionalHeaders?: Record<string, string>,
+    retryOverrides?: RetryOptions
   ): ApiResult<T> {
     const url = `${baseUrl}${path}`;
 
@@ -117,7 +118,7 @@ export function createZTMApiClient(
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
-      }, { timeout: apiTimeout });
+      }, { timeout: apiTimeout, ...retryOverrides });
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "");
@@ -170,6 +171,7 @@ export function createZTMApiClient(
     size: number;
   }
   const lastSeenFiles = new Map<string, FileMetadata>();
+  let lastPollTime: number | undefined;
 
   // Clean up oldest entries when reaching the limit to prevent memory leaks
   function trimFileMetadata(): void {
@@ -184,10 +186,10 @@ export function createZTMApiClient(
     return typeof obj === "object" && obj !== null;
   }
 
-  async function listFiles(since?: number): ApiResult<Record<string, { hash?: string; size?: number; time?: number }>> {
+  async function listFiles(since?: number, retryOverrides?: RetryOptions): ApiResult<Record<string, { hash?: string; size?: number; time?: number }>> {
     const path = `/api/meshes/${config.meshName}/files`;
     const queryParams = since !== undefined ? `?since=${since}` : "";
-    return request<Record<string, { hash?: string; size?: number; time?: number }>>("GET", path + queryParams);
+    return request<Record<string, { hash?: string; size?: number; time?: number }>>("GET", path + queryParams, undefined, undefined, retryOverrides);
   }
 
   async function readFile<T = unknown>(filePath: string): ApiResult<T> {
@@ -318,6 +320,10 @@ export function createZTMApiClient(
   }
 
   const client: ZTMApiClient = {
+    readFile<T = unknown>(filePath: string): Promise<Result<T, ZtmApiError | ZtmTimeoutError>> {
+      return readFile<T>(filePath);
+    },
+
     async getMeshInfo(): Promise<Result<ZTMMeshInfo, ZtmApiError | ZtmTimeoutError>> {
       return request<ZTMMeshInfo>("GET", `/api/meshes/${config.meshName}`);
     },
@@ -532,12 +538,8 @@ export function createZTMApiClient(
     ): Promise<Result<string[], ZtmReadError>> {
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
 
-      // Get the minimum last seen time for the since parameter
-      const lastSeenTimes = Array.from(lastSeenFiles.values()).map(m => m.time);
-      const minLastSeen = Math.min(...lastSeenTimes, Infinity);
-      const sinceTime = isFinite(minLastSeen) ? minLastSeen : undefined;
-
-      const fileListResult = await listFiles(sinceTime);
+      const sinceTime = lastPollTime;
+      const fileListResult = await listFiles(sinceTime, { maxRetries: 1, initialDelay: 500 });
       if (!fileListResult.ok) {
         const error = new ZtmReadError({
           peer: "*",
@@ -550,6 +552,7 @@ export function createZTMApiClient(
 
       const fileList = fileListResult.value;
       const changedPaths: string[] = [];
+      let maxTimeSeen = lastPollTime ?? 0;
 
       for (const [filePath, meta] of Object.entries(fileList)) {
         if (!filePath.startsWith(prefix)) continue;
@@ -561,6 +564,8 @@ export function createZTMApiClient(
         const fileTime = meta.time ?? 0;
         const fileSize = meta.size ?? 0;
         const lastSeen = lastSeenFiles.get(filePath);
+
+        if (fileTime > maxTimeSeen) maxTimeSeen = fileTime;
 
         // Check if either time or size changed (handles append-only files)
         const timeChanged = !lastSeen || fileTime > lastSeen.time;
@@ -574,6 +579,7 @@ export function createZTMApiClient(
         }
       }
 
+      lastPollTime = maxTimeSeen > 0 ? maxTimeSeen : undefined;
       logger.debug?.(`[ZTM API] Watch complete: ${changedPaths.length} changed paths for prefix="${prefix}"`);
       return success(changedPaths);
     },
