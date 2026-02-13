@@ -425,8 +425,9 @@ export async function startAccountGateway(
 
   // Dispatch inbound messages to the AI agent via OpenClaw's reply pipeline
   const messageCallback = (msg: ZTMChatMessage) => {
+    const msgType = msg.isGroup ? `group "${msg.groupName}"` : `peer ${msg.sender}`;
     ctx.log?.info(
-      `[${account.accountId}] Received message from ${msg.sender}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
+      `[${account.accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
     );
 
     void handleInboundMessage(state, rt, cfg, config, account.accountId, ctx, msg);
