@@ -7,8 +7,9 @@ import {
   hasCallbacks,
   clearCallbacks,
 } from "./dispatcher.js";
-import type { AccountRuntimeState } from "../types/runtime.js";
+import { testAccountId } from "../test-utils/fixtures.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
+import type { AccountRuntimeState } from "../types/runtime.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -35,12 +36,11 @@ vi.mock("../runtime/store.js", () => ({
 }));
 
 describe("Message Dispatcher", () => {
-  let mockState: AccountRuntimeState;
+  let mockState: ReturnType<typeof createMockState>;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockState = {
-      accountId: "test-account",
+  function createMockState(): AccountRuntimeState {
+    return {
+      accountId: testAccountId,
       config: {} as any,
       apiClient: null,
       connected: false,
@@ -51,11 +51,16 @@ describe("Message Dispatcher", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 0,
-      messageCallbacks: new Set(),
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
     };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState = createMockState();
   });
 
   describe("notifyMessageCallbacks", () => {
@@ -151,7 +156,7 @@ describe("Message Dispatcher", () => {
 
       // Verify that setWatermark was called on the store
       expect(mockStore.setWatermark).toHaveBeenCalledWith(
-        "test-account",
+        testAccountId,
         "alice",
         1234567890
       );

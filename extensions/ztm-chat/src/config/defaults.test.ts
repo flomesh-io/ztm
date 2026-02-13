@@ -1,6 +1,7 @@
 // Unit tests for default config and probe config
 
 import { describe, it, expect } from "vitest";
+import { testConfig } from "../test-utils/fixtures.js";
 import {
   getDefaultConfig,
   isConfigMinimallyValid,
@@ -27,9 +28,9 @@ describe("getDefaultConfig", () => {
 describe("isConfigMinimallyValid", () => {
   it("should return true for valid config", () => {
     const config = {
-      agentUrl: "https://example.com",
-      meshName: "my-mesh",
-      username: "test-bot",
+      agentUrl: testConfig.agentUrl,
+      meshName: testConfig.meshName,
+      username: testConfig.username,
     } as Partial<ZTMChatConfig>;
 
     expect(isConfigMinimallyValid(config)).toBe(true);

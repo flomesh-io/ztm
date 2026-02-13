@@ -5,6 +5,8 @@ import type { OpenClawConfig } from "openclaw/plugin-sdk";
 import type { ZTMChatConfig, ZTMMeshInfo, ZTMMessage } from "../types/index.js";
 import type { ZTMChatMessage } from "../messaging/inbound.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { createMockLoggerFns, createMockApiClient, mockSuccess } from "../test-utils/mocks.js";
 import {
   collectStatusIssues,
   probeAccountGateway,
@@ -206,24 +208,17 @@ describe("Channel Gateway", () => {
     // Reset mock return values for each test
     // Initialize mockState first so it can be used by other beforeEach hooks
     mockConfig = {
-      agentUrl: "https://example.com:7777",
-      permitUrl: "https://example.com/permit",
-      meshName: "test-mesh",
-      username: "test-bot",
-      enableGroups: false,
-      autoReply: true,
-      messagePath: "/shared",
-      dmPolicy: "pairing",
+      ...testConfig,
       allowFrom: undefined,
     };
 
     mockState = {
-      accountId: "test-account",
+      accountId: testAccountId,
       config: mockConfig,
-      apiClient: {
-        getMeshInfo: vi.fn().mockResolvedValue({ ok: true, value: { connected: true, peers: 5 } }),
-        sendPeerMessage: vi.fn().mockResolvedValue({ ok: true, value: null }),
-      },
+      apiClient: createMockApiClient({
+        getMeshInfo: mockSuccess({ connected: true, peers: 5 }),
+        sendPeerMessage: mockSuccess(null),
+      }),
       connected: true,
       meshConnected: true,
       lastError: null,
@@ -781,7 +776,7 @@ describe("Channel Gateway", () => {
 
       const ctx = {
         account: { accountId: "test", config: mockConfig },
-        log: { info: vi.fn(), error: vi.fn() },
+        log: createMockLoggerFns(),
       };
 
       await expect(startAccountGateway(ctx)).rejects.toThrow("agentUrl is required; username is required");
@@ -793,7 +788,7 @@ describe("Channel Gateway", () => {
 
       const ctx = {
         account: { accountId: "test", config: mockConfig },
-        log: { info: vi.fn(), error: vi.fn() },
+        log: createMockLoggerFns(),
       };
 
       await expect(startAccountGateway(ctx)).rejects.toThrow("Cannot connect to ZTM agent");
@@ -807,7 +802,7 @@ describe("Channel Gateway", () => {
 
       const ctx = {
         account: { accountId: "test", config: { ...mockConfig, agentUrl: "invalid-url" } },
-        log: { info: vi.fn(), error: vi.fn() },
+        log: createMockLoggerFns(),
       };
 
       await expect(startAccountGateway(ctx)).rejects.toThrow("Invalid ZTM agent URL");
@@ -844,7 +839,7 @@ describe("Channel Gateway", () => {
           accountId: "test",
           config: { ...mockConfig, dmPolicy: "pairing" as const, allowFrom: [] },
         },
-        log: { info: vi.fn(), error: vi.fn() },
+        log: createMockLoggerFns(),
       };
 
       await startAccountGateway(ctx);

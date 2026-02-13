@@ -1,6 +1,7 @@
 // Unit tests for Runtime
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createMockLoggerFns } from "../test-utils/mocks.js";
 
 // Mock PluginRuntime interface
 interface MockPluginRuntime {

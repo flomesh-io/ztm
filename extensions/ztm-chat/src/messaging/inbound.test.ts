@@ -8,8 +8,8 @@ import {
   type ZTMChatMessage,
   type MessageCheckResult,
 } from "./inbound.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import type { AccountRuntimeState } from "../types/runtime.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -30,7 +30,6 @@ vi.mock("../utils/logger.js", () => ({
 // Mock store with fresh instances for each call
 vi.mock("../runtime/store.js", () => ({
   getMessageStateStore: vi.fn(function() {
-    // Return a fresh mock object for each call
     return {
       getWatermark: vi.fn(() => -1),
       getGlobalWatermark: vi.fn(() => 0),
@@ -46,20 +45,10 @@ vi.mock("../runtime/store.js", () => ({
 }));
 
 describe("Inbound message processing", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: undefined,
-    dmPolicy: "pairing",
-  };
+  const baseConfig = testConfig;
 
   const mockState: AccountRuntimeState = {
-    accountId: "test-account",
+    accountId: testAccountId,
     config: baseConfig,
     apiClient: null,
     connected: true,
@@ -70,7 +59,7 @@ describe("Inbound message processing", () => {
     lastInboundAt: null,
     lastOutboundAt: null,
     peerCount: 5,
-    messageCallbacks: new Set(),
+    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),
@@ -195,7 +184,7 @@ describe("Inbound message processing", () => {
     it("should normalize valid messages", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).not.toBeNull();
       expect(result?.id).toBe(`${message.time}-alice`);
@@ -209,7 +198,7 @@ describe("Inbound message processing", () => {
     it("should skip empty messages", () => {
       const message = createMessage({ message: "" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).toBeNull();
     });
@@ -217,7 +206,7 @@ describe("Inbound message processing", () => {
     it("should skip whitespace-only messages", () => {
       const message = createMessage({ message: "   " });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).toBeNull();
     });
@@ -246,7 +235,7 @@ describe("Inbound message processing", () => {
       vi.mocked(getMessageStateStore).mockReturnValue(mockStore);
 
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).toBeNull();
 
@@ -261,7 +250,7 @@ describe("Inbound message processing", () => {
     it("should respect dmPolicy='deny'", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "deny" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).toBeNull();
     });
@@ -269,7 +258,7 @@ describe("Inbound message processing", () => {
     it("should trigger pairing request for dmPolicy='pairing'", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).toBeNull();
     });
@@ -278,7 +267,7 @@ describe("Inbound message processing", () => {
       const message = createMessage();
       const config = { ...baseConfig, dmPolicy: "pairing" as const, allowFrom: ["alice"] };
 
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).not.toBeNull();
       expect(result?.sender).toBe("alice");
@@ -287,7 +276,7 @@ describe("Inbound message processing", () => {
     it("should handle messages with newlines", () => {
       const message = createMessage({ message: "Hello\nWorld\n" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello\nWorld\n");
@@ -296,7 +285,7 @@ describe("Inbound message processing", () => {
     it("should handle messages with special characters", () => {
       const message = createMessage({ message: "Hello! 🌍 世界" });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("Hello! 🌍 世界");
@@ -305,7 +294,7 @@ describe("Inbound message processing", () => {
     it("should handle very long messages", () => {
       const message = createMessage({ message: "a".repeat(10000) });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).not.toBeNull();
       expect(result?.content).toBe("a".repeat(10000));
@@ -315,7 +304,7 @@ describe("Inbound message processing", () => {
       const message = createMessage({ time: 0 });
       const config = { ...baseConfig, dmPolicy: "allow" as const };
 
-      const result = processIncomingMessage(message, config, [], "test-account");
+      const result = processIncomingMessage(message, config, [], testAccountId);
 
       expect(result).not.toBeNull();
     });
@@ -393,7 +382,7 @@ describe("Inbound message processing", () => {
       notifyMessageCallbacks(mockState, message);
 
       // Check that watermark was set
-      expect(setWatermarkMock).toHaveBeenCalledWith("test-account", "alice", 1234567890);
+      expect(setWatermarkMock).toHaveBeenCalledWith(testAccountId, "alice", 1234567890);
     });
 
     it("should handle callback errors gracefully", () => {

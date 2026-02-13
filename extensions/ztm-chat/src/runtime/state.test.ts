@@ -10,6 +10,7 @@ import {
   type AccountRuntimeState,
 } from "./state.js";
 import { success } from "../types/common.js";
+import { testConfig } from "../test-utils/fixtures.js";
 
 // Mock state using mutable container
 const mockApiState = {
@@ -71,17 +72,7 @@ vi.mock("../messaging/inbound.js", () => ({
 
 describe("Account Runtime State Management", () => {
   const testAccountId = "test-account";
-  const testConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: undefined as string[] | undefined,
-    dmPolicy: "pairing" as const,
-  };
+  // Using testConfig from fixtures (see import at top of file)
 
   // Clean up all states before and after tests
   beforeEach(() => {

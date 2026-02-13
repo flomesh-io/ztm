@@ -1,6 +1,7 @@
 // Unit tests for Channel Config
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { testConfig } from "../test-utils/fixtures.js";
 import * as fs from "fs";
 import * as path from "node:path";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";

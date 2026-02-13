@@ -1,20 +1,10 @@
 // Integration tests for Message Timestamp Ordering
 
 import { describe, it, expect } from "vitest";
-import type { ZTMChatConfig } from "../types/config.js";
+import { testConfig } from "../test-utils/fixtures.js";
 
 describe("Message Timestamp Ordering", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "allow",
-  };
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "allow" as const };
 
   it("should process messages in timestamp order", () => {
     const messages = [

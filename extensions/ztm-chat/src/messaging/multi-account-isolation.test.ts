@@ -1,21 +1,16 @@
 // Integration tests for Multi-Account Isolation
 
 import { describe, it, expect, vi } from "vitest";
-import type { AccountRuntimeState } from "../runtime/state.js";
+import { testConfig } from "../test-utils/fixtures.js";
 
 describe("Multi-Account Isolation", () => {
-  const createAccountState = (accountId: string): AccountRuntimeState => ({
+  const createAccountState = (accountId: string) => ({
     accountId,
     config: {
-      agentUrl: "https://example.com:7777",
-      permitUrl: "https://example.com/permit",
-      meshName: "test-mesh",
+      ...testConfig,
       username: `bot-${accountId}`,
-      enableGroups: false,
-      autoReply: true,
-      messagePath: "/shared",
-      allowFrom: [],
-      dmPolicy: "pairing",
+      allowFrom: [] as string[],
+      dmPolicy: "pairing" as const,
     },
     apiClient: null,
     connected: true,

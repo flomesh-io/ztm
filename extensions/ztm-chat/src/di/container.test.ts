@@ -13,6 +13,7 @@ import {
   type IRuntime,
   container,
 } from "./container.js";
+import { createMockLoggerFns } from "../test-utils/mocks.js";
 
 // Mock service interfaces for testing
 interface IMockService {
@@ -134,12 +135,7 @@ describe("DI Container", () => {
 
       expect(() => {
         container.register(key1, () => ({ getValue: () => "test" }));
-        container.register(key2, () => ({
-          info: vi.fn(),
-          warn: vi.fn(),
-          error: vi.fn(),
-          debug: vi.fn(),
-        }));
+        container.register(key2, () => createMockLoggerFns());
       }).not.toThrow();
     });
   });
@@ -347,12 +343,7 @@ describe("DI Container", () => {
     it("should support ILogger interface", () => {
       const container = DIContainer.getInstance();
       const key = DEPENDENCIES.LOGGER;
-      const logger: ILogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-      };
+      const logger: ILogger = createMockLoggerFns();
 
       expect(() => container.registerInstance(key, logger)).not.toThrow();
       expect(container.get(key)).toBe(logger);

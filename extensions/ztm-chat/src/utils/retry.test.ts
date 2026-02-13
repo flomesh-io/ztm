@@ -10,6 +10,7 @@ import {
   isRetriableError,
   withRetry,
 } from "./retry.js";
+import { mockResolved } from "../test-utils/mocks.js";
 
 describe("Retry utilities", () => {
   describe("sleep", () => {

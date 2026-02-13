@@ -1,21 +1,11 @@
 // Integration tests for DM Policy behavior
 
 import { describe, it, expect } from "vitest";
-import type { ZTMChatConfig } from "../types/config.js";
+import { testConfig } from "../test-utils/fixtures.js";
 import { checkDmPolicy, isUserWhitelisted, normalizeUsername, isPairingMode } from "./inbound.js";
 
 describe("DM Policy Integration", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "pairing",
-  };
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
 
   describe("dmPolicy='allow' bypasses all checks", () => {
     it("should allow all users when dmPolicy is 'allow'", () => {

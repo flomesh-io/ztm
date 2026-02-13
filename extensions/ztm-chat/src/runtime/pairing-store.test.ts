@@ -5,6 +5,7 @@ import {
   PairingStateData,
   FileSystem,
 } from "./pairing-store.js";
+import { createMockLoggerFns } from "../test-utils/mocks.js";
 
 const createMockFs = (initialFiles: Map<string, string> = new Map()): FileSystem => {
   const files = new Map(initialFiles);
@@ -23,15 +24,11 @@ const createMockFs = (initialFiles: Map<string, string> = new Map()): FileSystem
 
 describe("PairingStateStore", () => {
   let mockFs: FileSystem;
-  let mockLogger: { debug: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn> };
+  let mockLogger: ReturnType<typeof createMockLoggerFns>;
 
   beforeEach(() => {
     mockFs = createMockFs();
-    mockLogger = {
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-    };
+    mockLogger = createMockLoggerFns();
     vi.useFakeTimers();
   });
 

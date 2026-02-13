@@ -3,6 +3,8 @@
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from "vitest";
 import { requestPermit, savePermitData, handlePairingRequest } from "./permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
+import { testConfig } from "../test-utils/fixtures.js";
+import { createMockLoggerFns } from "../test-utils/mocks.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -88,17 +90,7 @@ vi.mock("../runtime/pairing-store.js", () => ({
 describe("Permit management functions", () => {
   const mockState: AccountRuntimeState = {
     accountId: "test-account",
-    config: {
-      agentUrl: "https://example.com:7777",
-      permitUrl: "https://example.com/permit",
-      meshName: "test-mesh",
-      username: "test-bot",
-      enableGroups: false,
-      autoReply: true,
-      messagePath: "/shared",
-      allowFrom: undefined,
-      dmPolicy: "pairing",
-    },
+    config: { ...testConfig },
     apiClient: {
       sendPeerMessage: vi.fn().mockResolvedValue(true),
     } as any, // Partial mock for testing

@@ -1,6 +1,7 @@
 // Unit tests for message path helpers and DM policy
 
 import { describe, it, expect } from "vitest";
+import { testConfig } from "../test-utils/fixtures.js";
 import {
   validateZTMChatConfig,
   resolveZTMChatConfig,
@@ -76,10 +77,7 @@ describe("DMPolicy Configuration", () => {
   describe("dmPolicy validation", () => {
     it("should accept 'allow' policy", () => {
       const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-        username: "test-bot",
+        ...testConfig,
         dmPolicy: "allow",
       });
       expect(result.valid).toBe(true);
@@ -88,10 +86,7 @@ describe("DMPolicy Configuration", () => {
 
     it("should accept 'deny' policy", () => {
       const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-        username: "test-bot",
+        ...testConfig,
         dmPolicy: "deny",
       });
       expect(result.valid).toBe(true);
@@ -100,10 +95,7 @@ describe("DMPolicy Configuration", () => {
 
     it("should accept 'pairing' policy", () => {
       const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-        username: "test-bot",
+        ...testConfig,
         dmPolicy: "pairing",
       });
       expect(result.valid).toBe(true);
@@ -112,10 +104,10 @@ describe("DMPolicy Configuration", () => {
 
     it("should default to 'pairing' when not specified", () => {
       const result = validateZTMChatConfig({
-        agentUrl: "https://ztm-agent.example.com:7777",
-        meshName: "my-mesh",
-        permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-        username: "test-bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        permitUrl: testConfig.permitUrl,
+        username: testConfig.username,
       });
       expect(result.valid).toBe(true);
       expect(result.config?.dmPolicy).toBe("pairing");
@@ -125,18 +117,18 @@ describe("DMPolicy Configuration", () => {
   describe("resolveZTMChatConfig with dmPolicy", () => {
     it("should default dmPolicy to pairing", () => {
       const result = resolveZTMChatConfig({
-        agentUrl: "https://example.com",
-        meshName: "my-mesh",
-        username: "bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        username: testConfig.username,
       });
       expect(result.dmPolicy).toBe("pairing");
     });
 
     it("should preserve dmPolicy value", () => {
       const result = resolveZTMChatConfig({
-        agentUrl: "https://example.com",
-        meshName: "my-mesh",
-        username: "bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        username: testConfig.username,
         dmPolicy: "allow",
       });
       expect(result.dmPolicy).toBe("allow");
@@ -144,9 +136,9 @@ describe("DMPolicy Configuration", () => {
 
     it("should handle dmPolicy case insensitivity", () => {
       const result = resolveZTMChatConfig({
-        agentUrl: "https://example.com",
-        meshName: "my-mesh",
-        username: "bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        username: testConfig.username,
         dmPolicy: "PAIRING" as any,
       });
       // Invalid policy values default to pairing
@@ -157,7 +149,7 @@ describe("DMPolicy Configuration", () => {
   describe("createProbeConfig with dmPolicy", () => {
     it("should use dmPolicy from config", () => {
       const result = createProbeConfig({
-        agentUrl: "https://example.com",
+        agentUrl: testConfig.agentUrl,
         dmPolicy: "deny",
       });
       expect(result.dmPolicy).toBe("deny");
@@ -165,7 +157,7 @@ describe("DMPolicy Configuration", () => {
 
     it("should default dmPolicy to pairing", () => {
       const result = createProbeConfig({
-        agentUrl: "https://example.com",
+        agentUrl: testConfig.agentUrl,
       });
       expect(result.dmPolicy).toBe("pairing");
     });
@@ -179,9 +171,9 @@ describe("DMPolicy Configuration", () => {
 
     it("should preserve allowFrom array", () => {
       const result = resolveZTMChatConfig({
-        agentUrl: "https://example.com",
-        meshName: "my-mesh",
-        username: "bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        username: testConfig.username,
         allowFrom: ["alice", "bob"],
       });
       expect(result.allowFrom).toEqual(["alice", "bob"]);
@@ -189,9 +181,9 @@ describe("DMPolicy Configuration", () => {
 
     it("should normalize allowFrom entries", () => {
       const result = resolveZTMChatConfig({
-        agentUrl: "https://example.com",
-        meshName: "my-mesh",
-        username: "bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        username: testConfig.username,
         allowFrom: ["  Alice  ", "BOB", "  charlie  "],
       });
       expect(result.allowFrom).toEqual(["Alice", "BOB", "charlie"]);
@@ -199,9 +191,9 @@ describe("DMPolicy Configuration", () => {
 
     it("should filter empty allowFrom entries", () => {
       const result = resolveZTMChatConfig({
-        agentUrl: "https://example.com",
-        meshName: "my-mesh",
-        username: "bot",
+        agentUrl: testConfig.agentUrl,
+        meshName: testConfig.meshName,
+        username: testConfig.username,
         allowFrom: ["alice", "", "  ", "bob"],
       });
       expect(result.allowFrom).toEqual(["alice", "bob"]);

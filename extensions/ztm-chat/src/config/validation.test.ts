@@ -1,6 +1,7 @@
 // Unit tests for config validation and resolution
 
 import { describe, it, expect } from "vitest";
+import { testConfig } from "../test-utils/fixtures.js";
 import {
   validateZTMChatConfig,
   resolveZTMChatConfig,
@@ -8,12 +9,7 @@ import {
 
 describe("validateZTMChatConfig", () => {
   it("should return valid for complete config", () => {
-    const result = validateZTMChatConfig({
-      agentUrl: "https://ztm-agent.example.com:7777",
-      meshName: "my-mesh",
-      permitUrl: "https://ztm-portal.flomesh.io:7779/permit",
-      username: "test-bot",
-    });
+    const result = validateZTMChatConfig(testConfig);
 
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -75,9 +71,9 @@ describe("validateZTMChatConfig", () => {
   it("should include error reason types", () => {
     const result = validateZTMChatConfig({
       agentUrl: "",
-      meshName: "valid-mesh",
-      permitUrl: "https://example.com",
-      username: "valid-user",
+      meshName: testConfig.meshName,
+      permitUrl: testConfig.permitUrl,
+      username: testConfig.username,
     });
 
     const agentUrlError = result.errors.find(
@@ -90,9 +86,9 @@ describe("validateZTMChatConfig", () => {
   it("should include invalid value in error", () => {
     const result = validateZTMChatConfig({
       agentUrl: "not-a-url",
-      meshName: "valid-mesh",
-      permitUrl: "https://example.com",
-      username: "valid-user",
+      meshName: testConfig.meshName,
+      permitUrl: testConfig.permitUrl,
+      username: testConfig.username,
     });
 
     const agentUrlError = result.errors.find(
@@ -117,11 +113,8 @@ describe("validateZTMChatConfig", () => {
 
   it("should validate dmPolicy type", () => {
     const result = validateZTMChatConfig({
-      agentUrl: "https://example.com",
-      meshName: "valid-mesh",
-      permitUrl: "https://example.com",
-      username: "valid-user",
-      dmPolicy: "invalid-policy",
+      ...testConfig,
+      dmPolicy: "invalid-policy" as any,
     });
 
     expect(result.valid).toBe(false);
@@ -132,10 +125,7 @@ describe("validateZTMChatConfig", () => {
 
   it("should validate apiTimeout range", () => {
     const result = validateZTMChatConfig({
-      agentUrl: "https://example.com",
-      meshName: "valid-mesh",
-      permitUrl: "https://example.com",
-      username: "valid-user",
+      ...testConfig,
       apiTimeout: 500,
     });
 
@@ -149,10 +139,8 @@ describe("validateZTMChatConfig", () => {
 
   it("should validate meshName length", () => {
     const result = validateZTMChatConfig({
-      agentUrl: "https://example.com",
+      ...testConfig,
       meshName: "a".repeat(100),
-      permitUrl: "https://example.com",
-      username: "valid-user",
     });
 
     expect(result.valid).toBe(false);
@@ -163,9 +151,7 @@ describe("validateZTMChatConfig", () => {
 
   it("should validate username length", () => {
     const result = validateZTMChatConfig({
-      agentUrl: "https://example.com",
-      meshName: "valid-mesh",
-      permitUrl: "https://example.com",
+      ...testConfig,
       username: "a".repeat(100),
     });
 
@@ -211,14 +197,14 @@ describe("resolveZTMChatConfig", () => {
 
   it("should trim whitespace from string values", () => {
     const result = resolveZTMChatConfig({
-      agentUrl: "  https://example.com  ",
-      meshName: "  my-mesh  ",
-      username: "  bot  ",
+      agentUrl: `  ${testConfig.agentUrl}  `,
+      meshName: `  ${testConfig.meshName}  `,
+      username: `  ${testConfig.username}  `,
     });
 
-    expect(result.agentUrl).toBe("https://example.com");
-    expect(result.meshName).toBe("my-mesh");
-    expect(result.username).toBe("bot");
+    expect(result.agentUrl).toBe(testConfig.agentUrl);
+    expect(result.meshName).toBe(testConfig.meshName);
+    expect(result.username).toBe(testConfig.username);
   });
 
   it("should handle null/undefined values", () => {

@@ -2,6 +2,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { checkPortOpen, getPublicKeyFromIdentity, joinMesh } from "./mesh.js";
+import { mockResolved } from "../test-utils/mocks.js";
 
 // Mock state using mutable container
 const mockState = {

@@ -18,25 +18,12 @@ vi.mock("../utils/logger.js", () => ({
     debug: vi.fn(),
   },
 }));
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMMessage } from "../types/api.js";
-import {
-  createTestClient,
-  createMockFetch,
-  type MockLogger,
-} from "../api/test-utils.js";
+import type { ZTMMessage } from "../api/ztm-api.js";
+import { testConfigWithGroups } from "../test-utils/fixtures.js";
+import { createMockFetch, createTestClient } from "../api/test-utils.js";
 
 describe("Group Chat API Tests", () => {
-  const testConfig: ZTMChatConfig = {
-    agentUrl: "https://agent.example.com:7777",
-    meshName: "test-mesh",
-    permitUrl: "https://portal.example.com:7779/permit",
-    username: "test-bot",
-    enableGroups: true,
-    autoReply: true,
-    messagePath: "/shared",
-    dmPolicy: "pairing",
-  };
+  const testConfig = testConfigWithGroups;
 
   beforeEach(() => {
     vi.clearAllMocks();

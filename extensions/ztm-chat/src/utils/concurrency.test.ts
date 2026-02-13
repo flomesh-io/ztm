@@ -1,6 +1,7 @@
 // Unit tests for Semaphore concurrency control
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { mockResolved } from "../test-utils/mocks.js";
 import { Semaphore, createSemaphore } from "./concurrency.js";
 
 describe("Semaphore", () => {
