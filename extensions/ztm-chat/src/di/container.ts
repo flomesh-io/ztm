@@ -84,6 +84,7 @@ export interface IConfig {
 export interface IApiClient {
   getChats: AsyncResult<unknown, Error>;
   sendPeerMessage(peer: string, message: ZTMMessage): AsyncResult<unknown, Error>;
+  sendGroupMessage(creator: string, group: string, message: ZTMMessage): AsyncResult<unknown, Error>;
   discoverUsers: AsyncResult<unknown, Error>;
   getMeshInfo: AsyncResult<unknown, Error>;
 }

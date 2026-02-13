@@ -279,20 +279,44 @@ async function processChangedPaths(
     return false;
   }
 
-  logger.debug(`[${state.accountId}] Processing ${changedPeers.length} peers with new messages`);
+  const changedPeersList: string[] = [];
+  const changedGroups: string[] = [];
+
+  for (const item of changedPeers) {
+    if (item.includes('/')) {
+      changedGroups.push(item);
+    } else {
+      changedPeersList.push(item);
+    }
+  }
+
+  logger.debug(`[${state.accountId}] Processing ${changedPeersList.length} peers, ${changedGroups.length} groups with new messages`);
 
   const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
     logger.error(`[${state.accountId}] readAllowFromStore failed during watch loop: ${err instanceof Error ? err.message : String(err)}`);
     return [] as string[];
   });
 
-  await Promise.all(
-    Array.from(changedPeers).map(peer =>
+  const tasks: Promise<void>[] = [];
+
+  for (const peer of changedPeersList) {
+    tasks.push(
       messageSemaphore.execute(() =>
         processChangedPeer(state, rt, peer, loopStoreAllowFrom)
       )
-    )
-  );
+    );
+  }
+
+  for (const groupKey of changedGroups) {
+    const [creator, group] = groupKey.split('/');
+    tasks.push(
+      messageSemaphore.execute(() =>
+        processChangedGroup(state, rt, creator, group, loopStoreAllowFrom)
+      )
+    );
+  }
+
+  await Promise.all(tasks);
 
   scheduleFullSync(loopStoreAllowFrom);
   if (state.apiClient) {
@@ -336,6 +360,47 @@ async function processChangedPeer(
   const check = checkDmPolicy(peer, state.config, storeAllowFrom);
   if (check.action === "request_pairing") {
     await handlePairingRequest(state, peer, "New message", storeAllowFrom);
+  }
+}
+
+/**
+ * Process all messages for a specific group
+ */
+async function processChangedGroup(
+  state: AccountRuntimeState,
+  rt: ReturnType<typeof getZTMRuntime>,
+  creator: string,
+  group: string,
+  storeAllowFrom: string[]
+): Promise<void> {
+  if (!state.apiClient) return;
+
+  const groupKey = `${creator}/${group}`;
+  logger.debug(`[${state.accountId}] Processing group messages from "${groupKey}"`);
+
+  const messagesResult = await state.apiClient.getGroupMessages(creator, group);
+
+  if (!messagesResult.ok) {
+    logger.warn(`[${state.accountId}] Failed to get messages from group "${groupKey}": ${messagesResult.error.message}`);
+    return;
+  }
+
+  const messages = messagesResult.value;
+
+  for (const msg of messages) {
+    if (msg.sender === state.config.username) {
+      logger.debug(`[${state.accountId}] Skipping own message in group ${groupKey}`);
+      continue;
+    }
+    const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
+    if (normalized) {
+      notifyMessageCallbacks(state, {
+        ...normalized,
+        isGroup: true,
+        groupName: group,
+        groupCreator: creator,
+      });
+    }
   }
 }
 

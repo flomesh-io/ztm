@@ -85,6 +85,7 @@ export function createApiClientService(): () => IApiClient {
     return {
       getChats: client.getChats(),
       sendPeerMessage: client.sendPeerMessage,
+      sendGroupMessage: client.sendGroupMessage,
       discoverUsers: client.discoverUsers(),
       getMeshInfo: client.getMeshInfo(),
     };

@@ -133,7 +133,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
     },
   },
   capabilities: {
-    chatTypes: ["direct"],
+    chatTypes: ["direct", "group"],
     reactions: false,
     threads: false,
     media: false,

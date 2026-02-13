@@ -468,26 +468,32 @@ export function createZTMApiClient(
       }
 
       const changedPeers: string[] = [];
+      const changedGroups: string[] = [];
 
       logger.debug(`[ZTM API] Watch: got ${chatsResult.value.length} chats, lastPollTime=${lastPollTime}`);
 
       for (const chat of chatsResult.value) {
-        if (!chat.peer || chat.peer === config.username) continue;
-
         const chatLatestTime = chat.latest?.time ?? 0;
         if (chatLatestTime <= (lastPollTime ?? 0)) continue;
 
-        changedPeers.push(chat.peer);
+        if (chat.peer && chat.peer !== config.username) {
+          changedPeers.push(chat.peer);
+        } else if (chat.group && chat.creator) {
+          changedGroups.push(`${chat.creator}/${chat.group}`);
+        }
       }
 
-      if (changedPeers.length > 0) {
+      const allChanged = [...changedPeers, ...changedGroups];
+
+      if (allChanged.length > 0) {
         const latestTime = Math.max(...chatsResult.value.map(c => c.latest?.time ?? 0));
         lastPollTime = latestTime;
-        logger.debug(`[ZTM API] Watch: found ${changedPeers.length} peers with new messages: ${changedPeers.join(', ')}`);
+        logger.debug(`[ZTM API] Watch: found ${changedPeers.length} peers, ${changedGroups.length} groups with new messages`);
+        logger.debug(`[ZTM API] Watch: ${allChanged.join(', ')}`);
       }
 
-      logger.debug?.(`[ZTM API] Watch complete: ${changedPeers.length} peers with new messages`);
-      return success(changedPeers);
+      logger.debug?.(`[ZTM API] Watch complete: ${allChanged.length} chats with new messages`);
+      return success(allChanged);
     },
 
     async getGroups(): Promise<Result<ZTMChat[], ZtmError>> {
@@ -496,11 +502,72 @@ export function createZTMApiClient(
     },
 
     async getGroupMessages(
-      _creator: string,
-      _group: string
+      creator: string,
+      group: string
     ): Promise<Result<ZTMMessage[], ZtmReadError>> {
-      logger.debug?.(`[ZTM API] Group messages feature not implemented yet`);
-      return success<ZTMMessage[], ZtmReadError>([]);
+      logger.debug?.(`[ZTM API] Fetching group messages from "${creator}/${group}"`);
+
+      const result = await request<ZTMMessage[]>(
+        "GET",
+        `${CHAT_API_BASE}/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages`
+      );
+
+      if (!result.ok) {
+        const error = new ZtmReadError({
+          peer: `${creator}/${group}`,
+          operation: "read",
+          cause: result.error,
+        });
+        logger.error?.(`[ZTM API] Failed to get group messages: ${error.message}`);
+        return failure(error);
+      }
+
+      const messages = result.value.map((msg) => {
+        const msgMessage = msg.message ?? null;
+        let normalizedMessage = '';
+        if (msgMessage !== null && typeof msgMessage === 'object') {
+          normalizedMessage = (msgMessage as { text?: string }).text || JSON.stringify(msgMessage);
+        } else {
+          normalizedMessage = String(msgMessage ?? '');
+        }
+        return {
+          ...msg,
+          message: normalizedMessage,
+        };
+      });
+
+      logger.debug?.(`[ZTM API] Fetched ${messages.length} messages from group "${creator}/${group}"`);
+      return success(messages);
+    },
+
+    async sendGroupMessage(
+      creator: string,
+      group: string,
+      message: ZTMMessage
+    ): Promise<Result<boolean, ZtmSendError>> {
+      logger.debug?.(`[ZTM API] Sending message to group "${creator}/${group}", text="${message.message.substring(0, 50)}..."`);
+
+      const ztmEntry = { text: message.message };
+
+      const result = await request<void>(
+        "POST",
+        `${CHAT_API_BASE}/groups/${encodeURIComponent(creator)}/${encodeURIComponent(group)}/messages`,
+        ztmEntry
+      );
+
+      if (!result.ok) {
+        const error = new ZtmSendError({
+          peer: `${creator}/${group}`,
+          messageTime: message.time,
+          contentPreview: message.message,
+          cause: result.error,
+        });
+        logger.error?.(`[ZTM API] Failed to send group message: ${error.message}`);
+        return failure(error);
+      }
+
+      logger.debug?.(`[ZTM API] Successfully sent message to group "${creator}/${group}"`);
+      return success(true);
     },
 
     async addFile(

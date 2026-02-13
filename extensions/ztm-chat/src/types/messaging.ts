@@ -10,6 +10,9 @@ export interface ZTMChatMessage {
   timestamp: Date;
   peer: string;
   thread?: string;
+  isGroup?: boolean;
+  groupName?: string;
+  groupCreator?: string;
 }
 
 // Message processing result
