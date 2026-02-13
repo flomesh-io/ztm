@@ -56,6 +56,14 @@ export interface ZTMChat {
   latest: ZTMMessage;
 }
 
+export interface WatchChangeItem {
+  type: 'peer' | 'group';
+  peer?: string;
+  creator?: string;
+  group?: string;
+  name?: string;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // ZTM API Client Interface - Using Result<T, E> for consistent error handling
 // ═════════════════════════════════════════════════════════════════════════════
@@ -111,9 +119,6 @@ export interface ZTMApiClient {
   // Group Operations
   // ═════════════════════════════════════════════════════════════════════════════
 
-  /** Get available groups. Returns Result with groups list or error. */
-  getGroups(): Promise<Result<ZTMChat[], ZtmError>>;
-
   /** Get messages from a group. Returns Result with messages or read error. */
   getGroupMessages(
     creator: string,
@@ -149,8 +154,8 @@ export interface ZTMApiClient {
   /** Read a file from mesh storage. Returns Result with parsed content or error. */
   readFile<T = unknown>(filePath: string): Promise<Result<T, ZtmApiError | ZtmTimeoutError>>;
 
-  /** Watch for changes in storage with given prefix. Returns Result with changed paths or error. */
-  watchChanges(prefix: string): Promise<Result<string[], ZtmReadError>>;
+  /** Watch for changes in storage with given prefix. Returns Result with changed items or error. */
+  watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZtmReadError>>;
 
   /** Seed file metadata from persisted state (call before first watchChanges) */
   seedFileMetadata(metadata: Record<string, { time: number; size: number }>): void;
