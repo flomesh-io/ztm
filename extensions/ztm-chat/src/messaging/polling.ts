@@ -56,6 +56,7 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
             ...normalized,
             isGroup: true,
             groupName: chat.name,
+            groupId: chat.group,
             groupCreator: chat.creator,
           });
         }

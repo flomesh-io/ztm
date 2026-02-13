@@ -7,8 +7,8 @@ import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
 function getWatermarkKey(message: ZTMChatMessage): string {
-  if (message.isGroup && message.groupCreator && message.groupName) {
-    return `group:${message.groupCreator}/${message.groupName}`;
+  if (message.isGroup && message.groupCreator && message.groupId) {
+    return `group:${message.groupCreator}/${message.groupId}`;
   }
   return message.peer;
 }
