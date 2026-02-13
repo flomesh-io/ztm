@@ -9,6 +9,10 @@ export function checkDmPolicy(
   config: ZTMChatConfig,
   storeAllowFrom: string[] = []
 ): MessageCheckResult {
+  if (!sender) {
+    return { allowed: false, reason: "denied", action: "ignore" };
+  }
+
   const normalizedSender = sender.trim().toLowerCase();
 
   const allowFrom = config.allowFrom ?? [];
