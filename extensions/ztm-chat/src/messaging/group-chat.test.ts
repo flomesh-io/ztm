@@ -2,6 +2,22 @@
 // Tests for group message watching and processing
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock logger before any imports
+vi.mock("../utils/logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+  defaultLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMMessage } from "../types/api.js";
 import {
