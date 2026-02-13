@@ -113,6 +113,10 @@ function createInboundContext(params: {
 export function collectStatusIssues(
   accounts: ChannelAccountSnapshot[],
 ): ChannelStatusIssue[] {
+  if (!accounts || accounts.length === 0) {
+    return [];
+  }
+
   const snapshot = accounts[0];
   const cfg = (snapshot as ChannelAccountSnapshot & { cfg?: OpenClawConfig }).cfg;
   const accountId = snapshot?.accountId;

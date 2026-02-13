@@ -103,8 +103,8 @@ export function resolveZTMChatAccount({
   if (!channelConfig) {
     return {
       accountId: accountKey,
-      username: "",
-      enabled: false,
+      username: accountKey,  // Use accountKey as default username
+      enabled: true,  // Default to enabled
       config: getDefaultConfig(),
     };
   }
