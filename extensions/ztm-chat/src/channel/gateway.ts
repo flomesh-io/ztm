@@ -431,7 +431,7 @@ export async function startAccountGateway(
       const id = msg.groupId;
       msgType = name ? `group "${name}" (${id})` : `group ${id}`;
     } else {
-      msgType = `peer ${msg.sender}`;
+      msgType = `peer "${msg.sender}"`;
     }
     ctx.log?.info(
       `[${account.accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
