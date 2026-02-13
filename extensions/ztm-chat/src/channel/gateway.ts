@@ -55,6 +55,55 @@ interface ChannelStatusIssue {
 }
 
 // ============================================================================
+// Inbound Context Builder
+// ============================================================================
+
+/**
+ * Create inbound context payload for AI agent dispatch.
+ * Centralized context construction to avoid code duplication.
+ */
+function createInboundContext(params: {
+  rt: ReturnType<typeof getZTMRuntime>;
+  msg: ZTMChatMessage;
+  config: ZTMChatConfig;
+  accountId: string;
+  cfg?: Record<string, unknown>;
+}) {
+  const { rt, msg, config, accountId, cfg = {} } = params;
+
+  const route = rt.channel.routing.resolveAgentRoute({
+    channel: "ztm-chat",
+    accountId,
+    peer: { kind: "direct" as const, id: msg.sender },
+    cfg,
+  });
+
+  return {
+    ctxPayload: rt.channel.reply.finalizeInboundContext({
+      Body: msg.content,
+      RawBody: msg.content,
+      CommandBody: msg.content,
+      From: `ztm-chat:${msg.sender}`,
+      To: `ztm-chat:${config.username}`,
+      SessionKey: route.sessionKey,
+      AccountId: route.accountId,
+      ChatType: "direct" as const,
+      ConversationLabel: msg.sender,
+      SenderName: msg.sender,
+      SenderId: msg.sender,
+      Provider: "ztm-chat",
+      Surface: "ztm-chat",
+      MessageSid: msg.id,
+      Timestamp: msg.timestamp,
+      OriginatingChannel: "ztm-chat",
+      OriginatingTo: `ztm-chat:${msg.sender}`,
+    }),
+    matchedBy: route.matchedBy,
+    agentId: route.agentId,
+  };
+}
+
+// ============================================================================
 // Status Issues
 // ============================================================================
 
@@ -198,35 +247,10 @@ async function handleInboundMessage(
   msg: ZTMChatMessage,
 ): Promise<void> {
   try {
-    const route = rt.channel.routing.resolveAgentRoute({
-      channel: "ztm-chat",
-      accountId,
-      peer: { kind: "direct", id: msg.sender },
-      cfg,
-    });
-
-    const ctxPayload = rt.channel.reply.finalizeInboundContext({
-      Body: msg.content,
-      RawBody: msg.content,
-      CommandBody: msg.content,
-      From: `ztm-chat:${msg.sender}`,
-      To: `ztm-chat:${config.username}`,
-      SessionKey: route.sessionKey,
-      AccountId: route.accountId,
-      ChatType: "direct" as const,
-      ConversationLabel: msg.sender,
-      SenderName: msg.sender,
-      SenderId: msg.sender,
-      Provider: "ztm-chat",
-      Surface: "ztm-chat",
-      MessageSid: msg.id,
-      Timestamp: msg.timestamp,
-      OriginatingChannel: "ztm-chat",
-      OriginatingTo: `ztm-chat:${msg.sender}`,
-    });
+    const { ctxPayload, matchedBy, agentId } = createInboundContext({ rt, msg, config, accountId, cfg });
 
     ctx.log?.info(
-      `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${route.matchedBy})`,
+      `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`,
     );
 
     const { queuedFinal } =
@@ -236,7 +260,7 @@ async function handleInboundMessage(
         dispatcherOptions: {
           humanDelay: rt.channel.reply.resolveHumanDelayConfig(
             cfg,
-            route.agentId,
+            agentId,
           ),
           deliver: async (payload: { text?: string; mediaUrl?: string }) => {
             const replyText = payload.text ?? "";
@@ -446,35 +470,10 @@ export function buildMessageCallback(
   return (msg: ZTMChatMessage) => {
     const handleInbound = async (): Promise<void> => {
       try {
-        const route = rt.channel.routing.resolveAgentRoute({
-          channel: "ztm-chat",
-          accountId,
-          peer: { kind: "direct", id: msg.sender },
-          cfg: {},
-        });
-
-        const ctxPayload = rt.channel.reply.finalizeInboundContext({
-          Body: msg.content,
-          RawBody: msg.content,
-          CommandBody: msg.content,
-          From: `ztm-chat:${msg.sender}`,
-          To: `ztm-chat:${config.username}`,
-          SessionKey: route.sessionKey,
-          AccountId: route.accountId,
-          ChatType: "direct" as const,
-          ConversationLabel: msg.sender,
-          SenderName: msg.sender,
-          SenderId: msg.sender,
-          Provider: "ztm-chat",
-          Surface: "ztm-chat",
-          MessageSid: msg.id,
-          Timestamp: msg.timestamp,
-          OriginatingChannel: "ztm-chat",
-          OriginatingTo: `ztm-chat:${msg.sender}`,
-        });
+        const { ctxPayload, matchedBy, agentId } = createInboundContext({ rt, msg, config, accountId });
 
         logger.info?.(
-          `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${route.matchedBy})`,
+          `[${accountId}] Dispatching message from ${msg.sender} to AI agent (route: ${matchedBy})`,
         );
 
         const { queuedFinal } =
@@ -484,7 +483,7 @@ export function buildMessageCallback(
             dispatcherOptions: {
               humanDelay: rt.channel.reply.resolveHumanDelayConfig(
                 {},
-                route.agentId,
+                agentId,
               ),
               deliver: async (payload: {
                 text?: string;
