@@ -82,6 +82,116 @@ function createPeerMessagePattern(username: string): RegExp {
 }
 
 /**
+ * Normalize message content from API format to plain string.
+ * Handles cases where message is:
+ * - A plain string
+ * - An object with {text: "..."}
+ * - An object with {message: {text: "..."}} (nested format)
+ */
+function normalizeMessageContent(message: unknown): string {
+  if (message === null || message === undefined) {
+    return '';
+  }
+  if (typeof message === 'object') {
+    // Handle nested {message: {text: "..."}} format
+    const nestedMessage = (message as { message?: unknown }).message;
+    if (nestedMessage !== undefined && nestedMessage !== null && typeof nestedMessage === 'object') {
+      const nestedText = (nestedMessage as { text?: string }).text;
+      if (typeof nestedText === 'string') {
+        return nestedText;
+      }
+      return JSON.stringify(nestedMessage);
+    }
+    // Handle standard {text: "..."} format
+    const text = (message as { text?: string }).text;
+    if (typeof text === 'string') {
+      return text;
+    }
+    return JSON.stringify(message);
+  }
+  return String(message);
+}
+
+/**
+ * Parse message file content and return Result
+ */
+function parseMessageFileWithResult(
+  fileContent: unknown,
+  peer: string,
+  filePath: string
+): Result<ZTMMessage[], ZtmParseError> {
+  try {
+    const entries = Array.isArray(fileContent) ? fileContent : [fileContent];
+    const result: ZTMMessage[] = [];
+    for (const entry of entries) {
+      if (!entry?.time) continue;
+      const messageText = normalizeMessageContent(entry.message);
+      result.push({
+        time: entry.time,
+        message: messageText,
+        sender: entry.sender || peer,
+      });
+    }
+    return success(result);
+  } catch (error) {
+    const cause = error instanceof Error ? error : new Error(String(error));
+    return failure(new ZtmParseError({
+      peer,
+      filePath,
+      cause,
+    }));
+  }
+}
+
+/**
+ * Parse timestamp from filename
+ * @example "123.json" -> 123
+ */
+function parseTimestampFromFilename(filename: string): number {
+  const match = filename.match(/^(\d+)\.json$/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+/**
+ * Create an empty chat placeholder when file read/parse fails
+ */
+function createEmptyChat(peer: string, time: number): ZTMChat {
+  return {
+    peer,
+    time,
+    updated: time,
+    latest: { time, message: "", sender: peer },
+  };
+}
+
+/**
+ * Find latest file for each peer from file list
+ */
+function findLatestFilesByPeer(
+  fileList: Record<string, { time?: number }>,
+  pattern: RegExp
+): Map<string, { path: string; time: number; filename: string }> {
+  const latestByPeer = new Map<string, { path: string; time: number; filename: string }>();
+
+  for (const filePath of Object.keys(fileList)) {
+    const match = filePath.match(pattern);
+    if (!match) continue;
+
+    const peer = match[1];
+    const meta = fileList[filePath];
+    const fileTime = meta?.time ?? 0;
+    const existing = latestByPeer.get(peer);
+
+    if (!existing || fileTime > existing.time) {
+      const filename = filePath.split('/').pop() ?? '';
+      latestByPeer.set(peer, { path: filePath, time: fileTime, filename });
+    }
+  }
+
+  return latestByPeer;
+}
+
+/**
  * Create ZTM API Client with dependency injection
  */
 export function createZTMApiClient(
@@ -208,122 +318,8 @@ export function createZTMApiClient(
   // Pre-compiled regex pattern for peer message path matching
   const peerMessagePattern = createPeerMessagePattern(config.username);
 
-  /**
-   * Normalize message content from API format to plain string.
-   * Handles cases where message is:
-   * - A plain string
-   * - An object with {text: "..."}
-   * - An object with {message: {text: "..."}} (nested format)
-   */
-  function normalizeMessageContent(message: unknown): string {
-    if (message === null || message === undefined) {
-      return '';
-    }
-    if (typeof message === 'object') {
-      // Handle nested {message: {text: "..."}} format
-      const nestedMessage = (message as { message?: unknown }).message;
-      if (nestedMessage !== undefined && nestedMessage !== null && typeof nestedMessage === 'object') {
-        const nestedText = (nestedMessage as { text?: string }).text;
-        if (typeof nestedText === 'string') {
-          return nestedText;
-        }
-        return JSON.stringify(nestedMessage);
-      }
-      // Handle standard {text: "..."} format
-      const text = (message as { text?: string }).text;
-      if (typeof text === 'string') {
-        return text;
-      }
-      return JSON.stringify(message);
-    }
-    return String(message);
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════════
-  // Helper: Find latest file for each peer from file list
-  // ════════════════════════════════════════════════════════════════════════
-  function parseMessageFileWithResult(
-    fileContent: unknown,
-    peer: string,
-    filePath: string
-  ): Result<ZTMMessage[], ZtmParseError> {
-    try {
-      const entries = Array.isArray(fileContent) ? fileContent : [fileContent];
-      const result: ZTMMessage[] = [];
-      for (const entry of entries) {
-        if (!entry?.time) continue;
-        const messageText = normalizeMessageContent(entry.message);
-        result.push({
-          time: entry.time,
-          message: messageText,
-          sender: entry.sender || peer,
-        });
-      }
-      return success(result);
-    } catch (error) {
-      const cause = error instanceof Error ? error : new Error(String(error));
-      return failure(new ZtmParseError({
-        peer,
-        filePath,
-        cause,
-      }));
-    }
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════════
-  // Helper functions for data transformation
-  // ═════════════════════════════════════════════════════════════════════════════
-
   // Build Chat App API paths
   const CHAT_API_BASE = `/api/meshes/${config.meshName}/apps/ztm/chat/api`;
-
-  /**
-   * Parse timestamp from filename
-   * @example "123.json" -> 123
-   */
-  function parseTimestampFromFilename(filename: string): number {
-    const match = filename.match(/^(\d+)\.json$/);
-    return match ? parseInt(match[1], 10) : 0;
-  }
-
-  /**
-   * Create an empty chat placeholder when file read/parse fails
-   */
-  function createEmptyChat(peer: string, time: number): ZTMChat {
-    return {
-      peer,
-      time,
-      updated: time,
-      latest: { time, message: "", sender: peer },
-    };
-  }
-
-  /**
-   * Find latest file for each peer from file list
-   */
-  function findLatestFilesByPeer(
-    fileList: Record<string, { time?: number }>,
-    pattern: RegExp
-  ): Map<string, { path: string; time: number; filename: string }> {
-    const latestByPeer = new Map<string, { path: string; time: number; filename: string }>();
-
-    for (const filePath of Object.keys(fileList)) {
-      const match = filePath.match(pattern);
-      if (!match) continue;
-
-      const peer = match[1];
-      const meta = fileList[filePath];
-      const fileTime = meta?.time ?? 0;
-      const existing = latestByPeer.get(peer);
-
-      if (!existing || fileTime > existing.time) {
-        const filename = filePath.split('/').pop() ?? '';
-        latestByPeer.set(peer, { path: filePath, time: fileTime, filename });
-      }
-    }
-
-    return latestByPeer;
-  }
 
   const client: ZTMApiClient = {
     readFile<T = unknown>(filePath: string): Promise<Result<T, ZtmApiError | ZtmTimeoutError>> {
@@ -614,4 +610,3 @@ export function createZTMApiClient(
 
 // Re-export test utilities for backward compatibility
 export * from './test-utils.js';
-
