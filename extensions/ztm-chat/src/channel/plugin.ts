@@ -89,6 +89,7 @@ import {
   probeAccountGateway,
   startAccountGateway,
   logoutAccountGateway,
+  sendTextGateway,
 } from "./gateway.js";
 import {
   buildAccountSnapshot as buildAccountSnapshotImpl,
@@ -247,8 +248,6 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   outbound: {
     deliveryMode: "direct",
     sendText: async ({ to, text, accountId }) => {
-      // Import from gateway module
-      const { sendTextGateway } = await import("./gateway.js");
       return sendTextGateway({ to, text, accountId });
     },
   },
