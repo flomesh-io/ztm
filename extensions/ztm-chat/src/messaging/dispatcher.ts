@@ -6,6 +6,13 @@ import { getMessageStateStore } from "../runtime/store.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
+function getWatermarkKey(message: ZTMChatMessage): string {
+  if (message.isGroup && message.groupCreator && message.groupName) {
+    return `group:${message.groupCreator}/${message.groupName}`;
+  }
+  return message.peer;
+}
+
 /**
  * Notify all registered message callbacks for a received message
  *
@@ -46,10 +53,11 @@ export function notifyMessageCallbacks(
     );
   }
 
+  const watermarkKey = getWatermarkKey(message);
   if (successCount > 0) {
-    getMessageStateStore().setWatermark(state.accountId, message.peer, message.timestamp.getTime());
+    getMessageStateStore().setWatermark(state.accountId, watermarkKey, message.timestamp.getTime());
   } else {
-    logger.warn(`[${state.accountId}] Message processing failed for ${message.peer}, watermark not updated`);
+    logger.warn(`[${state.accountId}] Message processing failed for ${watermarkKey}, watermark not updated`);
   }
 }
 

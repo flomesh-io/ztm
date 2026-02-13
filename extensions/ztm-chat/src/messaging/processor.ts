@@ -11,8 +11,13 @@ export function processIncomingMessage(
   msg: { time: number; message: string; sender: string },
   config: ZTMChatConfig,
   storeAllowFrom: string[] = [],
-  accountId: string = "default"
+  accountId: string = "default",
+  groupInfo?: { creator: string; group: string }
 ): ZTMChatMessage | null {
+  const watermarkKey = groupInfo 
+    ? `group:${groupInfo.creator}/${groupInfo.group}`
+    : msg.sender;
+
   // Step 1: Skip empty or whitespace-only messages
   if (typeof msg.message !== "string" || msg.message.trim() === "") {
     logger.debug(`Skipping empty message from ${msg.sender}`);
@@ -26,9 +31,9 @@ export function processIncomingMessage(
   }
 
   // Step 3: Check watermark (skip already-processed messages)
-  const watermark = getMessageStateStore().getWatermark(accountId, msg.sender);
+  const watermark = getMessageStateStore().getWatermark(accountId, watermarkKey);
   if (msg.time <= watermark) {
-    logger.debug(`Skipping already-processed message from ${msg.sender} (time=${msg.time} <= watermark=${watermark})`);
+    logger.debug(`Skipping already-processed message from ${watermarkKey} (time=${msg.time} <= watermark=${watermark})`);
     return null;
   }
 

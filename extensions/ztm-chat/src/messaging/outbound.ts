@@ -7,33 +7,15 @@ import { type Result } from "../types/common.js";
 import { ZtmSendError } from "../types/errors.js";
 import { handleResult } from "../utils/result.js";
 
-// Helper to generate unique message ID
 export function generateMessageId(): string {
   return `ztm-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/**
- * Send message to peer using Result<T, E> pattern.
- *
- * @param state - Account runtime state
- * @param peer - Peer username to send to
- * @param content - Message content
- * @returns Result indicating success with true value, or failure with ZtmSendError
- *
- * @example
- * ```typescript
- * const result = await sendZTMMessage(state, "alice", "Hello!");
- * if (isSuccess(result)) {
- *   console.log("Message sent successfully");
- * } else {
- *   console.error("Failed:", result.error.message);
- * }
- * ```
- */
 export async function sendZTMMessage(
   state: AccountRuntimeState,
   peer: string,
-  content: string
+  content: string,
+  groupInfo?: { creator: string; group: string }
 ): Promise<Result<boolean, ZtmSendError>> {
   if (!state.config || !state.apiClient) {
     const error = new ZtmSendError({
@@ -51,19 +33,35 @@ export async function sendZTMMessage(
     sender: state.config.username,
   };
 
-  const result = await state.apiClient.sendPeerMessage(peer, message);
+  let result: Result<boolean, ZtmSendError>;
 
-  handleResult(result, {
-    operation: "sendPeerMessage",
-    peer: state.accountId,
-    logger,
-    onSuccess: () => {
-      state.lastOutboundAt = new Date();
-    },
-    onError: (err) => {
-      state.lastError = err.message;
-    }
-  });
+  if (groupInfo) {
+    result = await state.apiClient.sendGroupMessage(groupInfo.creator, groupInfo.group, message);
+    handleResult(result, {
+      operation: "sendGroupMessage",
+      peer: `${groupInfo.creator}/${groupInfo.group}`,
+      logger,
+      onSuccess: () => {
+        state.lastOutboundAt = new Date();
+      },
+      onError: (err) => {
+        state.lastError = err.message;
+      }
+    });
+  } else {
+    result = await state.apiClient.sendPeerMessage(peer, message);
+    handleResult(result, {
+      operation: "sendPeerMessage",
+      peer: state.accountId,
+      logger,
+      onSuccess: () => {
+        state.lastOutboundAt = new Date();
+      },
+      onError: (err) => {
+        state.lastError = err.message;
+      }
+    });
+  }
 
   return result;
 }

@@ -265,7 +265,10 @@ async function handleInboundMessage(
           deliver: async (payload: { text?: string; mediaUrl?: string }) => {
             const replyText = payload.text ?? "";
             if (!replyText) return;
-            await sendZTMMessage(state, msg.sender, replyText);
+            const groupInfo = msg.isGroup && msg.groupName && msg.groupCreator
+              ? { creator: msg.groupCreator, group: msg.groupName }
+              : undefined;
+            await sendZTMMessage(state, msg.sender, replyText, groupInfo);
             ctx.log?.info(
               `[${accountId}] Sent reply to ${msg.sender}: ${replyText.substring(0, 100)}${replyText.length > 100 ? "..." : ""}`,
             );
@@ -491,7 +494,10 @@ export function buildMessageCallback(
               }) => {
                 const replyText = payload.text ?? "";
                 if (!replyText) return;
-                await sendZTMMessage(state, msg.sender, replyText);
+                const groupInfo = msg.isGroup && msg.groupName && msg.groupCreator
+                  ? { creator: msg.groupCreator, group: msg.groupName }
+                  : undefined;
+                await sendZTMMessage(state, msg.sender, replyText, groupInfo);
               },
               onError: (err: unknown) => {
                 logger.error?.(
