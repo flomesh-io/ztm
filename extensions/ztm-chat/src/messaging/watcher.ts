@@ -76,21 +76,47 @@ export async function startMessageWatcher(
   // Step 1: Seed the API client's lastSeenTimes from persisted state
   await seedFileMetadata(state);
 
-  // Step 2: Get initial allowFrom store
+  // Step 2: Preload group names into cache (so getGroupName() always hits cache)
+  await preloadGroupNames(state);
+
+  // Step 3: Get initial allowFrom store
   const rt = getZTMRuntime();
   const storeAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
     logger.error(`[${state.accountId}] readAllowFromStore failed during init: ${err instanceof Error ? err.message : String(err)}`);
     return [] as string[];
   });
 
-  // Step 3: Initial sync - read all existing messages
+  // Step 4: Initial sync - read all existing messages
   await performInitialSync(state, storeAllowFrom);
 
-  // Step 4: Handle pairing requests from initial sync
+  // Step 5: Handle pairing requests from initial sync
   await handleInitialPairingRequests(state, storeAllowFrom);
 
-  // Step 5: Start watch loop
+  // Step 6: Start watch loop
   startWatchLoop(state, rt, messagePath);
+}
+
+/**
+ * Preload group names into cache at startup
+ */
+async function preloadGroupNames(state: AccountRuntimeState): Promise<void> {
+  if (!state.apiClient) return;
+  
+  const result = await state.apiClient.getGroups();
+  if (!result.ok) {
+    logger.debug(`[${state.accountId}] Failed to preload group names: ${result.error.message}`);
+    return;
+  }
+  
+  for (const group of result.value) {
+    const key = `${group.creator}/${group.group}`;
+    groupNameCache.set(key, {
+      name: group.name || group.group,
+      expiresAt: Date.now() + GROUP_CACHE_TTL
+    });
+  }
+  
+  logger.debug(`[${state.accountId}] Preloaded ${result.value.length} group names into cache`);
 }
 
 /**
