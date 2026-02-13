@@ -133,22 +133,26 @@ function createMessage(overrides?: Partial<{ time: number; message: string; send
 }
 
 describe("Integration: Complete Message Flow", () => {
-  // Get the mocked pairing store functions
-  let mockLoadPendingPairings: ReturnType<typeof vi.fn>;
-  let mockSavePendingPairing: ReturnType<typeof vi.fn>;
-  let mockDeletePendingPairing: ReturnType<typeof vi.fn>;
-  let mockCleanupExpiredPairings: ReturnType<typeof vi.fn>;
+  // Get the mocked pairing store functions - typed as Mock to have .mockReturnValue
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockLoadPendingPairings: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockSavePendingPairing: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockDeletePendingPairing: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockCleanupExpiredPairings: any;
 
   beforeEach(async () => {
     // Get mock functions from the mocked module
     const pairingModule = await import("../runtime/pairing-store.js");
-    mockLoadPendingPairings = vi.fn(() => new Map());
-    mockSavePendingPairing = vi.fn();
-    mockDeletePendingPairing = vi.fn();
-    mockCleanupExpiredPairings = vi.fn(() => 0);
+    mockLoadPendingPairings = vi.fn((_accountId: string) => new Map<string, Date>());
+    mockSavePendingPairing = vi.fn((_accountId: string, _peer: string, _date?: Date) => {});
+    mockDeletePendingPairing = vi.fn((_accountId: string, _peer: string) => {});
+    mockCleanupExpiredPairings = vi.fn((_accountId: string, _maxAgeMs?: number) => 0);
 
-    // Reset and configure mocks
-    pairingModule.getPairingStateStore.mockReturnValue({
+    // Reset and configure mocks - cast to any to avoid type issues with mocked module
+    (pairingModule.getPairingStateStore as ReturnType<typeof vi.fn>).mockReturnValue({
       loadPendingPairings: mockLoadPendingPairings,
       savePendingPairing: mockSavePendingPairing,
       deletePendingPairing: mockDeletePendingPairing,

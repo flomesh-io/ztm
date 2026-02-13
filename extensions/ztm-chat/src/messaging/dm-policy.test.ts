@@ -214,17 +214,17 @@ describe("DM Policy Integration", () => {
 
   describe("Boundary: isPairingMode", () => {
     it("should return true for pairing policy", () => {
-      const config = { ...baseConfig, dmPolicy: "pairing" };
+      const config = { ...baseConfig, dmPolicy: "pairing" as const };
       expect(isPairingMode(config)).toBe(true);
     });
 
     it("should return false for allow policy", () => {
-      const config = { ...baseConfig, dmPolicy: "allow" };
+      const config = { ...baseConfig, dmPolicy: "allow" as const };
       expect(isPairingMode(config)).toBe(false);
     });
 
     it("should return false for deny policy", () => {
-      const config = { ...baseConfig, dmPolicy: "deny" };
+      const config = { ...baseConfig, dmPolicy: "deny" as const };
       expect(isPairingMode(config)).toBe(false);
     });
   });

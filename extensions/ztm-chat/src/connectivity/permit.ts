@@ -6,6 +6,7 @@ import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
 import type { ZTMMessage, ZTMApiClient } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
+import { normalizeUsername } from "../core/dm-policy.js";
 
 // Request permit from permit server
 export async function requestPermit(
@@ -67,16 +68,16 @@ export async function handlePairingRequest(
   const { config, apiClient } = state;
   if (!apiClient) return;
 
-  const normalizedPeer = peer.trim().toLowerCase();
+  const normalizedPeer = normalizeUsername(peer);
 
   const allowFrom = config.allowFrom ?? [];
-  if (allowFrom.some((entry) => entry.trim().toLowerCase() === normalizedPeer)) {
+  if (allowFrom.some((entry) => normalizeUsername(entry) === normalizedPeer)) {
     logger.debug(`[${state.accountId}] ${peer} is already approved`);
     return;
   }
 
   // Check if already approved via pairing store (persisted across restarts)
-  if (storeAllowFrom.length > 0 && storeAllowFrom.some((entry) => entry.trim().toLowerCase() === normalizedPeer)) {
+  if (storeAllowFrom.length > 0 && storeAllowFrom.some((entry) => normalizeUsername(entry) === normalizedPeer)) {
     logger.debug(`[${state.accountId}] ${peer} is already approved via pairing store`);
     return;
   }
