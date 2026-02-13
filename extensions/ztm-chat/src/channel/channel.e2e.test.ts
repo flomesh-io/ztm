@@ -187,7 +187,7 @@ describe("startAccount E2E Tests", () => {
       expect(publicKey).toBe("test-public-key");
 
       // Step 3: Request permit
-      const permit = await requestPermit(baseConfig.permitUrl, publicKey, baseConfig.username);
+      const permit = await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
       expect(permit).toEqual({ token: "test-permit-token" });
 
       // Step 4: Save permit
@@ -211,7 +211,7 @@ describe("startAccount E2E Tests", () => {
 
       // These should not be called when permit.json exists
       const publicKey = await getPublicKeyFromIdentity();
-      const permit = await requestPermit(baseConfig.permitUrl, publicKey, baseConfig.username);
+      const permit = await requestPermit(baseConfig.permitUrl, publicKey!, baseConfig.username);
 
       // In a real flow, these wouldn't be called, but our mock still returns values
       // The test verifies the logic would skip these steps

@@ -190,8 +190,8 @@ describe("ZTM API Client Integration", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.connected).toBe(true);
-      expect(result.value.endpoints).toBe(5);
+      expect(result.value?.connected).toBe(true);
+      expect(result.value?.endpoints).toBe(5);
     }
 
     expect(calls.length).toBe(1);
@@ -207,7 +207,7 @@ describe("ZTM API Client Integration", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error.message).toContain("Network error");
+      expect(result.error?.message).toContain("Network error");
     }
   });
 
@@ -272,9 +272,9 @@ describe("ZTM API Client Integration", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.length).toBe(2);
-      expect(result.value[0].peer).toBe("alice");
-      expect(result.value[1].peer).toBe("bob");
+      expect(result.value?.length).toBe(2);
+      expect(result.value?.[0]?.peer).toBe("alice");
+      expect(result.value?.[1]?.peer).toBe("bob");
     }
   });
 
@@ -343,8 +343,8 @@ describe("discoverUsers via storage", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.length).toBe(2);
-      expect(result.value.map(u => u.username).sort()).toEqual(["alice", "bob"]);
+      expect(result.value?.length).toBe(2);
+      expect(result.value?.map((u: any) => u.username).sort()).toEqual(["alice", "bob"]);
     }
   });
 
@@ -358,8 +358,8 @@ describe("discoverUsers via storage", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.length).toBe(1);
-      expect(result.value[0].username).toBe("alice");
+      expect(result.value?.length).toBe(1);
+      expect(result.value?.[0]?.username).toBe("alice");
     }
   });
 
@@ -421,8 +421,8 @@ describe("discoverUsers via storage edge cases", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.length).toBe(2);
-      expect(result.value.map(p => p.username).sort()).toEqual(["alice", "bob"]);
+      expect(result.value?.length).toBe(2);
+      expect(result.value?.map((p: any) => p.username).sort()).toEqual(["alice", "bob"]);
     }
   });
 });
@@ -516,9 +516,9 @@ describe("Group Message Operations", () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.length).toBe(3);
-        expect(result.value[0].message).toBe("First message");
-        expect(result.value[2].message).toBe("Latest message");
+        expect(result.value?.length).toBe(3);
+        expect(result.value?.[0]?.message).toBe("First message");
+        expect(result.value?.[2]?.message).toBe("Latest message");
       }
 
       expect(calls.length).toBe(1);
@@ -536,7 +536,7 @@ describe("Group Message Operations", () => {
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.error.message).toContain("Group not found");
+        expect(result.error?.message).toContain("Group not found");
       }
     });
 
@@ -552,7 +552,7 @@ describe("Group Message Operations", () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value[0].message).toBe("Structured message");
+        expect(result.value?.[0]?.message).toBe("Structured message");
       }
     });
 
@@ -568,7 +568,7 @@ describe("Group Message Operations", () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value[0].message).toBe("");
+        expect(result.value?.[0]?.message).toBe("");
       }
     });
   });

@@ -367,11 +367,11 @@ async function processChangedPeer(
   const messagesResult = await state.apiClient.getPeerMessages(peer);
 
   if (!messagesResult.ok) {
-    logger.warn(`[${state.accountId}] Failed to get messages from peer "${peer}": ${messagesResult.error.message}`);
+    logger.warn(`[${state.accountId}] Failed to get messages from peer "${peer}": ${messagesResult.error?.message ?? "Unknown error"}`);
     return;
   }
 
-  const messages = messagesResult.value;
+  const messages = messagesResult.value ?? [];
 
   for (const msg of messages) {
     if (msg.sender === state.config.username) {
@@ -409,11 +409,11 @@ async function processChangedGroup(
   const messagesResult = await state.apiClient.getGroupMessages(creator, group);
 
   if (!messagesResult.ok) {
-    logger.warn(`[${state.accountId}] Failed to get messages from group "${groupKey}": ${messagesResult.error.message}`);
+    logger.warn(`[${state.accountId}] Failed to get messages from group "${groupKey}": ${messagesResult.error?.message ?? "Unknown error"}`);
     return;
   }
 
-  const messages = messagesResult.value;
+  const messages = messagesResult.value ?? [];
 
   for (const msg of messages) {
     if (msg.sender === state.config.username) {

@@ -57,9 +57,9 @@ describe("Group Chat API Tests", () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.length).toBe(3);
-        expect(result.value[0].message).toBe("First message");
-        expect(result.value[2].message).toBe("Latest message");
+        expect(result.value?.length).toBe(3);
+        expect(result.value?.[0]?.message).toBe("First message");
+        expect(result.value?.[2]?.message).toBe("Latest message");
       }
     });
 
@@ -72,7 +72,7 @@ describe("Group Chat API Tests", () => {
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.error.message).toContain("Group not found");
+        expect(result.error?.message).toContain("Group not found");
       }
     });
 
@@ -88,7 +88,7 @@ describe("Group Chat API Tests", () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value[0].message).toBe("Structured message");
+        expect(result.value?.[0]?.message).toBe("Structured message");
       }
     });
 
@@ -104,7 +104,7 @@ describe("Group Chat API Tests", () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value[0].message).toBe("");
+        expect(result.value?.[0]?.message).toBe("");
       }
     });
 

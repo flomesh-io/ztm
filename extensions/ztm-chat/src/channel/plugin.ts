@@ -143,11 +143,11 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   reload: { configPrefixes: ["channels.ztm-chat"] },
   configSchema: buildChannelConfigSchemaWithHints(ZTMChatConfigSchema),
   config: {
-    listAccountIds: (cfg) => listZTMChatAccountIds(cfg),
+    listAccountIds: (cfg) => listZTMChatAccountIds(cfg ?? undefined),
     resolveAccount: (cfg, accountId) =>
-      resolveZTMChatAccount({ cfg, accountId }),
+      resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }),
     defaultAccountId: (cfg) =>
-      listZTMChatAccountIds(cfg)[0] ?? "default",
+      listZTMChatAccountIds(cfg ?? undefined)[0] ?? "default",
     isConfigured: (account) =>
       isConfigMinimallyValid(account.config as ZTMChatConfig),
     describeAccount: (account) => ({
@@ -159,9 +159,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       meshName: (account.config as ZTMChatConfig)?.meshName,
     }),
     resolveAllowFrom: ({ cfg, accountId }) => {
-      const account = resolveZTMChatAccount({ cfg, accountId });
+      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
       return ((account.config as ZTMChatConfig)?.allowFrom ?? []).map((entry) =>
-        String(entry),
+        String(entry ?? ""),
       );
     },
     formatAllowFrom: ({ allowFrom }) =>
@@ -189,13 +189,13 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         allowFrom: config?.allowFrom ?? [],
         policyPath: `${basePath}dmPolicy`,
         allowFromPath: `${basePath}allowFrom`,
-        approveHint: undefined,
+        approveHint: "",
         normalizeEntry: (raw) => raw.trim().toLowerCase(),
       };
     },
     collectWarnings: async ({ cfg, accountId }) => {
       const warnings: string[] = [];
-      const account = resolveZTMChatAccount({ cfg, accountId });
+      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
       const config = account.config as ZTMChatConfig;
 
       const allowFrom = config?.allowFrom ?? [];
@@ -209,7 +209,7 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
       try {
         const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
         const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
-        const probeConfig = resolveZTMChatAccount({ cfg, accountId }).config;
+        const probeConfig = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined }).config;
         const apiClient = apiClientFactory(probeConfig, { logger });
         const meshResult = await apiClient.getMeshInfo();
 
@@ -219,12 +219,12 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
         }
 
         const meshInfo = meshResult.value;
-        if (!meshInfo.connected) {
+        if (!meshInfo?.connected) {
           warnings.push("ZTM Agent is not connected to the mesh network");
         }
-        if (meshInfo.errors && meshInfo.errors.length > 0) {
+        if (meshInfo?.errors && meshInfo.errors.length > 0) {
           warnings.push(
-            `ZTM Agent has ${meshInfo.errors.length} error(s): ${meshInfo.errors[0].message}`,
+            `ZTM Agent has ${meshInfo.errors.length} error(s): ${meshInfo.errors[0]?.message ?? "Unknown error"}`,
           );
         }
       } catch {
@@ -248,7 +248,9 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   outbound: {
     deliveryMode: "direct",
     sendText: async ({ to, text, accountId }) => {
-      return sendTextGateway({ to, text, accountId });
+      const target = to == null ? "" : String(to);
+      const accountKey = accountId == null ? undefined : accountId;
+      return sendTextGateway({ to: target, text, accountId: accountKey });
     },
   },
   status: {
@@ -290,20 +292,20 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   },
   directory: {
     self: async ({ cfg, accountId }) => {
-      const account = resolveZTMChatAccount({ cfg, accountId });
+      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
       const config = account.config as ZTMChatConfig;
       return {
         kind: "user" as const,
-        id: account.username,
-        name: account.username,
+        id: account.username ?? "",
+        name: account.username ?? "",
         raw: {
-          username: account.username,
+          username: account.username ?? "",
           meshName: config?.meshName,
         },
       };
     },
     listPeers: async ({ cfg, accountId }) => {
-      const account = resolveZTMChatAccount({ cfg, accountId });
+      const account = resolveZTMChatAccount({ cfg: cfg ?? undefined, accountId: accountId ?? undefined });
       const config = account.config as ZTMChatConfig;
       const logger = container.get<ILogger>(DEPENDENCIES.LOGGER);
       const apiClientFactory = container.get<IApiClientFactory>(DEPENDENCIES.API_CLIENT_FACTORY);
@@ -311,11 +313,11 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
 
       const usersResult = await apiClient.discoverUsers();
       if (!usersResult.ok) {
-        logger.warn?.(`Failed to list peers: ${usersResult.error.message}`);
+        logger.warn?.(`Failed to list peers: ${usersResult.error?.message ?? "Unknown error"}`);
         return [];
       }
 
-      return usersResult.value.map((user) => ({
+      return (usersResult.value ?? []).map((user) => ({
         kind: "user" as const,
         id: user.username,
         name: user.username,
@@ -329,10 +331,20 @@ export const ztmChatPlugin: ChannelPlugin<ResolvedZTMChatAccount> = {
   },
   gateway: {
     startAccount: async (ctx) => {
-      return startAccountGateway(ctx);
+      const log = ctx.log;
+      const adaptedCtx = {
+        ...ctx,
+        log: log
+          ? {
+              info: (...args: unknown[]) => log.info(args[0] as string),
+              error: log.error ? (...args: unknown[]) => log.error(args[0] as string) : undefined,
+            }
+          : undefined,
+      };
+      return startAccountGateway(adaptedCtx);
     },
     logoutAccount: async ({ accountId, cfg }) => {
-      return logoutAccountGateway({ accountId, cfg });
+      return logoutAccountGateway({ accountId: accountId ?? "default", cfg: cfg ?? undefined });
     },
   },
 };
