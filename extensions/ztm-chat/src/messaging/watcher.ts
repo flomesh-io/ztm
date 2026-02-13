@@ -111,15 +111,14 @@ async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
 /**
  * Process a single chat message and notify callbacks if valid
  */
-function processChatMessage(
+async function processChatMessage(
   chat: ZTMChat,
   state: AccountRuntimeState,
   storeAllowFrom: string[]
-): boolean {
+): Promise<boolean> {
   const isGroup = !!(chat.creator && chat.group);
   
   if (isGroup) {
-    // Group chat: skip if no latest message
     if (!chat.latest) return false;
     
     const sender = chat.latest.sender || "";
@@ -138,10 +137,11 @@ function processChatMessage(
       groupInfo
     );
     if (normalized) {
+      const groupName = chat.name || await getGroupName(state.apiClient, chat.creator!, chat.group!);
       notifyMessageCallbacks(state, {
         ...normalized,
         isGroup: true,
-        groupName: chat.name,
+        groupName: groupName,
         groupId: chat.group,
         groupCreator: chat.creator,
       });
@@ -193,7 +193,7 @@ async function performInitialSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (processChatMessage(chat, state, storeAllowFrom)) {
+    if (await processChatMessage(chat, state, storeAllowFrom)) {
       processedCount++;
     }
   }
@@ -504,7 +504,7 @@ async function performFullSync(
   let processedCount = 0;
 
   for (const chat of chats) {
-    if (processChatMessage(chat, state, storeAllowFrom)) {
+    if (await processChatMessage(chat, state, storeAllowFrom)) {
       processedCount++;
     }
   }

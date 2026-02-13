@@ -52,10 +52,11 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
           { creator: chat.creator!, group: chat.group! }
         );
         if (normalized) {
+          const groupName = chat.name || (await state.apiClient?.getGroups()).value?.find(g => g.group === chat.group && g.creator === chat.creator)?.name;
           notifyMessageCallbacks(state, {
             ...normalized,
             isGroup: true,
-            groupName: chat.name,
+            groupName: groupName,
             groupId: chat.group,
             groupCreator: chat.creator,
           });
