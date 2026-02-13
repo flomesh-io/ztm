@@ -104,7 +104,7 @@ function processChatMessage(
       notifyMessageCallbacks(state, {
         ...normalized,
         isGroup: true,
-        groupName: chat.group,
+        groupName: chat.name,
         groupCreator: chat.creator,
       });
       return true;

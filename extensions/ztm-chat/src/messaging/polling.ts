@@ -55,7 +55,7 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
           notifyMessageCallbacks(state, {
             ...normalized,
             isGroup: true,
-            groupName: chat.group,
+            groupName: chat.name,
             groupCreator: chat.creator,
           });
         }
