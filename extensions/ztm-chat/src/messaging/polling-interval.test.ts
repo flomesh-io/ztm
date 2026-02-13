@@ -55,11 +55,12 @@ describe("Interval Management", () => {
   let mockState: AccountRuntimeState;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     createdIntervals = [];
 
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
-      const ref = originalSetInterval(callback, Math.min(ms, 100));
+      const ref = originalSetInterval(callback, ms);
       createdIntervals.push(ref);
       return ref;
     }) as unknown as typeof setInterval;
@@ -86,6 +87,7 @@ describe("Interval Management", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     for (const interval of createdIntervals) {
       clearInterval(interval);
     }
@@ -143,11 +145,12 @@ describe("Watch → Polling Transition", () => {
   let mockState: AccountRuntimeState;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     createdIntervals = [];
 
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
-      const ref = originalSetInterval(callback, Math.min(ms, 100));
+      const ref = originalSetInterval(callback, ms);
       createdIntervals.push(ref);
       return ref;
     }) as unknown as typeof setInterval;
@@ -174,6 +177,7 @@ describe("Watch → Polling Transition", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     for (const interval of createdIntervals) {
       clearInterval(interval);
     }

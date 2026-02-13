@@ -105,6 +105,7 @@ describe("Polling Watcher", () => {
   let setIntervalCallback: (() => void) | null = null;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     createdIntervals = [];
     mockReadAllowFromFn = vi.fn(() => Promise.resolve([]));
@@ -112,7 +113,7 @@ describe("Polling Watcher", () => {
 
     global.setInterval = vi.fn((callback: () => void, ms: number) => {
       setIntervalCallback = callback;
-      const ref = originalSetInterval(callback, Math.min(ms, 100));
+      const ref = originalSetInterval(callback, ms);
       createdIntervals.push(ref);
       return ref;
     }) as unknown as typeof setInterval;
@@ -139,6 +140,7 @@ describe("Polling Watcher", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     for (const interval of createdIntervals) {
       clearInterval(interval);
     }
