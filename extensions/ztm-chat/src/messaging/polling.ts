@@ -33,6 +33,36 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
     });
     if (!chats) return;
     for (const chat of chats) {
+      const isGroup = !!(chat.creator && chat.group);
+      
+      if (isGroup) {
+        if (!chat.latest) continue;
+        const sender = chat.latest.sender || "";
+        if (sender === config.username) continue;
+        
+        const normalized = processIncomingMessage(
+          {
+            time: chat.latest.time,
+            message: chat.latest.message,
+            sender: sender,
+          },
+          config,
+          pollStoreAllowFrom,
+          state.accountId,
+          { creator: chat.creator!, group: chat.group! }
+        );
+        if (normalized) {
+          notifyMessageCallbacks(state, {
+            ...normalized,
+            isGroup: true,
+            groupName: chat.group,
+            groupCreator: chat.creator,
+          });
+        }
+        continue;
+      }
+      
+      // Peer chat
       if (!chat.peer || chat.peer === config.username) continue;
       if (chat.latest) {
         const normalized = processIncomingMessage(

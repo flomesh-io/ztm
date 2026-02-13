@@ -12,6 +12,7 @@ import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
+import type { ZTMChat } from "../types/api.js";
 
 // Peer message path pattern
 const PEER_MESSAGE_PATTERN = /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages\//;
@@ -74,10 +75,44 @@ async function seedFileMetadata(state: AccountRuntimeState): Promise<void> {
  * Process a single chat message and notify callbacks if valid
  */
 function processChatMessage(
-  chat: { latest?: { time: number; message: string; sender?: string }; peer?: string },
+  chat: ZTMChat,
   state: AccountRuntimeState,
   storeAllowFrom: string[]
 ): boolean {
+  const isGroup = !!(chat.creator && chat.group);
+  
+  if (isGroup) {
+    // Group chat: skip if no latest message
+    if (!chat.latest) return false;
+    
+    const sender = chat.latest.sender || "";
+    if (sender === state.config.username) return false;
+    
+    const groupInfo = { creator: chat.creator!, group: chat.group! };
+    const normalized = processIncomingMessage(
+      {
+        time: chat.latest.time,
+        message: chat.latest.message,
+        sender: sender,
+      },
+      state.config,
+      storeAllowFrom,
+      state.accountId,
+      groupInfo
+    );
+    if (normalized) {
+      notifyMessageCallbacks(state, {
+        ...normalized,
+        isGroup: true,
+        groupName: chat.group,
+        groupCreator: chat.creator,
+      });
+      return true;
+    }
+    return false;
+  }
+  
+  // Peer chat
   if (!chat.peer || chat.peer === state.config.username) return false;
   if (!chat.latest) return false;
 
@@ -392,7 +427,13 @@ async function processChangedGroup(
       logger.debug(`[${state.accountId}] Skipping own message in group ${groupKey}`);
       continue;
     }
-    const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
+    const normalized = processIncomingMessage(
+      msg, 
+      state.config, 
+      storeAllowFrom, 
+      state.accountId,
+      { creator, group }
+    );
     if (normalized) {
       notifyMessageCallbacks(state, {
         ...normalized,
