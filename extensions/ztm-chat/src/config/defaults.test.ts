@@ -16,7 +16,7 @@ describe("getDefaultConfig", () => {
     expect(result.permitUrl).toBe("https://ztm-portal.flomesh.io:7779/permit");
     expect(result.meshName).toBe("openclaw-mesh");
     expect(result.username).toBe("openclaw-bot");
-    expect(result.enableGroups).toBe(false);
+    expect(result.enableGroups).toBe(true);
     expect(result.autoReply).toBe(true);
     expect(result.messagePath).toBe("/shared");
     expect(result.dmPolicy).toBe("pairing");
