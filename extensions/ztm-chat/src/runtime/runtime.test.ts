@@ -158,11 +158,11 @@ describe("Runtime Management", () => {
   describe("Callback Invocation", () => {
     it("should invoke registered callbacks with message", () => {
       const callback = vi.fn();
-      let storedCallback: ((message: unknown) => void) | null = null;
+      const storedCallback: { cb?: (message: unknown) => void } = {};
 
       const mockRuntime: PluginRuntime = {
         onMessage: (cb) => {
-          storedCallback = cb;
+          storedCallback.cb = cb;
           return () => {};
         },
       };
@@ -173,8 +173,8 @@ describe("Runtime Management", () => {
       rt.onMessage(callback);
 
       // Simulate receiving a message
-      if (storedCallback) {
-        storedCallback({ content: "Hello", sender: "alice" });
+      if (storedCallback.cb) {
+        storedCallback.cb({ content: "Hello", sender: "alice" });
       }
 
       expect(callback).toHaveBeenCalledTimes(1);
@@ -194,7 +194,7 @@ describe("Runtime Management", () => {
         log: mockLog,
       };
 
-      mockRuntime.log?.info("Test message");
+      mockRuntime.log!.info!("Test message");
 
       expect(mockLog.info).toHaveBeenCalledWith("Test message");
     });
@@ -207,7 +207,7 @@ describe("Runtime Management", () => {
         log: mockLog,
       };
 
-      mockRuntime.log?.debug("Debug message");
+      mockRuntime.log!.debug!("Debug message");
 
       expect(mockLog.debug).toHaveBeenCalledWith("Debug message");
     });
@@ -217,11 +217,11 @@ describe("Runtime Management", () => {
         onMessage: () => () => {},
       };
 
-      // Should not throw
-      mockRuntime.log?.info("Test");
-      mockRuntime.log?.debug("Test");
-      mockRuntime.log?.warn("Test");
-      mockRuntime.log?.error("Test");
+      // Should not throw - log is undefined so these are no-ops
+      mockRuntime.log?.info?.("Test");
+      mockRuntime.log?.debug?.("Test");
+      mockRuntime.log?.warn?.("Test");
+      mockRuntime.log?.error?.("Test");
     });
   });
 });

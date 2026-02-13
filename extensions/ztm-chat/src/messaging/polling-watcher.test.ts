@@ -186,7 +186,7 @@ describe("Polling Watcher", () => {
         createMockChat("alice", "Hello", now),
         createMockChat("bob", "Hi", now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       await startPollingWatcher(mockState);
 
@@ -194,7 +194,7 @@ describe("Polling Watcher", () => {
         await setIntervalCallback();
       }
 
-      expect(mockState.apiClient.getChats).toHaveBeenCalled();
+      expect(mockState.apiClient!.getChats).toHaveBeenCalled();
     });
 
     it("should skip messages from self (bot username)", async () => {
@@ -203,7 +203,7 @@ describe("Polling Watcher", () => {
         createMockChat("test-bot", "Self message", now),
         createMockChat("alice", "Hello", now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -233,7 +233,7 @@ describe("Polling Watcher", () => {
         },
         createMockChat({ peer: "alice", message: "Hello", time: now }),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -257,7 +257,7 @@ describe("Polling Watcher", () => {
         },
         createMockChat({ peer: "bob", message: "Hi", time: now }),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats as ZTMChat[])));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -271,7 +271,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle polling errors gracefully", async () => {
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(createChatsFailure()));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(createChatsFailure()));
 
       await startPollingWatcher(mockState);
 
@@ -287,7 +287,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("alice", "Test message", 1234567890),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       const inboundModule = await import("./inbound.js");
       const mockNormalizedMessage = {
@@ -321,7 +321,7 @@ describe("Polling Watcher", () => {
         createMockChat("alice", "Hello", now),
         createMockChat("bob", "Hi", now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       const inboundModule = await import("./inbound.js");
 
@@ -339,7 +339,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("stranger", "Hello", now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       const inboundModule = await import("./inbound.js");
       vi.mocked(inboundModule.checkDmPolicy).mockReturnValue({
@@ -369,7 +369,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("alice", "Hello", now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       mockReadAllowFromFn = vi.fn(() => Promise.resolve(["alice", "bob"]));
 
@@ -387,7 +387,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("alice", "Hello", now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       mockReadAllowFromFn = vi.fn(() => Promise.reject(new Error("Store read failed")));
 
@@ -401,7 +401,7 @@ describe("Polling Watcher", () => {
     });
 
     it("should handle empty chat list", async () => {
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success<ZTMChat[], ZtmReadError>([])));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success<ZTMChat[], ZtmReadError>([])));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -419,7 +419,7 @@ describe("Polling Watcher", () => {
         createMockChat("alice", "First", 1000),
         createMockChat("alice", "Second", 2000),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       const { processIncomingMessage } = await import("./inbound.js");
 
@@ -438,7 +438,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("alice", specialMessage, now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       await startPollingWatcher(mockState);
 
@@ -455,7 +455,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("alice", longMessage, now),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       await startPollingWatcher(mockState);
 
@@ -470,7 +470,7 @@ describe("Polling Watcher", () => {
       const mockChats = [
         createMockChat("alice", "Zero time", 0),
       ];
-      mockState.apiClient.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
+      mockState.apiClient!.getChats = vi.fn(() => Promise.resolve(success(mockChats)));
 
       await startPollingWatcher(mockState);
 

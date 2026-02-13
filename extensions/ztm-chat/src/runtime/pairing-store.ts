@@ -7,7 +7,7 @@ import * as path from "path";
 import { defaultLogger, type Logger } from "../utils/logger.js";
 import { FileSystem, nodeFs } from "./store.js";
 
-export { FileSystem };
+export type { FileSystem };
 
 /**
  * Pairing state data structure

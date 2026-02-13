@@ -36,7 +36,7 @@ describe("Memory and Resource Management", () => {
   });
 
   it("should handle cleanup of unknown resources gracefully", () => {
-    const testCases = [
+    const testCases: Array<{ interval?: number | null; callbacks?: Set<any>; pending?: Map<any, any> }> = [
       { interval: null },
       { interval: undefined },
       { callbacks: new Set() },

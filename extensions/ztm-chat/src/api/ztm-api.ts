@@ -12,7 +12,7 @@ import type {
   ZTMApiClient,
   WatchChangeItem,
 } from "../types/api.js";
-import { success, failure, type Result } from "../types/common.js";
+import { success, failure, isSuccess, type Result } from "../types/common.js";
 import {
   ZtmApiError,
   ZtmTimeoutError,
@@ -32,10 +32,10 @@ export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat, ZTMApiClie
  * Logger interface for dependency injection
  */
 export interface ZtmLogger {
-  debug: (...args: unknown[]) => void;
-  info: (...args: unknown[]) => void;
-  warn: (...args: unknown[]) => void;
-  error: (...args: unknown[]) => void;
+  debug?: (...args: unknown[]) => void;
+  info?: (...args: unknown[]) => void;
+  warn?: (...args: unknown[]) => void;
+  error?: (...args: unknown[]) => void;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface ZtmApiClientDeps {
  * Default values for dependencies
  */
 const defaultDeps: ZtmApiClientDeps = {
-  logger: defaultLogger,
+  logger: defaultLogger as ZtmLogger,
   fetch,
   fetchWithRetry,
 };
@@ -178,7 +178,11 @@ export function createZTMApiClient(
   function trimFileMetadata(): void {
     while (lastSeenFiles.size > MAX_TRACKED_FILES) {
       const firstKey = lastSeenFiles.keys().next().value;
-      lastSeenFiles.delete(firstKey);
+      if (firstKey) {
+        lastSeenFiles.delete(firstKey);
+      } else {
+        break;
+      }
     }
   }
 
@@ -336,10 +340,12 @@ export function createZTMApiClient(
 
     async discoverPeers(): Promise<Result<ZTMPeer[], ZtmDiscoveryError>> {
       const usersResult = await client.listUsers();
-      if (usersResult.ok) {
+      const usersError = usersResult.error;
+      if (isSuccess(usersResult) && usersResult.value) {
         return success(usersResult.value.map(u => ({ username: u.username })));
       }
-      return failure(usersResult.error);
+      const error = usersError ?? new ZtmDiscoveryError({ operation: "discoverPeers", source: "ChatAppAPI", cause: new Error("Failed to discover peers") });
+      return failure(error);
     },
 
     async listUsers(): Promise<Result<ZTMUserInfo[], ZtmDiscoveryError>> {
@@ -348,15 +354,15 @@ export function createZTMApiClient(
       const result = await request<string[]>("GET", `${CHAT_API_BASE}/users`);
 
       if (!result.ok) {
-        logger.error?.(`[ZTM API] Failed to list users: ${result.error.message}`);
+        logger.error?.(`[ZTM API] Failed to list users: ${result.error?.message ?? "Unknown error"}`);
         return failure(new ZtmDiscoveryError({
           operation: "discoverUsers",
           source: "ChatAppAPI",
-          cause: result.error,
+          cause: result.error ?? new Error("Unknown error"),
         }));
       }
 
-      const users = result.value.map(username => ({ username }));
+      const users = (result.value ?? []).map(username => ({ username }));
       logger.debug?.(`[ZTM API] Discovered ${users.length} users`);
       return success(users);
     },
@@ -370,20 +376,20 @@ export function createZTMApiClient(
         const error = new ZtmReadError({
           peer: "*",
           operation: "list",
-          cause: result.error,
+          cause: result.error ?? new Error("Unknown error"),
         });
         logger.error?.(`[ZTM API] Failed to get chats: ${error.message}`);
         return failure(error);
       }
 
       // Normalize message format: convert {text: "..."} to string
-      const chats = result.value.map((chat) => {
+      const chats = (result.value ?? []).map((chat) => {
         if (chat.latest) {
           return {
             ...chat,
             latest: {
               ...chat.latest,
-              message: normalizeMessageContent(chat.latest.message),
+              message: normalizeMessageContent(chat.latest?.message),
             },
           };
         }
@@ -415,13 +421,13 @@ export function createZTMApiClient(
         const error = new ZtmReadError({
           peer,
           operation: "read",
-          cause: result.error,
+          cause: result.error ?? new Error("Unknown error"),
         });
         logger.error?.(`[ZTM API] Failed to get peer messages: ${error.message}`);
         return failure(error);
       }
 
-      const messages = result.value.map((msg) => ({
+      const messages = (result.value ?? []).map((msg) => ({
         ...msg,
         message: normalizeMessageContent(msg.message),
       }));
@@ -442,7 +448,7 @@ export function createZTMApiClient(
           peer,
           messageTime: message.time,
           contentPreview: message.message,
-          cause: result.error,
+          cause: result.error ?? new Error("Unknown error"),
         });
         logger.error?.(`[ZTM API] Failed to send message to ${peer}: ${error.message}`);
         return failure(error);
@@ -462,7 +468,7 @@ export function createZTMApiClient(
         const error = new ZtmReadError({
           peer: "*",
           operation: "list",
-          cause: chatsResult.error,
+          cause: chatsResult.error ?? new Error("Unknown error"),
         });
         logger.error?.(`[ZTM API] Watch failed for ${prefix}: ${error.message}`);
         return failure(error);
@@ -470,30 +476,30 @@ export function createZTMApiClient(
 
       const changedItems: WatchChangeItem[] = [];
 
-      logger.debug(`[ZTM API] Watch: got ${chatsResult.value.length} chats, lastPollTime=${lastPollTime}`);
+      logger.debug?.(`[ZTM API] Watch: got ${chatsResult.value?.length ?? 0} chats, lastPollTime=${lastPollTime}`);
 
-      for (const chat of chatsResult.value) {
+      for (const chat of chatsResult.value ?? []) {
         const chatLatestTime = chat.latest?.time ?? 0;
         if (chatLatestTime <= (lastPollTime ?? 0)) continue;
 
         if (chat.peer && chat.peer !== config.username) {
           changedItems.push({ type: 'peer', peer: chat.peer });
         } else if (chat.group && chat.creator) {
-          changedItems.push({ 
-            type: 'group', 
-            creator: chat.creator, 
+          changedItems.push({
+            type: 'group',
+            creator: chat.creator,
             group: chat.group,
-            name: chat.name 
+            name: chat.name
           });
         }
       }
 
       if (changedItems.length > 0) {
-        const latestTime = Math.max(...chatsResult.value.map(c => c.latest?.time ?? 0));
+        const latestTime = Math.max(...(chatsResult.value ?? []).map(c => c.latest?.time ?? 0));
         lastPollTime = latestTime;
         const peerCount = changedItems.filter(i => i.type === 'peer').length;
         const groupCount = changedItems.filter(i => i.type === 'group').length;
-        logger.debug(`[ZTM API] Watch: found ${peerCount} peers, ${groupCount} groups with new messages`);
+        logger.debug?.(`[ZTM API] Watch: found ${peerCount} peers, ${groupCount} groups with new messages`);
       }
 
       logger.debug?.(`[ZTM API] Watch complete: ${changedItems.length} chats with new messages`);
@@ -515,13 +521,13 @@ export function createZTMApiClient(
         const error = new ZtmReadError({
           peer: `${creator}/${group}`,
           operation: "read",
-          cause: result.error,
+          cause: result.error ?? new Error("Unknown error"),
         });
         logger.error?.(`[ZTM API] Failed to get group messages: ${error.message}`);
         return failure(error);
       }
 
-      const messages = result.value.map((msg) => {
+      const messages = (result.value ?? []).map((msg) => {
         const msgMessage = msg.message ?? null;
         let normalizedMessage = '';
         if (msgMessage !== null && typeof msgMessage === 'object') {
@@ -559,7 +565,7 @@ export function createZTMApiClient(
           peer: `${creator}/${group}`,
           messageTime: message.time,
           contentPreview: message.message,
-          cause: result.error,
+          cause: result.error ?? new Error("Unknown error"),
         });
         logger.error?.(`[ZTM API] Failed to send group message: ${error.message}`);
         return failure(error);

@@ -735,7 +735,7 @@ describe("Channel Config", () => {
 
   describe("Edge Cases", () => {
     it("should handle null cfg", () => {
-      const result = resolveZTMChatAccount({ cfg: null, accountId: "test" });
+      const result = resolveZTMChatAccount({ cfg: undefined, accountId: "test" });
 
       expect(result).toBeDefined();
       expect(result.accountId).toBe("test");

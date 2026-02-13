@@ -202,14 +202,14 @@ describe("Complete Pairing Request Flow", () => {
   describe("store allowFrom bypass", () => {
     it("should allow store-approved user directly", () => {
       const sender = "bob";
-      const config = { ...baseConfig, allowFrom: [] };
+      const config = { ...baseConfig, allowFrom: [] as string[] };
       const pendingPairings = new Map<string, Date>();
       const storeAllowFrom = ["bob", "charlie"];
 
-      const isAllowed = config.allowFrom?.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
+      const isAllowed = (config.allowFrom ?? []).some(
+        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
       ) || storeAllowFrom.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
+        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
       );
 
       expect(isAllowed).toBe(true);
@@ -231,13 +231,13 @@ describe("Complete Pairing Request Flow", () => {
 
     it("should fall back to store when config allowFrom is empty", () => {
       const sender = "bob";
-      const config = { ...baseConfig, allowFrom: [] };
+      const config = { ...baseConfig, allowFrom: [] as string[] };
       const storeAllowFrom = ["bob"];
 
-      const isAllowed = config.allowFrom?.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
+      const isAllowed = (config.allowFrom ?? []).some(
+        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
       ) || storeAllowFrom.some(
-        allowed => allowed.toLowerCase() === sender.toLowerCase()
+        (allowed: string) => allowed.toLowerCase() === sender.toLowerCase()
       );
 
       expect(isAllowed).toBe(true);

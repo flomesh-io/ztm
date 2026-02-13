@@ -171,10 +171,10 @@ export async function probeAccountGateway({
   const apiClient = createZTMApiClient(probeConfig);
   const meshResult = await apiClient.getMeshInfo();
 
-  if (!meshResult.ok) {
+  if (!meshResult.ok || !meshResult.value) {
     return {
       ok: false,
-      error: meshResult.error.message,
+      error: meshResult.error?.message ?? "Unknown error",
     };
   }
 
@@ -229,7 +229,7 @@ export async function sendTextGateway({
     channel: "ztm-chat",
     ok: result.ok,
     messageId: result.ok ? generateMessageId() : "",
-    error: result.ok ? undefined : result.error?.message ?? state.lastError,
+    error: result.ok ? undefined : (result.error?.message ?? state.lastError ?? undefined),
   };
 }
 
@@ -247,7 +247,7 @@ async function handleInboundMessage(
   cfg: Record<string, unknown>,
   config: ZTMChatConfig,
   accountId: string,
-  ctx: { log?: { info?: (...args: unknown[]) => void; error?: (...args: unknown[]) => void } },
+  ctx: { log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void } },
   msg: ZTMChatMessage,
 ): Promise<void> {
   try {
@@ -303,7 +303,7 @@ async function handleInboundMessage(
  * Start account gateway implementation
  */
 export async function startAccountGateway(
-  ctx: { account: { config: ZTMChatConfig; accountId: string }; log?: { info?: (...args: unknown[]) => void; error?: (...args: unknown[]) => void }; cfg?: Record<string, unknown> },
+  ctx: { account: { config: ZTMChatConfig; accountId: string }; log?: { info: (...args: unknown[]) => void; error?: (...args: unknown[]) => void }; cfg?: Record<string, unknown> },
 ): Promise<() => Promise<void>> {
   const account = ctx.account;
   const config = resolveZTMChatConfig(account.config);
@@ -437,7 +437,7 @@ export async function startAccountGateway(
       `[${account.accountId}] Received ${msgType} message: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
     );
 
-    void handleInboundMessage(state, rt, cfg, config, account.accountId, ctx, msg);
+    void handleInboundMessage(state, rt, cfg ?? {}, config, account.accountId, ctx, msg);
   };
 
   state.messageCallbacks.add(messageCallback);
