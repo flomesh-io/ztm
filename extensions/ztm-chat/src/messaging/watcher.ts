@@ -105,6 +105,7 @@ function processChatMessage(
         ...normalized,
         isGroup: true,
         groupName: chat.name,
+        groupId: chat.group,
         groupCreator: chat.creator,
       });
       return true;
@@ -438,7 +439,7 @@ async function processChangedGroup(
       notifyMessageCallbacks(state, {
         ...normalized,
         isGroup: true,
-        groupName: group,
+        groupId: group,
         groupCreator: creator,
       });
     }

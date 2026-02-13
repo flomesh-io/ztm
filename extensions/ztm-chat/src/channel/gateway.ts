@@ -269,8 +269,8 @@ async function handleInboundMessage(
           deliver: async (payload: { text?: string; mediaUrl?: string }) => {
             const replyText = payload.text ?? "";
             if (!replyText) return;
-            const groupInfo = msg.isGroup && msg.groupName && msg.groupCreator
-              ? { creator: msg.groupCreator, group: msg.groupName }
+            const groupInfo = msg.isGroup && msg.groupId && msg.groupCreator
+              ? { creator: msg.groupCreator, group: msg.groupId }
               : undefined;
             await sendZTMMessage(state, msg.sender, replyText, groupInfo);
             ctx.log?.info(
@@ -499,8 +499,8 @@ export function buildMessageCallback(
               }) => {
                 const replyText = payload.text ?? "";
                 if (!replyText) return;
-                const groupInfo = msg.isGroup && msg.groupName && msg.groupCreator
-                  ? { creator: msg.groupCreator, group: msg.groupName }
+                const groupInfo = msg.isGroup && msg.groupId && msg.groupCreator
+                  ? { creator: msg.groupCreator, group: msg.groupId }
                   : undefined;
                 await sendZTMMessage(state, msg.sender, replyText, groupInfo);
               },
