@@ -14,6 +14,43 @@ import { checkDmPolicy } from "../core/dm-policy.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
 import type { ZTMChat } from "../types/api.js";
 
+// Group name cache: groupId -> { name, expiresAt }
+const groupNameCache = new Map<string, { name: string; expiresAt: number }>();
+const GROUP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getGroupName(
+  apiClient: AccountRuntimeState["apiClient"],
+  creator: string,
+  groupId: string
+): Promise<string | undefined> {
+  if (!apiClient) return undefined;
+  
+  const cacheKey = `${creator}/${groupId}`;
+  const cached = groupNameCache.get(cacheKey);
+  
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.name;
+  }
+  
+  const result = await apiClient.getGroups();
+  if (!result.ok) {
+    logger.debug(`Failed to get groups: ${result.error.message}`);
+    return undefined;
+  }
+  
+  for (const group of result.value) {
+    if (group.group === groupId && group.creator === creator) {
+      groupNameCache.set(cacheKey, { 
+        name: group.name || groupId, 
+        expiresAt: Date.now() + GROUP_CACHE_TTL 
+      });
+      return group.name;
+    }
+  }
+  
+  return undefined;
+}
+
 // Peer message path pattern
 const PEER_MESSAGE_PATTERN = /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages\//;
 
@@ -422,6 +459,7 @@ async function processChangedGroup(
   }
 
   const messages = messagesResult.value;
+  const groupName = await getGroupName(state.apiClient, creator, group);
 
   for (const msg of messages) {
     if (msg.sender === state.config.username) {
@@ -440,6 +478,7 @@ async function processChangedGroup(
         ...normalized,
         isGroup: true,
         groupId: group,
+        groupName: groupName,
         groupCreator: creator,
       });
     }
