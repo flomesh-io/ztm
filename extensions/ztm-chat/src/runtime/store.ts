@@ -103,35 +103,45 @@ export class MessageStateStoreImpl implements MessageStateStore {
 
   private load(): void {
     try {
-      if (this.fs.existsSync(this.statePath)) {
-        const content = this.fs.readFileSync(this.statePath, "utf-8");
-        const parsed = JSON.parse(content);
-        if (parsed && typeof parsed === "object") {
-          // Migrate from old fileTimes format (Record<string, number>) to new fileMetadata format
-          const fileMetadata: Record<string, Record<string, FileMetadata>> = {};
-          if (parsed.fileMetadata) {
-            // New format
-            Object.assign(fileMetadata, parsed.fileMetadata);
-          } else if (parsed.fileTimes) {
-            // Old format: migrate time to metadata with size 0
-            for (const [accountId, files] of Object.entries(parsed.fileTimes as Record<string, Record<string, number>>)) {
-              fileMetadata[accountId] = {};
-              for (const [p, time] of Object.entries(files)) {
-                fileMetadata[accountId][p] = { time, size: 0 };
-              }
-            }
-          }
-
-          this.data = {
-            accounts: parsed.accounts ?? {},
-            fileMetadata,
-          };
-        }
+      if (!this.fs.existsSync(this.statePath)) {
+        return;
       }
+
+      const content = this.fs.readFileSync(this.statePath, "utf-8");
+      const parsed = JSON.parse(content);
+
+      if (!parsed || typeof parsed !== "object") {
+        return;
+      }
+
+      const fileMetadata = this.migrateFileMetadata(parsed);
+      this.data = {
+        accounts: parsed.accounts ?? {},
+        fileMetadata,
+      };
     } catch {
       // Ignore read/parse errors — start fresh
       this.logger.warn("Failed to load message state, starting fresh");
     }
+  }
+
+  private migrateFileMetadata(parsed: Record<string, unknown>): Record<string, Record<string, FileMetadata>> {
+    const fileMetadata: Record<string, Record<string, FileMetadata>> = {};
+
+    if (parsed.fileMetadata) {
+      // New format
+      Object.assign(fileMetadata, parsed.fileMetadata);
+    } else if (parsed.fileTimes) {
+      // Old format: migrate time to metadata with size 0
+      for (const [accountId, files] of Object.entries(parsed.fileTimes as Record<string, Record<string, number>>)) {
+        fileMetadata[accountId] = {};
+        for (const [p, time] of Object.entries(files)) {
+          fileMetadata[accountId][p] = { time, size: 0 };
+        }
+      }
+    }
+
+    return fileMetadata;
   }
 
   private scheduleSave(): void {
