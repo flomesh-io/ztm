@@ -1,9 +1,8 @@
 // Integration tests for Pairing Request Flow
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatConfig } from "../types/config.js";
-import type { ZTMApiClient } from "../types/api.js";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { mockResolved } from "../test-utils/mocks.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -37,31 +36,18 @@ vi.mock("./store.js", () => ({
 }));
 
 describe("Complete Pairing Request Flow", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "pairing",
-  };
+  const baseConfig = testConfig;
 
-  let mockState: AccountRuntimeState;
+  let mockState: ReturnType<typeof createMockState>;
   let mockPairingRequests: string[] = [];
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockPairingRequests = [];
-
-    mockState = {
-      accountId: "test-account",
+  function createMockState() {
+    return {
+      accountId: testAccountId,
       config: baseConfig,
       apiClient: {
-        sendPeerMessage: vi.fn().mockResolvedValue(true),
-      } as unknown as ZTMApiClient,
+        sendPeerMessage: mockResolved(true),
+      },
       connected: true,
       meshConnected: true,
       lastError: null,
@@ -75,6 +61,13 @@ describe("Complete Pairing Request Flow", () => {
       watchErrorCount: 0,
       pendingPairings: new Map(),
     };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPairingRequests = [];
+
+    mockState = createMockState();
   });
 
   describe("new user triggers pairing request", () => {

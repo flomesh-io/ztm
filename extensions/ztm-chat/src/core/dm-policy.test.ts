@@ -7,17 +7,10 @@ import {
   normalizeUsername,
   isPairingMode,
 } from "./dm-policy.js";
-import type { ZTMChatConfig } from "../types/config.js";
+import { testConfig } from "../test-utils/fixtures.js";
 
 describe("DM Policy enforcement", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    dmPolicy: "pairing",
-    allowFrom: [],
-  };
+  const baseConfig = { ...testConfig, allowFrom: [] };
 
   describe("checkDmPolicy", () => {
     it("should allow messages when dmPolicy='allow'", () => {

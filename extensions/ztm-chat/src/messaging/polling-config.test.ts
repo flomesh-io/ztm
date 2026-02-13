@@ -2,12 +2,13 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { startPollingWatcher } from "./polling.js";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatConfig } from "../types/config.js";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { mockSuccess } from "../test-utils/mocks.js";
+import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
-import { success } from "../types/common.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
 
-type ExtendedConfig = ZTMChatConfig & { pollingInterval?: number; [key: string]: unknown };
+type ExtendedConfig = typeof testConfig & { pollingInterval?: number; [key: string]: unknown };
 
 let createdIntervals: ReturnType<typeof setInterval>[] = [];
 const originalSetInterval = global.setInterval;
@@ -42,19 +43,31 @@ vi.mock("../connectivity/permit.js", () => ({
 }));
 
 describe("Configuration Edge Cases", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "pairing",
-  };
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
 
-  let mockState: AccountRuntimeState;
+  let mockState: ReturnType<typeof createMockState>;
+
+  function createMockState(): AccountRuntimeState {
+    return {
+      accountId: testAccountId,
+      config: baseConfig,
+      apiClient: {
+        getChats: mockSuccess([]),
+      } as unknown as ZTMApiClient,
+      connected: true,
+      meshConnected: true,
+      lastError: null,
+      lastStartAt: new Date(),
+      lastStopAt: null,
+      lastInboundAt: null,
+      lastOutboundAt: null,
+      peerCount: 5,
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
+      watchInterval: null,
+      watchErrorCount: 0,
+      pendingPairings: new Map(),
+    };
+  }
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -67,25 +80,7 @@ describe("Configuration Edge Cases", () => {
       return ref;
     }) as unknown as typeof setInterval;
 
-    mockState = {
-      accountId: "test-account",
-      config: baseConfig,
-      apiClient: {
-        getChats: vi.fn(() => Promise.resolve(success([]))),
-      } as unknown as ZTMApiClient,
-      connected: true,
-      meshConnected: true,
-      lastError: null,
-      lastStartAt: new Date(),
-      lastStopAt: null,
-      lastInboundAt: null,
-      lastOutboundAt: null,
-      peerCount: 5,
-      messageCallbacks: new Set(),
-      watchInterval: null,
-      watchErrorCount: 0,
-      pendingPairings: new Map(),
-    };
+    mockState = createMockState();
   });
 
   afterEach(() => {

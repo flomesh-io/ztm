@@ -1,6 +1,7 @@
 // Unit tests for Logger
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createMockLoggerFns } from "../test-utils/mocks.js";
 
 // Logger instance for testing
 class TestLogger {

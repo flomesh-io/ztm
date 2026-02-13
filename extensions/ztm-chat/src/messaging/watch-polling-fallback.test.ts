@@ -1,9 +1,11 @@
 // Integration tests for Watch → Polling fallback behavior
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { AccountRuntimeState } from "../runtime/state.js";
-import type { ZTMChatConfig } from "../types/config.js";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { mockResolved } from "../test-utils/mocks.js";
+import type { AccountRuntimeState } from "../types/runtime.js";
 import type { ZTMApiClient } from "../types/api.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -37,34 +39,20 @@ vi.mock("./store.js", () => ({
 }));
 
 describe("Watch → Polling Fallback", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "pairing",
-  };
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
 
-  let mockState: AccountRuntimeState;
+  let mockState: ReturnType<typeof createMockState>;
   let mockStartPollingCalled = false;
   let mockWatchErrorCount = 0;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockWatchErrorCount = 0;
-    mockStartPollingCalled = false;
-
-    mockState = {
-      accountId: "test-account",
+  function createMockState(): AccountRuntimeState {
+    return {
+      accountId: testAccountId,
       config: baseConfig,
       apiClient: {
-        watchChanges: vi.fn(),
-        getChats: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
-        getPeerMessages: vi.fn(() => Promise.resolve({ ok: true, value: [] })),
+        watchChanges: mockResolved(undefined),
+        getChats: mockResolved({ ok: true, value: [] }),
+        getPeerMessages: mockResolved({ ok: true, value: [] }),
         exportFileMetadata: () => ({}),
       } as unknown as ZTMApiClient,
       connected: true,
@@ -75,11 +63,19 @@ describe("Watch → Polling Fallback", () => {
       lastInboundAt: null,
       lastOutboundAt: null,
       peerCount: 5,
-      messageCallbacks: new Set(),
+      messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
       watchInterval: null,
       watchErrorCount: 0,
       pendingPairings: new Map(),
     };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockWatchErrorCount = 0;
+    mockStartPollingCalled = false;
+
+    mockState = createMockState();
   });
 
   describe("watchErrorCount increment", () => {
@@ -190,17 +186,7 @@ describe("Watch → Polling Fallback", () => {
 });
 
 describe("Integration: Watch Error with Pending Pairings", () => {
-  const baseConfig: ZTMChatConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "pairing",
-  };
+  const baseConfig = { ...testConfig, allowFrom: [] as string[], dmPolicy: "pairing" as const };
 
   it("should preserve pending pairings during fallback", () => {
     const pendingPairings = new Map<string, Date>();

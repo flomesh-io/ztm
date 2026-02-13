@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMApiClient } from "../types/api.js";
+import { testConfig } from "../test-utils/fixtures.js";
 import {
   createZTMApiClient,
   createTestClient,
@@ -35,18 +36,6 @@ vi.mock("../utils/logger.js", async () => {
 
 // Re-export types for convenience
 export type { ZTMMessage, ZTMPeer, ZTMUserInfo, ZTMMeshInfo, ZTMChat } from "../types/api.js";
-
-// Test configuration
-const testConfig: ZTMChatConfig = {
-  agentUrl: "https://agent.example.com:7777",
-  meshName: "test-mesh",
-  permitUrl: "https://portal.example.com:7779/permit",
-  username: "test-bot",
-  enableGroups: false,
-  autoReply: true,
-  messagePath: "/shared",
-  dmPolicy: "pairing",
-};
 
 describe("ZTM API Client", () => {
   beforeEach(() => {

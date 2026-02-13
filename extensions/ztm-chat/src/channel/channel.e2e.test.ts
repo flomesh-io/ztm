@@ -2,6 +2,7 @@
 // Tests the complete startup flow from config validation to message dispatch
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { testConfig } from "../test-utils/fixtures.js";
 
 // Mock state containers
 const mockState = {
@@ -139,17 +140,7 @@ vi.mock("./utils/logger.js", () => ({
 }));
 
 describe("startAccount E2E Tests", () => {
-  const baseConfig = {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: [],
-    dmPolicy: "pairing" as const,
-  };
+  const baseConfig = { ...testConfig };
 
   beforeEach(() => {
     vi.clearAllMocks();

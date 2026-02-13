@@ -13,11 +13,12 @@ import {
   removeAccountState,
   getAllAccountStates,
 } from "../runtime/state.js";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
+import { mockSuccess } from "../test-utils/mocks.js";
+import { isSuccess } from "../types/common.js";
+import type { ZTMChatMessage } from "../types/messaging.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { AccountRuntimeState } from "../types/runtime.js";
-import type { ZTMChatMessage } from "../types/messaging.js";
-import type { ZTMApiClient } from "../types/api.js";
-import { success, isSuccess } from "../types/common.js";
 
 // Mock dependencies
 vi.mock("../utils/logger.js", () => ({
@@ -75,23 +76,15 @@ vi.mock("../runtime/pairing-store.js", () => {
 });
 
 // Helper to create base config
-function createBaseConfig(overrides?: Partial<ZTMChatConfig>): ZTMChatConfig {
+function createBaseConfig(overrides?: Partial<typeof testConfig>): typeof testConfig {
   return {
-    agentUrl: "https://example.com:7777",
-    permitUrl: "https://example.com/permit",
-    meshName: "test-mesh",
-    username: "test-bot",
-    enableGroups: false,
-    autoReply: true,
-    messagePath: "/shared",
-    allowFrom: undefined,
-    dmPolicy: "pairing",
+    ...testConfig,
     ...overrides,
   };
 }
 
 // Helper to create mock state
-function createMockState(accountId: string, config?: ZTMChatConfig): AccountRuntimeState {
+function createMockState(accountId: string, config?: typeof testConfig): AccountRuntimeState {
   return {
     accountId,
     config: config ?? createBaseConfig(),
@@ -104,7 +97,7 @@ function createMockState(accountId: string, config?: ZTMChatConfig): AccountRunt
     lastInboundAt: null,
     lastOutboundAt: null,
     peerCount: 5,
-    messageCallbacks: new Set(),
+    messageCallbacks: new Set<(message: ZTMChatMessage) => void>(),
     watchInterval: null,
     watchErrorCount: 0,
     pendingPairings: new Map(),
@@ -115,11 +108,11 @@ function createMockState(accountId: string, config?: ZTMChatConfig): AccountRunt
 function createMockApiClient(overrides?: {
   sendPeerMessage?: ReturnType<typeof vi.fn>;
   sendGroupMessage?: ReturnType<typeof vi.fn>;
-}): ZTMApiClient {
+}) {
   return {
-    sendPeerMessage: overrides?.sendPeerMessage ?? vi.fn().mockResolvedValue(success(true)),
-    sendGroupMessage: overrides?.sendGroupMessage ?? vi.fn().mockResolvedValue(success(true)),
-  } as unknown as ZTMApiClient;
+    sendPeerMessage: overrides?.sendPeerMessage ?? mockSuccess(true),
+    sendGroupMessage: overrides?.sendGroupMessage ?? mockSuccess(true),
+  } as unknown as ReturnType<typeof createMockState>["apiClient"];
 }
 
 // Helper to create a unique message
@@ -185,7 +178,7 @@ describe("Integration: Complete Message Flow", () => {
       const state = createMockState(accountId, config);
 
       // Setup mock API client
-      const mockSendPeerMessage = vi.fn().mockResolvedValue(success(true));
+      const mockSendPeerMessage = mockSuccess(true);
       state.apiClient = createMockApiClient({ sendPeerMessage: mockSendPeerMessage });
 
       // Step 1: Receive inbound message
@@ -253,7 +246,7 @@ describe("Integration: Complete Message Flow", () => {
       const state = createMockState(accountId, config);
 
       // Setup mock API client
-      const mockSendGroupMessage = vi.fn().mockResolvedValue(success(true));
+      const mockSendGroupMessage = mockSuccess(true);
       state.apiClient = createMockApiClient({ sendGroupMessage: mockSendGroupMessage });
 
       // Step 1: Receive inbound group message
@@ -540,7 +533,7 @@ describe("Integration: Complete Message Flow", () => {
       const state = createMockState(accountId, config);
 
       // Setup mock API
-      const mockSendPeerMessage = vi.fn().mockResolvedValue(success(true));
+      const mockSendPeerMessage = mockSuccess(true);
       state.apiClient = createMockApiClient({ sendPeerMessage: mockSendPeerMessage });
 
       // Track message flow

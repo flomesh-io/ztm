@@ -1,6 +1,7 @@
 // Unit tests for ZTM Chat Channel Plugin
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { testConfig } from "../test-utils/fixtures.js";
 
 describe("ZTM Chat Channel Plugin", () => {
   beforeEach(() => {

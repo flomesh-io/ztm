@@ -1,6 +1,7 @@
 // Unit tests for MessageStateStore
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { testConfig, testAccountId } from "../test-utils/fixtures.js";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
