@@ -180,7 +180,11 @@ export class DIContainer {
   get<T>(key: DependencyKey<T>): T {
     const entry = this.services.get(key);
     if (!entry) {
-      throw new Error(`Service ${key.toString()} not registered. Available keys: ${Array.from(this.services.keys()).join(", ")}`);
+      const keyStr = String(key);
+      const availableKeys = Array.from(this.services.keys())
+        .map((k) => String(k))
+        .join(", ");
+      throw new Error(`Service ${keyStr} not registered. Available keys: ${availableKeys}`);
     }
 
     // Lazy initialization: create instance on first access
@@ -199,7 +203,7 @@ export class DIContainer {
    */
   has<T>(key: DependencyKey<T>): boolean {
     const entry = this.services.get(key);
-    return entry?.instance !== null;
+    return entry !== undefined && entry.instance !== null;
   }
 
   /**

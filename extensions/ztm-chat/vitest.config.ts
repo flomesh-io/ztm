@@ -3,14 +3,14 @@ import { defineConfig } from 'vitest/config';
 const testConfig = {
   test: {
     testTimeout: 30000, // 30 seconds default timeout
-    pool: 'threads',
+    // Use forks pool for better mock isolation
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        singleThread: true, // Run tests in single thread to avoid race conditions
+      forks: {
+        singleFork: true, // Run all tests in a single fork
       },
     },
-    isolate: true, // Isolate each test file for better stability
-    fileParallelism: false, // Run test files sequentially
+    isolate: false, // Disable test isolation to maintain mock state
   },
 };
 

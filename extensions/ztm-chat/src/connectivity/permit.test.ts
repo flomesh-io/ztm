@@ -258,6 +258,58 @@ describe("Permit management functions", () => {
       const { logger } = await import("../utils/logger.js");
       expect(logger.error).toHaveBeenCalled();
     });
+
+    it("should handle various HTTP status codes", async () => {
+      const statusCodes = [400, 401, 403, 404, 500, 502, 503];
+
+      for (const status of statusCodes) {
+        mockFetch.mockResolvedValue({
+          ok: status < 400,
+          status,
+          statusText: `Error ${status}`,
+          text: async () => `Error ${status}`,
+        } as unknown as Response);
+
+        const result = await requestPermit(
+          "https://example.com/permit",
+          "key",
+          "user"
+        );
+
+        expect(result).toBe(status < 400 ? expect.anything() : null);
+      }
+    });
+
+    it("should send correct payload structure", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as unknown as Response);
+
+      await requestPermit("https://example.com/permit", "pub-key", "username");
+
+      const bodyArg = mockFetch.mock.calls[0]?.[1]?.body;
+      const parsedBody = JSON.parse(bodyArg);
+      expect(parsedBody).toEqual({
+        PublicKey: "pub-key",
+        UserName: "username",
+      });
+    });
+
+    it("should handle empty permit response", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      } as unknown as Response);
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toEqual({});
+    });
   });
 
   describe("savePermitData", () => {
@@ -328,6 +380,52 @@ describe("Permit management functions", () => {
 
       const { logger } = await import("../utils/logger.js");
       expect(logger.error).toHaveBeenCalled();
+    });
+
+    it("should handle complex nested permit data", () => {
+      const permitData = {
+        token: "test",
+        nested: {
+          level1: {
+            level2: { value: "deep" },
+          },
+          array: [1, 2, 3],
+        },
+      };
+
+      savePermitData(permitData, testPermitPath);
+
+      expect(fsWriteCalls[0][1]).toBe(JSON.stringify(permitData, null, 2));
+    });
+
+    it("should handle special characters in data", () => {
+      const permitData = {
+        message: "Test unicode: 你好 🌍",
+        special: 'Quotes: " \'',
+      };
+
+      const result = savePermitData(permitData, testPermitPath);
+
+      expect(result).toBe(true);
+    });
+
+    it("should not create directory when exists", () => {
+      const permitData = { token: "test" };
+      mockFsExists = true;
+
+      savePermitData(permitData, testPermitPath);
+
+      expect(fsMkdirCalls.length).toBe(0);
+    });
+
+    it("should handle deeply nested paths", () => {
+      const permitData = { token: "test" };
+      mockFsExists = false;
+      const deepPath = "/a/b/c/d/e/f/permit.json";
+
+      savePermitData(permitData, deepPath);
+
+      expect(fsMkdirCalls[0][0]).toBe("/a/b/c/d/e/f");
     });
   });
 
@@ -450,6 +548,171 @@ describe("Permit management functions", () => {
       await handlePairingRequest(mockState, "Alice", "Test context", []);
 
       expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+    });
+
+    it("should use correct pairing request parameters", async () => {
+      mockUpsertPairingRequest.mockClear();
+
+      await handlePairingRequest(mockState, "TestPeer", "context", []);
+
+      expect(mockUpsertPairingRequest).toHaveBeenCalledWith({
+        channel: "ztm-chat",
+        id: "testpeer",
+        meta: { name: "TestPeer" },
+      });
+    });
+
+    it("should build pairing reply correctly", async () => {
+      mockPairingResult = { code: "TESTCODE", created: true };
+      mockUpsertPairingRequest.mockClear();
+
+      await handlePairingRequest(mockState, "TestPeer", "context", []);
+
+      expect(mockUpsertPairingRequest).toHaveBeenCalled();
+    });
+
+    it("should handle case-insensitive peer matching in allowFrom", async () => {
+      mockState.config.allowFrom = ["Alice", "Bob"];
+
+      await handlePairingRequest(mockState, "ALICE", "context", []);
+
+      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+    });
+
+    it("should send message with proper structure", async () => {
+      mockPairingResult = { code: "CODE", created: true };
+
+      await handlePairingRequest(mockState, "Peer", "context", []);
+
+      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledWith(
+        "Peer",
+        expect.objectContaining({
+          time: expect.any(Number),
+          message: expect.any(String),
+          sender: mockState.config.username,
+        })
+      );
+    });
+
+    it("should handle empty storeAllowFrom array", async () => {
+      const emptyStore: string[] = [];
+
+      await handlePairingRequest(mockState, "alice", "context", emptyStore);
+
+      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalled();
+    });
+
+    it("should handle peer with special characters", async () => {
+      const specialPeer = "user_123-test.dev";
+
+      await handlePairingRequest(mockState, specialPeer, "context", []);
+
+      expect(mockUpsertPairingRequest).toHaveBeenCalledWith({
+        channel: "ztm-chat",
+        id: "user_123-test.dev",
+        meta: { name: specialPeer },
+      });
+    });
+
+    it("should log when pairing already exists", async () => {
+      mockPairingResult = { code: "OLD", created: false };
+      mockUpsertPairingRequest.mockClear();
+
+      await handlePairingRequest(mockState, "alice", "context", []);
+
+      const { logger } = await import("../utils/logger.js");
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("already exists")
+      );
+    });
+
+    it("should log successful pairing request", async () => {
+      mockPairingResult = { code: "NEW", created: true };
+      mockUpsertPairingRequest.mockClear();
+
+      await handlePairingRequest(mockState, "alice", "context", []);
+
+      const { logger } = await import("../utils/logger.js");
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining("Registered new pairing request")
+      );
+    });
+
+    it("should handle null apiClient config", async () => {
+      const noClientState: AccountRuntimeState = {
+        ...mockState,
+        apiClient: null,
+      };
+
+      await handlePairingRequest(noClientState, "peer", "context", []);
+
+      expect(mockUpsertPairingRequest).not.toHaveBeenCalled();
+    });
+
+    it("should not call apiClient when peer already in allowFrom", async () => {
+      mockState.config.allowFrom = ["ExistingPeer"];
+
+      await handlePairingRequest(mockState, "ExistingPeer", "context", []);
+
+      expect(mockState.apiClient?.sendPeerMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Edge Cases and Integration", () => {
+    it("should handle concurrent pairing requests", async () => {
+      const peers = ["peer1", "peer2", "peer3"];
+
+      await Promise.all(
+        peers.map((peer) =>
+          handlePairingRequest(mockState, peer, "context", [])
+        )
+      );
+
+      expect(mockState.apiClient?.sendPeerMessage).toHaveBeenCalledTimes(3);
+    });
+
+    it("should handle very long peer names", async () => {
+      const longPeer = "a".repeat(1000);
+
+      await handlePairingRequest(mockState, longPeer, "context", []);
+
+      expect(mockUpsertPairingRequest).toHaveBeenCalled();
+    });
+
+    it("should handle unicode peer names", async () => {
+      const unicodePeer = "用户-пользователь";
+
+      await handlePairingRequest(mockState, unicodePeer, "context", []);
+
+      expect(mockUpsertPairingRequest).toHaveBeenCalled();
+    });
+
+    it("should handle empty permit data save", () => {
+      const emptyData = {};
+
+      savePermitData(emptyData, "/test/path.json");
+
+      expect(fsWriteCalls[0][1]).toBe(JSON.stringify(emptyData, null, 2));
+    });
+
+    it("should handle null values in permit data", () => {
+      const dataWithNull = { token: "test", optional: null };
+
+      savePermitData(dataWithNull, "/test/path.json");
+
+      expect(fsWriteCalls[0][1]).toContain("null");
+    });
+
+    it("should handle network timeout in permit request", async () => {
+      mockFetch.mockRejectedValue(new Error("Request timeout"));
+
+      const result = await requestPermit(
+        "https://example.com/permit",
+        "key",
+        "user"
+      );
+
+      expect(result).toBeNull();
     });
   });
 });
