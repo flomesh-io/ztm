@@ -107,9 +107,9 @@ export interface ZTMApiClient {
   /** Send a message to a peer. Returns Result with success=true or ZtmSendError on failure. */
   sendPeerMessage(peer: string, message: ZTMMessage): Promise<Result<boolean, ZtmSendError>>;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Group Operations - Future feature, still return Result
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═════════════════════════════════════════════════════════════════════════════
+  // Group Operations
+  // ═════════════════════════════════════════════════════════════════════════════
 
   /** Get available groups. Returns Result with groups list or error. */
   getGroups(): Promise<Result<ZTMChat[], ZtmError>>;
@@ -119,6 +119,13 @@ export interface ZTMApiClient {
     creator: string,
     group: string
   ): Promise<Result<ZTMMessage[], ZtmReadError>>;
+
+  /** Send a message to a group. Returns Result with success or error. */
+  sendGroupMessage(
+    creator: string,
+    group: string,
+    message: ZTMMessage
+  ): Promise<Result<boolean, ZtmSendError>>;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // File Operations - Return Result types with appropriate errors
