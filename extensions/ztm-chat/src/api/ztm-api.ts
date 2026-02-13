@@ -10,6 +10,7 @@ import type {
   ZTMMeshInfo,
   ZTMChat,
   ZTMApiClient,
+  WatchChangeItem,
 } from "../types/api.js";
 import { success, failure, type Result } from "../types/common.js";
 import {
@@ -453,7 +454,7 @@ export function createZTMApiClient(
 
     async watchChanges(
       prefix: string
-    ): Promise<Result<string[], ZtmReadError>> {
+    ): Promise<Result<WatchChangeItem[], ZtmReadError>> {
       logger.debug?.(`[ZTM API] Watching for changes with prefix="${prefix}"`);
 
       const chatsResult = await client.getChats();
@@ -467,8 +468,7 @@ export function createZTMApiClient(
         return failure(error);
       }
 
-      const changedPeers: string[] = [];
-      const changedGroups: string[] = [];
+      const changedItems: WatchChangeItem[] = [];
 
       logger.debug(`[ZTM API] Watch: got ${chatsResult.value.length} chats, lastPollTime=${lastPollTime}`);
 
@@ -477,28 +477,27 @@ export function createZTMApiClient(
         if (chatLatestTime <= (lastPollTime ?? 0)) continue;
 
         if (chat.peer && chat.peer !== config.username) {
-          changedPeers.push(chat.peer);
+          changedItems.push({ type: 'peer', peer: chat.peer });
         } else if (chat.group && chat.creator) {
-          changedGroups.push(`${chat.creator}/${chat.group}`);
+          changedItems.push({ 
+            type: 'group', 
+            creator: chat.creator, 
+            group: chat.group,
+            name: chat.name 
+          });
         }
       }
 
-      const allChanged = [...changedPeers, ...changedGroups];
-
-      if (allChanged.length > 0) {
+      if (changedItems.length > 0) {
         const latestTime = Math.max(...chatsResult.value.map(c => c.latest?.time ?? 0));
         lastPollTime = latestTime;
-        logger.debug(`[ZTM API] Watch: found ${changedPeers.length} peers, ${changedGroups.length} groups with new messages`);
-        logger.debug(`[ZTM API] Watch: ${allChanged.join(', ')}`);
+        const peerCount = changedItems.filter(i => i.type === 'peer').length;
+        const groupCount = changedItems.filter(i => i.type === 'group').length;
+        logger.debug(`[ZTM API] Watch: found ${peerCount} peers, ${groupCount} groups with new messages`);
       }
 
-      logger.debug?.(`[ZTM API] Watch complete: ${allChanged.length} chats with new messages`);
-      return success(allChanged);
-    },
-
-    async getGroups(): Promise<Result<ZTMChat[], ZtmError>> {
-      logger.debug?.(`[ZTM API] Groups feature not implemented yet`);
-      return success<ZTMChat[], ZtmError>([]);
+      logger.debug?.(`[ZTM API] Watch complete: ${changedItems.length} chats with new messages`);
+      return success(changedItems);
     },
 
     async getGroupMessages(

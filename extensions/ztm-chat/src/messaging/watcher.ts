@@ -12,47 +12,7 @@ import type { AccountRuntimeState } from "../types/runtime.js";
 import { isSuccess } from "../types/common.js";
 import { checkDmPolicy } from "../core/dm-policy.js";
 import { handlePairingRequest } from "../connectivity/permit.js";
-import type { ZTMChat } from "../types/api.js";
-
-// Group name cache: groupId -> { name, expiresAt }
-const groupNameCache = new Map<string, { name: string; expiresAt: number }>();
-const GROUP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-async function getGroupName(
-  apiClient: AccountRuntimeState["apiClient"],
-  creator: string,
-  groupId: string
-): Promise<string | undefined> {
-  if (!apiClient) return undefined;
-  
-  const cacheKey = `${creator}/${groupId}`;
-  const cached = groupNameCache.get(cacheKey);
-  
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.name;
-  }
-  
-  const result = await apiClient.getGroups();
-  if (!result.ok) {
-    logger.debug(`Failed to get groups: ${result.error.message}`);
-    return undefined;
-  }
-  
-  for (const group of result.value) {
-    if (group.group === groupId && group.creator === creator) {
-      groupNameCache.set(cacheKey, { 
-        name: group.name || groupId, 
-        expiresAt: Date.now() + GROUP_CACHE_TTL 
-      });
-      return group.name;
-    }
-  }
-  
-  return undefined;
-}
-
-// Peer message path pattern
-const PEER_MESSAGE_PATTERN = /\/apps\/ztm\/chat\/shared\/([^/]+)\/publish\/peers\/.*\/messages\//;
+import type { ZTMChat, WatchChangeItem } from "../types/api.js";
 
 /**
  * Start message watcher using ZTM's Watch mechanism
@@ -76,10 +36,7 @@ export async function startMessageWatcher(
   // Step 1: Seed the API client's lastSeenTimes from persisted state
   await seedFileMetadata(state);
 
-  // Step 2: Preload group names into cache (so getGroupName() always hits cache)
-  await preloadGroupNames(state);
-
-  // Step 3: Get initial allowFrom store
+  // Step 2: Get initial allowFrom store
   const rt = getZTMRuntime();
   const storeAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
     logger.error(`[${state.accountId}] readAllowFromStore failed during init: ${err instanceof Error ? err.message : String(err)}`);
@@ -94,29 +51,6 @@ export async function startMessageWatcher(
 
   // Step 6: Start watch loop
   startWatchLoop(state, rt, messagePath);
-}
-
-/**
- * Preload group names into cache at startup
- */
-async function preloadGroupNames(state: AccountRuntimeState): Promise<void> {
-  if (!state.apiClient) return;
-  
-  const result = await state.apiClient.getGroups();
-  if (!result.ok) {
-    logger.debug(`[${state.accountId}] Failed to preload group names: ${result.error.message}`);
-    return;
-  }
-  
-  for (const group of result.value) {
-    const key = `${group.creator}/${group.group}`;
-    groupNameCache.set(key, {
-      name: group.name || group.group,
-      expiresAt: Date.now() + GROUP_CACHE_TTL
-    });
-  }
-  
-  logger.debug(`[${state.accountId}] Preloaded ${result.value.length} group names into cache`);
 }
 
 /**
@@ -163,11 +97,10 @@ async function processChatMessage(
       groupInfo
     );
     if (normalized) {
-      const groupName = chat.name || await getGroupName(state.apiClient, chat.creator!, chat.group!);
       notifyMessageCallbacks(state, {
         ...normalized,
         isGroup: true,
-        groupName: groupName,
+        groupName: chat.name,
         groupId: chat.group,
         groupCreator: chat.creator,
       });
@@ -305,7 +238,7 @@ function startWatchLoop(
 
     messagesReceivedInCycle = await processChangedPaths(
       ctx,
-      result.paths,
+      result.items,
       messagesReceivedInCycle,
       scheduleFullSync
     );
@@ -321,14 +254,14 @@ function startWatchLoop(
 // Result type for watch iteration
 type WatchResult =
   | { success: false; errorMessage: string }
-  | { success: true; paths: string[] };
+  | { success: true; items: WatchChangeItem[] };
 
 function isWatchError(result: WatchResult): result is { success: false; errorMessage: string } {
   return !result.success;
 }
 
 /**
- * Execute a single watch iteration and return changed paths
+ * Execute a single watch iteration and return changed items
  */
 async function executeWatchIteration(ctx: WatchContext): Promise<WatchResult> {
   const { state, messagePath } = ctx;
@@ -341,7 +274,7 @@ async function executeWatchIteration(ctx: WatchContext): Promise<WatchResult> {
     return { success: false, errorMessage: changedResult.error?.message ?? "Unknown watch error" };
   }
 
-  return { success: true, paths: changedResult.value };
+  return { success: true, items: changedResult.value };
 }
 
 /**
@@ -364,32 +297,24 @@ function handleWatchError(
 }
 
 /**
- * Process all changed peers and handle state updates
+ * Process all changed items and handle state updates
  */
 async function processChangedPaths(
   ctx: WatchContext,
-  changedPeers: string[],
+  changedItems: WatchChangeItem[],
   messagesReceivedInCycle: boolean,
   scheduleFullSync: (storeAllowFrom: string[]) => void
 ): Promise<boolean> {
   const { state, rt, messageSemaphore } = ctx;
 
-  if (changedPeers.length === 0) {
+  if (changedItems.length === 0) {
     return false;
   }
 
-  const changedPeersList: string[] = [];
-  const changedGroups: string[] = [];
+  const peerItems = changedItems.filter(i => i.type === 'peer');
+  const groupItems = changedItems.filter(i => i.type === 'group');
 
-  for (const item of changedPeers) {
-    if (item.includes('/')) {
-      changedGroups.push(item);
-    } else {
-      changedPeersList.push(item);
-    }
-  }
-
-  logger.debug(`[${state.accountId}] Processing ${changedPeersList.length} peers, ${changedGroups.length} groups with new messages`);
+  logger.debug(`[${state.accountId}] Processing ${peerItems.length} peers, ${groupItems.length} groups with new messages`);
 
   const loopStoreAllowFrom = await rt.channel.pairing.readAllowFromStore("ztm-chat").catch((err: unknown) => {
     logger.error(`[${state.accountId}] readAllowFromStore failed during watch loop: ${err instanceof Error ? err.message : String(err)}`);
@@ -398,21 +323,24 @@ async function processChangedPaths(
 
   const tasks: Promise<void>[] = [];
 
-  for (const peer of changedPeersList) {
-    tasks.push(
-      messageSemaphore.execute(() =>
-        processChangedPeer(state, rt, peer, loopStoreAllowFrom)
-      )
-    );
+  for (const item of peerItems) {
+    if (item.peer) {
+      tasks.push(
+        messageSemaphore.execute(() =>
+          processChangedPeer(state, rt, item.peer!, loopStoreAllowFrom)
+        )
+      );
+    }
   }
 
-  for (const groupKey of changedGroups) {
-    const [creator, group] = groupKey.split('/');
-    tasks.push(
-      messageSemaphore.execute(() =>
-        processChangedGroup(state, rt, creator, group, loopStoreAllowFrom)
-      )
-    );
+  for (const item of groupItems) {
+    if (item.creator && item.group) {
+      tasks.push(
+        messageSemaphore.execute(() =>
+          processChangedGroup(state, rt, item.creator!, item.group!, item.name, loopStoreAllowFrom)
+        )
+      );
+    }
   }
 
   await Promise.all(tasks);
@@ -470,6 +398,7 @@ async function processChangedGroup(
   rt: ReturnType<typeof getZTMRuntime>,
   creator: string,
   group: string,
+  name: string | undefined,
   storeAllowFrom: string[]
 ): Promise<void> {
   if (!state.apiClient) return;
@@ -485,7 +414,6 @@ async function processChangedGroup(
   }
 
   const messages = messagesResult.value;
-  const groupName = await getGroupName(state.apiClient, creator, group);
 
   for (const msg of messages) {
     if (msg.sender === state.config.username) {
@@ -504,7 +432,7 @@ async function processChangedGroup(
         ...normalized,
         isGroup: true,
         groupId: group,
-        groupName: groupName,
+        groupName: name,
         groupCreator: creator,
       });
     }

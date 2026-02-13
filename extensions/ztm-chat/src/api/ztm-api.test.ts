@@ -628,15 +628,4 @@ describe("Group Message Operations", () => {
     });
   });
 
-  describe("getGroups", () => {
-    it("should return empty array (not implemented)", async () => {
-      const client = createTestClient(testConfig);
-      const result = await client.getGroups();
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value).toEqual([]);
-      }
-    });
-  });
 });
