@@ -2,7 +2,8 @@
 
 import { logger } from "../utils/logger.js";
 import { getZTMRuntime } from "../runtime/index.js";
-import { processIncomingMessage, notifyMessageCallbacks } from "./inbound.js";
+import { processIncomingMessage, notifyMessageCallbacks, checkDmPolicy } from "./inbound.js";
+import { handlePairingRequest } from "../connectivity/permit.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import { handleResult } from "../utils/result.js";
 
@@ -48,9 +49,8 @@ export async function startPollingWatcher(state: AccountRuntimeState): Promise<v
           notifyMessageCallbacks(state, normalized);
         }
 
-        const check = (await import("./inbound.js")).checkDmPolicy(chat.peer, config, pollStoreAllowFrom);
+        const check = checkDmPolicy(chat.peer, config, pollStoreAllowFrom);
         if (check.action === "request_pairing") {
-          const { handlePairingRequest } = await import("../connectivity/permit.js");
           await handlePairingRequest(state, chat.peer, "Polling check", pollStoreAllowFrom);
         }
       }
