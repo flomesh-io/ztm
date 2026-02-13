@@ -136,23 +136,6 @@ export interface ZTMApiClient {
   // File Operations - Return Result types with appropriate errors
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /** Add a file to storage. Returns Result with file ID or error. */
-  addFile(
-    data: ArrayBuffer
-  ): Promise<Result<string, ZtmWriteError>>;
-
-  /** Get a file from storage. Returns Result with file data or error. */
-  getFile(
-    owner: string,
-    hash: string
-  ): Promise<Result<ArrayBuffer, ZtmReadError>>;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Watch Mechanism - Return Result types
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /** Read a file from mesh storage. Returns Result with parsed content or error. */
-  readFile<T = unknown>(filePath: string): Promise<Result<T, ZtmApiError | ZtmTimeoutError>>;
 
   /** Watch for changes in storage with given prefix. Returns Result with changed items or error. */
   watchChanges(prefix: string): Promise<Result<WatchChangeItem[], ZtmReadError>>;

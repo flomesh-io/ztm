@@ -65,8 +65,6 @@ describe("ZTM API Client", () => {
     expect(client).toHaveProperty("discoverPeers");
     expect(client).toHaveProperty("sendPeerMessage");
     expect(client).toHaveProperty("getChats");
-    expect(client).toHaveProperty("getFile");
-    expect(client).toHaveProperty("addFile");
     expect(client).toHaveProperty("seedFileMetadata");
     expect(client).toHaveProperty("exportFileMetadata");
   });
@@ -278,12 +276,6 @@ describe("ZTM API Client Integration", () => {
     }
   });
 
-  it("should get file successfully", async () => {
-    // getFile is a stub that returns empty buffer - just verify it works
-    const client = createTestClient(testConfig);
-    const result = await client.getFile("alice", "abc123");
-    expect(result.ok).toBe(true);
-  });
 });
 
 describe("File Metadata Tracking", () => {
