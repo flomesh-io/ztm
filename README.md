@@ -207,7 +207,207 @@ To find out detailed information about using an app via CLI, type:
 ztm APP_NAME help
 ```
 
-#### CLI Commands Summary
+### Plugins
+
+ZTM supports plugins through **OpenClaw**, an AI-native gateway that integrates ZTM with external systems. Plugins enable messaging, automation, and third-party integrations.
+
+#### Overview
+
+| Component | Purpose |
+|-----------|---------|
+| OpenClaw | AI-native gateway that routes messages to/from external systems |
+| Plugins | Channel adapters that connect OpenClaw to specific platforms |
+| ZTM Chat | Built-in chat app for decentralized P2P messaging |
+
+#### Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  ZTM User       │────▶│   ZTM Network   │────▶│  OpenClaw       │
+│  (Chat App)     │     │   (P2P Mesh)    │     │  (AI Gateway)   │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+                                               ┌─────────────────┐
+                                               │  External       │
+                                               │  Systems        │
+                                               │  (ztm-chat,     │
+                                               │   slack, etc.)  │
+                                               └─────────────────┘
+```
+
+#### ZTM Chat Plugin
+
+The ZTM Chat plugin connects OpenClaw to ZTM Chat, enabling your AI agent to send and receive decentralized P2P messages with other ZTM users.
+
+---
+
+#### Installation Guide
+
+Follow these steps in order:
+
+#### Step 1: Start ZTM Agent
+
+```sh
+# Start the ZTM Agent service
+ztm start agent
+```
+
+#### Step 2: Install ZTM Chat App
+
+```sh
+# Install the Chat app
+ztm app install chat
+
+# Verify installation
+ztm get app
+```
+
+#### Step 3: Create Bot User Account
+
+```sh
+# Create a dedicated user account for the bot
+ztm user add openclaw-bot
+```
+
+#### Step 4: Install OpenClaw
+
+If OpenClaw is not yet installed, download and install it from [OpenClaw Releases](https://github.com/flomesh-io/openclaw/releases):
+
+```sh
+# Download the latest OpenClaw for your platform
+# Then start the OpenClaw service
+openclaw start
+```
+
+#### Step 5: Install ZTM Chat Plugin
+
+```sh
+# Install from local path (when using ZTM source repository)
+openclaw plugins install -l ./extensions/ztm-chat
+
+# Or install from URL (when using published package)
+openclaw plugins install -u https://github.com/flomesh-io/ztm/plugins/ztm-chat
+```
+
+#### Step 6: Configure the Plugin
+
+Choose one of these methods:
+
+**Option A: Interactive Wizard (Recommended)**
+
+```sh
+# Run the setup wizard
+openclaw ztm-chat-wizard
+
+# The wizard will guide you through:
+# 1. ZTM Agent URL (default: https://localhost:7777)
+# 2. Mesh name
+# 3. Bot username (default: openclaw-bot)
+# 4. mTLS authentication (optional)
+# 5. Security settings
+```
+
+> **Note**: Use `openclaw ztm-chat-wizard` when running from the ZTM source repository (before npm publication). Use `npx ztm-chat-wizard` only after the package is published to npm.
+
+**Option B: Manual Configuration**
+
+```sh
+# Create config file
+mkdir -p ~/.openclaw/channels
+
+cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
+{
+  "agentUrl": "https://your-ztm-agent.example.com:7777",
+  "meshName": "your-mesh-name",
+  "username": "openclaw-bot"
+}
+EOF
+```
+
+For all configuration options, see [ZTM Chat Plugin README](extensions/ztm-chat/README.md).
+
+#### Step 7: Restart OpenClaw
+
+```sh
+# Apply the new configuration
+openclaw restart
+```
+
+#### Step 8: Verify Connection
+
+```sh
+# Check channel status
+openclaw channels status ztm-chat
+
+# Test connection
+openclaw channels status ztm-chat --probe
+```
+
+---
+
+#### Plugin Commands
+
+```sh
+# Setup wizard
+openclaw ztm-chat-wizard
+
+# Auto-discover existing ZTM configuration
+openclaw ztm-chat-discover
+
+# Check channel status
+openclaw channels status ztm-chat
+
+# Probe connection
+openclaw channels status ztm-chat --probe
+
+# List connected peers
+openclaw channels directory ztm-chat peers
+
+# Enable/disable channel
+openclaw channels disable ztm-chat
+openclaw channels enable ztm-chat
+```
+
+> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard` and `openclaw ztm-chat-discover`. Use `npx` only after the package is published to npm.
+
+---
+
+#### Troubleshooting
+
+**Connection Failed**
+
+```sh
+# Verify ZTM Agent is running
+curl https://your-ztm-agent.example.com:7777/api/meshes
+
+# Check mesh name
+ztm get mesh
+
+# Check plugin logs
+openclaw logs --level debug --channel ztm-chat
+```
+
+**No Messages Received**
+
+```sh
+# Verify Chat app is installed
+ztm get app
+
+# Check bot username
+ztm user list
+```
+
+For detailed troubleshooting, see [ZTM Chat Plugin README](extensions/ztm-chat/README.md).
+
+## Quick Links:
+
+* [How-to: Using ZTM for Secure Remote Desktop Protocol (RDP) Access](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
+* [QuickStart : ZTM Tunnel](docs/ZT-App.md#zt-tunnel) | [Tunnel Demo](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access#4-configuring-ztm-tunnel-for-rdp-connection)
+* [QuickStart : ZTM Proxy](docs/ZT-App.md#zt-proxy)
+* [QuickStart : ZTM Terminal](docs/ZT-App.md#zt-terminal)
+* [QuickStart : ZTM Script](docs/ZT-App.md#zt-script)
+* [QuickStart : ZTM Cloud](docs/ZT-App.md#zt-cloud) | [Cloud Demo](https://github.com/flomesh-io/ztm/wiki/4.-HOWTO-:-File-Sharing-between-ZTM-End-Points#sharing-files-on-macos)
 
 Here's a recap of what CLI commands you need to do on each computer node.
 
