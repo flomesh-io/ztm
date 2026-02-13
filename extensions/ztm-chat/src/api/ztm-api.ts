@@ -205,13 +205,26 @@ export function createZTMApiClient(
 
   /**
    * Normalize message content from API format to plain string.
-   * Handles cases where message is either a string or {text: "..."} object.
+   * Handles cases where message is:
+   * - A plain string
+   * - An object with {text: "..."}
+   * - An object with {message: {text: "..."}} (nested format)
    */
   function normalizeMessageContent(message: unknown): string {
     if (message === null || message === undefined) {
       return '';
     }
     if (typeof message === 'object') {
+      // Handle nested {message: {text: "..."}} format
+      const nestedMessage = (message as { message?: unknown }).message;
+      if (nestedMessage !== undefined && nestedMessage !== null && typeof nestedMessage === 'object') {
+        const nestedText = (nestedMessage as { text?: string }).text;
+        if (typeof nestedText === 'string') {
+          return nestedText;
+        }
+        return JSON.stringify(nestedMessage);
+      }
+      // Handle standard {text: "..."} format
       const text = (message as { text?: string }).text;
       if (typeof text === 'string') {
         return text;
@@ -234,20 +247,7 @@ export function createZTMApiClient(
       const result: ZTMMessage[] = [];
       for (const entry of entries) {
         if (!entry?.time) continue;
-        let messageText = '';
-        if (typeof entry.message === 'object' && entry.message !== null) {
-          if (typeof entry.message.text === 'string') {
-            messageText = entry.message.text;
-          } else if (typeof entry.message.message === 'object' && entry.message.message !== null) {
-            messageText = typeof entry.message.message.text === 'string'
-              ? entry.message.message.text
-              : JSON.stringify(entry.message.message);
-          } else {
-            messageText = JSON.stringify(entry.message);
-          }
-        } else {
-          messageText = String(entry.message ?? '');
-        }
+        const messageText = normalizeMessageContent(entry.message);
         result.push({
           time: entry.time,
           message: messageText,
