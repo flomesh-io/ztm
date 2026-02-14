@@ -1,10 +1,24 @@
 // ZTM Mesh connectivity management
+// Handles network connectivity checks and ZTM CLI command execution
 
 import { spawn } from "child_process";
 import * as net from "net";
 import { logger } from "../utils/logger.js";
 
-// Check if a TCP port is open
+/**
+ * Check if a TCP port is open and accepting connections.
+ *
+ * This is a basic connectivity check used to verify if a ZTM agent
+ * is reachable at the specified host and port.
+ *
+ * @param hostname - The hostname or IP address to check
+ * @param port - The port number to check
+ * @returns Promise resolving to true if port is open, false otherwise
+ *
+ * @example
+ * const isOpen = await checkPortOpen("localhost", 7777);
+ * // isOpen: true if agent is running
+ */
 export async function checkPortOpen(hostname: string, port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -29,7 +43,18 @@ export async function checkPortOpen(hostname: string, port: number): Promise<boo
   });
 }
 
-// Execute ztm identity command to get public key
+/**
+ * Execute the ZTM CLI identity command to retrieve the public key.
+ *
+ * This command reads the local ZTM identity from the system and extracts
+ * the public key for use in permit requests and mesh authentication.
+ *
+ * @returns Promise resolving to the public key string if successful, null otherwise
+ *
+ * @example
+ * const pubkey = await getPublicKeyFromIdentity();
+ * // pubkey: "-----BEGIN PUBLIC KEY-----\nMIIBIj...\n-----END PUBLIC KEY-----"
+ */
 export async function getPublicKeyFromIdentity(): Promise<string | null> {
   return new Promise((resolve) => {
     const child = spawn("ztm", ["identity"], {
@@ -69,7 +94,21 @@ export async function getPublicKeyFromIdentity(): Promise<string | null> {
   });
 }
 
-// Execute ztm join command
+/**
+ * Execute the ZTM CLI join command to connect to a mesh network.
+ *
+ * This command registers the bot with a ZTM mesh using the provided
+ * permit file for authentication.
+ *
+ * @param meshName - The name of the mesh to join
+ * @param endpointName - The name for this endpoint (usually the bot username)
+ * @param permitPath - Path to the permit file for authentication
+ * @returns Promise resolving to true if join was successful, false otherwise
+ *
+ * @example
+ * const success = await joinMesh("my-mesh", "bot-1", "/path/to/permit.json");
+ * // success: true if successfully joined
+ */
 export async function joinMesh(
   meshName: string,
   endpointName: string,

@@ -40,20 +40,62 @@ export interface MessageStateData {
 
 /**
  * MessageStateStore interface - abstract interface for persistence operations
+ *
+ * This interface defines the contract for persisting message state across
+ * gateway restarts. It tracks:
+ * - Per-peer watermarks (last processed message timestamp)
+ * - File metadata for change detection
  */
 export interface MessageStateStore {
+  /**
+   * Get the last-processed message timestamp for a peer under an account
+   */
   getWatermark(accountId: string, peer: string): number;
+
+  /**
+   * Get the global watermark (max across all peers) for an account
+   */
   getGlobalWatermark(accountId: string): number;
+
+  /**
+   * Update the watermark for a peer (only advances forward)
+   */
   setWatermark(accountId: string, peer: string, time: number): void;
+
+  /**
+   * Get all persisted file metadata for an account
+   */
   getFileMetadata(accountId: string): Record<string, FileMetadata>;
+
+  /**
+   * Update a file's metadata
+   */
   setFileMetadata(accountId: string, filePath: string, metadata: FileMetadata): void;
+
+  /**
+   * Bulk-set file metadata (e.g. after initial scan)
+   */
   setFileMetadataBulk(accountId: string, metadata: Record<string, FileMetadata>): void;
+
+  /**
+   * Flush any pending writes immediately
+   */
   flush(): void;
+
+  /**
+   * Dispose of resources - call on plugin unload
+   */
   dispose(): void;
 }
 
 /**
  * Implementation of MessageStateStore
+ *
+ * This class provides persistent storage for message watermarks and file metadata.
+ * It uses a JSON file for persistence and includes:
+ * - Automatic cleanup when limits are exceeded
+ * - Debounced writes to avoid excessive I/O
+ * - Migration support for old data formats
  */
 export class MessageStateStoreImpl implements MessageStateStore {
   private statePath: string;
