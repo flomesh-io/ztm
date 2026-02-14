@@ -46,6 +46,8 @@ This approach provides full functionality via storage APIs, suitable for headles
 - **Message Deduplication**: Prevents duplicate message processing
 - **Structured Logging**: Context-aware logger with sensitive data filtering
 - **Interactive Wizard**: CLI-guided configuration setup
+- **Group Chat Support**: Multi-user group conversations with permission control
+- **Fine-Grained Access Control**: Per-group policies, mention gating, and tool restrictions
 
 ## Installation
 
@@ -106,6 +108,133 @@ The wizard will guide you through:
 ```bash
 openclaw gateway restart
 ```
+
+## Group Chat
+
+### Overview
+
+ZTM Chat supports group conversations with fine-grained permission control. When `enableGroups` is enabled, the bot can:
+
+- Receive and process messages from group chats
+- Reply to group messages with @mention support
+- Apply per-group access policies
+- Restrict available tools based on group membership
+
+### How It Works
+
+```mermaid
+flowchart LR
+    subgraph Group["Group Chat"]
+        User1["Member 1"]
+        User2["Member 2"]
+        User3["Member 3"]
+    end
+
+    Plugin -->|"Filter by policy"| Group
+    Group -->|"@mention required"| Plugin
+    Plugin -->|"AI Response"| Group
+```
+
+### Enabling Group Chat
+
+```bash
+# Enable via wizard
+openclaw ztm-chat-wizard
+# Select "Enable Groups" when prompted
+
+# Or manually in openclaw.yaml
+```
+
+### Group Policy Modes
+
+| Policy | Behavior |
+|--------|----------|
+| `open` | Allow all group messages (with optional mention requirement) |
+| `allowlist` | Only allow whitelisted senders |
+| `disabled` | Block all group messages |
+
+### Mention Gating
+
+When `requireMention` is enabled, the bot will only process messages that @mention the bot username:
+
+```
+# Bot username: my-bot
+
+# These messages will be processed:
+@my-bot can you help me?
+Hey @my-bot what's up?
+
+# These messages will be ignored:
+hello everyone!
+good morning
+```
+
+### Per-Group Configuration
+
+You can configure different policies for different groups:
+
+```yaml
+channels:
+  ztm-chat:
+    accounts:
+      my-bot:
+        enableGroups: true
+        groupPolicy: allowlist  # Default for unknown groups
+        groupPermissions:
+          alice/team:
+            groupPolicy: open
+            requireMention: false
+          bob/project-x:
+            groupPolicy: allowlist
+            requireMention: true
+            allowFrom: [bob, charlie, david]
+          private/secret-group:
+            groupPolicy: disabled
+```
+
+### Tool Restrictions
+
+Control which tools are available in each group:
+
+```yaml
+channels:
+  ztm-chat:
+    accounts:
+      my-bot:
+        groupPermissions:
+          alice/team:
+            groupPolicy: open
+            requireMention: false
+            tools:
+              allow:
+                - group:messaging
+                - group:sessions
+                - group:runtime
+            toolsBySender:
+              admin:
+                alsoAllow:
+                  - exec
+                  - fs
+```
+
+#### Tool Policy Options
+
+| Option | Description |
+|--------|-------------|
+| `tools.allow` | Only allow these tools (deny all others) |
+| `tools.deny` | Deny these tools (allow all others) |
+| `toolsBySender.{user}.alsoAllow` | Additional tools for specific users |
+| `toolsBySender.{user}.deny` | Deny tools for specific users |
+
+#### Default Tools
+
+By default, groups only have access to:
+- `group:messaging` - Send/receive messages
+- `group:sessions` - Session management
+
+### Creator Privileges
+
+Group creators always have full access regardless of policy settings. This ensures the bot owner can always interact with their own groups.
 
 ## Usage
 
@@ -196,23 +325,45 @@ openclaw pairing approve ztm-chat <code>
 
 ### Configuration File
 
-Location: `~/.openclaw/ztm/config.json`
+Configuration is stored in `openclaw.yaml` under `channels.ztm-chat`:
 
-```json
-{
-  "agentUrl": "http://localhost:7777",
-  "permitUrl": "https://ztm-portal.flomesh.io:7779/permit",
-  "meshName": "production-mesh",
-  "username": "my-bot",
-  "enableGroups": false,
-  "autoReply": true,
-  "messagePath": "/shared",
-  "dmPolicy": "pairing",
-  "allowFrom": ["alice", "trusted-team"]
-}
+```yaml
+channels:
+  ztm-chat:
+    enabled: true
+    accounts:
+      my-bot:
+        agentUrl: "http://localhost:7777"
+        permitUrl: "https://ztm-portal.flomesh.io:7779/permit"
+        meshName: "production-mesh"
+        username: "my-bot"
+        enableGroups: true
+        autoReply: true
+        messagePath: "/shared"
+        dmPolicy: "pairing"
+        allowFrom:
+          - alice
+          - trusted-team
+        groupPolicy: "allowlist"
+        groupPermissions:
+          alice/team:
+            creator: "alice"
+            group: "team"
+            groupPolicy: "open"
+            requireMention: false
+            allowFrom: []
+            tools:
+              allow:
+                - group:messaging
+                - group:sessions
+                - group:runtime
+            toolsBySender:
+              admin:
+                alsoAllow:
+                  - exec
 ```
 
-### Options
+### Configuration Options
 
 **Required:**
 
@@ -223,15 +374,34 @@ Location: `~/.openclaw/ztm/config.json`
 | `meshName` | string | Name of your ZTM mesh |
 | `username` | string | Bot's ZTM username |
 
-**Optional:**
+**Optional - Basic:**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `enabled` | boolean | `true` | Enable/disable account |
 | `enableGroups` | boolean | `false` | Enable group chat support |
 | `autoReply` | boolean | `true` | Automatically reply to messages |
 | `messagePath` | string | `/shared` | Custom message path prefix |
 | `dmPolicy` | string | `"pairing"` | DM policy: `allow`, `deny`, `pairing` |
 | `allowFrom` | string[] | `[]` | List of approved usernames |
+
+**Optional - Group:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `groupPolicy` | string | `"allowlist"` | Default group policy: `open`, `allowlist`, `disabled` |
+| `groupPermissions` | object | `{}` | Per-group permission overrides |
+
+### Group Permission Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `groupPolicy` | string | Policy for this group: `open`, `allowlist`, `disabled` |
+| `requireMention` | boolean | Require @mention to process message (default: `true`) |
+| `allowFrom` | string[] | Whitelist of allowed senders |
+| `tools.allow` | string[] | Only allow these tools |
+| `tools.deny` | string[] | Deny these tools |
+| `toolsBySender` | object | Sender-specific tool overrides |
 
 ### Environment Variables
 
@@ -256,6 +426,29 @@ sequenceDiagram
     A->>P: 5. Generate response
     P->>M: 6. Store response to /shared/{bot}/publish/...
     M->>U: 7. Deliver to recipient
+```
+
+### Group Message Flow
+
+```mermaid
+sequenceDiagram
+    participant M as ZTM Member
+    participant G as ZTM Group
+    participant P as Plugin
+    participant A as AI Agent
+
+    M->>G: 1. Send @mention message
+    G->>G: 2. Store to /shared/{group}/publish/...
+    P->>G: 3. Poll for group messages
+    G->>P: Return group messages
+    P->>P: 4. Check group policy
+    alt Policy allows
+        P->>A: 5. Route message
+        A->>P: 6. Generate response
+        P->>G: 7. Send reply to group
+    else Policy denied
+        P->>P: Ignore message
+    end
 ```
 
 ## ZTM Agent API
