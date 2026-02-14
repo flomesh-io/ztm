@@ -97,11 +97,17 @@ openclaw ztm-chat-wizard
 ```
 
 The wizard will guide you through:
-1. ZTM Agent URL (default: `http://localhost:7777`)
-2. Permit Server URL (default: `https://ztm-portal.flomesh.io:7779/permit`)
-3. Bot Username (default: `openclaw-bot`)
-4. Security Settings (DM policy, allowFrom list)
-5. Summary & Save
+1. **ZTM Agent URL** (default: `http://localhost:7777`)
+2. **Permit Server URL** (default: `https://ztm-portal.flomesh.io:7779/permit`)
+3. **Bot Username** (default: `openclaw-bot`)
+4. **Security Settings**
+   - DM Policy: `pairing` (recommended), `allow`, or `deny`
+   - Allow From: Whitelist of usernames (or `*` for all)
+5. **Group Chat Settings** (if enabled)
+   - Enable Groups: Yes/No
+   - Group Policy: `allowlist`, `open`, or `disabled`
+   - Require Mention: Yes/No (default: Yes)
+6. **Summary & Save**
 
 ### 5. Restart OpenClaw
 
@@ -155,7 +161,7 @@ openclaw ztm-chat-wizard
 
 ### Mention Gating
 
-When `requireMention` is enabled, the bot will only process messages that @mention the bot username:
+When `requireMention` is enabled (default), the bot will only process messages that @mention the bot username:
 
 ```
 # Bot username: my-bot
@@ -169,6 +175,8 @@ hello everyone!
 good morning
 ```
 
+**Note:** `requireMention` applies to ALL users, including the group creator. This ensures even the group owner must explicitly mention the bot to trigger a response.
+
 ### Per-Group Configuration
 
 You can configure different policies for different groups:
@@ -180,6 +188,7 @@ channels:
       my-bot:
         enableGroups: true
         groupPolicy: allowlist  # Default for unknown groups
+        requireMention: true   # Global default (can be overridden per group)
         groupPermissions:
           alice/team:
             groupPolicy: open
@@ -234,7 +243,15 @@ By default, groups only have access to:
 
 ### Creator Privileges
 
-Group creators always have full access regardless of policy settings. This ensures the bot owner can always interact with their own groups.
+Group creators have special privileges that allow them to bypass certain policy checks:
+
+| Check | Creator Bypass? |
+|-------|---------------|
+| `groupPolicy` (disabled/allowlist/open) | ✅ Yes |
+| `allowFrom` whitelist | ✅ Yes |
+| `requireMention` | ❌ No (still required) |
+
+This ensures the bot owner can always interact with their own groups while still requiring explicit @mentions to trigger responses.
 
 ## Usage
 
@@ -345,6 +362,7 @@ channels:
           - alice
           - trusted-team
         groupPolicy: "allowlist"
+        requireMention: true
         groupPermissions:
           alice/team:
             creator: "alice"
@@ -390,6 +408,7 @@ channels:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `groupPolicy` | string | `"allowlist"` | Default group policy: `open`, `allowlist`, `disabled` |
+| `requireMention` | boolean | `true` | Require @mention for group messages (global default) |
 | `groupPermissions` | object | `{}` | Per-group permission overrides |
 
 ### Group Permission Options
@@ -511,10 +530,10 @@ flowchart TD
 | Message Type | Check Order | Result |
 |-------------|------------|--------|
 | DM | allow → deny → pairing → check allowFrom | Allow/Deny/Pairing |
-| Group (creator) | - | Always Allow |
+| Group (creator) | bypass policy → requireMention | Allow if mentioned |
 | Group (disabled) | - | Always Deny |
-| Group (allowlist) | creator → policy → allowFrom | Whitelist Match |
-| Group (open) | creator → policy → requireMention | Mention Check |
+| Group (allowlist) | policy → allowFrom → requireMention | Whitelist + Mention |
+| Group (open) | policy → requireMention | Mention Check |
 
 ## ZTM Agent API
 
@@ -613,17 +632,20 @@ npm test:watch    # Watch mode
 ### Test Coverage
 
 ```
-Test Files  7 passed (7)
-      Tests  192 passed (192)
+Test Files  43 passed (43)
+Tests  878 passed (878)
 
-Coverage:
-- ZTM API Client: 40 tests
-- Configuration: 57 tests
-- Channel Plugin: 23 tests
-- Wizard: 25 tests
-- Logger: 15 tests
-- Runtime: 17 tests
-- Index: 15 tests
+Coverage Areas:
+- Group Policy: Creator bypass, requireMention, allowlist, open/disabled modes
+- DM Policy: allow/deny/pairing modes, pairing flow
+- Configuration: Schema validation, defaults, helpers
+- Onboarding: Wizard flow, buildConfig
+- Messaging: Processing, dispatch, deduplication, polling, watcher
+- Runtime: State management, pairing store, persistence
+- API: ZTM client, mesh connectivity, permit
+- Utils: Logger, retry, validation
+- Channel: Gateway, plugin, config
+- DI: Container, dependency resolution
 ```
 
 ### Debug Logging
@@ -640,13 +662,58 @@ ztm-chat/
 ├── index.test.ts         # Plugin tests
 ├── package.json          # NPM package config
 ├── openclaw.plugin.json  # OpenClaw plugin manifest
+├── tsconfig.json         # TypeScript config
+├── vitest.config.ts     # Test config
 └── src/
-    ├── channel.ts        # Channel adapter
-    ├── config.ts         # Config schema (TypeBox)
-    ├── ztm-api.ts        # API client
-    ├── logger.ts         # Structured logging
-    ├── runtime.ts        # Runtime management
-    ├── wizard.ts         # Setup wizard
-    └── mocks/
-        └── ztm-client.ts # Mock agent
+    ├── api/              # ZTM API client
+    │   ├── ztm-api.ts
+    │   ├── chat-api.ts
+    │   ├── message-api.ts
+    │   ├── file-api.ts
+    │   ├── mesh-api.ts
+    │   └── request.ts
+    ├── channel/          # OpenClaw channel adapter
+    │   ├── channel.ts
+    │   ├── plugin.ts
+    │   ├── gateway.ts
+    │   └── config.ts
+    ├── config/           # Configuration
+    │   ├── schema.ts
+    │   ├── defaults.ts
+    │   └── validation.ts
+    ├── connectivity/    # Network connectivity
+    │   ├── mesh.ts
+    │   └── permit.ts
+    ├── core/            # Core business logic
+    │   ├── group-policy.ts
+    │   └── dm-policy.ts
+    ├── di/              # Dependency injection
+    │   └── container.ts
+    ├── messaging/       # Message processing
+    │   ├── inbound.ts
+    │   ├── outbound.ts
+    │   ├── processor.ts
+    │   ├── dispatcher.ts
+    │   ├── watcher.ts
+    │   └── polling.ts
+    ├── onboarding/      # Setup wizard
+    │   └── onboarding.ts
+    ├── runtime/         # Runtime management
+    │   ├── runtime.ts
+    │   ├── state.ts
+    │   ├── store.ts
+    │   └── pairing-store.ts
+    ├── types/           # TypeScript types
+    │   ├── config.ts
+    │   ├── group-policy.ts
+    │   └── messaging.ts
+    ├── utils/           # Utilities
+    │   ├── logger.ts
+    │   ├── validation.ts
+    │   └── retry.ts
+    ├── mocks/           # Test mocks
+    │   └── ztm-client.ts
+    └── test-utils/      # Test utilities
+        ├── fixtures.ts
+        └── mocks.ts
 ```
