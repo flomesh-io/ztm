@@ -48,19 +48,19 @@ export interface MessageStateData {
  */
 export interface MessageStateStore {
   /**
-   * Get the last-processed message timestamp for a peer under an account
+   * Get the last-processed message timestamp for a key under an account
    */
-  getWatermark(accountId: string, peer: string): number;
+  getWatermark(accountId: string, key: string): number;
 
   /**
-   * Get the global watermark (max across all peers) for an account
+   * Get the global watermark (max across all keys) for an account
    */
   getGlobalWatermark(accountId: string): number;
 
   /**
-   * Update the watermark for a peer (only advances forward)
+   * Update the watermark for a key (only advances forward)
    */
-  setWatermark(accountId: string, peer: string, time: number): void;
+  setWatermark(accountId: string, key: string, time: number): void;
 
   /**
    * Get all persisted file metadata for an account
@@ -218,26 +218,26 @@ export class MessageStateStoreImpl implements MessageStateStore {
     this.save();
   }
 
-  /** Get the last-processed message timestamp for a peer under an account */
-  getWatermark(accountId: string, peer: string): number {
-    return this.data.accounts[accountId]?.[peer] ?? 0;
+  /** Get the last-processed message timestamp for a key under an account */
+  getWatermark(accountId: string, key: string): number {
+    return this.data.accounts[accountId]?.[key] ?? 0;
   }
 
-  /** Get the global watermark (max across all peers) for an account */
+  /** Get the global watermark (max across all keys) for an account */
   getGlobalWatermark(accountId: string): number {
-    const peers = this.data.accounts[accountId];
-    if (!peers) return 0;
-    return Math.max(0, ...Object.values(peers));
+    const keys = this.data.accounts[accountId];
+    if (!keys) return 0;
+    return Math.max(0, ...Object.values(keys));
   }
 
-  /** Update the watermark for a peer (only advances forward) */
-  setWatermark(accountId: string, peer: string, time: number): void {
-    const current = this.getWatermark(accountId, peer);
+  /** Update the watermark for a key (only advances forward) */
+  setWatermark(accountId: string, key: string, time: number): void {
+    const current = this.getWatermark(accountId, key);
     if (time <= current) return;
     if (!this.data.accounts[accountId]) {
       this.data.accounts[accountId] = {};
     }
-    this.data.accounts[accountId][peer] = time;
+    this.data.accounts[accountId][key] = time;
     this.cleanupIfNeeded(accountId);
     this.scheduleSave();
   }

@@ -155,13 +155,13 @@ export function createMockMessageStateStore() {
   const fileMetadata = new Map<string, { time: number; size: number }>();
 
   return {
-    getWatermark: vi.fn((accountId: string, peer: string) => watermarks.get(`${accountId}:${peer}`) || 0),
+    getWatermark: vi.fn((accountId: string, key: string) => watermarks.get(`${accountId}:${key}`) || 0),
     getGlobalWatermark: vi.fn((accountId: string) => {
       const accountWatermarks = Array.from(watermarks.entries()).filter(([k]) => k.startsWith(`${accountId}:`));
       return accountWatermarks.length > 0 ? Math.max(...accountWatermarks.map(([, v]) => v)) : 0;
     }),
-    setWatermark: vi.fn((accountId: string, peer: string, time: number) => {
-      watermarks.set(`${accountId}:${peer}`, time);
+    setWatermark: vi.fn((accountId: string, key: string, time: number) => {
+      watermarks.set(`${accountId}:${key}`, time);
     }),
     getFileMetadata: vi.fn(() => Object.fromEntries(fileMetadata)),
     setFileMetadata: vi.fn((accountId: string, filePath: string, metadata: { time: number; size: number }) => {
