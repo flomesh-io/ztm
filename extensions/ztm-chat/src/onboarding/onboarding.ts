@@ -2,11 +2,10 @@
 // Interactive CLI wizard for configuring the ZTM Chat channel
 
 import * as readline from "readline";
-import * as fs from "fs";
-import * as path from "path";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { DMPolicy } from "../config/schema.js";
 import { isValidUrl, IDENTIFIER_PATTERN } from "../utils/validation.js";
+import { getZTMRuntime, hasZTMRuntime } from "../runtime/index.js";
 
 // Extended config with wizard-specific fields
 interface WizardConfig extends Partial<ZTMChatConfig> {
@@ -332,26 +331,42 @@ export class ZTMChatWizard {
 
     let savePath: string | undefined;
     if (save) {
-      const defaultPath = path.join(
-        process.env.HOME || "",
-        ".openclaw",
-        "ztm",
-        "config.json"
-      );
+      const config = this.buildConfig();
+      const accountId = this.config.username || "default";
 
-      savePath = await this.prompts.ask(
-        "Save to file",
-        defaultPath
-      );
+      // Write to openclaw.yaml using runtime
+      if (!hasZTMRuntime()) {
+        this.prompts.error("Runtime not available. Please run through OpenClaw CLI.");
+        return {
+          config: this.buildConfig(),
+          accountId: this.config.username || "default",
+          savePath: undefined,
+        };
+      }
 
       try {
-        const config = this.buildConfig();
-        const dir = path.dirname(savePath);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(savePath, JSON.stringify(config, null, 2));
-        this.prompts.success(`Configuration saved to ${savePath}`);
+        const rt = getZTMRuntime();
+        const currentConfig = rt.config.loadConfig();
+
+        // Build channel config in openclaw.yaml format
+        const channelConfig = currentConfig.channels?.["ztm-chat"] as Record<string, unknown> || {};
+        const accounts = (channelConfig.accounts as Record<string, unknown>) || {};
+        accounts[accountId] = config;
+
+        const newConfig = {
+          ...currentConfig,
+          channels: {
+            ...currentConfig.channels,
+            "ztm-chat": {
+              ...channelConfig,
+              accounts,
+            },
+          },
+        };
+
+        await rt.config.writeConfigFile(newConfig);
+        savePath = "openclaw.yaml (channels.ztm-chat)";
+        this.prompts.success(`Configuration saved to openclaw.yaml`);
 
         // Show pairing mode info
         if (this.config.dmPolicy === "pairing") {
@@ -412,33 +427,35 @@ export interface DiscoveredConfig {
 }
 
 /**
- * Attempt to auto-discover ZTM configuration
+ * Attempt to auto-discover ZTM configuration from openclaw.yaml via runtime API
  */
 export async function discoverConfig(): Promise<DiscoveredConfig | null> {
-  // Check environment variables
+  // Check environment variables first
   const agentUrl = process.env.ZTM_AGENT_URL || "http://localhost:7777";
 
-  // Try to read from existing config
-  const configPaths = [
-    path.join(process.env.HOME || "", ".ztm", "config.json"),
-    path.join(process.env.HOME || "", ".openclaw", "ztm", "config.json"),
-  ];
+  // Try to read from openclaw.yaml via runtime API
+  if (!hasZTMRuntime()) {
+    return null;
+  }
 
-  for (const configPath of configPaths) {
-    if (fs.existsSync(configPath)) {
-      try {
-        const content = fs.readFileSync(configPath, "utf-8");
-        const config = JSON.parse(content);
+  try {
+    const rt = getZTMRuntime();
+    const config = rt.config.loadConfig();
 
-        return {
-          agentUrl: config.agentUrl || agentUrl,
-          meshName: config.meshName || "",
-          username: config.username || "",
-        };
-      } catch {
-        // Ignore parse errors
-      }
+    // Look for ztm-chat channel config
+    const channelConfig = config.channels?.["ztm-chat"] as Record<string, unknown> | undefined;
+    const accounts = channelConfig?.accounts as Record<string, unknown> | undefined;
+    const firstAccount = accounts ? Object.values(accounts)[0] as Record<string, unknown> : null;
+
+    if (firstAccount) {
+      return {
+        agentUrl: (firstAccount.agentUrl as string) || agentUrl,
+        meshName: (firstAccount.meshName as string) || "",
+        username: (firstAccount.username as string) || "",
+      };
     }
+  } catch {
+    // Ignore errors
   }
 
   return null;

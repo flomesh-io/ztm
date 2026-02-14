@@ -2,13 +2,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { testConfig } from "../test-utils/fixtures.js";
-import * as fs from "fs";
-import * as path from "node:path";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { TSchema } from "@sinclair/typebox";
 import {
-  readExternalChannelConfig,
   getEffectiveChannelConfig,
   listZTMChatAccountIds,
   resolveZTMChatAccount,
@@ -16,19 +13,6 @@ import {
   type ResolvedZTMChatAccount,
 } from "./config.js";
 import { getDefaultConfig } from "../config/index.js";
-
-// Mock fs operations
-const { mockFsExistsSync, mockFsReadFileSync } = vi.hoisted(() => {
-  return {
-    mockFsExistsSync: vi.fn(),
-    mockFsReadFileSync: vi.fn(),
-  };
-});
-
-vi.mock("fs", () => ({
-  existsSync: mockFsExistsSync,
-  readFileSync: mockFsReadFileSync,
-}));
 
 // Mock config functions
 vi.mock("../config/index.js", () => ({
@@ -62,117 +46,12 @@ vi.mock("../config/index.js", () => ({
 describe("Channel Config", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset mock return values for each test
-    mockFsExistsSync.mockReset();
-    mockFsExistsSync.mockReturnValue(false);
-    mockFsReadFileSync.mockReset();
-    mockFsReadFileSync.mockReturnValue("");
     // Set default HOME environment variable
     process.env.HOME = "/test/home";
   });
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  describe("readExternalChannelConfig", () => {
-    it("should return null when config file does not exist", () => {
-      mockFsExistsSync.mockReturnValue(false);
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toBeNull();
-      expect(mockFsExistsSync).toHaveBeenCalled();
-    });
-
-    it("should return null when HOME is not set", () => {
-      delete process.env.HOME;
-      mockFsExistsSync.mockReturnValue(false);
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it("should read and parse existing config file", () => {
-      const mockConfig = {
-        accounts: {
-          default: {
-            agentUrl: "https://example.com:7777",
-            username: "test-bot",
-          },
-        },
-      };
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toEqual(mockConfig);
-      expect(mockFsReadFileSync).toHaveBeenCalledWith(
-        path.join(process.env.HOME || "", ".openclaw", "ztm", "config.json"),
-        "utf-8"
-      );
-    });
-
-    it("should handle JSON parse errors gracefully", () => {
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue("invalid json {");
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it("should handle fs read errors gracefully", () => {
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockImplementation(() => {
-        throw new Error("Read error");
-      });
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toBeNull();
-    });
-
-    it("should return null on empty config", () => {
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue("{}");
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toEqual({});
-    });
-
-    it("should handle config with multiple accounts", () => {
-      const mockConfig = {
-        accounts: {
-          default: { username: "bot1" },
-          account1: { username: "bot2" },
-          account2: { username: "bot3" },
-        },
-      };
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue(JSON.stringify(mockConfig));
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toEqual(mockConfig);
-    });
-
-    it("should construct correct config path", () => {
-      mockFsExistsSync.mockReturnValue(false);
-
-      readExternalChannelConfig();
-
-      const expectedPath = path.join(
-        process.env.HOME || "",
-        ".openclaw",
-        "ztm",
-        "config.json"
-      );
-      expect(mockFsExistsSync).toHaveBeenCalledWith(expectedPath);
-    });
   });
 
   describe("getEffectiveChannelConfig", () => {
@@ -229,43 +108,7 @@ describe("Channel Config", () => {
       expect(result).toBeNull();
     });
 
-    it("should fall back to external config when inline is empty", () => {
-      const externalConfig = {
-        agentUrl: "https://external.example.com",
-      };
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue(JSON.stringify(externalConfig));
-
-      const cfg: OpenClawConfig = {
-        channels: {
-          "ztm-chat": {},
-        },
-      };
-
-      const result = getEffectiveChannelConfig(cfg);
-
-      expect(result).toEqual(externalConfig);
-    });
-
-    it("should fall back to external config when inline is null", () => {
-      const externalConfig = { username: "external-bot" };
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue(JSON.stringify(externalConfig));
-
-      const cfg: OpenClawConfig = {
-        channels: {
-          "ztm-chat": null as any,
-        },
-      };
-
-      const result = getEffectiveChannelConfig(cfg);
-
-      expect(result).toEqual(externalConfig);
-    });
-
     it("should return null when no config available", () => {
-      mockFsExistsSync.mockReturnValue(false);
-
       const cfg: OpenClawConfig = {
         channels: {},
       };
@@ -275,22 +118,10 @@ describe("Channel Config", () => {
       expect(result).toBeNull();
     });
 
-    it("should prioritize inline over external config", () => {
-      const inlineConfig = { username: "inline-bot" };
-      const externalConfig = { username: "external-bot" };
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue(JSON.stringify(externalConfig));
+    it("should return null when cfg is undefined", () => {
+      const result = getEffectiveChannelConfig(undefined);
 
-      const cfg: OpenClawConfig = {
-        channels: {
-          "ztm-chat": inlineConfig,
-        },
-      };
-
-      const result = getEffectiveChannelConfig(cfg);
-
-      expect(result).toBe(inlineConfig);
-      expect(mockFsReadFileSync).not.toHaveBeenCalled();
+      expect(result).toBeNull();
     });
   });
 
@@ -754,15 +585,6 @@ describe("Channel Config", () => {
       const result = listZTMChatAccountIds(cfg);
 
       expect(result).toEqual(["default"]);
-    });
-
-    it("should handle malformed external config", () => {
-      mockFsExistsSync.mockReturnValue(true);
-      mockFsReadFileSync.mockReturnValue("{ malformed json");
-
-      const result = readExternalChannelConfig();
-
-      expect(result).toBeNull();
     });
 
     it("should handle special characters in account IDs", () => {

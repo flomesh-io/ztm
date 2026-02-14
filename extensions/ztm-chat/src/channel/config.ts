@@ -1,8 +1,6 @@
 // ZTM Chat Channel Configuration
 // Configuration parsing and schema utilities
 
-import * as fs from "fs";
-import * as path from "node:path";
 import type { TSchema } from "@sinclair/typebox";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";
 import type { ZTMChatConfig } from "../types/config.js";
@@ -28,32 +26,11 @@ export interface ResolvedZTMChatAccount {
 }
 
 // ============================================================================
-// External Config Reading
+// Channel Config Resolution
 // ============================================================================
 
 /**
- * Read channel config from external file (~/.openclaw/ztm/config.json)
- */
-export function readExternalChannelConfig(): Record<string, unknown> | null {
-  try {
-    const configPath = path.join(
-      process.env.HOME || "",
-      ".openclaw",
-      "ztm",
-      "config.json",
-    );
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, "utf-8");
-      return JSON.parse(content);
-    }
-  } catch {
-    // Ignore read/parse errors
-  }
-  return null;
-}
-
-/**
- * Get effective channel config: cfg.channels["ztm-chat"] or external file fallback
+ * Get effective channel config from openclaw.yaml: cfg.channels["ztm-chat"]
  */
 export function getEffectiveChannelConfig(
   cfg?: OpenClawConfig,
@@ -66,7 +43,7 @@ export function getEffectiveChannelConfig(
   ) {
     return inlineConfig;
   }
-  return readExternalChannelConfig();
+  return null;
 }
 
 // ============================================================================

@@ -15,7 +15,6 @@ export {
 export {
   listZTMChatAccountIds,
   resolveZTMChatAccount,
-  readExternalChannelConfig,
   getEffectiveChannelConfig,
   buildChannelConfigSchemaWithHints,
 } from './config.js';

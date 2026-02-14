@@ -122,4 +122,12 @@ export function isRuntimeInitialized(): boolean {
   return runtimeProvider.isInitialized();
 }
 
+/**
+ * Alias for isRuntimeInitialized - checks if ZTM runtime is available
+ * @returns true if runtime has been set
+ */
+export function hasZTMRuntime(): boolean {
+  return runtimeProvider.isInitialized();
+}
+
 

@@ -1,7 +1,5 @@
 import type { OpenClawPluginApi, ChannelPlugin } from "openclaw/plugin-sdk";
 import type { ResolvedZTMChatAccount } from "./src/channel/index.js";
-import * as fs from "node:fs";
-import * as path from "node:path";
 import { ztmChatPlugin, disposeMessageStateStore } from "./src/channel/index.js";
 import { setZTMRuntime } from "./src/runtime/index.js";
 import { runWizard, discoverConfig } from "./src/onboarding/index.js";
@@ -26,54 +24,8 @@ export {
 // Re-export dispose function for plugin cleanup (from channel/index.js)
 export { disposeMessageStateStore } from "./src/channel/index.js";
 
-// Plugin configuration path
-function getConfigPath(): string {
-  return path.join(process.env.HOME || "", ".openclaw", "ztm", "config.json");
-}
-
-// Read config file
-function readConfig(): Record<string, unknown> {
-  try {
-    const configPath = getConfigPath();
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, "utf-8");
-      return JSON.parse(content);
-    }
-  } catch (error) {
-    console.error("Failed to read config:", error);
-  }
-  return {};
-}
-
-// Write config file
-function writeConfig(config: Record<string, unknown>): boolean {
-  try {
-    const configPath = getConfigPath();
-    const dir = path.dirname(configPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    return true;
-  } catch (error) {
-    console.error("Failed to write config:", error);
-    return false;
-  }
-}
-
-// Ensure config directory exists on plugin startup
-function ensureConfigDir(): void {
-  const configDir = path.join(process.env.HOME || "", ".openclaw", "ztm");
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
-}
-
 // Plugin registration function
 export function registerPlugin(api: OpenClawPluginApi): void {
-  // Ensure config directory exists on startup
-  ensureConfigDir();
-
   // Set runtime for the plugin
   setZTMRuntime(api.runtime);
 
