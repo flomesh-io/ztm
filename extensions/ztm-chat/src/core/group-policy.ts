@@ -49,6 +49,8 @@ export function getGroupPermission(
   const key = `${creator}/${group}`;
   const groupPermissions = config.groupPermissions ?? {};
   const channelGroupPolicy = config.groupPolicy ?? "allowlist";
+  // Get global requireMention (defaults to true if not specified)
+  const channelRequireMention = config.requireMention ?? true;
 
   // Check if there's a per-group configuration
   if (groupPermissions[key]) {
@@ -57,7 +59,8 @@ export function getGroupPermission(
       creator: perGroup.creator ?? creator,
       group: perGroup.group ?? group,
       groupPolicy: perGroup.groupPolicy ?? channelGroupPolicy,
-      requireMention: perGroup.requireMention ?? true,
+      // Per-group overrides global, fallback to global or default
+      requireMention: perGroup.requireMention ?? channelRequireMention,
       allowFrom: perGroup.allowFrom ?? [],
       tools: perGroup.tools,
       toolsBySender: perGroup.toolsBySender,
@@ -70,6 +73,8 @@ export function getGroupPermission(
     creator,
     group,
     groupPolicy: channelGroupPolicy,
+    // Use global requireMention when no per-group config
+    requireMention: channelRequireMention,
   };
 }
 

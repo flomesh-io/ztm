@@ -412,4 +412,116 @@ describe("getGroupPermission", () => {
     expect(result.requireMention).toBe(true); // 硬编码默认
     expect(result.allowFrom).toEqual([]); // 硬编码默认
   });
+
+  describe("global requireMention (config-level)", () => {
+    it("should use global requireMention when no per-group config", () => {
+      const config = createMockConfig({
+        groupPolicy: "open",
+        requireMention: false,
+        groupPermissions: {},
+      });
+
+      const result = getGroupPermission("alice", "unknown-group", config);
+
+      expect(result.requireMention).toBe(false); // 使用全局配置
+    });
+
+    it("should use global requireMention: true when not specified", () => {
+      const config = createMockConfig({
+        groupPolicy: "open",
+        // requireMention 未指定
+        groupPermissions: {},
+      });
+
+      const result = getGroupPermission("alice", "unknown-group", config);
+
+      expect(result.requireMention).toBe(true); // 全局默认是 true
+    });
+
+    it("should use global requireMention: false when explicitly set", () => {
+      const config = createMockConfig({
+        groupPolicy: "allowlist",
+        requireMention: false,
+        groupPermissions: {},
+      });
+
+      const result = getGroupPermission("alice", "test-group", config);
+
+      expect(result.requireMention).toBe(false);
+    });
+
+    it("should per-group requireMention override global requireMention", () => {
+      const config = createMockConfig({
+        groupPolicy: "allowlist",
+        requireMention: false, // 全局设为 false
+        groupPermissions: {
+          "alice/test-group": {
+            creator: "alice",
+            group: "test-group",
+            requireMention: true, // per-group 覆盖为 true
+          },
+        },
+      });
+
+      const result = getGroupPermission("alice", "test-group", config);
+
+      expect(result.requireMention).toBe(true); // per-group 优先
+    });
+
+    it("should per-group requireMention override global even when global is true", () => {
+      const config = createMockConfig({
+        groupPolicy: "allowlist",
+        requireMention: true, // 全局设为 true
+        groupPermissions: {
+          "alice/test-group": {
+            creator: "alice",
+            group: "test-group",
+            requireMention: false, // per-group 覆盖为 false
+          },
+        },
+      });
+
+      const result = getGroupPermission("alice", "test-group", config);
+
+      expect(result.requireMention).toBe(false); // per-group 优先
+    });
+
+    it("should combine global groupPolicy and per-group requireMention", () => {
+      const config = createMockConfig({
+        groupPolicy: "open", // 全局 groupPolicy
+        requireMention: true, // 全局 requireMention
+        groupPermissions: {
+          "alice/test-group": {
+            creator: "alice",
+            group: "test-group",
+            requireMention: false, // 只覆盖 requireMention
+          },
+        },
+      });
+
+      const result = getGroupPermission("alice", "test-group", config);
+
+      expect(result.groupPolicy).toBe("open"); // 使用全局
+      expect(result.requireMention).toBe(false); // per-group 覆盖
+    });
+
+    it("should prioritize: per-group > global > default", () => {
+      const config = createMockConfig({
+        groupPolicy: "disabled", // 全局
+        requireMention: true, // 全局
+        groupPermissions: {
+          "alice/test-group": {
+            creator: "alice",
+            group: "test-group",
+            requireMention: false, // 最高优先级
+          },
+        },
+      });
+
+      const result = getGroupPermission("alice", "test-group", config);
+
+      expect(result.groupPolicy).toBe("disabled"); // 全局
+      expect(result.requireMention).toBe(false); // per-group 最高优先级
+    });
+  });
 });

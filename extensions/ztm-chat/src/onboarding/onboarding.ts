@@ -3,7 +3,7 @@
 
 import * as readline from "readline";
 import type { ZTMChatConfig } from "../types/config.js";
-import type { DMPolicy } from "../config/schema.js";
+import type { DMPolicy, GroupPolicy } from "../config/schema.js";
 import { isValidUrl, IDENTIFIER_PATTERN } from "../utils/validation.js";
 import { getZTMRuntime, hasZTMRuntime } from "../runtime/index.js";
 
@@ -11,6 +11,7 @@ import { getZTMRuntime, hasZTMRuntime } from "../runtime/index.js";
 interface WizardConfig extends Partial<ZTMChatConfig> {
   messagePath?: string;
   enableGroups?: boolean;
+  groupPolicy?: GroupPolicy;
   autoReply?: boolean;
   allowFrom?: string[];
   dmPolicy?: DMPolicy;
@@ -178,7 +179,10 @@ export class ZTMChatWizard {
       // Step 4: Security Settings
       await this.stepSecuritySettings();
 
-      // Step 5: Summary
+      // Step 5: Group Chat Settings
+      await this.stepGroupSettings();
+
+      // Step 6: Summary
       const result = await this.summary();
 
       this.prompts.close();
@@ -307,7 +311,57 @@ export class ZTMChatWizard {
   }
 
   /**
-   * Step 5: Summary and Save
+   * Step 5: Group Chat Settings
+   */
+  private async stepGroupSettings(): Promise<void> {
+    this.prompts.separator();
+    this.prompts.heading("Step 5: Group Chat Settings");
+    this.prompts.separator();
+
+    // Ask if user wants to enable groups
+    const enableGroups = await this.prompts.confirm(
+      "Enable group chat support?",
+      false
+    );
+
+    this.config.enableGroups = enableGroups;
+
+    if (!enableGroups) {
+      this.prompts.info("Group chat disabled.");
+      return;
+    }
+
+    this.prompts.success("Group chat enabled.");
+
+    // Group Policy
+    const groupPolicies = ["allowlist", "open", "disabled"] as const;
+    const groupPolicyLabels = [
+      "Allowlist - Only allow whitelisted senders",
+      "Open - Allow all group messages",
+      "Disabled - Block all group messages",
+    ];
+
+    const groupPolicy = await this.prompts.select<GroupPolicy>(
+      "Default Group Policy",
+      groupPolicies,
+      groupPolicyLabels
+    );
+
+    this.config.groupPolicy = groupPolicy;
+    this.prompts.success(`Group Policy set to: ${groupPolicy}`);
+
+    // Require Mention
+    const requireMention = await this.prompts.confirm(
+      "Require @mention to process group messages?",
+      true
+    );
+
+    this.config.requireMention = requireMention;
+    this.prompts.success(`Require Mention set to: ${requireMention}`);
+  }
+
+  /**
+   * Step 6: Summary and Save
    */
   private async summary(): Promise<WizardResult> {
     this.prompts.separator();
@@ -321,6 +375,11 @@ export class ZTMChatWizard {
     console.log("  Auto Reply:", this.config.autoReply);
     console.log("  DM Policy:", this.config.dmPolicy);
     console.log("  Allow From:", this.config.allowFrom?.join(", ") || "* (all users)");
+    console.log("  Enable Groups:", this.config.enableGroups ?? false);
+    if (this.config.enableGroups) {
+      console.log("  Group Policy:", this.config.groupPolicy ?? "allowlist");
+      console.log("  Require Mention:", this.config.requireMention ?? true);
+    }
 
     this.prompts.separator();
 
