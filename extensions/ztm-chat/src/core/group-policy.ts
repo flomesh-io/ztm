@@ -166,17 +166,7 @@ export function checkGroupPolicy(
     return { allowed: false, reason: "denied", action: "ignore" };
   }
 
-  // Creator always has full access
-  if (isCreator(sender, permissions.creator)) {
-    return {
-      allowed: true,
-      reason: "allowed",
-      action: "process",
-      wasMentioned: hasMention(content, botUsername),
-    };
-  }
-
-  // Check group policy
+  // Check group policy (creator bypass removed - all users now need @mention when requireMention is true)
   switch (permissions.groupPolicy) {
     case "disabled":
       return { allowed: false, reason: "denied", action: "ignore" };

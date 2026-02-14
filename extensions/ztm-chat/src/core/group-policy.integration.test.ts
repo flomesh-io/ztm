@@ -180,8 +180,8 @@ describe("Group Policy Integration", () => {
       const perm = getGroupPermission(msg.groupCreator!, msg.groupId!, config);
       const result = checkGroupPolicy(msg.sender, msg.content, perm, "chatbot");
 
-      // 创建者总是被允许
-      expect(result.allowed).toBe(true);
+      // Creator is no longer bypassed - subject to groupPolicy
+      expect(result.allowed).toBe(false); // disabled policy denies all
     });
 
     it("should handle unknown group with channel defaults", () => {
