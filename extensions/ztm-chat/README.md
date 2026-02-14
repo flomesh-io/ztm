@@ -21,22 +21,6 @@ flowchart TB
     Plugin -->|"Route"| Agent
 ```
 
-### Chat App API
-
-This plugin uses the **ZTM Chat App API** for messaging:
-
-| Feature | Implementation |
-|---------|---------------|
-| API Base | `/api/meshes/{meshName}/apps/ztm/chat/api` |
-| Send DM | `POST /peers/{peer}/messages` |
-| Receive DM | `GET /peers/{peer}/messages` |
-| Send Group | `POST /groups/{creator}/{group}/messages` |
-| Receive Group | `GET /groups/{creator}/{group}/messages` |
-| List Chats | `GET /chats` |
-| Real-Time Updates | Polling with configurable interval |
-
-This approach uses the high-level Chat App API, providing a cleaner interface for messaging operations.
-
 ## Features
 
 - **Peer-to-Peer Messaging**: Send and receive messages with other ZTM users
