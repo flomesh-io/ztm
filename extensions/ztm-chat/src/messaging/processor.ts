@@ -1,5 +1,12 @@
 // Message processing for ZTM Chat
 // Normalizes and validates incoming messages
+//
+// This module handles the inbound message processing pipeline:
+// 1. Validate message has required fields
+// 2. Skip empty messages and self-messages
+// 3. Check watermark to skip duplicate/already-processed messages
+// 4. Enforce DM policy rules
+// 5. Return normalized ZTMChatMessage
 
 import { logger } from "../utils/logger.js";
 import { getMessageStateStore } from "../runtime/store.js";
@@ -7,6 +14,29 @@ import { checkDmPolicy } from "../core/dm-policy.js";
 import type { ZTMChatConfig } from "../types/config.js";
 import type { ZTMChatMessage } from "../types/messaging.js";
 
+/**
+ * Process an incoming message through the validation and policy pipeline.
+ *
+ * This function performs several processing steps:
+ * 1. Skips empty or whitespace-only messages
+ * 2. Skips messages from the bot itself (self-m3. Usesessages)
+ *  watermark to skip already-processed messages
+ * 4. Applies DM policy to determine if message should be accepted
+ *
+ * @param msg - Raw message object with time, message, and sender
+ * @param config - ZTM Chat configuration for policy evaluation
+ * @param storeAllowFrom - Optional persisted approved user list
+ * @param accountId - Account identifier for watermark tracking (default: "default")
+ * @param groupInfo - Optional group info for group messages
+ * @returns Processed ZTMChatMessage or null if message should be skipped
+ *
+ * @example
+ * const result = processIncomingMessage(
+ *   { time: 1234567890, message: "Hello", sender: "alice" },
+ *   { dmPolicy: "pairing", allowFrom: [], username: "bot" }
+ * );
+ * // result: { id: "1234567890-alice", content: "Hello", sender: "alice", ... }
+ */
 export function processIncomingMessage(
   msg: { time: number; message: string; sender: string },
   config: ZTMChatConfig,
