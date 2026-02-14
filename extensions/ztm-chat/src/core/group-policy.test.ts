@@ -41,7 +41,7 @@ describe("checkGroupPolicy", () => {
       expect(result.action).toBe("ignore");
     });
 
-    it("should allow creator even when groupPolicy is disabled", () => {
+    it("should deny creator when groupPolicy is disabled (creator needs mention too)", () => {
       const permissions: GroupPermissions = {
         creator: "alice",
         group: "test-group",
@@ -52,8 +52,8 @@ describe("checkGroupPolicy", () => {
 
       const result = checkGroupPolicy("alice", "hello", permissions, botUsername);
 
-      expect(result.allowed).toBe(true);
-      expect(result.reason).toBe("allowed");
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe("denied");
     });
   });
 
@@ -88,7 +88,7 @@ describe("checkGroupPolicy", () => {
       expect(result.reason).toBe("whitelisted");
     });
 
-    it("should allow creator regardless of allowlist", () => {
+    it("should deny creator when not in allowlist (creator needs mention too)", () => {
       const permissions: GroupPermissions = {
         creator: "alice",
         group: "test-group",
@@ -99,7 +99,8 @@ describe("checkGroupPolicy", () => {
 
       const result = checkGroupPolicy("alice", "hello", permissions, botUsername);
 
-      expect(result.allowed).toBe(true);
+      expect(result.allowed).toBe(false);
+      expect(result.reason).toBe("whitelisted");
     });
   });
 
@@ -187,7 +188,7 @@ describe("checkGroupPolicy", () => {
       expect(result.allowed).toBe(true);
     });
 
-    it("should handle case insensitive creator", () => {
+    it("should handle case insensitive creator (now subject to policy)", () => {
       const permissions: GroupPermissions = {
         creator: "Alice",
         group: "test-group",
@@ -196,9 +197,10 @@ describe("checkGroupPolicy", () => {
         allowFrom: [],
       };
 
+      // Creator is no longer bypassed - subject to groupPolicy
       const result = checkGroupPolicy("ALICE", "hello", permissions, botUsername);
 
-      expect(result.allowed).toBe(true);
+      expect(result.allowed).toBe(false); // disabled policy denies all
     });
   });
 
