@@ -11,6 +11,10 @@ import type {
   ZTMChatConfig,
   ZTMChatConfigValidation,
 } from "../types/config.js";
+import {
+  checkGroupPolicy,
+  getGroupPermission,
+} from "../core/group-policy.js";
 import type { ZTMApiClient, ZTMMeshInfo, ZTMMessage } from "../api/ztm-api.js";
 import type { AccountRuntimeState } from "../runtime/state.js";
 import type { ZTMChatMessage } from "../messaging/inbound.js";
@@ -251,6 +255,28 @@ async function handleInboundMessage(
   msg: ZTMChatMessage,
 ): Promise<void> {
   try {
+    // Check group policy for group messages
+    if (msg.isGroup && msg.groupId && msg.groupCreator) {
+      const permissions = getGroupPermission(msg.groupCreator, msg.groupId, config);
+      const policyResult = checkGroupPolicy(
+        msg.sender,
+        msg.content,
+        permissions,
+        config.username
+      );
+
+      if (!policyResult.allowed) {
+        ctx.log?.info(
+          `[${accountId}] Group message from ${msg.sender} blocked: ${policyResult.reason} (group: ${msg.groupCreator}/${msg.groupId})`
+        );
+        return; // Don't process the message
+      }
+
+      ctx.log?.info(
+        `[${accountId}] Group message from ${msg.sender} allowed: ${policyResult.reason}`
+      );
+    }
+
     const { ctxPayload, matchedBy, agentId } = createInboundContext({ rt, msg, config, accountId, cfg });
 
     ctx.log?.info(

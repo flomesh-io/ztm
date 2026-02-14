@@ -16,3 +16,6 @@ export * from './api.js';
 
 // Common types
 export * from './common.js';
+
+// Group policy types
+export * from './group-policy.js';
