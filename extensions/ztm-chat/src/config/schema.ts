@@ -117,6 +117,11 @@ export const ZTMChatConfigSchema = Type.Object({
     description: "Default policy for group messages: open (allow all), disabled (block all), or allowlist (whitelist only)",
     default: "allowlist",
   })),
+  requireMention: Type.Optional(Type.Boolean({
+    title: "Require Mention",
+    description: "Require @mention to process group messages (default: true)",
+    default: true,
+  })),
   groupPermissions: Type.Optional(Type.Record(
     Type.String(),  // key: "creator/groupId"
     GroupPermissionsSchema
@@ -129,6 +134,10 @@ export type ZTMChatConfig = Static<typeof ZTMChatConfigSchema>;
 // DMPolicy type inferred from schema's dmPolicy field
 type DMPolicyType = Static<typeof ZTMChatConfigSchema>["dmPolicy"];
 export type DMPolicy = NonNullable<DMPolicyType>;
+
+// GroupPolicy type inferred from schema's groupPolicy field
+type GroupPolicyType = Static<typeof ZTMChatConfigSchema>["groupPolicy"];
+export type GroupPolicy = NonNullable<GroupPolicyType>;
 
 // Extended config with allowFrom (for wizard output)
 export type ExtendedZTMChatConfig = ZTMChatConfig;
