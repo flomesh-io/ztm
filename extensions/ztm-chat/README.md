@@ -465,47 +465,56 @@ sequenceDiagram
 
 ### Message Processing Pipeline
 
+```mermaid
+flowchart TD
+    A[Incoming Message] --> B{isGroup?}
+
+    B -->|No| C[DM Flow]
+    B -->|Yes| D[Group Flow]
+
+    C --> C1{DM Policy}
+    C1 -->|allow| E[Route to AI]
+    C1 -->|deny| F[Ignore]
+    C1 -->|pairing| G{Paired?}
+    G -->|Yes| E
+    G -->|No| H[Send Pairing Request]
+
+    D --> D1{Get Group Permissions}
+    D1 --> D2{Is Creator?}
+    D2 -->|Yes| E
+    D2 -->|No| D3{Policy}
+    D3 -->|disabled| F
+    D3 -->|allowlist| D4{In allowFrom?}
+    D3 -->|open| D5{requireMention?}
+    D4 -->|Yes| E
+    D4 -->|No| F
+    D5 -->|Yes| D6{@Mention?}
+    D5 -->|No| E
+    D6 -->|Yes| E
+    D6 -->|No| F
+
+    E --> E1{Resolve Agent Route}
+    E1 --> E2{Dispatch to Agent}
+    E2 --> E3{Filter Tools}
+
+    E3 --> I[Generate Response]
+    I --> J{Send Response}
+    J -->|DM| J1[sendZTMMessage]
+    J -->|Group| J2[sendGroupMessage]
+
+    F --> K[Log and Ignore]
+    H --> K
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Incoming Message                          │
-└─────────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│  1. Classify: isGroup?                                     │
-│     ├─ NO → DM Flow                                        │
-│     └─ YES → Group Flow                                    │
-└─────────────────────────┬─────────────────────────────────────┘
-                        │
-         ┌──────────────┴──────────────┐
-         ▼                                 ▼
-┌─────────────────┐             ┌─────────────────────────────┐
-│   DM Policy     │             │   Group Policy              │
-│                 │             │                             │
-│ - allow         │             │ 1. Creator? → ALLOW       │
-│ - deny          │             │ 2. Policy:                 │
-│ - pairing       │             │    - disabled → DENY      │
-│                 │             │    - allowlist → check    │
-│                 │             │    - open → check mention  │
-│                 │             │ 3. allowFrom whitelist     │
-│                 │             │ 4. requireMention         │
-└────────┬────────┘             └──────────────┬──────────────┘
-         │                                        │
-         ▼                                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Route to AI Agent                              │
-│  - Resolve agent route (cfg)                               │
-│  - Dispatch with reply pipeline                            │
-│  - Apply tool restrictions (groups)                        │
-└─────────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Send Response                                  │
-│  - DM: sendZTMMessage(peer, text)                         │
-│  - Group: sendGroupMessage(creator, group, text)           │
-└─────────────────────────────────────────────────────────────┘
-```
+
+#### Policy Decision Matrix
+
+| Message Type | Check Order | Result |
+|-------------|------------|--------|
+| DM | allow → deny → pairing → check allowFrom | Allow/Deny/Pairing |
+| Group (creator) | - | Always Allow |
+| Group (disabled) | - | Always Deny |
+| Group (allowlist) | creator → policy → allowFrom | Whitelist Match |
+| Group (open) | creator → policy → requireMention | Mention Check |
 
 ## ZTM Agent API
 
