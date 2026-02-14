@@ -8,6 +8,36 @@ import { Type, type TSchema, type Static } from "@sinclair/typebox";
 // ZTM Chat Configuration Schema & Types
 // ============================================
 
+// Group Tool Policy Schema
+const GroupToolPolicySchema = Type.Object({
+  allow: Type.Optional(Type.Array(Type.String())),
+  deny: Type.Optional(Type.Array(Type.String())),
+});
+
+// Group Tool Policy By Sender Schema
+const GroupToolPolicyBySenderSchema = Type.Record(
+  Type.String(),
+  Type.Object({
+    alsoAllow: Type.Optional(Type.Array(Type.String())),
+    deny: Type.Optional(Type.Array(Type.String())),
+  })
+);
+
+// Group Permissions Schema (per-group)
+const GroupPermissionsSchema = Type.Object({
+  creator: Type.String(),
+  group: Type.String(),
+  groupPolicy: Type.Optional(Type.Union([
+    Type.Literal("open"),
+    Type.Literal("disabled"),
+    Type.Literal("allowlist"),
+  ], { default: "allowlist" })),
+  requireMention: Type.Optional(Type.Boolean({ default: true })),
+  allowFrom: Type.Optional(Type.Array(Type.String())),
+  tools: Type.Optional(GroupToolPolicySchema),
+  toolsBySender: Type.Optional(GroupToolPolicyBySenderSchema),
+});
+
 // ZTM Chat Configuration Schema
 export const ZTMChatConfigSchema = Type.Object({
   agentUrl: Type.String({
@@ -77,6 +107,20 @@ export const ZTMChatConfigSchema = Type.Object({
     default: 30000,
     examples: [5000, 30000, 60000],
   })),
+  // Group policy configuration
+  groupPolicy: Type.Optional(Type.Union([
+    Type.Literal("open"),
+    Type.Literal("disabled"),
+    Type.Literal("allowlist"),
+  ], {
+    title: "Group Policy",
+    description: "Default policy for group messages: open (allow all), disabled (block all), or allowlist (whitelist only)",
+    default: "allowlist",
+  })),
+  groupPermissions: Type.Optional(Type.Record(
+    Type.String(),  // key: "creator/groupId"
+    GroupPermissionsSchema
+  )),
 }, { $id: "ztmChatConfig" });
 
 // Type alias inferred from schema - guaranteed to stay in sync
