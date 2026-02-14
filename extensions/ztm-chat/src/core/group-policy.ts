@@ -166,41 +166,52 @@ export function checkGroupPolicy(
     return { allowed: false, reason: "denied", action: "ignore" };
   }
 
-  // Check group policy (creator bypass removed - all users now need @mention when requireMention is true)
-  switch (permissions.groupPolicy) {
-    case "disabled":
-      return { allowed: false, reason: "denied", action: "ignore" };
+  const isSenderCreator = isCreator(sender, permissions.creator);
 
-    case "allowlist":
-      if (!isWhitelisted(sender, permissions.allowFrom)) {
-        return { allowed: false, reason: "whitelisted", action: "ignore" };
-      }
-      // Fall through to mention check
+  // Creator always bypasses groupPolicy and allowFrom checks
+  // But still subject to requireMention check
 
-    case "open":
-      // Check mention requirement
-      if (permissions.requireMention) {
-        const mentioned = hasMention(content, botUsername);
-        if (!mentioned) {
-          return {
-            allowed: false,
-            reason: "mention_required",
-            action: "ignore",
-            wasMentioned: false,
-          };
+  // If not creator, check groupPolicy and allowFrom
+  if (!isSenderCreator) {
+    switch (permissions.groupPolicy) {
+      case "disabled":
+        return { allowed: false, reason: "denied", action: "ignore" };
+
+      case "allowlist":
+        if (!isWhitelisted(sender, permissions.allowFrom)) {
+          return { allowed: false, reason: "whitelisted", action: "ignore" };
         }
-      }
+        break;
 
-      return {
-        allowed: true,
-        reason: permissions.groupPolicy === "allowlist" ? "whitelisted" : "allowed",
-        action: "process",
-        wasMentioned: hasMention(content, botUsername),
-      };
+      case "open":
+        // open policy allows all non-creator senders
+        break;
 
-    default:
-      return { allowed: false, reason: "denied", action: "ignore" };
+      default:
+        return { allowed: false, reason: "denied", action: "ignore" };
+    }
   }
+
+  // requireMention check applies to ALL users (including creator)
+  if (permissions.requireMention) {
+    const mentioned = hasMention(content, botUsername);
+    if (!mentioned) {
+      return {
+        allowed: false,
+        reason: "mention_required",
+        action: "ignore",
+        wasMentioned: false,
+      };
+    }
+  }
+
+  // Passed all checks
+  return {
+    allowed: true,
+    reason: isSenderCreator ? "creator" : permissions.groupPolicy === "allowlist" ? "whitelisted" : "allowed",
+    action: "process",
+    wasMentioned: hasMention(content, botUsername),
+  };
 }
 
 /**

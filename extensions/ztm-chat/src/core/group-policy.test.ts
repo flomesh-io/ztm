@@ -41,7 +41,7 @@ describe("checkGroupPolicy", () => {
       expect(result.action).toBe("ignore");
     });
 
-    it("should deny creator when groupPolicy is disabled (creator needs mention too)", () => {
+    it("should allow creator when groupPolicy is disabled (creator bypasses groupPolicy)", () => {
       const permissions: GroupPermissions = {
         creator: "alice",
         group: "test-group",
@@ -52,8 +52,40 @@ describe("checkGroupPolicy", () => {
 
       const result = checkGroupPolicy("alice", "hello", permissions, botUsername);
 
+      // Creator bypasses groupPolicy and allowFrom, but requireMention applies
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("creator");
+    });
+
+    it("should deny creator when requireMention is true and no @mention", () => {
+      const permissions: GroupPermissions = {
+        creator: "alice",
+        group: "test-group",
+        groupPolicy: "disabled",
+        requireMention: true,
+        allowFrom: [],
+      };
+
+      // Creator bypasses groupPolicy but needs mention when requireMention is true
+      const result = checkGroupPolicy("alice", "hello", permissions, botUsername);
+
       expect(result.allowed).toBe(false);
-      expect(result.reason).toBe("denied");
+      expect(result.reason).toBe("mention_required");
+    });
+
+    it("should allow creator when requireMention is true and has @mention", () => {
+      const permissions: GroupPermissions = {
+        creator: "alice",
+        group: "test-group",
+        groupPolicy: "disabled",
+        requireMention: true,
+        allowFrom: [],
+      };
+
+      const result = checkGroupPolicy("alice", "hey @chatbot", permissions, botUsername);
+
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("creator");
     });
   });
 
@@ -88,7 +120,7 @@ describe("checkGroupPolicy", () => {
       expect(result.reason).toBe("whitelisted");
     });
 
-    it("should deny creator when not in allowlist (creator needs mention too)", () => {
+    it("should allow creator even when not in allowlist (creator bypasses allowlist)", () => {
       const permissions: GroupPermissions = {
         creator: "alice",
         group: "test-group",
@@ -99,8 +131,9 @@ describe("checkGroupPolicy", () => {
 
       const result = checkGroupPolicy("alice", "hello", permissions, botUsername);
 
-      expect(result.allowed).toBe(false);
-      expect(result.reason).toBe("whitelisted");
+      // Creator bypasses groupPolicy and allowFrom
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("creator");
     });
   });
 
@@ -188,7 +221,7 @@ describe("checkGroupPolicy", () => {
       expect(result.allowed).toBe(true);
     });
 
-    it("should handle case insensitive creator (now subject to policy)", () => {
+    it("should handle case insensitive creator (creator bypasses policy)", () => {
       const permissions: GroupPermissions = {
         creator: "Alice",
         group: "test-group",
@@ -197,10 +230,11 @@ describe("checkGroupPolicy", () => {
         allowFrom: [],
       };
 
-      // Creator is no longer bypassed - subject to groupPolicy
+      // Creator bypasses groupPolicy
       const result = checkGroupPolicy("ALICE", "hello", permissions, botUsername);
 
-      expect(result.allowed).toBe(false); // disabled policy denies all
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe("creator");
     });
   });
 
