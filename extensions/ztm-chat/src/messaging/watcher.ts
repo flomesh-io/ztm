@@ -114,7 +114,9 @@ async function processChatMessage(
   if (!chat.latest) return false;
 
   const sender = chat.latest.sender || chat.peer;
-  if (sender === state.config.username) return false;
+  if (sender === state.config.username) {
+    return false;
+  }
 
   const normalized = processIncomingMessage(
     {
@@ -373,9 +375,12 @@ async function processChangedPeer(
 
   const messages = messagesResult.value ?? [];
 
+  logger.debug(`[${state.accountId}] Processing ${messages.length} messages from peer "${peer}"`);
+
   for (const msg of messages) {
+    logger.debug(`[${state.accountId}] Message check: sender="${msg.sender}", botUsername="${state.config.username}"`);
     if (msg.sender === state.config.username) {
-      logger.debug(`[${state.accountId}] Skipping outbound message to ${peer}`);
+      logger.debug(`[${state.accountId}] Skipping outbound message to ${peer} (sender=${msg.sender})`);
       continue;
     }
     const normalized = processIncomingMessage(msg, state.config, storeAllowFrom, state.accountId);
