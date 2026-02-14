@@ -3,4 +3,4 @@
 	url = https://github.com/flomesh-io/pipy.git
 [submodule "extensions/ztm-chat"]
 	path = extensions/ztm-chat
-	url = git@github.com:flomesh-io/openclaw-channel-plugin-ztm.git
+	url = git@github-oss:flomesh-io/openclaw-channel-plugin-ztm.git
