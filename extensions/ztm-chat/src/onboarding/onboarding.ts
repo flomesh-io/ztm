@@ -464,6 +464,8 @@ export class ZTMChatWizard {
       messagePath: this.config.messagePath || "/shared",
       dmPolicy: this.config.dmPolicy ?? "pairing",
       allowFrom: this.config.allowFrom,
+      groupPolicy: this.config.groupPolicy ?? "allowlist",
+      requireMention: this.config.requireMention ?? true,
     };
   }
 }
