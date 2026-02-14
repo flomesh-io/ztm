@@ -21,18 +21,21 @@ flowchart TB
     Plugin -->|"Route"| Agent
 ```
 
-### Direct Storage Access
+### Chat App API
 
-This plugin uses **direct ZTM Mesh storage access** for messaging:
+This plugin uses the **ZTM Chat App API** for messaging:
 
 | Feature | Implementation |
 |---------|---------------|
-| Send Messages | `POST /api/setFileData/shared/{bot}/publish/peers/{peer}/messages/{id}` |
-| Receive Messages | `GET /api/allFiles/shared/{peer}/publish/peers/{bot}/messages/` |
-| User Discovery | `GET /api/allFiles/shared/*/publish/` |
+| API Base | `/api/meshes/{meshName}/apps/ztm/chat/api` |
+| Send DM | `POST /peers/{peer}/messages` |
+| Receive DM | `GET /peers/{peer}/messages` |
+| Send Group | `POST /groups/{creator}/{group}/messages` |
+| Receive Group | `GET /groups/{creator}/{group}/messages` |
+| List Chats | `GET /chats` |
 | Real-Time Updates | Polling with configurable interval |
 
-This approach provides full functionality via storage APIs, suitable for headless Gateway deployments.
+This approach uses the high-level Chat App API, providing a cleaner interface for messaging operations.
 
 ## Features
 
@@ -356,7 +359,6 @@ channels:
         username: "my-bot"
         enableGroups: true
         autoReply: true
-        messagePath: "/shared"
         dmPolicy: "pairing"
         allowFrom:
           - alice
@@ -399,7 +401,6 @@ channels:
 | `enabled` | boolean | `true` | Enable/disable account |
 | `enableGroups` | boolean | `false` | Enable group chat support |
 | `autoReply` | boolean | `true` | Automatically reply to messages |
-| `messagePath` | string | `/shared` | Custom message path prefix |
 | `dmPolicy` | string | `"pairing"` | DM policy: `allow`, `deny`, `pairing` |
 | `allowFrom` | string[] | `[]` | List of approved usernames |
 
@@ -556,7 +557,6 @@ The plugin uses the ZTM Chat App API for messaging:
 | POST | `/api/meshes/{meshName}/apps/ztm/chat/api/peers/{peer}/messages` | Send message to peer |
 | GET | `/api/meshes/{meshName}/apps/ztm/chat/api/groups/{creator}/{group}/messages` | Get group messages |
 | POST | `/api/meshes/{meshName}/apps/ztm/chat/api/groups/{creator}/{group}/messages` | Send message to group |
-| GET | `/api/watch?prefix={path}` | Watch for path changes (real-time updates) |
 
 ### Message API Parameters
 
@@ -581,10 +581,15 @@ curl "http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/peers/ali
 # Send message to peer
 curl -X POST http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/peers/alice/messages \
   -H "Content-Type: application/json" \
-  -d '{"content": "Hello!", "sender": "my-bot", "timestamp": 1700000000000}'
+  -d '{"text": "Hello!"}'
 
-# Watch for changes
-curl "http://localhost:7777/api/watch?prefix=/api/meshes/openclaw-mesh/apps/ztm/chat/api"
+# Get group messages
+curl "http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/groups/alice/team/messages"
+
+# Send message to group
+curl -X POST http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/groups/alice/team/messages \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello everyone!"}'
 ```
 
 ## Troubleshooting
