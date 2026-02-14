@@ -488,7 +488,7 @@ flowchart TD
     D3 -->|open| D5{requireMention?}
     D4 -->|Yes| E
     D4 -->|No| F
-    D5 -->|Yes| D6{@Mention?}
+    D5 -->|Yes| D6{Mention?}
     D5 -->|No| E
     D6 -->|Yes| E
     D6 -->|No| F
@@ -518,23 +518,55 @@ flowchart TD
 
 ## ZTM Agent API
 
-### Storage API
+The plugin uses the ZTM Chat App API for messaging:
+
+### Base Path
+
+```
+/api/meshes/{meshName}/apps/ztm/chat/api
+```
+
+### Chat App API
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/meshes/{meshName}` | Get mesh connection status |
-| GET | `/api/allFiles{path}` | List files in a directory |
-| POST | `/api/setFileData{path}` | Write data to a file |
-| GET | `/api/getFileData{path}` | Read file contents |
-| GET | `/api/watch{prefix}` | Watch for path changes |
+| GET | `/api/meshes/{meshName}/apps/ztm/chat/api/users` | List all users in mesh |
+| GET | `/api/meshes/{meshName}/apps/ztm/chat/api/chats` | Get all chats (DMs and groups) |
+| GET | `/api/meshes/{meshName}/apps/ztm/chat/api/peers/{peer}/messages` | Get peer messages (with since/before pagination) |
+| POST | `/api/meshes/{meshName}/apps/ztm/chat/api/peers/{peer}/messages` | Send message to peer |
+| GET | `/api/meshes/{meshName}/apps/ztm/chat/api/groups/{creator}/{group}/messages` | Get group messages |
+| POST | `/api/meshes/{meshName}/apps/ztm/chat/api/groups/{creator}/{group}/messages` | Send message to group |
+| GET | `/api/watch?prefix={path}` | Watch for path changes (real-time updates) |
 
-### Message Paths
+### Message API Parameters
 
-| Direction | Path Pattern | Description |
-|-----------|-------------|-------------|
-| Send | `/shared/{bot}/publish/peers/{peer}/messages/{time}-{sender}.json` | Bot publishes to peer |
-| Receive | `/shared/{peer}/publish/peers/{bot}/messages/*.json` | Peers publish to bot |
-| Discovery | `/shared/*/publish/` | Scan for active users |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `since` | number | Get messages after this timestamp (Unix ms) |
+| `before` | number | Get messages before this timestamp (Unix ms) |
+| `limit` | number | Maximum number of messages to return (default: 50) |
+
+### Example API Calls
+
+```bash
+# Get mesh status
+curl http://localhost:7777/api/meshes/openclaw-mesh
+
+# List users
+curl http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/users
+
+# Get peer messages (last 10)
+curl "http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/peers/alice/messages?limit=10"
+
+# Send message to peer
+curl -X POST http://localhost:7777/api/meshes/openclaw-mesh/apps/ztm/chat/api/peers/alice/messages \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Hello!", "sender": "my-bot", "timestamp": 1700000000000}'
+
+# Watch for changes
+curl "http://localhost:7777/api/watch?prefix=/api/meshes/openclaw-mesh/apps/ztm/chat/api"
+```
 
 ## Troubleshooting
 
