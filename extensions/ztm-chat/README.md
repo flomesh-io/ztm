@@ -411,6 +411,8 @@ channels:
 
 ## Message Flow
 
+### Direct Message (DM)
+
 ```mermaid
 sequenceDiagram
     participant U as ZTM User
@@ -418,17 +420,22 @@ sequenceDiagram
     participant P as Plugin
     participant A as AI Agent
 
-    U->>M: 1. Send message
-    M->>M: 2. Store to /shared/{peer}/publish/...
-    P->>M: 3. Poll/watch for new messages
-    M->>P: Return new messages
-    P->>A: 4. Route message
-    A->>P: 5. Generate response
-    P->>M: 6. Store response to /shared/{bot}/publish/...
-    M->>U: 7. Deliver to recipient
+    U->>M: 1. Send DM to bot
+    M->>M: 2. Store to /shared/{user}/publish/peers/{bot}/messages/
+    P->>M: 3. Poll /shared/*/publish/peers/{bot}/messages/
+    M->>P: 4. Return new messages
+    P->>P: 5. Check DM policy (allow/deny/pairing)
+    alt Policy allows
+        P->>A: 6. Route to AI agent
+        A->>P: 7. Generate response
+        P->>M: 8. Send via setFileData
+        M->>U: 9. Deliver to recipient
+    else Policy denied
+        P->>P: 6. Ignore message
+    end
 ```
 
-### Group Message Flow
+### Group Message
 
 ```mermaid
 sequenceDiagram
@@ -437,18 +444,67 @@ sequenceDiagram
     participant P as Plugin
     participant A as AI Agent
 
-    M->>G: 1. Send @mention message
-    G->>G: 2. Store to /shared/{group}/publish/...
-    P->>G: 3. Poll for group messages
-    G->>P: Return group messages
-    P->>P: 4. Check group policy
-    alt Policy allows
-        P->>A: 5. Route message
-        A->>P: 6. Generate response
-        P->>G: 7. Send reply to group
-    else Policy denied
-        P->>P: Ignore message
+    M->>G: 1. Send @mention to group
+    G->>G: 2. Store to /shared/{group}/publish/
+    P->>G: 3. Poll /shared/{group}/publish/
+    G->>P: 4. Return new messages
+    P->>P: 5. Get group permissions (creator/groupId)
+    P->>P: 6. Check: creator? → allow
+    P->>P: 7. Check: policy (open/allowlist/disabled)
+    P->>P: 8. Check: allowFrom whitelist
+    P->>P: 9. Check: requireMention (@{bot})
+    alt All checks pass
+        P->>A: 10. Route to AI agent (with tools filter)
+        A->>P: 11. Generate response
+        P->>G: 12. Send reply to group
+        G->>M: 13. Deliver to all members
+    else Any check fails
+        P->>P: Log and ignore message
     end
+```
+
+### Message Processing Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Incoming Message                          │
+└─────────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│  1. Classify: isGroup?                                     │
+│     ├─ NO → DM Flow                                        │
+│     └─ YES → Group Flow                                    │
+└─────────────────────────┬─────────────────────────────────────┘
+                        │
+         ┌──────────────┴──────────────┐
+         ▼                                 ▼
+┌─────────────────┐             ┌─────────────────────────────┐
+│   DM Policy     │             │   Group Policy              │
+│                 │             │                             │
+│ - allow         │             │ 1. Creator? → ALLOW       │
+│ - deny          │             │ 2. Policy:                 │
+│ - pairing       │             │    - disabled → DENY      │
+│                 │             │    - allowlist → check    │
+│                 │             │    - open → check mention  │
+│                 │             │ 3. allowFrom whitelist     │
+│                 │             │ 4. requireMention         │
+└────────┬────────┘             └──────────────┬──────────────┘
+         │                                        │
+         ▼                                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Route to AI Agent                              │
+│  - Resolve agent route (cfg)                               │
+│  - Dispatch with reply pipeline                            │
+│  - Apply tool restrictions (groups)                        │
+└─────────────────────────┬─────────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Send Response                                  │
+│  - DM: sendZTMMessage(peer, text)                         │
+│  - Group: sendGroupMessage(creator, group, text)           │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## ZTM Agent API
