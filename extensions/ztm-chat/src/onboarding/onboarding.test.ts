@@ -432,6 +432,54 @@ describe("ZTMChatWizard", () => {
     });
   });
 
+  describe("wizard buildConfig includes group settings", () => {
+    it("should include groupPolicy and requireMention when groups enabled", async () => {
+      const { ZTMChatWizard } = await import("./onboarding.js");
+      
+      const wizard = new ZTMChatWizard();
+      (wizard as any).config = {
+        agentUrl: "http://localhost:7777",
+        permitUrl: "https://portal.example.com:7779/permit",
+        meshName: "test-mesh",
+        username: "test-bot",
+        enableGroups: true,
+        autoReply: true,
+        messagePath: "/shared",
+        dmPolicy: "pairing",
+        allowFrom: ["alice"],
+        groupPolicy: "allowlist",
+        requireMention: true,
+      };
+
+      const config = (wizard as any).buildConfig();
+
+      expect(config.groupPolicy).toBe("allowlist");
+      expect(config.requireMention).toBe(true);
+    });
+
+    it("should use defaults for groupPolicy and requireMention when not specified", async () => {
+      const { ZTMChatWizard } = await import("./onboarding.js");
+      
+      const wizard = new ZTMChatWizard();
+      (wizard as any).config = {
+        agentUrl: "http://localhost:7777",
+        permitUrl: "https://portal.example.com:7779/permit",
+        meshName: "test-mesh",
+        username: "test-bot",
+        enableGroups: true,
+        autoReply: true,
+        messagePath: "/shared",
+        dmPolicy: "pairing",
+        allowFrom: [],
+      };
+
+      const config = (wizard as any).buildConfig();
+
+      expect(config.groupPolicy).toBe("allowlist");
+      expect(config.requireMention).toBe(true);
+    });
+  });
+
   describe("config serialization", () => {
     it("should serialize config to JSON", () => {
       const config = {
