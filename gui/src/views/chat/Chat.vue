@@ -506,6 +506,40 @@ const inputStyle = computed(() => {
 	_style.placeholder.text = t(_style.placeholder.text)
 	return _style;
 })
+
+// const filterMember = ref('');
+// const membersModel = ref([]);
+const chatInput = (body, isUser) => {
+// 	const ary = body.data.split("@");
+// 	if(ary.length>=2 && (
+// 		 ary[ary.length-1] == '' || ary[ary.length-1].indexOf(' ') == -1
+// 	)){
+// 		filterMember.value = ary[ary.length-1];
+// 	} else {
+// 		filterMember.value = null
+// 	}
+// 	computedMembers();
+}
+// const computedMembers = (()=>{
+// 	if(props.room?.members?.length>0){
+// 		let rtn = [];
+// 		if(!!filterMember.value){
+// 			props.room.members.forEach((label)=>{
+// 				if(label.indexOf(filterMember.value)>=0){
+// 					rtn.push({ label })
+// 				}
+// 			})
+// 		} else if(filterMember.value == ''){
+			
+// 			props.room.members.forEach((label)=>{
+// 					rtn.push({ label })
+// 			})
+// 		}
+// 		membersModel.value = rtn
+// 	} else {
+// 		membersModel.value = []
+// 	}
+// })
 </script>
 
 <template>
@@ -529,6 +563,7 @@ const inputStyle = computed(() => {
 			:names="names"
 			@render="chatRender"
 			@new-message="sendMessage"
+			@input="chatInput"
 			:attachmentContainerStyle='style.attachmentContainerStyle()'
 			:avatars='avatars'
 			:dragAndDrop='style.dragAndDrop()'
@@ -551,7 +586,9 @@ const inputStyle = computed(() => {
 			:images="menuStyle('inside-left','10px')"
 			:camera="hasMediaDevices?menuStyle('inside-left','70px'):false"
 			/>
+			
 	</div>
+	<!-- <Menu style="position: fixed;z-index: 10000;bottom:160px" id="overlay_menu" :model="membersModel" /> -->
 	<div ref="barRef" @mousedown="startDrag" :class="['resize-bar', { moving }]"  :style="{ bottom: (minHeight +55) + 'px' }"></div>
 	<DrawMenu :menus="menus" v-model:open="menuOpen" :title="forwardTarget?.name"/>
 	<Forward v-model:open="forwardOpen" :message="forwardMessage" />
