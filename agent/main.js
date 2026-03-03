@@ -661,7 +661,7 @@ function main(listen) {
       }
     },
 
-    '/api/openclaw/{agent}/message': {
+    '/api/openclaw/chat/{agent}': {
       'POST': function ({ agent }, req) {
         agent = URL.decodeComponent(agent)
         var message = req.body.toString()
