@@ -102,6 +102,20 @@ try {
 
 function main(listen) {
   var gui = new http.Directory('gui')
+
+  var $openclawOutput
+  var openclawStatus = pipeline($=>$
+    .onStart(new Data)
+    .exec(() => ['openclaw', 'status'], { stderr: true })
+    .replaceStreamStart(evt => [new MessageStart, evt])
+    .replaceStreamEnd(() => new MessageEnd)
+    .replaceMessage(msg => {
+      $openclawOutput = msg?.body?.toString?.() || ''
+      return new StreamEnd
+    })
+    .onEnd(() => $openclawOutput)
+  )
+
   var routes = Object.entries({
 
     '/api/version': {
@@ -579,6 +593,15 @@ function main(listen) {
         mesh = URL.decodeComponent(mesh)
         return api.pingEndpoint(mesh, ep).then(
           ret => ret ? response(200, ret) : response(404)
+        )
+      }
+    },
+
+    '/api/openclaw/status': {
+      'GET': function () {
+        return openclawStatus.spawn().then(
+          output => response(200, { output }),
+          output => response(500, { output })
         )
       }
     },
