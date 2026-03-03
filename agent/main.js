@@ -606,6 +606,12 @@ function main(listen) {
       }
     },
 
+    '/ok': {
+      'GET': function () {
+        return response(200, 'ok')
+      }
+    },
+
   }).map(
     function ([path, methods]) {
       var match = new http.Match(path)
