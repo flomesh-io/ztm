@@ -426,7 +426,8 @@ function main(listen) {
         mesh = URL.decodeComponent(mesh)
         var url = new URL(req.head.path)
         var since = url.searchParams.get('since')
-        return api.allFiles(mesh, since).then(
+        var wait = url.searchParams.get('wait') === 'true'  // Enable long-polling
+        return api.allFiles(mesh, since, wait).then(
           ret => response(200, ret)
         )
       }

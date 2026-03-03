@@ -210,10 +210,18 @@ function delUser(mesh, name) {
   return m.evictUser(name)
 }
 
-function allFiles(mesh, since) {
+/**
+ * Get file changes in a mesh, with optional long-polling wait.
+ *
+ * @param mesh - Mesh name
+ * @param since - Optional timestamp to get changes after
+ * @param wait - If true, enable long-polling (wait for changes before returning)
+ * @returns Promise resolving to file changes object
+ */
+function allFiles(mesh, since, wait = false) {
   var m = meshes[mesh]
   if (!m) return Promise.resolve(null)
-  return m.discoverFiles(since)
+  return m.discoverFiles(since, wait)
 }
 
 function getFileInfo(mesh, pathname) {
