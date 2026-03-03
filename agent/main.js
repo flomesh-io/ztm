@@ -103,17 +103,63 @@ try {
 function main(listen) {
   var gui = new http.Directory('gui')
 
-  var $openclawOutput
-  var openclawStatus = pipeline($=>$
-    .onStart(new Data)
-    .exec(() => ['openclaw', 'status'], { stderr: true })
+  function makeOpenclawPipeline(cmd) {
+    var $output
+    return pipeline($=>$
+      .onStart(new Data)
+      .exec(() => cmd, {
+        onExit: (code, err) => {
+          if (err) err.toString().split('\n').filter(Boolean).forEach(
+            line => console.error('[openclaw]', line)
+          )
+          return new StreamEnd
+        }
+      })
+      .replaceStreamStart(evt => [new MessageStart, evt])
+      .replaceStreamEnd(() => new MessageEnd)
+      .replaceMessage(msg => {
+        $output = msg?.body?.toString?.() || ''
+        return new StreamEnd
+      })
+      .onEnd(() => $output)
+    )
+  }
+
+  var openclawStatus = makeOpenclawPipeline(['openclaw', 'status', '--json'])
+  var openclawAgents = makeOpenclawPipeline(['openclaw', 'agents', 'list', '--json'])
+
+  var $openclawAgentCmd
+  var $openclawAgentOutput
+  var openclawAgentMessage = pipeline($=>$
+    .onStart(cmd => { $openclawAgentCmd = cmd; return new Data })
+    .exec(() => $openclawAgentCmd, {
+      onExit: (code, err) => {
+        if (err) err.toString().split('\n').filter(Boolean).forEach(
+          line => console.error('[openclaw]', line)
+        )
+        return new StreamEnd
+      }
+    })
     .replaceStreamStart(evt => [new MessageStart, evt])
     .replaceStreamEnd(() => new MessageEnd)
     .replaceMessage(msg => {
-      $openclawOutput = msg?.body?.toString?.() || ''
+      $openclawAgentOutput = msg?.body?.toString?.() || ''
       return new StreamEnd
     })
-    .onEnd(() => $openclawOutput)
+    .onEnd(() => $openclawAgentOutput)
+  )
+
+  var $ztmVersionOutput
+  var ztmVersion = pipeline($=>$
+    .onStart(new Data)
+    .exec(() => ['ztm', 'version'], { stderr: true })
+    .replaceStreamStart(evt => [new MessageStart, evt])
+    .replaceStreamEnd(() => new MessageEnd)
+    .replaceMessage(msg => {
+      $ztmVersionOutput = msg?.body?.toString?.() || ''
+      return new StreamEnd
+    })
+    .onEnd(() => $ztmVersionOutput)
   )
 
   var routes = Object.entries({
@@ -600,15 +646,45 @@ function main(listen) {
     '/api/openclaw/status': {
       'GET': function () {
         return openclawStatus.spawn().then(
-          output => response(200, { output }),
-          output => response(500, { output })
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
+    '/api/openclaw/agents': {
+      'GET': function () {
+        return openclawAgents.spawn().then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
+    '/api/openclaw/{agent}/message': {
+      'POST': function ({ agent }, req) {
+        agent = URL.decodeComponent(agent)
+        var message = req.body.toString()
+        var cmd = ['openclaw', 'agent', '--agent', agent, '--message', message, '--json']
+        return openclawAgentMessage.spawn(cmd).then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
         )
       }
     },
 
     '/ok': {
       'GET': function () {
-        return response(200, 'ok')
+        return response(200, 'OK')
+      }
+    },
+
+    '/version': {
+      'GET': function () {
+        return ztmVersion.spawn().then(
+          output => response(200, { output }),
+          output => response(500, { output })
+        )
       }
     },
 
@@ -649,6 +725,8 @@ function main(listen) {
               } else {
                 return 'api'
               }
+            } else if (routes.find(r => r.match(path))) {
+              return 'api'
             } else {
               return 'gui'
             }
