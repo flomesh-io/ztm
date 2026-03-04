@@ -55,6 +55,19 @@ function open(pathname) {
       data TEXT NOT NULL
     )
   `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS api_log (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp REAL NOT NULL,
+      client_ip TEXT NOT NULL,
+      api       TEXT NOT NULL,
+      req_headers TEXT NOT NULL,
+      req_body    TEXT NOT NULL,
+      res_headers TEXT NOT NULL,
+      res_body    TEXT NOT NULL
+    )
+  `)
 }
 
 function allZones() {
@@ -354,6 +367,18 @@ function delFile(mesh, provider, app, path) {
     .exec()
 }
 
+function logApi(clientIp, api, reqHeaders, reqBody, resHeaders, resBody) {
+  db.sql(`INSERT INTO api_log(timestamp, client_ip, api, req_headers, req_body, res_headers, res_body) VALUES(?, ?, ?, ?, ?, ?, ?)`)
+    .bind(1, Date.now())
+    .bind(2, clientIp)
+    .bind(3, api)
+    .bind(4, JSON.stringify(reqHeaders || {}))
+    .bind(5, reqBody || '')
+    .bind(6, JSON.stringify(resHeaders || {}))
+    .bind(7, resBody || '')
+    .exec()
+}
+
 function getKey(name) {
   return db.sql(`SELECT data FROM keys WHERE name = ?`)
     .bind(1, name)
@@ -403,4 +428,5 @@ export default {
   getKey,
   setKey,
   delKey,
+  logApi,
 }

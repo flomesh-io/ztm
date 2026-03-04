@@ -305,6 +305,8 @@ Paths and methods:
 ```
 GET  /api/openclaw/status
 GET  /api/openclaw/agents
+GET  /api/openclaw/session/{agent}
+GET  /api/openclaw/session-history/{agent}/{session}
 POST /api/openclaw/chat/{agent}
 ```
 
@@ -315,6 +317,35 @@ Executes `openclaw status --json` and returns the stdout as plain text. Stderr i
 ### `GET /api/openclaw/agents`
 
 Executes `openclaw agents list --json` and returns the stdout as plain text. Stderr is written to the ZTM log.
+
+### `GET /api/openclaw/session/{agent}`
+
+Returns the session list for the named agent.
+
+- `{agent}`: the agent name (e.g. `main`)
+
+Executes `openclaw session --agent {agent} --json` and returns the stdout as plain text. Stderr is written to the ZTM log.
+
+Example:
+
+```
+curl localhost:7777/api/openclaw/session/main
+```
+
+### `GET /api/openclaw/session-history/{agent}/{session}`
+
+Returns the full conversation history of a session as raw JSONL content.
+
+- `{agent}`: the agent name (e.g. `main`)
+- `{session}`: the session UUID (e.g. `1df79641-ec12-4607-8e44-10d83d89e58d`)
+
+Reads from `~/.openclaw/agents/{agent}/sessions/{session}.jsonl`. Returns 404 if the file does not exist.
+
+Example:
+
+```
+curl localhost:7777/api/openclaw/session-history/main/1df79641-ec12-4607-8e44-10d83d89e58d
+```
 
 ### `POST /api/openclaw/chat/{agent}`
 

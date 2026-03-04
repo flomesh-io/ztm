@@ -661,6 +661,31 @@ function main(listen) {
       }
     },
 
+    '/api/openclaw/session-history/{agent}/{session}': {
+      'GET': function ({ agent, session }) {
+        agent = URL.decodeComponent(agent)
+        session = URL.decodeComponent(session)
+        var filepath = os.path.join(os.home(), '.openclaw', 'agents', agent, 'sessions', session + '.jsonl')
+        try {
+          var data = os.read(filepath)
+          return data ? response(200, data) : response(404)
+        } catch (e) {
+          return response(404)
+        }
+      }
+    },
+
+    '/api/openclaw/session/{agent}': {
+      'GET': function ({ agent }) {
+        agent = URL.decodeComponent(agent)
+        var cmd = ['openclaw', 'session', '--agent', agent, '--json']
+        return openclawAgentMessage.spawn(cmd).then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
     '/api/openclaw/chat/{agent}': {
       'POST': function ({ agent }, req) {
         agent = URL.decodeComponent(agent)
@@ -706,12 +731,16 @@ function main(listen) {
   var $params
   var $appPipeline
   var $appSession
+  var $reqHead
+  var $reqBody
+  var $clientIp
 
   var appSessionPools = new algo.Cache(
     k => new algo.LoadBalancer([{}])
   )
 
   pipy.listen(listen, { idleTimeout: 0 }, $=>$
+    .onStart(ib => { $clientIp = ib.remoteAddress || '' })
     .demuxHTTP().to($=>$
       .pipe(
         function (evt) {
@@ -734,18 +763,37 @@ function main(listen) {
         }, {
           'api': $=>$.replaceMessage(
             req => {
+              $reqHead = req.head
+              $reqBody = req.body?.toString?.() || ''
               var path = req.head.path
               var params = null
               var route = routes.find(r => Boolean(params = r.match(path)))
+              var resPromise
               if (route) {
                 try {
                   var res = route.handler(params, req)
-                  return res instanceof Promise ? res.catch(responseError) : res
+                  resPromise = res instanceof Promise ? res.catch(responseError) : Promise.resolve(res)
                 } catch (e) {
-                  return responseError(e)
+                  resPromise = Promise.resolve(responseError(e))
                 }
+              } else {
+                resPromise = Promise.resolve(new Message({ status: 404 }))
               }
-              return new Message({ status: 404 })
+              return resPromise.then(res => {
+                try {
+                  db.logApi(
+                    $clientIp,
+                    $reqHead.method + ' ' + $reqHead.path,
+                    $reqHead.headers,
+                    $reqBody,
+                    res.head?.headers,
+                    res.body?.toString?.() || ''
+                  )
+                } catch (e) {
+                  console.error('[api_log]', e)
+                }
+                return res
+              })
             }
           ),
           'app': ($=>$
