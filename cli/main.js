@@ -749,11 +749,11 @@ function root(dataDir, pqcSigAlg, caURL, names) {
 //
 
 function tryOpenclaw(meshName, userName, passKey, epName, permitPathname, targets, master, listen) {
-  if (!meshName) throw 'mesh name not specified (with option --mesh-name)'
   if (!userName) throw 'user name not specified (with option --user-name)'
   if (!epName) throw 'endpoint name not specified (with option --ep-name)'
   if (master && !listen) throw 'listen not specified (with option --listen)'
   if (listen && !master) throw 'master not specified (with option --master)'
+  if (!meshName) meshName = 'openclaw-mesh'
 
 
   return client.get('/api/identity').then(
@@ -783,6 +783,7 @@ function tryOpenclaw(meshName, userName, passKey, epName, permitPathname, target
             throw `cannot write to file: ${os.path.resolve(permitPathname)}`
           }
 
+          println(`Mesh Name: ${meshName}`)
           println(`User Name: ${userName}`)
           println(`Ep Name: ${epName}`)
           println(`Permit file saved to: ${os.path.resolve(permitPathname)}`)

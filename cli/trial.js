@@ -6,7 +6,7 @@ if (!config || typeof config !== 'object') config = {}
 
 function getConfig() {
   return {
-    trial: config.trial || 'https://ztm-portal.flomesh.io:7779',
+    trial: config.trial || 'https://clawparty.flomesh.io:7779',
   }
 }
 
@@ -14,8 +14,8 @@ var trial = null
 
 function getHost() {
   var host = os.env.ZTM_TRIAL || getConfig().trial
-  if (host.startsWith(':')) return 'https://ztm-portal.flomesh.io' + host
-  if (!Number.isNaN(Number.parseInt(host))) return 'https://ztm-portal.flomesh.io:' + host
+  if (host.startsWith(':')) return 'https://clawparty.flomesh.io' + host
+  if (!Number.isNaN(Number.parseInt(host))) return 'https://clawparty.flomesh.io:' + host
   if (!host.includes('://')) return 'https://' + host
   return host
 }
