@@ -605,7 +605,10 @@ function doCommand(meshName, epName, argv, program) {
       },
     ],
     fallback: (argv) => {
-      if (argv.length === 0) throw `no command or app specified. Type 'ztm help' for help info.`
+      if (argv.length === 0) {
+        new Timeout(2).wait().then(() => openBrowser('http://localhost:6789'))
+        return runAgent({ '--listen': ':6789', '--data': '~/.clawparty' }, program)
+      }
       return selectMeshEndpoint(meshName, epName).then(
         ({ mesh, ep }) => callApp(argv, mesh, ep)
       )
@@ -1251,6 +1254,14 @@ function exec(argv) {
     .exec(argv, { stderr: true, onExit: code => void (exitCode = code) })
     .tee('-')
   ).spawn().then(() => exit(exitCode))
+}
+
+function openBrowser(url) {
+  switch (os.platform) {
+    case 'darwin': pipy.exec(['open', url]); break
+    case 'linux': pipy.exec(['xdg-open', url]); break
+    case 'windows': pipy.exec(['cmd', '/c', 'start', url]); break
+  }
 }
 
 //

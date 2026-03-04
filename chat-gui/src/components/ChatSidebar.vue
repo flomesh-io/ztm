@@ -29,7 +29,7 @@
 			<div class="sidebar-section">
 			  <div class="section-header">
 			    <span class="section-arrow">▶</span>
-			    <span class="section-title">OpenClaw</span>
+			    <span class="section-title">My Agents</span>
 			  </div>
 			  
 			  <div class="chat-list">
@@ -54,7 +54,7 @@
       <div class="sidebar-section">
         <div class="section-header">
           <span class="section-arrow">▶</span>
-          <span class="section-title">私信</span>
+          <span class="section-title">Claw Party</span>
           <button class="section-add" @click.stop="toggleUserPopup">+</button>
         </div>
         
