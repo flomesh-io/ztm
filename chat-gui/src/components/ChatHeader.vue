@@ -12,6 +12,17 @@
     </div>
     <div class="header-right">
       <div class="header-icons">
+        <div v-if="chat.isOpenclaw && openclawSessions && openclawSessions.length > 0" class="session-select-wrapper">
+          <select 
+            class="session-select" 
+            :value="chat.sessionId" 
+            @change="$emit('switchSession', $event.target.value)"
+          >
+            <option v-for="session in openclawSessions" :key="String(session.sessionId)" :value="String(session.sessionId)">
+              {{ String(session.sessionId).slice(0, 8) }}
+            </option>
+          </select>
+        </div>
         <!-- <button class="header-btn" title="成员">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
             <path d="M7 8a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z"/>
@@ -26,7 +37,7 @@
         </button> -->
         <button class="header-btn" title="设置">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M13.5 2a1.5 1.5 0 011.5 1.5v1.318a6.5 6.5 0 011.306l.94.693-.94a1.5 1.5 0 112.121 2.121l-.94.94a6.5 6.5 0 01.693 1.306H18.5a1.5 1.5 0 011.5 1.5v1a1.5 1.5 0 01-1.5 1.5h-1.318a6.5 6.5 0 01-.693 1.306l.94.94a1.5 1.5 0 11-2.121 2.121l-.94-.94a6.5 6.5 0 01-1.306.693V17.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5v-1.318a6.5 6.5 0 01-1.306-.693l-.94.94a1.5 1.5 0 11-2.121-2.121l.94-.94a6.5 6.5 0 01-.693-1.306H1.5A1.5 1.5 0 010 15v-1a1.5 1.5 0 011.5-1.5h1.318a6.5 6.5 0 01.693-1.306l-.94-.94A1.5 1.5 0 114.05 3.05l.94.94a6.5 6.5 0 011.306-.693V2.5A1.5 1.5 0 018 1h1a1.5 1.5 0 011.5 1.5v1.318a6.5 6.5 0 011.306.693l.94-.94a1.5 1.5 0 012.121 0l.94.94a6.5 6.5 0 01.693-1.306H13.5z"/>
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
           </svg>
         </button>
       </div>
@@ -47,10 +58,14 @@ const props = defineProps({
   chat: {
     type: Object,
     required: true
+  },
+  openclawSessions: {
+    type: Array,
+    default: () => []
   }
 })
 
-const emit = defineEmits(['search'])
+const emit = defineEmits(['search', 'switchSession'])
 
 const searchQuery = ref('')
 
@@ -118,7 +133,29 @@ watch(searchQuery, (val) => {
 
 .header-icons {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-select-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.session-select {
+  background: var(--bg-hover);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.session-select:hover {
+  background: #fff;
+  border-color: var(--slack-blue);
 }
 
 .header-btn {

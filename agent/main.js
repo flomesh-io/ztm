@@ -678,7 +678,7 @@ function main(listen) {
     '/api/openclaw/session/{agent}': {
       'GET': function ({ agent }) {
         agent = URL.decodeComponent(agent)
-        var cmd = ['openclaw', 'session', '--agent', agent, '--json']
+        var cmd = ['openclaw', 'sessions', '--agent', agent, '--json']
         return openclawAgentMessage.spawn(cmd).then(
           output => response(200, output.split('\n').join('')),
           output => response(500, output.split('\n').join(''))

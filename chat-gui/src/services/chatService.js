@@ -11,6 +11,52 @@ export const meshService = {
   }
 }
 
+export const openclawService = {
+  getAgents() {
+    return api.get('/openclaw/agents').then(response => {
+      if (typeof response.data === 'string') {
+        const bracketIndex = response.data.indexOf('[')
+        if (bracketIndex !== -1) {
+          const jsonStr = response.data.slice(bracketIndex)
+          try {
+            response.data = JSON.parse(jsonStr)
+          } catch (e) {
+            console.error('解析agents数据失败:', e)
+            response.data = []
+          }
+        } else {
+          response.data = []
+        }
+      }
+      return response
+    })
+  },
+  
+  sendMessage(agentId, text) {
+    return api.post(`/openclaw/chat/${agentId}`, text, {
+      headers: { 'Content-Type': 'text/plain' }
+    })
+  },
+  
+  getMessages(agentId) {
+    return api.get(`/openclaw/agents/${agentId}/messages`)
+  },
+  
+  getMessagesSince(agentId, since) {
+    return api.get(`/openclaw/agents/${agentId}/messages?since=${since}`)
+  },
+
+  getSessions(agentId) {
+    return api.get(`/openclaw/session/${agentId}`)
+  },
+
+  getSessionHistory(agentId, sessionId) {
+    return api.get(`/openclaw/session-history/${agentId}/${sessionId}`, {
+      responseType: 'text'
+    })
+  }
+}
+
 export const chatService = {
   getChats(meshName) {
     return api.get(`/meshes/${meshName}/apps/ztm/chat/api/chats`)

@@ -1,6 +1,6 @@
 <template>
   <main class="chat-main">
-    <ChatHeader :chat="chat" @search="handleSearch" />
+    <ChatHeader :chat="chat" :openclawSessions="openclawSessions" @search="handleSearch" @switchSession="$emit('switchSession', $event)" />
     <div class="messages" ref="messagesContainer">
       <div class="date-divider">
         <span>{{ currentDate }}</span>
@@ -12,13 +12,16 @@
         :class="{ sent: isMessageSent(msg) }"
       >
         <div class="message-avatar">
-          <div class="avatar-placeholder" :style="{ background: getAvatarColor(isMessageSent(msg) ? currentUserName : chat.name) }">
-            {{ (isMessageSent(msg) ? currentUserName : chat.name)[0].toUpperCase() }}
+          <div v-if="chat.isOpenclaw && !isMessageSent(msg)" class="avatar-emoji">
+            {{ chat.emoji }}
+          </div>
+          <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(isMessageSent(msg) ? (currentUserName || 'You') : chat.name) }">
+            {{ (isMessageSent(msg) ? (currentUserName || 'You') : chat.name)[0].toUpperCase() }}
           </div>
         </div>
         <div class="message-body">
           <div class="message-header">
-            <span class="message-author">{{ isMessageSent(msg) ? currentUserName : chat.name }}</span>
+            <span class="message-author">{{ isMessageSent(msg) ? (currentUserName || 'You') : chat.name }}</span>
             <span class="message-time">{{ msg.time }}</span>
           </div>
           <div class="message-bubble">
@@ -61,11 +64,15 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  openclawSessions: {
+    type: Array,
+    default: () => []
+  },
   	
   modelValue: String
 })
 
-defineEmits(['send', 'update:modelValue'])
+defineEmits(['send', 'update:modelValue', 'switchSession'])
 
 const messagesContainer = ref(null)
 let pollTimer = null
@@ -115,7 +122,7 @@ const renderMarkdown = (text) => {
 }
 
 const isMessageSent = (msg) => {
-  return msg.sender === props.currentUserName
+  return msg.isSent || msg.sender === props.currentUserName
 }
 
 const parseMessages = (data) => {
@@ -300,6 +307,17 @@ onUnmounted(() => {
 
 .avatar-placeholder:hover {
   opacity: 0.9;
+}
+
+.avatar-emoji {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
 }
 
 .message-body {

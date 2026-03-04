@@ -26,6 +26,31 @@
     </div>
     
     <div class="sidebar-content">
+			<div class="sidebar-section">
+			  <div class="section-header">
+			    <span class="section-arrow">▶</span>
+			    <span class="section-title">OpenClaw</span>
+			  </div>
+			  
+			  <div class="chat-list">
+			    <div 
+			      v-for="agent in openclawAgents" 
+			      :key="agent.id"
+			      class="chat-item"
+			      :class="{ active: getChatIndex(agent.id, true) === activeChat }"
+			      @click="$emit('selectOpenclaw', agent)"
+			    >
+			      <div class="chat-avatar-wrapper">
+			        <div class="avatar-placeholder openclaw-avatar">
+			          {{ agent.emoji }}
+			        </div>
+			      </div>
+			      <div class="chat-info">
+			        <span class="chat-name">{{ agent.name }}</span>
+			      </div>
+			    </div>
+			  </div>
+			</div>
       <div class="sidebar-section">
         <div class="section-header">
           <span class="section-arrow">▶</span>
@@ -71,6 +96,7 @@
             class="chat-item"
             :class="{ active: getChatIndex(chat.id) === activeChat }"
             @click="$emit('select', getChatIndex(chat.id))"
+						v-show="!chat?.isOpenclaw"
           >
             <div class="chat-avatar-wrapper">
               <div class="avatar-placeholder" :style="{ background: getAvatarColor(chat.name) }">
@@ -84,6 +110,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </aside>
 </template>
@@ -103,10 +130,11 @@ const props = defineProps({
   }
 })
 
-defineEmits(['select'])
+defineEmits(['select', 'selectOpenclaw'])
 
 const currentMesh = inject('currentMesh')
 const meshes = inject('meshes')
+const openclawAgents = inject('openclawAgents')
 const switchMesh = inject('switchMesh')
 const fetchUsers = inject('fetchUsers')
 const users = inject('users')
@@ -197,8 +225,8 @@ const filteredChats = computed(() => {
   )
 })
 
-const getChatIndex = (chatId) => {
-  return props.chats.findIndex(chat => chat.id === chatId)
+const getChatIndex = (chatId, isOpenclaw = false) => {
+  return props.chats.findIndex(chat => chat.id === chatId && Boolean(chat.isOpenclaw) === isOpenclaw)
 }
 </script>
 
@@ -527,6 +555,11 @@ const getChatIndex = (chatId) => {
   color: #fff;
   font-weight: 700;
   font-size: 14px;
+}
+
+.openclaw-avatar {
+  background: linear-gradient(135deg, #ff6b6b, #ffa500);
+  font-size: 18px;
 }
 
 .status-indicator {

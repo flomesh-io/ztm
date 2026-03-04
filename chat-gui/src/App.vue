@@ -4,6 +4,7 @@
       :chats="chats"
       :activeChat="activeChat"
       @select="selectChat"
+      @selectOpenclaw="selectOpenclawAgent"
     />
     <ChatMain
       v-if="activeChat !== null && activeChat < chats.length"
@@ -11,8 +12,10 @@
       :meshName="currentMesh"
       :currentUserName="currentMeshAgentUsername"
       :sending="sending"
+      :openclawSessions="openclawSessions"
       v-model="newMessage"
       @send="sendMessage"
+      @switchSession="(sessionId) => switchOpenclawSession(chats[activeChat], sessionId)"
     />
     <div v-else class="empty-state">
       <div class="empty-icon">
@@ -31,9 +34,11 @@
 import { ref, onMounted, onUnmounted, provide } from 'vue'
 import ChatSidebar from './components/ChatSidebar.vue'
 import ChatMain from './components/ChatMain.vue'
-import { meshService, chatService } from './services/chatService'
+import { meshService, chatService, openclawService } from './services/chatService'
 
 const meshes = ref([])
+const openclawAgents = ref([])
+const openclawSessions = ref([])
 const currentMesh = ref('')
 const currentMeshAgentUsername = ref('')
 const chats = ref([])
@@ -101,18 +106,57 @@ const fetchMeshes = async () => {
   }
 }
 
+const fetchOpenclawAgents = async () => {
+  try {
+    const response = await openclawService.getAgents()
+    const agentsData = Array.isArray(response.data) ? response.data : []
+    openclawAgents.value = agentsData.map(agent => ({
+      id: agent.id,
+      name: agent.identityName || agent.id,
+      emoji: agent.identityEmoji || '🤖',
+      model: agent.model,
+      isOpenclaw: true
+    }))
+    
+    agentsData.forEach(agent => {
+      const existingChat = chats.value.find(c => c.isOpenclaw && c.agentId === agent.id)
+      if (!existingChat) {
+        chats.value.push({
+          id: agent.id,
+          agentId: agent.id,
+          name: agent.identityName || agent.id,
+          emoji: agent.identityEmoji || '🤖',
+          time: '',
+          lastMessage: '',
+          updated: 0,
+          messages: [],
+          sessions: [],
+          sessionId: null,
+          isOpenclaw: true,
+          isTemp: true
+        })
+      }
+    })
+  } catch (error) {
+    console.error('获取 OpenClaw agents 失败:', error)
+  }
+}
+
 const fetchChats = async () => {
   if (!currentMesh.value) return
   try {
     const response = await chatService.getChats(currentMesh.value)
     const newChats = parseChatData(response.data)
     
+    const savedChatId = activeChat.value !== null ? chats.value[activeChat.value]?.id : null
+    const savedIsOpenclaw = activeChat.value !== null ? chats.value[activeChat.value]?.isOpenclaw : false
+    
     if (newChats.length > 0) {
       const existingChatNames = new Set(chats.value.map(c => c.name))
       const newChatNames = new Set(newChats.map(c => c.name))
       
       newChats.forEach(newChat => {
-        const existingIndex = chats.value.findIndex(c => c.name === newChat.name)
+        const existingIndex = chats.value.findIndex(c => c.name === newChat.name && !c.isOpenclaw)
         if (existingIndex !== -1) {
           chats.value[existingIndex].time = newChat.time
           chats.value[existingIndex].lastMessage = newChat.lastMessage
@@ -124,12 +168,17 @@ const fetchChats = async () => {
       })
       
       for (let i = chats.value.length - 1; i >= 0; i--) {
-        if (!newChatNames.has(chats.value[i].name) && !chats.value[i].isTemp) {
+        if (!chats.value[i].isOpenclaw && !newChatNames.has(chats.value[i].name) && !chats.value[i].isTemp) {
           chats.value.splice(i, 1)
         }
       }
       
-      if (activeChat.value === null && chats.value.length > 0) {
+      if (savedChatId !== null) {
+        const newIndex = chats.value.findIndex(c => c.id === savedChatId && c.isOpenclaw === savedIsOpenclaw)
+        if (newIndex !== -1) {
+          activeChat.value = newIndex
+        }
+      } else if (activeChat.value === null && chats.value.length > 0) {
         activeChat.value = 0
       }
     }
@@ -153,7 +202,28 @@ const sendMessage = async () => {
   sending.value = true
   
   try {
-    if (chat.isGroup) {
+    if (chat.isOpenclaw) {
+      const agentId = chat.agentId
+      const response = await openclawService.sendMessage(agentId, text)
+      const replyText = response.data?.payloads?.[0]?.text
+      if (replyText) {
+				setTimeout(()=>{
+					
+					const now = new Date()
+					const time = now.getHours().toString().padStart(2, '0') + ':' + 
+					             now.getMinutes().toString().padStart(2, '0')
+					chat.messages.push({
+					  text: replyText,
+					  time: time,
+					  sender: chat.name,
+					  timestamp: now.getTime(),
+					  isTemp: false
+					})
+					chat.lastMessage = replyText
+					chat.time = time
+				},600)
+      }
+    } else if (chat.isGroup) {
       await chatService.sendGroupMessage(currentMesh.value, chat.creator, chat.groupId, text)
     } else {
       await chatService.sendMessage(currentMesh.value, chat.name, text)
@@ -229,6 +299,68 @@ const selectUser = async (user) => {
   }
 }
 
+const selectOpenclawAgent = async (agent) => {
+  const chat = chats.value.find(c => c.isOpenclaw && c.agentId === agent.id)
+  if (chat) {
+    activeChat.value = chats.value.indexOf(chat)
+    if (!chat.sessions || chat.sessions.length === 0) {
+      try {
+        const response = await openclawService.getSessions(agent.id)
+        const rawData = response.data
+        let sessions = []
+        try {
+          const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData
+          sessions = parsed?.sessions || []
+        } catch (e) {
+          console.error('解析 sessions 失败:', e)
+        }
+        openclawSessions.value = sessions
+        chat.sessions = sessions
+        
+        const defaultSessionId = sessions.length > 0 ? String(sessions[0].sessionId) : null
+        if (defaultSessionId) {
+          const historyResponse = await openclawService.getSessionHistory(agent.id, defaultSessionId)
+          let historyData = null
+          try {
+            historyData = JSON.parse(`[${historyResponse.data.replaceAll('\n',',')}{}]`)
+          } catch (e) {
+            console.error('解析 history 失败:', e)
+          }
+					chat.messages = [];
+          historyData.filter((n)=>n.type=='message').forEach((n,i)=>{
+						chat.messages.push(
+						{ 
+							"text": n.message.content.filter((n)=>n.type=='text')[0]?.text, 
+							"time": new Date(n.message.timestamp).toLocaleTimeString(), 
+							"sender": n.message.role, "isSent": n.message.role=='user', "timestamp": n.message.timestamp }
+						)
+					})
+          chat.sessionId = defaultSessionId
+        }
+        chat.isTemp = false
+      } catch (error) {
+        console.error('获取 sessions 失败:', error)
+      }
+    }
+  }
+}
+
+const switchOpenclawSession = async (chat, sessionId) => {
+  try {
+    const response = await openclawService.getSessionHistory(chat.agentId, sessionId)
+    let data = null
+    try {
+      data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+    } catch (e) {
+      console.error('解析 history 失败:', e)
+    }
+    chat.messages = data?.messages || []
+    chat.sessionId = sessionId
+  } catch (error) {
+    console.error('获取历史消息失败:', error)
+  }
+}
+
 const createGroupChat = async (selectedUsers, groupName) => {
   if (!currentMesh.value || !currentMeshAgentUsername.value || selectedUsers.length < 2) return
   
@@ -262,6 +394,7 @@ const createGroupChat = async (selectedUsers, groupName) => {
 
 provide('switchMesh', switchMesh)
 provide('meshes', meshes)
+provide('openclawAgents', openclawAgents)
 provide('fetchUsers', fetchUsers)
 provide('users', users)
 provide('selectUser', selectUser)
@@ -283,6 +416,7 @@ onMounted(() => {
   fetchMeshes().then(() => {
     startChatsPolling()
   })
+  fetchOpenclawAgents()
 })
 
 onUnmounted(() => {
