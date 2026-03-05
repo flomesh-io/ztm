@@ -9,24 +9,34 @@
         v-for="(msg, index) in filteredMessages" 
         :key="index"
         class="message"
-        :class="{ sent: isMessageSent(msg) }"
+        :class="{ sent: isMessageSent(msg), typing: msg.isTyping }"
       >
         <div class="message-avatar">
-          <div v-if="chat.isOpenclaw && !isMessageSent(msg)" class="avatar-emoji">
+          <div v-if="chat.isOpenclaw && !isMessageSent(msg) && !msg.isTyping" class="avatar-emoji">
             {{ chat.emoji }}
           </div>
-          <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(isMessageSent(msg) ? (currentUserName || 'You') : chat.name) }">
+          <div v-else-if="msg.isTyping && chat.isOpenclaw" class="avatar-emoji">
+            {{ chat.emoji }}
+          </div>
+          <div v-else-if="!msg.isTyping" class="avatar-placeholder" :style="{ background: getAvatarColor(isMessageSent(msg) ? (currentUserName || 'You') : chat.name) }">
             {{ (isMessageSent(msg) ? (currentUserName || 'You') : chat.name)[0].toUpperCase() }}
           </div>
         </div>
         <div class="message-body">
-          <div class="message-header">
-            <span class="message-author">{{ isMessageSent(msg) ? (currentUserName || 'You') : chat.name }}</span>
-            <span class="message-time">{{ msg.time }}</span>
+          <div v-if="msg.isTyping" class="typing-indicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
           </div>
-          <div class="message-bubble">
-            <div class="message-content" v-html="renderMarkdown(msg.text)"></div>
-          </div>
+          <template v-else>
+            <div class="message-header">
+              <span class="message-author">{{ isMessageSent(msg) ? (currentUserName || 'You') : chat.name }}</span>
+              <span class="message-time">{{ msg.time }}</span>
+            </div>
+            <div class="message-bubble">
+              <div class="message-content" v-html="renderMarkdown(msg.text)"></div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -463,6 +473,44 @@ onUnmounted(() => {
 
 .message-content :deep(a:hover) {
   text-decoration: underline;
+}
+
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
 }
 
 .message-content :deep(strong) {

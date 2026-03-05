@@ -202,26 +202,43 @@ const sendMessage = async () => {
   
   try {
     if (chat.isOpenclaw) {
+      if (!chat.messages) chat.messages = []
+      sending.value = false
+      const now = new Date()
+      const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+      setTimeout(()=>{
+				chat.messages.push({
+				  text: '',
+				  time: time,
+				  sender: chat.name,
+				  timestamp: now.getTime(),
+				  isTyping: true
+				})
+			},300)
+      
       const agentId = chat.agentId
-      const response = await openclawService.sendMessage(agentId, text)
-      const replyText = response.data?.payloads?.[0]?.text
-      if (replyText) {
-				setTimeout(()=>{
+      openclawService.sendMessage(agentId, text).then((response)=>{
 					
-					const now = new Date()
-					const time = now.getHours().toString().padStart(2, '0') + ':' + 
-					             now.getMinutes().toString().padStart(2, '0')
+				const replyText = response.data?.payloads?.[0]?.text
+				
+				const typingIndex = chat.messages.findIndex(m => m.isTyping)
+				if (typingIndex !== -1) {
+					chat.messages.splice(typingIndex, 1)
+				}
+				if (replyText) {
+					const replyTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0')
 					chat.messages.push({
-					  text: replyText,
-					  time: time,
-					  sender: chat.name,
-					  timestamp: now.getTime(),
-					  isTemp: false
+						text: replyText,
+						time: replyTime,
+						sender: chat.name,
+						timestamp: new Date().getTime(),
+						isTemp: false
 					})
 					chat.lastMessage = replyText
-					chat.time = time
-				},600)
-      }
+					chat.time = replyTime
+				}
+			
+			})
     } else if (chat.isGroup) {
       await chatService.sendGroupMessage(currentMesh.value, chat.creator, chat.groupId, text)
     } else {
@@ -315,7 +332,7 @@ const selectOpenclawAgent = async (agent) => {
         }
         openclawSessions.value = sessions
         chat.sessions = sessions
-        
+        debugger
         const defaultSessionId = sessions.length > 0 ? String(sessions[0].sessionId) : null
         if (defaultSessionId) {
           const historyResponse = await openclawService.getSessionHistory(agent.id, defaultSessionId)
