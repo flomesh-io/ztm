@@ -342,12 +342,16 @@ const selectOpenclawAgent = async (agent) => {
           }
 					chat.messages = [];
           historyData.filter((n)=>n.type=='message').forEach((n,i)=>{
-						chat.messages.push(
-						{ 
-							"text": n.message.content.filter((n)=>n.type=='text')[0]?.text, 
-							"time": new Date(n.message.timestamp).toLocaleTimeString(), 
-							"sender": n.message.role, "isSent": n.message.role=='user', "timestamp": n.message.timestamp }
-						)
+						console.log(n.message.content)
+						const text = n.message.content.filter((n)=>n.type=='text')[0]?.text;
+						if(!!text){
+							chat.messages.push(
+							{ 
+								"text": n.message.content.filter((n)=>n.type=='text')[0]?.text, 
+								"time": new Date(n.message.timestamp).toLocaleTimeString(), 
+								"sender": n.message.role, "isSent": n.message.role=='user', "timestamp": n.message.timestamp }
+							)
+						}
 					})
           chat.sessionId = defaultSessionId
         }
