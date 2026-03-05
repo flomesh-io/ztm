@@ -101,13 +101,24 @@ const handleSearch = (query) => {
 }
 
 const filteredMessages = computed(() => {
+	let msgs = [];
   if (!searchQuery.value.trim()) {
-    return props.chat.messages || []
-  }
-  const query = searchQuery.value.toLowerCase()
-  return (props.chat.messages || []).filter(msg => 
-    msg.text && msg.text.toLowerCase().includes(query)
-  )
+    msgs = props.chat.messages || []
+  } else {
+		const query = searchQuery.value.toLowerCase()
+		msgs = (props.chat.messages || []).filter(msg => 
+			msg.text && msg.text.toLowerCase().includes(query)
+		);
+	}
+	msgs.forEach((m)=>{
+		if(!!m.text && m.text.indexOf(' GMT')>=0){
+			m.text = m.text.split(/[^[]*] /).slice(1)[0]
+		}
+		if(!m.text){
+			m.text = '[Empty]'
+		}
+	})
+	return msgs
 })
 
 const formatTime = (timestamp) => {

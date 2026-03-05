@@ -218,8 +218,7 @@ const sendMessage = async () => {
       
       const agentId = chat.agentId
       openclawService.sendMessage(agentId, text).then((response)=>{
-					
-				const replyText = response.data?.payloads?.[0]?.text
+				let replyText = response.data?.payloads?.[0]?.text;
 				
 				const typingIndex = chat.messages.findIndex(m => m.isTyping)
 				if (typingIndex !== -1) {
@@ -332,7 +331,6 @@ const selectOpenclawAgent = async (agent) => {
         }
         openclawSessions.value = sessions
         chat.sessions = sessions
-        debugger
         const defaultSessionId = sessions.length > 0 ? String(sessions[0].sessionId) : null
         if (defaultSessionId) {
           const historyResponse = await openclawService.getSessionHistory(agent.id, defaultSessionId)

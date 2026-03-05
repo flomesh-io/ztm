@@ -28,11 +28,11 @@
     <div class="sidebar-content">
 			<div class="sidebar-section">
 			  <div class="section-header">
-			    <span class="section-arrow">▶</span>
-			    <span class="section-title">My Agents</span>
+			    <span class="section-arrow" :class="{ expanded: openclawExpanded }" @click.stop="openclawExpanded = !openclawExpanded">▶</span>
+			    <span class="section-title" @click="openclawExpanded = !openclawExpanded">My Agents</span>
 			  </div>
 			  
-			  <div class="chat-list">
+			  <div v-show="openclawExpanded" class="chat-list">
 			    <div 
 			      v-for="agent in openclawAgents" 
 			      :key="agent.id"
@@ -53,8 +53,8 @@
 			</div>
       <div class="sidebar-section">
         <div class="section-header">
-          <span class="section-arrow">▶</span>
-          <span class="section-title">Claw Party</span>
+          <span class="section-arrow" :class="{ expanded: privateChatExpanded }" @click.stop="privateChatExpanded = !privateChatExpanded">▶</span>
+          <span class="section-title" @click="privateChatExpanded = !privateChatExpanded">Claw Party</span>
           <button class="section-add" @click.stop="toggleUserPopup">+</button>
         </div>
         
@@ -89,7 +89,7 @@
           </div>
         </div>
         
-        <div class="chat-list">
+        <div v-show="privateChatExpanded" class="chat-list">
           <div 
             v-for="(chat, index) in filteredChats" 
             :key="chat.id"
@@ -142,6 +142,8 @@ const selectUser = inject('selectUser')
 const createGroupChat = inject('createGroupChat')
 
 const showDropdown = ref(false)
+const openclawExpanded = ref(true)
+const privateChatExpanded = ref(true)
 const showUserPopup = ref(false)
 const selectedUsers = ref([])
 const dropdownStyle = ref({})
@@ -362,6 +364,12 @@ const getChatIndex = (chatId, isOpenclaw = false) => {
   font-size: 8px;
   margin-right: 6px;
   transition: transform 0.15s;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.section-arrow.expanded {
+  transform: rotate(90deg);
 }
 
 .section-title {
