@@ -6,6 +6,7 @@ cli/version.json
 hub/version.json
 agent/version.json
 agent/gui
+/gui
 agent/apps/*/*/gui
 version.env
 usr/
