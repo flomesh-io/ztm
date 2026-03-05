@@ -218,7 +218,7 @@ const sendMessage = async () => {
       
       const agentId = chat.agentId
       openclawService.sendMessage(agentId, text).then((response)=>{
-				let replyText = response.data?.payloads?.[0]?.text;
+				let replyText = response.data?.payloads?.[0]?.text || response.data?.result?.payloads?.[0]?.text;
 				
 				const typingIndex = chat.messages.findIndex(m => m.isTyping)
 				if (typingIndex !== -1) {
