@@ -1,1 +1,0 @@
-CopyBinaryActivity.kt will move libztm.so & libc++_shared.so to android private folder
