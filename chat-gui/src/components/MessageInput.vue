@@ -1,6 +1,7 @@
 <template>
   <div class="input-area">
-    <div class="editor-wrapper">
+    <div class="resize-handle" @mousedown="startResize"></div>
+    <div class="editor-wrapper" :style="{ height: editorHeight + 'px' }">
       <div class="editor-toolbar">
         <button class="toolbar-btn" @click="insertFormat('**', '**')" title="粗体 (Ctrl+B)">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -103,6 +104,35 @@ const props = defineProps({
 const emit = defineEmits(['send', 'update:modelValue'])
 
 const textareaRef = ref(null)
+const editorHeight = ref(160)
+const isResizing = ref(false)
+let startY = 0
+let startHeight = 0
+
+const startResize = (e) => {
+  isResizing.value = true
+  startY = e.clientY
+  startHeight = editorHeight.value
+  document.addEventListener('mousemove', doResize)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.cursor = 'ns-resize'
+  document.body.style.userSelect = 'none'
+}
+
+const doResize = (e) => {
+  if (!isResizing.value) return
+  const delta = startY - e.clientY
+  const newHeight = Math.max(60, Math.min(400, startHeight + delta))
+  editorHeight.value = newHeight
+}
+
+const stopResize = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', doResize)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
 
 const insertFormat = (prefix, suffix) => {
   const textarea = textareaRef.value
@@ -145,11 +175,25 @@ const handleKeydown = (e) => {
   padding: 0 20px 24px;
 }
 
+.resize-handle {
+  height: 4px;
+  cursor: ns-resize;
+  background: transparent;
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+
+.resize-handle:hover {
+  background: var(--slack-blue);
+}
+
 .editor-wrapper {
   border: 1px solid var(--border-light);
   border-radius: 10px;
   overflow: hidden;
   transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
 }
 
 .editor-wrapper:focus-within {
@@ -164,6 +208,7 @@ const handleKeydown = (e) => {
   background: #f8f8f8;
   border-bottom: 1px solid var(--border-subtle);
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .toolbar-btn {
@@ -230,19 +275,20 @@ const handleKeydown = (e) => {
 
 .editor-content {
   background: #fff;
+  flex: 1;
+  overflow: hidden;
 }
 
 .editor-content textarea {
   width: 100%;
-  min-height: 80px;
-  max-height: 200px;
+  height: 100%;
   padding: 12px 14px;
   border: none;
   color: var(--text-primary);
   font-size: 14px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
   line-height: 1.5;
-  resize: vertical;
+  resize: none;
   outline: none;
 }
 

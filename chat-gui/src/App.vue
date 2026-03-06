@@ -237,6 +237,25 @@ const sendMessage = async () => {
 					chat.time = replyTime
 				}
 			
+			}).catch((e)=>{
+				
+				const typingIndex = chat.messages.findIndex(m => m.isTyping)
+				if (typingIndex !== -1) {
+					chat.messages.splice(typingIndex, 1)
+				}
+				let replyText = '响应超时，请稍后刷新。'
+				if (replyText) {
+					const replyTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0')
+					chat.messages.push({
+						text: replyText,
+						time: replyTime,
+						sender: chat.name,
+						timestamp: new Date().getTime(),
+						isTemp: false
+					})
+					chat.lastMessage = replyText
+					chat.time = replyTime
+				}
 			})
     } else if (chat.isGroup) {
       await chatService.sendGroupMessage(currentMesh.value, chat.creator, chat.groupId, text)
