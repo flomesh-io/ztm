@@ -102,6 +102,66 @@ try {
 
 function main(listen) {
   var gui = new http.Directory('gui')
+
+  function makeOpenclawPipeline(cmd) {
+    var $output
+    return pipeline($=>$
+      .onStart(new Data)
+      .exec(() => cmd, {
+        onExit: (code, err) => {
+          if (err) err.toString().split('\n').filter(Boolean).forEach(
+            line => console.error('[openclaw]', line)
+          )
+          return new StreamEnd
+        }
+      })
+      .replaceStreamStart(evt => [new MessageStart, evt])
+      .replaceStreamEnd(() => new MessageEnd)
+      .replaceMessage(msg => {
+        $output = msg?.body?.toString?.() || ''
+        return new StreamEnd
+      })
+      .onEnd(() => $output)
+    )
+  }
+
+  var openclawStatus = makeOpenclawPipeline(['openclaw', 'status', '--json'])
+  var openclawAgents = makeOpenclawPipeline(['openclaw', 'agents', 'list', '--json'])
+
+  var $openclawAgentCmd
+  var $openclawAgentOutput
+  var openclawAgentMessage = pipeline($=>$
+    .onStart(cmd => { $openclawAgentCmd = cmd; return new Data })
+    .exec(() => $openclawAgentCmd, {
+      onExit: (code, err) => {
+        if (err) err.toString().split('\n').filter(Boolean).forEach(
+          line => console.error('[openclaw]', line)
+        )
+        return new StreamEnd
+      }
+    })
+    .replaceStreamStart(evt => [new MessageStart, evt])
+    .replaceStreamEnd(() => new MessageEnd)
+    .replaceMessage(msg => {
+      $openclawAgentOutput = msg?.body?.toString?.() || ''
+      return new StreamEnd
+    })
+    .onEnd(() => $openclawAgentOutput)
+  )
+
+  var $ztmVersionOutput
+  var ztmVersion = pipeline($=>$
+    .onStart(new Data)
+    .exec(() => ['ztm', 'version'], { stderr: true })
+    .replaceStreamStart(evt => [new MessageStart, evt])
+    .replaceStreamEnd(() => new MessageEnd)
+    .replaceMessage(msg => {
+      $ztmVersionOutput = msg?.body?.toString?.() || ''
+      return new StreamEnd
+    })
+    .onEnd(() => $ztmVersionOutput)
+  )
+
   var routes = Object.entries({
 
     '/api/version': {
@@ -584,6 +644,76 @@ function main(listen) {
       }
     },
 
+    '/api/openclaw/status': {
+      'GET': function () {
+        return openclawStatus.spawn().then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
+    '/api/openclaw/agents': {
+      'GET': function () {
+        return openclawAgents.spawn().then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
+    '/api/openclaw/session-history/{agent}/{session}': {
+      'GET': function ({ agent, session }) {
+        agent = URL.decodeComponent(agent)
+        session = URL.decodeComponent(session)
+        var filepath = os.path.join(os.home(), '.openclaw', 'agents', agent, 'sessions', session + '.jsonl')
+        try {
+          var data = os.read(filepath)
+          return data ? response(200, data) : response(404)
+        } catch (e) {
+          return response(404)
+        }
+      }
+    },
+
+    '/api/openclaw/session/{agent}': {
+      'GET': function ({ agent }) {
+        agent = URL.decodeComponent(agent)
+        var cmd = ['openclaw', 'sessions', '--agent', agent, '--json']
+        return openclawAgentMessage.spawn(cmd).then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
+    '/api/openclaw/chat/{agent}': {
+      'POST': function ({ agent }, req) {
+        agent = URL.decodeComponent(agent)
+        var message = req.body.toString()
+        var cmd = ['openclaw', 'agent', '--agent', agent, '--message', message, '--json']
+        return openclawAgentMessage.spawn(cmd).then(
+          output => response(200, output.split('\n').join('')),
+          output => response(500, output.split('\n').join(''))
+        )
+      }
+    },
+
+    '/ok': {
+      'GET': function () {
+        return response(200, 'OK')
+      }
+    },
+
+    '/version': {
+      'GET': function () {
+        return ztmVersion.spawn().then(
+          output => response(200, { output }),
+          output => response(500, { output })
+        )
+      }
+    },
+
   }).map(
     function ([path, methods]) {
       var match = new http.Match(path)
@@ -602,12 +732,16 @@ function main(listen) {
   var $params
   var $appPipeline
   var $appSession
+  var $reqHead
+  var $reqBody
+  var $clientIp
 
   var appSessionPools = new algo.Cache(
     k => new algo.LoadBalancer([{}])
   )
 
   pipy.listen(listen, { idleTimeout: 0 }, $=>$
+    .onStart(ib => { $clientIp = ib.remoteAddress || '' })
     .demuxHTTP().to($=>$
       .pipe(
         function (evt) {
@@ -621,6 +755,8 @@ function main(listen) {
               } else {
                 return 'api'
               }
+            } else if (routes.find(r => r.match(path))) {
+              return 'api'
             } else {
               return 'gui'
             }
@@ -628,18 +764,37 @@ function main(listen) {
         }, {
           'api': $=>$.replaceMessage(
             req => {
+              $reqHead = req.head
+              $reqBody = req.body?.toString?.() || ''
               var path = req.head.path
               var params = null
               var route = routes.find(r => Boolean(params = r.match(path)))
+              var resPromise
               if (route) {
                 try {
                   var res = route.handler(params, req)
-                  return res instanceof Promise ? res.catch(responseError) : res
+                  resPromise = res instanceof Promise ? res.catch(responseError) : Promise.resolve(res)
                 } catch (e) {
-                  return responseError(e)
+                  resPromise = Promise.resolve(responseError(e))
                 }
+              } else {
+                resPromise = Promise.resolve(new Message({ status: 404 }))
               }
-              return new Message({ status: 404 })
+              return resPromise.then(res => {
+                try {
+                  db.logApi(
+                    $clientIp,
+                    $reqHead.method + ' ' + $reqHead.path,
+                    $reqHead.headers,
+                    $reqBody,
+                    res.head?.headers,
+                    res.body?.toString?.() || ''
+                  )
+                } catch (e) {
+                  console.error('[api_log]', e)
+                }
+                return res
+              })
             }
           ),
           'app': ($=>$

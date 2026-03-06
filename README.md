@@ -1,455 +1,433 @@
-<p align="center">
-  <img width="150px" height="150px" src="https://flomesh.io/img/ztm.png" />
-</p>
+[English](README.md) | [中文](README.zh.md)
 
-<div align="center">
-  <a href="https://github.com/flomesh-io/pipy"><img src="https://flomesh.io/img/favicon.ico" width="20px" height="20px"  alt=""></a>
-  <img src="https://img.shields.io/badge/PipyJS-00adef">
-  <img src="https://img.shields.io/badge/C++-green">
-  <img src="https://img.shields.io/badge/Tauri-24C8DB?logo=tauri&logoColor=FFC131">
-  <img src="https://img.shields.io/badge/Rust-c57c54?logo=rust&logoColor=E34F26">
-  <img src="https://img.shields.io/badge/Vite5-35495E?logo=vite&logoColor=41D1FF">
-  <a href="https://github.com/flomesh-io/ztm/stargazers"><img src="https://img.shields.io/github/stars/flomesh-io/ztm" alt="star"></a>
-</div>
+# 🦞 ClawParty
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Web-green">
-  <img src="https://img.shields.io/badge/macOS-gray">
-  <img src="https://img.shields.io/badge/Windows-blue">
-  <img src="https://img.shields.io/badge/Linux-orange">
-  <img src="https://img.shields.io/badge/iOS-Android-blue">
+<img src="./clawparty.png" width="420">
 </p>
 
-# ZTM (Zero Trust Mesh)
+<p align="center">
 
-ZTM is an open source network infrastructure software for running a ***decentralized*** network. It is built upon ***HTTP/2 tunnels*** and can run on ***any sort of IP networks*** such as LANs, containerized networks and the Internet, etc.
+![GitHub stars](https://img.shields.io/github/stars/YOUR_ORG/clawparty?style=social)
+![License](https://img.shields.io/github/license/YOUR_ORG/clawparty)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
+![AI Coding](https://img.shields.io/badge/built%20with-AI%20Coding-orange)
+![P2P](https://img.shields.io/badge/network-P2P-green)
 
-## Why ZTM?
+</p>
 
-ZTM lays the foundation for building ***decentralized applications*** by providing a set of core capabilities including:
+> **A privacy-first, chat-native multi-agent platform built on encrypted P2P networks.**
 
-* Network connectivity across Internet gateways and firewalls
-* TLS-encrypted communication channels
-* Certificate-based authentication and access control
-* Decentralized application publishing and deployment
-* Decentralized file discovery and data sharing
+**ClawParty** is an open-source platform for **multi-agent management and collaboration**, built on top of the secure distributed networking capabilities of **ZTM**.
 
-ZTM can be used in various settings ranging from a ***2-node personal network connecting one's home and workplace*** to a ***10,000-node enterprise network connecting offices and branches across the globe***. Examples of applications that can leverage ZTM are:
+ClawParty introduces a radically simple interaction model:
 
-* Remote access your home computer from anywhere in the world
-* Share documents, pictures and videos within a group of people without the need of a big-tech social networking platform
-* Private and secure P2P data transfer without the fear of eavesdropping
+> **Chat is the only tool.**
 
-## Features
+Agents, users, and remote endpoints are all represented as **chat participants**, enabling collaborative automation, networking, and control through conversations.
 
-ZTM is written in **PipyJS**, a JavaScript dialect designed for [**Pipy**](https://github.com/flomesh-io/pipy) (https://github.com/flomesh-io/pipy). **Pipy** is an open source programmable proxy software. Thanks to **Pipy**, ZTM has many unique features on top of the capabilities it offers:
-
-* **Fast**. HTTP/2 multiplexing is fast. And **Pipy** is fast. Like, C++ fast.
-
-* **Secure**. All traffic is encrypted by TLS and has identities via certificates. By using **PipyJS**, security policy can be easily customized to meet the requirements in your organization.
-
-* **Highly customizable and programmable**, since **Pipy** in itself is a general-purpose network scripting engine.
-
-* **Portable**. Choose your CPU architecture: x86, ARM, MIPS, RISC-V, LoongArch... Choose your operating system: Linux, Windows, macOS, FreeBSD, Android... ZTM runs anywhere.
-
-## Documentation
-
-* [Architecture & Concepts](docs/Architecture-Concepts.md)
-* [CLI](docs/CLI.md)
-* [ZT-App](docs/ZT-App.md)
-* [Agent API](docs/Agent-API.md)
-* [Build](docs/Build.md)  
-
-## Quick Start
-
-### Download
-
-The easiest way to get started is download the latest binary release of ZTM from our [release page](https://github.com/flomesh-io/ztm/releases). If you prefer to have your own build from the source, you can follow the instructions in [Build](docs/Build.md).
-
-> The official build releases of ZTM come in two forms of packaging: the CLI tool as a SEA (Single Executable Application), and the desktop application that wraps up the CLI tool and provides a GUI for desktop environments.
->
-> In this guide, we'll be only utilizing the CLI for setting up a simple mesh. For more guides, including the usage of the desktop app, please check out our [Wiki](https://github.com/flomesh-io/ztm/wiki).
-
-### CLI Completion
-
-To enable shell completion, run:
-
-```sh
-mkdir -p ~/.local/share/ztm/completions
-ztm completion bash > ~/.local/share/ztm/completions/ztm.bash
-source ~/.local/share/ztm/completions/ztm.bash
-```
-
-For zsh users:
-
-```sh
-mkdir -p ~/.local/share/ztm/completions
-ztm completion zsh > ~/.local/share/ztm/completions/_ztm
-fpath=(~/.local/share/ztm/completions $fpath)
-autoload -U compinit && compinit
-```
-
-### Setup
-
-A common setup consists of 3 nodes: 1 node running the *Hub*, the other 2 nodes running two *Agents* who wish to communicate with each other.
-
-```
-                            Data Center
-          +-------------------------------------------+
-          |                     Hub                   |
-          |        (state in ~/.ztm/ztm-hub.db)       |
-          +-------------------------------------------+
-        HTTPS | Port 8888                 HTTPS | Port 8888
-              |                                 |
-  ------------|---------------------------------|--------------
-              |             Firewall            |
-  ------------|---------------------------------|--------------
-              |                                 |
-              |             Internet            |
-              |                                 |
-  ----------------------------  |  ----------------------------
-          Firewall              |            Firewall
-  ----------------------------  |  ----------------------------
-              |                 |               |
-              |                 |               |
-  +--------------------------+  |  +--------------------------+
-  |      Agent @ Home        |  |  |    Agent @ Workplace     |
-  | (state in ~/.ztm/ztm.db) |  |  | (state in ~/.ztm/ztm.db) |
-  +--------------------------+  |  +--------------------------+
-                                |
-
-```
-
-> We'll only cover the setup of a Hub on Linux, since that's where they are usually run - a cloud-hosted Linux virtual machine.
-
-#### Setup a Hub
-
-Suppose you have a Linux box in the cloud, with a public IP address `1.2.3.4` and a public TCP port `8888`. Start a Hub service by typing:
-
-```sh
-ztm start hub --listen 0.0.0.0:8888 --names 1.2.3.4:8888 --permit root.json
-```
-
-> You might need `sudo` when executing the above command because it needs to install a service to `systemd`.
-
-Now the Hub should be up an running. Plus, a file named `root.json` should have been generated for us to allow *endpoints* to join our mesh.
-
-#### Setup Endpoints
-
-Once the Hub gets up and running in the cloud, we can go on and add as many *endpoints* as we like to the mesh by using the generated permit file `root.json`.
-
-> An *endpoint* is just a computer running in various network environments with access to the Internet.
-
-First, start an Agent on an endpoint computer that is going to join our mesh:
-
-```sh
-ztm start agent
-```
-
-> On Windows, starting as a system service isn't supported yet. You'll have to do `ztm run agent` instead.
-
-And then, join the mesh by saying:
-
-```sh
-ztm join MESH_NAME --as EP_NAME --permit root.json
-```
-
-Where `MESH_NAME` can be any name of your choice for identifying a mesh locally if you have many. `EP_NAME` is the name of your current endpoint seen by other endpoints in the same mesh. `root.json` is the permit file generated in our first step where a Hub is set up.
-
-If everything works out, you can now check out the status of the mesh by typing:
-
-```sh
-ztm get mesh
-```
-
-Or look up for endpoints that already joined the mesh:
-
-```sh
-ztm get ep
-```
-
-For detailed usage of the command-line tool, type:
-
-```sh
-ztm help
-```
-
-If you prefer GUI, you can open your browser and point it to `http://localhost:7777` right after command `ztm start agent`. You can join a mesh, find other endpoints, using apps and everything. Almost all functionalities ZTM provides are available from both the CLI and the GUI.
-
-Repeat the above procedure for every endpoint in your mesh. Then, you will be able to manage your mesh via terminal or browser from any endpoint in the mesh.
-
-#### Using Your Mesh
-
-Only connecting a bunch of endpoints as a mesh isn't very useful. What makes your mesh useful is the *apps* running in it. The official ZTM releases come with a number of builtin apps including:
-
-- Tunnel - Establish secure TCP/UDP tunnels between endpoints
-- Proxy - A SOCKS/HTTP forward proxy that takes in traffic from one endpoint and forward out via another endpoint 
-- Script - Execute *PipyJS* scripts remotely on an endpoint
-- Terminal - Remote access to the shell on an endpoint
-
-Third-party apps can also be installed. Also, new apps can be developed rather easily thanks to the *PipyJS* scripting capability of [**Pipy**](https://github.com/flomesh-io/pipy).
-
-To get a list of all installed apps, type:
-
-```sh
-ztm get app
-```
-
-You can use an app from either the browser GUI or the command-line tool. On a terminal, one can access an app's CLI in a way like:
-
-```sh
-ztm APP_NAME ...
-```
-
-To find out detailed information about using an app via CLI, type:
-
-```sh
-ztm APP_NAME help
-```
-
-### Plugins
-
-ZTM supports plugins through **OpenClaw**, an AI-native gateway that integrates ZTM with external systems. Plugins enable messaging, automation, and third-party integrations.
-
-#### Overview
-
-| Component | Purpose |
-|-----------|---------|
-| OpenClaw | AI-native gateway that routes messages to/from external systems |
-| Plugins | Channel adapters that connect OpenClaw to specific platforms |
-| ZTM Chat | Built-in chat app for decentralized P2P messaging |
-
-#### Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  ZTM User       │────▶│   ZTM Network   │────▶│  OpenClaw       │
-│  (Chat App)     │     │   (P2P Mesh)    │     │  (AI Gateway)   │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                        │
-                                                        ▼
-                                               ┌─────────────────┐
-                                               │  External       │
-                                               │  Systems        │
-                                               │  (ztm-chat,     │
-                                               │   slack, etc.)  │
-                                               └─────────────────┘
-```
-
-#### ZTM Chat Plugin
-
-The ZTM Chat plugin connects OpenClaw to ZTM Chat, enabling your AI agent to send and receive decentralized P2P messages with other ZTM users.
+The project is developed using **AI-assisted coding with OpenCode** and leverages **ZTM's distributed P2P networking and chat framework**.
 
 ---
 
-#### Installation Guide
+# ✨ Why ClawParty
 
-Follow these steps in order:
+Most agent frameworks today rely on:
 
-#### Step 1: Start ZTM Agent
+* centralized cloud infrastructure
+* complex APIs
+* dashboards and orchestration systems
 
-```sh
-# Start the ZTM Agent service
-ztm start agent
+ClawParty takes a fundamentally different approach.
+
+## 💬 Chat-Native Architecture
+
+Everything happens through **chat**.
+
+Instead of managing systems through:
+
+* APIs
+* web consoles
+* configuration files
+
+you interact with agents directly via **chat conversations**.
+
+---
+
+## 🔐 Privacy-First Design
+
+ClawParty is built on **encrypted peer-to-peer networking**.
+
+There is:
+
+* no central message server
+* no central control plane
+* no centralized identity provider
+
+Agents communicate **directly and securely**.
+
+---
+
+## 🤖 Agents Are Users
+
+In ClawParty:
+
+* every **agent is a chat user**
+* every **endpoint is a chat user**
+* remote ClawParty nodes are also **chat users**
+
+This enables natural collaboration between:
+
+* humans
+* agents
+* remote systems
+
+---
+
+# 🚀 Features
+
+## 🤖 Multi-Agent Chat System
+
+Each local OpenClaw agent appears as an **independent chat user**.
+
+Agents can:
+
+* chat with users
+* chat with other agents
+* collaborate in group conversations
+
+---
+
+## 🌐 Distributed P2P Network
+
+ClawParty is built on top of **ZTM's distributed networking stack**.
+
+Capabilities include:
+
+* peer-to-peer networking
+* NAT traversal
+* encrypted connections
+* decentralized communication
+
+No centralized infrastructure is required.
+
+---
+
+## 🦞 Lobster Networks
+
+Users can create **private networks between agents and endpoints** via chat.
+
+These "Lobster Networks" provide:
+
+* secure connectivity
+* peer-to-peer tunnels
+* network access control
+* cross-network communication
+
+All established dynamically through chat commands.
+
+---
+
+## 💬 Hybrid Group Chat
+
+Group conversations can include:
+
+* users
+* agents
+* remote endpoints
+
+This enables **human + AI collaborative workflows**.
+
+Example group:
+
+```
+User
+Agent-Research
+Agent-Builder
+Remote Endpoint
 ```
 
-#### Step 2: Install ZTM Chat App
+Agents collaborate within the same chat context.
 
-```sh
-# Install the Chat app
-ztm app install chat
+---
 
-# Verify installation
-ztm get app
+## ⚡ Extremely Simple Setup
+
+Install:
+
+```bash
+brew install clawparty
 ```
 
-#### Step 3: Create Bot User Account
+Run:
 
-```sh
-# Create a dedicated user account for the bot
-ztm user add openclaw-bot
+```bash
+ztm
 ```
 
-#### Step 4: Install OpenClaw
+That's it.
 
-If OpenClaw is not yet installed, download and install it from [OpenClaw Releases](https://github.com/flomesh-io/openclaw/releases):
+Once started, agents and endpoints appear as **chat participants**.
 
-```sh
-# Download the latest OpenClaw for your platform
-# Then start the OpenClaw service
-openclaw start
+---
+
+# 🎬 30-Second Demo
+
+Getting started with ClawParty takes less than a minute.
+
+### 1 Install
+
+```bash
+brew install clawparty
 ```
 
-#### Step 5: Install ZTM Chat Plugin
+### 2 Start the network
 
-```sh
-# Install from local path (when using ZTM source repository)
-openclaw plugins install -l ./extensions/ztm-chat
-
-# Or install from URL (when using published package)
-openclaw plugins install -u https://github.com/flomesh-io/ztm/plugins/ztm-chat
+```bash
+ztm
 ```
 
-#### Step 6: Configure the Plugin
+This starts your **local ClawParty node**.
 
-Choose one of these methods:
+Agents and endpoints become available as chat participants.
 
-**Option A: Interactive Wizard (Recommended)**
+### 3 Chat with agents
 
-```sh
-# Run the setup wizard
-openclaw ztm-chat-wizard
+Example conversation:
 
-# The wizard will guide you through:
-# 1. ZTM Agent URL (default: https://localhost:7777)
-# 2. Mesh name
-# 3. Bot username (default: openclaw-bot)
-# 4. mTLS authentication (optional)
-# 5. Security settings
+```
+You → agent-builder
+
+Create a private lobster network for my agents
+and connect to endpoint "lab-server".
 ```
 
-> **Note**: Use `openclaw ztm-chat-wizard` when running from the ZTM source repository (before npm publication). Use `npx ztm-chat-wizard` only after the package is published to npm.
+Agent response:
 
-**Option B: Manual Configuration**
-
-```sh
-# Create config file
-mkdir -p ~/.openclaw/channels
-
-cat > ~/.openclaw/channels/ztm-chat.json << 'EOF'
-{
-  "agentUrl": "https://your-ztm-agent.example.com:7777",
-  "meshName": "your-mesh-name",
-  "username": "openclaw-bot"
-}
-EOF
 ```
+Network created.
 
-For all configuration options, see [ZTM Chat Plugin README](extensions/ztm-chat/README.md).
-
-#### Step 7: Restart OpenClaw
-
-```sh
-# Apply the new configuration
-openclaw restart
-```
-
-#### Step 8: Verify Connection
-
-```sh
-# Check channel status
-openclaw channels status ztm-chat
-
-# Test connection
-openclaw channels status ztm-chat --probe
+Lobster network: dev-lobster-net
+Connected endpoint: lab-server
+Access control enabled.
 ```
 
 ---
 
-#### Plugin Commands
+# 🏗 Architecture
 
-```sh
-# Setup wizard
-openclaw ztm-chat-wizard
+ClawParty combines **chat-native interaction**, **multi-agent collaboration**, and **encrypted P2P networking**.
 
-# Auto-discover existing ZTM configuration
-openclaw ztm-chat-discover
+Agents, users, and endpoints all participate as **chat identities**, while networking is handled by **ZTM's secure distributed P2P layer**.
 
-# Check channel status
-openclaw channels status ztm-chat
+## High-Level Architecture
 
-# Probe connection
-openclaw channels status ztm-chat --probe
+```mermaid
+graph TD
 
-# List connected peers
-openclaw channels directory ztm-chat peers
+User[User Chat CLI / UI]
 
-# Enable/disable channel
-openclaw channels disable ztm-chat
-openclaw channels enable ztm-chat
+CF[ClawParty Chat Framework]
+
+A1[Agent A OpenClaw]
+A2[Agent B OpenClaw]
+
+P2P[ZTM Encrypted P2P Network]
+
+E1[Remote Endpoint]
+E2[Remote ClawParty Node]
+
+User --> CF
+CF --> A1
+CF --> A2
+
+A1 --> P2P
+A2 --> P2P
+
+P2P --> E1
+P2P --> E2
 ```
-
-> **Note**: When using the ZTM source repository (before npm publication), use `openclaw ztm-chat-wizard` and `openclaw ztm-chat-discover`. Use `npx` only after the package is published to npm.
 
 ---
 
-#### Troubleshooting
+## Core Components
 
-**Connection Failed**
+### ClawParty Chat Framework
 
-```sh
-# Verify ZTM Agent is running
-curl https://your-ztm-agent.example.com:7777/api/meshes
+* unified communication layer
+* agent collaboration
+* group chat support
 
-# Check mesh name
-ztm get mesh
+### OpenClaw Agents
 
-# Check plugin logs
-openclaw logs --level debug --channel ztm-chat
-```
+* autonomous chat participants
+* capable of interacting with users and other agents
 
-**No Messages Received**
+### ZTM P2P Network
 
-```sh
-# Verify Chat app is installed
-ztm get app
+* encrypted peer-to-peer connectivity
+* certificate-based identity
+* distributed networking
 
-# Check bot username
-ztm user list
-```
+---
 
-For detailed troubleshooting, see [ZTM Chat Plugin README](extensions/ztm-chat/README.md).
+# 🔐 Privacy & Security
 
-## Quick Links:
+ClawParty is designed with **privacy and security as core principles**.
 
-* [How-to: Using ZTM for Secure Remote Desktop Protocol (RDP) Access](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
-* [QuickStart : ZTM Tunnel](docs/ZT-App.md#zt-tunnel) | [Tunnel Demo](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access#4-configuring-ztm-tunnel-for-rdp-connection)
-* [QuickStart : ZTM Proxy](docs/ZT-App.md#zt-proxy)
-* [QuickStart : ZTM Terminal](docs/ZT-App.md#zt-terminal)
-* [QuickStart : ZTM Script](docs/ZT-App.md#zt-script)
-* [QuickStart : ZTM Cloud](docs/ZT-App.md#zt-cloud) | [Cloud Demo](https://github.com/flomesh-io/ztm/wiki/4.-HOWTO-:-File-Sharing-between-ZTM-End-Points#sharing-files-on-macos)
+Unlike many AI or multi-agent platforms that depend on centralized cloud services, ClawParty leverages **ZTM's encrypted P2P architecture**.
 
-Here's a recap of what CLI commands you need to do on each computer node.
+---
 
-```
-                       Cloud-hosted VM
-  +---------------------------------------------------------+
-  | ztm start hub --names x.x.x.x:8888 --permit root.json   | ---+
-  +---------------------------------------------------------+    |
-              |          x.x.x.x:8888          |                 |
-  ------------|--------------------------------|-------------    |
-              |            Firewall            |                 |
-  ------------|--------------------------------|-------------    |
-              |                                |                 |
-              |            Internet            |                 | root.json
-              |                                |                 |
-  --------------------------   |   --------------------------    |
-           Firewall            |            Firewall             |
-  --------------------------   |   --------------------------    |
-              |                |               |                 |
-              |                |               |                 |
-  +------------------------+   |   +------------------------+    |
-  | ztm start agent        |   |   | ztm start agent        |    |
-  | ztm join my-mesh \     |   |   | ztm join my-mesh \     | <--+
-  |   --as home \          |   |   |   --as workplace \     |
-  |   --permit root.json   |   |   |   --permit root.json   |
-  +------------------------+   |   +------------------------+
-           PC @ Home           |         PC @ Workplace
+## End-to-End Encrypted Communication
 
-```
+All communication is encrypted by default.
 
-For more information on the CLI, please refer to:
+This includes:
 
-```sh
-ztm help
-```
+* agent-to-agent communication
+* user-to-agent chat
+* endpoint networking traffic
 
-## Quick Links:
+All traffic flows through the **ZTM encrypted P2P network**.
 
-* [How-to: Using ZTM for Secure Remote Desktop Protocol (RDP) Access](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access)
-* [QuickStart : ZTM Tunnel](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-tunnel) | [Tunnel Demo](https://github.com/flomesh-io/ztm/wiki/2.-HOWTO-:-using-ztm-for-secure-RDP-access#4-configuring-ztm-tunnel-for-rdp-connection)
-* [QuickStart : ZTM Proxy](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-proxy)
-* [QuickStart : ZTM Terminal](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-terminal)
-* [QuickStart : ZTM Script](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-script)
-* [QuickStart : ZTM Cloud](https://github.com/flomesh-io/ztm/blob/main/docs/ZT-App.md#zt-cloud) | [Cloud Demo](https://github.com/flomesh-io/ztm/wiki/4.-HOWTO-:-File-Sharing-between-ZTM-End-Points#sharing-files-on-macos)
+---
+
+## Certificate-Based Identity
+
+Every endpoint has a **cryptographic identity**.
+
+Authentication is based on **certificates**, providing:
+
+* verifiable identities
+* strong authentication
+* zero-trust communication
+
+No centralized identity provider is required.
+
+---
+
+## Zero-Trust Distributed Architecture
+
+ClawParty inherits ZTM's distributed security model:
+
+* peer-to-peer connections
+* encrypted networking
+* identity-based authentication
+* no centralized broker
+
+Your conversations and agent interactions **stay inside your network**.
+
+---
+
+# 🧠 Design Philosophy
+
+ClawParty is built around several key ideas.
+
+## Chat Is the Only Tool
+
+Chat replaces traditional system interfaces.
+
+Instead of:
+
+* dashboards
+* APIs
+* complex orchestration tools
+
+everything happens through **chat interactions**.
+
+---
+
+## Agents Are First-Class Participants
+
+Agents behave like **users in a conversation**.
+
+This enables:
+
+* agent-to-agent collaboration
+* human-agent interaction
+* multi-agent coordination
+
+---
+
+## Distributed by Default
+
+ClawParty leverages ZTM to provide:
+
+* decentralized networking
+* P2P connectivity
+* encrypted communication
+
+No central infrastructure required.
+
+---
+
+## AI-Native Development
+
+ClawParty is developed using **AI-assisted coding with OpenCode**, exploring a new paradigm where AI helps build and evolve the system.
+
+---
+
+# 📦 Platform Support
+
+Currently tested on:
+
+* macOS
+* Linux
+
+Support for additional platforms is planned.
+
+---
+
+# 🗺 Roadmap
+
+Planned future improvements include:
+
+* richer agent capabilities
+* advanced chat automation
+* improved network management
+* enhanced access control
+* additional platform support
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome.
+
+If you are interested in:
+
+* multi-agent systems
+* distributed networking
+* privacy-first infrastructure
+* AI collaboration frameworks
+
+feel free to open issues or submit pull requests.
+
+---
+
+# 🌐 Related Projects
+
+ClawParty builds on top of:
+
+* **ZTM** – distributed P2P networking
+* **OpenClaw**
+* **OpenCode AI Coding**
+
+---
+
+# 🦞 The Lobster Philosophy
+
+Why lobsters?
+
+Because lobsters:
+
+* move independently
+* connect in groups
+* form resilient networks
+
+Just like distributed agents.
+
+Welcome to the **ClawParty**. 🦞
+
 

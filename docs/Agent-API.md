@@ -264,3 +264,100 @@ GET /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound/{protoc
 POST /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound/{protocol}/{name}
 DELETE /api/meshes/{meshName}/apps/ztm/tunnel/api/endpoints/{uuid}/outbound/{protocol}/{name}
 ```
+
+## Utility
+
+Paths and methods:
+
+```
+GET /ok
+GET /version
+GET /api/version
+```
+
+### `GET /ok`
+
+Health check. Returns the plain text string `OK`.
+
+### `GET /version`
+
+Returns the output of `ztm version` as a plain text string.
+
+### `GET /api/version`
+
+Returns ZTM and Pipy version info.
+
+```json
+{
+    "ztm": {
+        "version": "x.y.z",
+        "commit": "abc123",
+        "date": "..."
+    },
+    "pipy": "x.y.z"
+}
+```
+
+## OpenClaw
+
+Paths and methods:
+
+```
+GET  /api/openclaw/status
+GET  /api/openclaw/agents
+GET  /api/openclaw/session/{agent}
+GET  /api/openclaw/session-history/{agent}/{session}
+POST /api/openclaw/chat/{agent}
+```
+
+### `GET /api/openclaw/status`
+
+Executes `openclaw status --json` and returns the stdout as plain text. Stderr is written to the ZTM log.
+
+### `GET /api/openclaw/agents`
+
+Executes `openclaw agents list --json` and returns the stdout as plain text. Stderr is written to the ZTM log.
+
+### `GET /api/openclaw/session/{agent}`
+
+Returns the session list for the named agent.
+
+- `{agent}`: the agent name (e.g. `main`)
+
+Executes `openclaw session --agent {agent} --json` and returns the stdout as plain text. Stderr is written to the ZTM log.
+
+Example:
+
+```
+curl localhost:7777/api/openclaw/session/main
+```
+
+### `GET /api/openclaw/session-history/{agent}/{session}`
+
+Returns the full conversation history of a session as raw JSONL content.
+
+- `{agent}`: the agent name (e.g. `main`)
+- `{session}`: the session UUID (e.g. `1df79641-ec12-4607-8e44-10d83d89e58d`)
+
+Reads from `~/.openclaw/agents/{agent}/sessions/{session}.jsonl`. Returns 404 if the file does not exist.
+
+Example:
+
+```
+curl localhost:7777/api/openclaw/session-history/main/1df79641-ec12-4607-8e44-10d83d89e58d
+```
+
+### `POST /api/openclaw/chat/{agent}`
+
+Sends a message to the named OpenClaw agent.
+
+- `{agent}`: the agent name (e.g. `main`)
+- Request body: plain text message content
+
+Executes `openclaw agent --agent {agent} --message {body} --json` and returns the stdout as plain text. Stderr is written to the ZTM log.
+
+Example:
+
+```
+curl -d 'hello, buddy' localhost:7777/api/openclaw/chat/main
+```

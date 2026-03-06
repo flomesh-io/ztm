@@ -1,0 +1,94 @@
+:root {
+  --bg-primary: #f8f8f8;
+  --bg-secondary: #ffffff;
+  --bg-sidebar: #4a154b;
+  --bg-chat: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+  
+  --slack-purple: #4a154b;
+  --slack-aubergine: #611f69;
+  --slack-green: #2eb67d;
+  --slack-blue: #1d9bd1;
+  --slack-red: #e01e5a;
+  --slack-yellow: #ecb22e;
+  
+  --text-primary: #1d1c1d;
+  --text-secondary: #616061;
+  --text-muted: #1d1c1d;
+  --text-dim: #616061;
+  --text-link: #1264a3;
+  
+  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border-light: rgba(0, 0, 0, 0.15);
+  
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  
+  --sidebar-width: 220px;
+  --header-height: 60px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.07);
+}
+
+input {
+  font-family: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+  }
+}
