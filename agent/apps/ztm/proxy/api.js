@@ -336,9 +336,9 @@ export default function ({ app, mesh }) {
   var $directTarget
   var $proto
 
-  var connectPeer = pipeline($=>$
-    .onStart(
-      () => mesh.list('/shared').then(
+  var exitCache = new algo.Cache(
+    function (host) {
+      return mesh.list('/shared').then(
         files => {
           var peers = []
           var pattern = new http.Match('/shared/{username}/{ep}/config.json')
@@ -348,11 +348,19 @@ export default function ({ app, mesh }) {
               peers.push(params.ep)
             }
           })
-          return mesh.discover(peers)
+          app.log(`[discover] ${host} peers: ${JSON.stringify(peers)}`)
+          return mesh.discover(peers).then(discovered => {
+            app.log(`[discover] ${host} discovered: ${JSON.stringify(discovered ? discovered.map(p => p && p.id) : 'null')}`)
+            return discovered
+          })
         }
       ).then(
-        peers => Promise.any(peers.map(
+        peers => Promise.any(peers.filter(ep => ep).filter(function (ep) {
+          var exitName = currentConfig && currentConfig.exit
+          return !exitName || ep.name === exitName
+        }).map(
           ep => {
+            app.log(`[discover] checking ${ep.id} name=${ep.name} online=${ep?.online}`)
             // 排除本地端点, 避免 mesh 自我转发循环
             if (ep.id === app.endpoint.id) return Promise.reject(null)
             if (!ep?.online) return Promise.reject(null)
@@ -361,18 +369,34 @@ export default function ({ app, mesh }) {
               new Message({ path: '/api/config' })
             ).then(res => {
               var config = res?.head?.status === 200 ? JSON.decode(res.body) : {}
-              if (isExit(config, $host)) return ep
+              app.log(`[discover] ${ep.name} (${ep.id}) targets: ${JSON.stringify(config?.targets)}`)
+              if (isExit(config, host)) return { id: ep.id, name: ep.name }
+              throw null
+            }).catch(err => {
+              app.log(`[discover] ${ep.name} rejected: ${err}`)
               throw null
             })
           }
         ))
-      ).then(ep => {
-        $targetEP = ep.id
-        app.log(`Forward to ${$target} via ${ep.name} (${ep.id})`)
-        return new Data
-      }).catch(() => {
-        // 远程未找到 exit, 若本地 proxy 自身是 exit 则直连目标
-        if (isExit(currentConfig, $host)) {
+      ).catch(err => {
+        app.log(`[discover] ERROR: ${err && err.message ? err.message : err}`)
+        return null
+      })
+    },
+    null, { ttl: 60 }
+  )
+
+  function findExit(host) {
+    return exitCache.get(host)
+  }
+
+  var connectPeer = pipeline($=>$
+    .onStart(
+      () => findExit($host).then(ep => {
+        if (ep) {
+          $targetEP = ep.id
+          app.log(`Forward to ${$target} via ${ep.name} (${ep.id})`)
+        } else if (isExit(currentConfig, $host)) {
           $directTarget = $target
           app.log(`Direct forward to ${$target}`)
         } else {

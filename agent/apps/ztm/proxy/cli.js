@@ -35,6 +35,8 @@ export default function ({ api, mesh, utils }) {
               --add-exclusion     <domain|ip ...>   Add excluded targets where traffic can't go via the endpoint
                                                     e.g. '*.example.com' and '8.88.0.0/16'
               --remove-exclusion  <domain|ip ...>   Remove previously added exclusions
+              --set-exit          <name>            Prefer this endpoint (by name) as the exit
+              --remove-exit                         Clear the preferred exit
 
               --gen-cert          <on|off>          Enable/disable certificate generation
               --set-log           <splunk|off>      Enable/disable logging
@@ -80,6 +82,16 @@ export default function ({ api, mesh, utils }) {
                 args['--remove-exclusion'].forEach(target => {
                   config.exclusions = config.exclusions.filter(t => t !== target)
                 })
+                changed = true
+              }
+
+              if ('--set-exit' in args) {
+                config.exit = args['--set-exit']
+                changed = true
+              }
+
+              if ('--remove-exit' in args) {
+                delete config.exit
                 changed = true
               }
 
@@ -132,6 +144,7 @@ export default function ({ api, mesh, utils }) {
                   output('Targets: (not an exit)\n')
                 }
                 output(`Generate Certificate: ${config.generateCert ? 'On' : 'Off'}\n`)
+                output(`Preferred Exit: ${config.exit || '(any)'}\n`)
                 if (config.log?.splunk) {
                   output(`Logging:\n`)
                   output(`  Target: Splunk\n`)

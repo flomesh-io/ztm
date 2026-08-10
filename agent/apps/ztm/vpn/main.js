@@ -215,6 +215,12 @@ export default function ({ app, mesh, utils }) {
         onTransportData(flow, d)
         return null
       })
+      .handleStreamEnd(() => {
+        app.log(`[resp] ${flow.key} stream end`)
+        sendFin(flow)
+        closeFlow(flow)
+        return new StreamEnd
+      })
     )
 
     flow.conn = connectPeer.connect()
@@ -249,12 +255,17 @@ export default function ({ app, mesh, utils }) {
         break
       case 'ESTABLISHED':
         if (payload.length > 0) {
-          if (flow.tunnelReady && flow.conn) {
-            flow.conn.push(new Data(payload))
+          // 去重: seq 小于已确认发送位置的数据视为重发, 忽略
+          if (tcp.seq >= flow.clientNextSeq) {
+            if (flow.tunnelReady && flow.conn) {
+              flow.conn.push(new Data(payload))
+            } else {
+              flow.pendingData.push(payload)
+            }
+            flow.clientNextSeq = (tcp.seq + payload.length) >>> 0
           } else {
-            flow.pendingData.push(payload)
+            app.log(`[dup] ${flow.key} ignore retransmit seq=${tcp.seq} < next=${flow.clientNextSeq}`)
           }
-          flow.clientNextSeq = (flow.clientNextSeq + payload.length) >>> 0
         }
         if (tcp.flags & 0x01) {  // FIN
           flow.state = 'FIN_WAIT'
@@ -279,25 +290,52 @@ export default function ({ app, mesh, utils }) {
     tun.write(pkt)
   }
 
+  function sendFin(flow) {
+    var pkt = buildPacket({
+      src: flow.serverIP, dst: flow.clientIP,
+      srcPort: flow.serverPort, dstPort: flow.clientPort,
+      seq: flow.serverNextSeq, ack: flow.clientNextSeq,
+      flags: 0x11,
+    })
+    tun.write(pkt)
+  }
+
   function onTransportData(flow, data) {
     if (flow.state !== 'ESTABLISHED' && flow.state !== 'FIN_WAIT') return
     var bytes = data.toArray ? data.toArray() : data
     var text = ''
     try { text = bytes.map(b => String.fromCharCode(b)).join('') } catch (e) {}
     app.log(`[resp] ${flow.key} got ${bytes.length}B: ${text.substring(0, 60)}`)
-    var pkt = buildPacket({
-      src: flow.serverIP, dst: flow.clientIP,
-      srcPort: flow.serverPort, dstPort: flow.clientPort,
-      seq: flow.serverNextSeq, ack: flow.clientNextSeq,
-      flags: 0x18,
-      payload: bytes,
-    })
-    flow.serverNextSeq = (flow.serverNextSeq + bytes.length) >>> 0
-    tun.write(pkt)
+    // 分片发送, 避免超过 TUN MTU
+    var chunkSize = 1400
+    for (var off = 0; off < bytes.length; off += chunkSize) {
+      var chunk = bytes.slice(off, off + chunkSize)
+      var pkt = buildPacket({
+        src: flow.serverIP, dst: flow.clientIP,
+        srcPort: flow.serverPort, dstPort: flow.clientPort,
+        seq: flow.serverNextSeq, ack: flow.clientNextSeq,
+        flags: 0x18,
+        payload: chunk,
+      })
+      flow.serverNextSeq = (flow.serverNextSeq + chunk.length) >>> 0
+      tun.write(pkt)
+    }
+    // 启发式 FIN: 响应数据后 300ms 无新数据则关闭 (处理 HTTP keep-alive 挂起)
+    if (!flow.finSent) {
+      new Timeout(300).wait().then(function () {
+        if (flows[flow.key] !== flow) return
+        if (flow.finSent) return
+        flow.finSent = true
+        app.log(`[resp] ${flow.key} idle timeout, sending FIN`)
+        sendFin(flow)
+        closeFlow(flow)
+      })
+    }
   }
 
   function closeFlow(flow) {
     if (flow.conn) flow.conn.close()
+    flow.finSent = true
     delete flows[flow.key]
   }
 
@@ -332,6 +370,10 @@ export default function ({ app, mesh, utils }) {
   }
 
   function start() {
+    if (tun) {
+      app.log(`VPN already started, skip`)
+      return
+    }
     cleanupStaleTuns()
     tun = pipy.tun({
       ip: tunConfig.ip,
@@ -355,4 +397,7 @@ export default function ({ app, mesh, utils }) {
   })
 
   start()
+
+  // 必须返回非空 pipeline, 使 apps 的 entryPipeline 生效 (isRunning 依赖它)
+  return pipeline($=>$)
 }
