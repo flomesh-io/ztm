@@ -91,7 +91,9 @@ export default function ({ app, mesh }) {
     currentConfig = config
 
     if (config.listen !== currentListen) {
-      if (currentListen) pipy.listen(currentListen, null)
+      if (currentListen) {
+        try { pipy.listen(currentListen, null) } catch (_) { /* ignore stop errors */ }
+      }
       currentListen = config.listen || ''
       if (currentListen) {
         var $protocol
@@ -191,6 +193,9 @@ export default function ({ app, mesh }) {
   var $ctx
   var $requestHead
   var $requestTime
+  var $requestBody
+  var $responseHead
+  var $responseBody
 
   var acceptPeer = pipeline($=>$
     .onStart(c => { $ctx = c })
@@ -237,10 +242,18 @@ export default function ({ app, mesh }) {
         (msg) => {
           $requestHead = msg.head
           $requestTime = new Date
+          $requestBody = null
+        }
+      )
+      .handleMessageBody(
+        (body) => {
+          $requestBody = body
         }
       )
       .handleMessageEnd(
         (msg) => {
+          var body = $requestBody ? $requestBody.toString() : ''
+          if (body.length > 8192) body = body.substring(0, 8192) + '...[truncated]'
           currentLogger?.log?.({
             event: {
               time: $requestTime.toUTCString(),
@@ -248,9 +261,49 @@ export default function ({ app, mesh }) {
               endpoint: $ctx.peer.id,
               ip: $ctx.peer.ip,
               target: $target,
+              direction: 'request',
               method: $requestHead.method,
               path: $requestHead.path,
               headers: $requestHead.headers,
+              body,
+              size: msg.tail.headSize + msg.tail.bodySize,
+            }
+          })
+        }
+      )
+    )
+  )
+
+  // 观察响应 (decodeHTTPResponse 在响应方向)
+  var observeResponse = pipeline($=>$
+    .fork().to($=>$
+      .decodeHTTPResponse()
+      .handleMessageStart(
+        (msg) => {
+          $responseHead = msg.head
+          $responseBody = null
+        }
+      )
+      .handleMessageBody(
+        (body) => {
+          $responseBody = body
+        }
+      )
+      .handleMessageEnd(
+        (msg) => {
+          var body = $responseBody ? $responseBody.toString() : ''
+          if (body.length > 8192) body = body.substring(0, 8192) + '...[truncated]'
+          currentLogger?.log?.({
+            event: {
+              time: new Date().toUTCString(),
+              username: $ctx.peer.username,
+              endpoint: $ctx.peer.id,
+              ip: $ctx.peer.ip,
+              target: $target,
+              direction: 'response',
+              status: $responseHead.status,
+              headers: $responseHead.headers,
+              body,
               size: msg.tail.headSize + msg.tail.bodySize,
             }
           })
@@ -262,6 +315,7 @@ export default function ({ app, mesh }) {
   var proxyTCP = pipeline($=>$
     .pipe(observe)
     .connect(() => $target)
+    .pipe(observeResponse)
   )
 
   var proxyTLS = pipeline($=>$
@@ -272,12 +326,14 @@ export default function ({ app, mesh }) {
       .connectTLS().to($=>$
         .connect(() => $target)
       )
+      .pipe(observeResponse)
     )
   )
 
   var $host
   var $target
   var $targetEP
+  var $directTarget
   var $proto
 
   var connectPeer = pipeline($=>$
@@ -297,6 +353,8 @@ export default function ({ app, mesh }) {
       ).then(
         peers => Promise.any(peers.map(
           ep => {
+            // 排除本地端点, 避免 mesh 自我转发循环
+            if (ep.id === app.endpoint.id) return Promise.reject(null)
             if (!ep?.online) return Promise.reject(null)
             return mesh.request(
               ep.id,
@@ -313,11 +371,17 @@ export default function ({ app, mesh }) {
         app.log(`Forward to ${$target} via ${ep.name} (${ep.id})`)
         return new Data
       }).catch(() => {
-        app.log(`No exit found for ${$target}`)
+        // 远程未找到 exit, 若本地 proxy 自身是 exit 则直连目标
+        if (isExit(currentConfig, $host)) {
+          $directTarget = $target
+          app.log(`Direct forward to ${$target}`)
+        } else {
+          app.log(`No exit found for ${$target}`)
+        }
         return new Data
       })
     )
-    .pipe(() => $targetEP ? 'pass' : 'deny', {
+    .pipe(() => $targetEP ? 'pass' : ($directTarget ? 'direct' : 'deny'), {
       'pass': ($=>$
         .connectHTTPTunnel(
           () => new Message({
@@ -330,6 +394,7 @@ export default function ({ app, mesh }) {
           )
         )
       ),
+      'direct': $=>$.connect(() => $target),
       'deny': $=>$.replaceStreamStart(new StreamEnd)
     })
   )

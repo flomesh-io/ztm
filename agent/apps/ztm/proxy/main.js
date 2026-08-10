@@ -74,7 +74,8 @@ export default function ({ app, mesh, utils }) {
     .pipe(() => {
       switch ($ctx.source) {
         case 'user': return serveUser
-        case 'peer': return servePeer
+        case 'peer':
+        case 'self': return servePeer
       }
     })
   )
