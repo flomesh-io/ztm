@@ -320,9 +320,18 @@ export default function ({ app, mesh, utils }) {
       flow.serverNextSeq = (flow.serverNextSeq + chunk.length) >>> 0
       tun.write(pkt)
     }
-    // 启发式 FIN: 响应数据后 300ms 无新数据则关闭 (处理 HTTP keep-alive 挂起)
+    // 精确 FIN: HTTP 响应完整(Content-Length/chunked/Connection:close)时立即关闭,
+    // 避免 keep-alive 连接挂起导致 curl 等待超时
+    if (!flow.finSent && checkHttpComplete(flow, bytes)) {
+      app.log(`[resp] ${flow.key} HTTP complete, sending FIN`)
+      flow.finSent = true
+      sendFin(flow)
+      closeFlow(flow)
+      return
+    }
+    // 兜底 FIN: 非 HTTP 或无法解析时, 1s 无新数据则关闭
     if (!flow.finSent) {
-      new Timeout(300).wait().then(function () {
+      new Timeout(1000).wait().then(function () {
         if (flows[flow.key] !== flow) return
         if (flow.finSent) return
         flow.finSent = true
@@ -331,6 +340,65 @@ export default function ({ app, mesh, utils }) {
         closeFlow(flow)
       })
     }
+  }
+
+  // HTTP/1.1 响应完整性检测 (跨包缓冲, 纯 substring/indexOf 兼容 pjs)
+  function checkHttpComplete(flow, bytes) {
+    var buf = flow.httpBuffer
+    if (!buf) { buf = []; flow.httpBuffer = buf }
+    for (var bi = 0; bi < bytes.length; bi++) buf.push(bytes[bi])
+    if (flow.httpDone) return true
+    var text = ''
+    for (var ti = 0; ti < buf.length; ti++) text += String.fromCharCode(buf[ti])
+
+    if (!flow.httpHeaderDone) {
+      var idx = text.indexOf('\r\n\r\n')
+      if (idx < 0) return false
+      var head = text.substring(0, idx)
+      flow.httpHeaderDone = true
+      flow.httpHeaderLen = idx + 4
+      var cli = head.indexOf('Content-Length:')
+      if (cli < 0) cli = head.indexOf('content-length:')
+      if (cli >= 0) {
+        var rest = head.substring(cli + 15)
+        var nl = rest.indexOf('\r')
+        if (nl < 0) nl = rest.indexOf('\n')
+        if (nl < 0) nl = rest.length
+        var val = rest.substring(0, nl)
+        var num = ''
+        for (var p = 0; p < val.length; p++) {
+          var ch = val.substring(p, p + 1)
+          if (ch === '0' || ch === '1' || ch === '2' || ch === '3' || ch === '4' ||
+              ch === '5' || ch === '6' || ch === '7' || ch === '8' || ch === '9') {
+            num += ch
+          }
+        }
+        if (num.length > 0) flow.httpContentLength = +num
+      }
+      var te = head.indexOf('Transfer-Encoding: chunked')
+      if (te < 0) te = head.indexOf('transfer-encoding: chunked')
+      if (te >= 0) {
+        flow.httpChunked = true
+      } else {
+        var cc = head.indexOf('Connection: close')
+        if (cc < 0) cc = head.indexOf('connection: close')
+        if (cc >= 0) flow.httpClose = true
+      }
+    }
+    var bodyRead = buf.length - flow.httpHeaderLen
+    if (flow.httpContentLength !== undefined && bodyRead >= flow.httpContentLength) {
+      flow.httpDone = true
+      return true
+    }
+    if (flow.httpChunked && text.indexOf('0\r\n\r\n') >= 0) {
+      flow.httpDone = true
+      return true
+    }
+    if (flow.httpClose) {
+      flow.httpDone = true
+      return true
+    }
+    return false
   }
 
   function closeFlow(flow) {
